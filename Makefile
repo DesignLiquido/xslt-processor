@@ -1,34 +1,13 @@
 # Currently, this Makefile has only a "dist" target.
 
 PACKAGE = ajaxslt
-VERSION = 0.5
+VERSION = 0.4
 
-DIST_FILES = \
-  AUTHORS \
-  ChangeLog \
-  COPYING \
-  Makefile \
-  README \
-  TODO \
-  dom.js \
-  dom_unittest.html \
-  dom_unittest.js \
-  simplelog.js \
-  test/xpath.html \
-  test/xpath_script.js \
-  test/xslt.html \
-  test/xslt_script.js \
-  util.js \
-  xmltoken.js \
-  xmltoken_unittest.html \
-  xmltoken_unittest.js \
-  xpathdebug.js \
-  xpath.js \
-  xpath_unittest.html \
-  xpath_unittest.js \
-  xslt.js \
-  xslt_unittest.html \
-  xslt_unittest.js \
+DIST_FILES = README AUTHORS ChangeLog COPYING Makefile TODO dom.js \
+	misc.js xpathdebug.js xpath.js xslt.js \
+	dom_unittest.html dom_unittest.js test xpath_unittest.html \
+	xpath_unittest.js
+
 
 DIST_NAME = $(PACKAGE)-$(VERSION)
 DIST_DIR = /tmp/$(DIST_NAME)
@@ -46,3 +25,4 @@ dist: clobber $(DIST_FILES)
 
 
 clobber:
+

@@ -41,18 +41,22 @@
 // @return the processed document, as XML text in a string.
 
 function xsltProcess(xmlDoc, stylesheet) {
-  xsltLog('XML STYLESHEET:');
-  xsltLogXml(xmlText(stylesheet));
-  xsltLog('XML INPUT:');
-  xsltLogXml(xmlText(xmlDoc));
+  if (xsltdebug) {
+    Log.write('XML STYLESHEET:');
+    Log.writeXML(xmlText(stylesheet));
+    Log.write('XML INPUT:');
+    Log.writeXML(xmlText(xmlDoc));
+  }
 
-  var output = domCreateDocumentFragment(new XDocument);
+  var output = (new XDocument).createDocumentFragment();
   xsltProcessContext(new ExprContext(xmlDoc), stylesheet, output);
 
   var ret = xmlText(output);
 
-  xsltLog('HTML OUTPUT:');
-  xsltLogXml(ret);
+  if (xsltdebug) {
+    Log.write('HTML OUTPUT:');
+    Log.writeXML(ret);
+  }
 
   return ret;
 }
@@ -95,7 +99,7 @@ function xsltProcessContext(input, template, output) {
         if (c.nodeType == DOM_ELEMENT_NODE &&
             c.nodeName == 'xsl:template' &&
             c.getAttribute('mode') == mode) {
-          for (var j = 0; j < sortContext.contextSize(); ++j) {
+          for (var j = 0; j < sortContext.nodelist.length; ++j) {
             var nj = sortContext.nodelist[j];
             xsltProcessContext(sortContext.clone(nj, j), c, output);
           }
@@ -109,7 +113,7 @@ function xsltProcessContext(input, template, output) {
       var node = output.ownerDocument.createDocumentFragment();
       xsltChildNodes(input, template, node);
       var value = xmlValue(node);
-      domSetAttribute(output, name, value);
+      output.setAttribute(name, value);
       break;
 
     case 'attribute-set':
@@ -127,7 +131,7 @@ function xsltProcessContext(input, template, output) {
         var c = top.childNodes[i];
         if (c.nodeType == DOM_ELEMENT_NODE &&
             c.nodeName == 'xsl:template' &&
-            domGetAttribute(c, 'name') == name) {
+            c.getAttribute('name') == name) {
           xsltChildNodes(paramContext, c, output);
           break;
         }
@@ -139,21 +143,23 @@ function xsltProcessContext(input, template, output) {
       break;
 
     case 'comment':
-      var node = domCreateDocumentFragment(output.ownerDocument);
+      var node = output.ownerDocument.createDocumentFragment();
       xsltChildNodes(input, template, node);
       var commentData = xmlValue(node);
-      var commentNode = domCreateComment(output.ownerDocument, commentData);
+      var commentNode = output.ownerDocument.createComment(commentData);
       output.appendChild(commentNode);
       break;
 
     case 'copy':
       if (input.node.nodeType == DOM_ELEMENT_NODE) {
-        var node = domCreateElement(output.ownerDocument, input.node.nodeName);
-        domAppendChild(output, node);
+        var node = output.ownerDocument.createElement(input.node.nodeName);
+        output.appendChild(node);
         xsltChildNodes(input, template, node);
 
       } else if (input.node.nodeType == DOM_ATTRIBUTE_NODE) {
-        domSetAttribute(output, input.node.nodeName, input.node.nodeValue);
+        var node = output.ownerDocument.createAttribute(input.node.nodeName);
+        node.nodeValue = input.node.nodeValue;
+        output.setAttribute(node);
       }
       break;
 
@@ -167,8 +173,8 @@ function xsltProcessContext(input, template, output) {
         }
 
       } else {
-        var node = domCreateTextNode(output.ownerDocument,value.stringValue());
-        domAppendChild(output, node);
+        var node = output.ownerDocument.createTextNode(value.stringValue());
+        output.appendChild(node);
       }
       break;
 
@@ -179,8 +185,8 @@ function xsltProcessContext(input, template, output) {
     case 'element':
       var nameexpr = xmlGetAttribute(template, 'name');
       var name = xsltAttributeValue(nameexpr, input);
-      var node = domCreateElement(output.ownerDocument, name);
-      domAppendChild(output, node);
+      var node = output.ownerDocument.createElement(name);
+      output.appendChild(node);
       xsltChildNodes(input, template, node);
       break;
 
@@ -189,7 +195,9 @@ function xsltProcessContext(input, template, output) {
       break;
 
     case 'for-each':
-      xsltForEach(input, template, output);
+      var sortContext = input.clone();
+      xsltSort(sortContext, template);
+      xsltForEach(sortContext, template, output);
       break;
 
     case 'if':
@@ -257,21 +265,21 @@ function xsltProcessContext(input, template, output) {
 
     case 'template':
       var match = xmlGetAttribute(template, 'match');
-      if (match && xsltMatch(match, input)) {
+      if (match && xpathMatch(match, input)) {
         xsltChildNodes(input, template, output);
       }
       break;
 
     case 'text':
       var text = xmlValue(template);
-      var node = domCreateTextNode(output.ownerDocument, text);
+      var node = output.ownerDocument.createTextNode(text);
       output.appendChild(node);
       break;
 
     case 'value-of':
       var select = xmlGetAttribute(template, 'select');
       var value = xpathEval(select, input).stringValue();
-      var node = domCreateTextNode(output.ownerDocument, value);
+      var node = output.ownerDocument.createTextNode(value);
       output.appendChild(node);
       break;
 
@@ -320,6 +328,16 @@ function xsltWithParam(input, template) {
 // current template node is executed.
 //
 // TODO(mesch): case-order is not implemented.
+//
+// NOTE: this was tested using driving directions, as follows:
+//
+// <xsl:apply-templates select="segments/segment">
+//  <xsl:sort select="substring-before(@distance,'&#160;')"
+//            order="descending" data-type="number"/>
+//  <xsl:sort select="node()"/>
+// </xsl:apply-templates>
+// 
+// TODO(mesch): write a unit test.
 
 function xsltSort(input, template) {
   var sort = [];
@@ -399,11 +417,9 @@ function xsltChoose(input, template, output) {
 function xsltForEach(input, template, output) {
   var select = xmlGetAttribute(template, 'select');
   var nodes = xpathEval(select, input).nodeSetValue();
-  var sortContext = input.clone(nodes[0], 0, nodes);
-  xsltSort(sortContext, template);
-  for (var i = 0; i < sortContext.contextSize(); ++i) {
-    var ni = sortContext.nodelist[i];
-    xsltChildNodes(sortContext.clone(ni, i), template, output);
+  for (var i = 0; i < nodes.length; ++i) {
+    var context = input.clone(nodes[i], i, nodes);
+    xsltChildNodes(context, template, output);
   }
 }
 
@@ -430,21 +446,21 @@ function xsltChildNodes(input, template, output) {
 function xsltPassThrough(input, template, output) {
   if (template.nodeType == DOM_TEXT_NODE) {
     if (xsltPassText(template)) {
-      var node = domCreateTextNode(output.ownerDocument, template.nodeValue);
-      domAppendChild(output, node);
+      var node = output.ownerDocument.createTextNode(template.nodeValue);
+      output.appendChild(node);
     }
 
   } else if (template.nodeType == DOM_ELEMENT_NODE) {
-    var node = domCreateElement(output.ownerDocument, template.nodeName);
+    var node = output.ownerDocument.createElement(template.nodeName);
     for (var i = 0; i < template.attributes.length; ++i) {
       var a = template.attributes[i];
       if (a) {
         var name = a.nodeName;
         var value = xsltAttributeValue(a.nodeValue, input);
-        domSetAttribute(node, name, value);
+        node.setAttribute(name, value);
       }
     }
-    domAppendChild(output, node);
+    output.appendChild(node);
     xsltChildNodes(input, template, node);
 
   } else {
@@ -473,7 +489,7 @@ function xsltPassText(template) {
   }
 
   while (element && element.nodeType == DOM_ELEMENT_NODE) {
-    var xmlspace = domGetAttribute(element, 'xml:space');
+    var xmlspace = element.getAttribute('xml:space');
     if (xmlspace) {
       if (xmlspace == 'default') {
         return false;
@@ -523,11 +539,12 @@ function xsltAttributeValue(value, context) {
 // implementations the return value of node.getAttributeValue()
 // contains unresolved XML entities, although the DOM spec requires
 // that entity references are resolved by te DOM.
+
 function xmlGetAttribute(node, name) {
   // TODO(mesch): This should not be necessary if the DOM is working
   // correctly. The DOM is responsible for resolving entities, not the
   // application.
-  var value = domGetAttribute(node, name);
+  var value = node.getAttribute(name);
   if (value) {
     return xmlResolveEntities(value);
   } else {
@@ -545,15 +562,15 @@ function xmlGetAttribute(node, name) {
 
 function xsltCopyOf(dst, src) {
   if (src.nodeType == DOM_TEXT_NODE) {
-    var node = domCreateTextNode(dst.ownerDocument, src.nodeValue);
-    domAppendChild(dst, node);
+    var node = dst.ownerDocument.createTextNode(src.nodeValue);
+    dst.appendChild(node);
 
   } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {
-    domSetAttribute(dst, src.nodeName, src.nodeValue);
+    dst.setAttribute(src.nodeName, src.nodeValue);
 
   } else if (src.nodeType == DOM_ELEMENT_NODE) {
-    var node = domCreateElement(dst.ownerDocument, src.nodeName);
-    domAppendChild(dst, node);
+    var node = dst.ownerDocument.createElement(src.nodeName);
+    dst.appendChild(node);
 
     // Recursion is implemented by the function calling itself via
     // arguments.callee, independent of its name. Very convenient for
@@ -578,7 +595,8 @@ function xsltCopyOf(dst, src) {
 
 // Evaluates an XPath expression in the current input context as a
 // match (see [XSLT] section 5.2, paragraph 1).
-function xsltMatch(match, context) {
+
+function xpathMatch(match, context) {
   var expr = xpathParse(match);
 
   var ret;
@@ -604,5 +622,15 @@ function xsltMatch(match, context) {
     }
   }
 
+  return ret;
+}
+
+
+// Parses and then evaluates the given XPath expression in the given
+// input context. Notice that parsed xpath expressions are cached.
+
+function xpathEval(select, context) {
+  var expr = xpathParse(select);
+  var ret = expr.evaluate(context);
   return ret;
 }

@@ -31,6 +31,9 @@
 // that are used internally follow after them.
 //
 //
+// TODO(mesch): add jsdoc comments. Use more coherent naming.
+//
+//
 // Author: Steffen Meschkat <mesch@google.com>
 
 
@@ -41,12 +44,16 @@
 // expression context.
 
 function xpathParse(expr) {
-  xpathLog('parse ' + expr);
+  if (xpathdebug) {
+    Log.write('XPath parse ' + expr);
+  }
   xpathParseInit();
 
   var cached = xpathCacheLookup(expr);
   if (cached) {
-    xpathLog(' ... cached');
+    if (xpathdebug) {
+      Log.write(' ... cached');
+    }
     return cached;
   }
 
@@ -55,22 +62,29 @@ function xpathParse(expr) {
   // ($address), numbers (4), multi-step path expressions where each
   // step is a plain element node test
   // (page/overlay/locations/location).
-
+  
   if (expr.match(/^(\$|@)?\w+$/i)) {
     var ret = makeSimpleExpr(expr);
     xpathParseCache[expr] = ret;
-    xpathLog(' ... simple');
+    if (xpathdebug) {
+      Log.write(' ... simple');
+    }
     return ret;
   }
 
   if (expr.match(/^\w+(\/\w+)*$/i)) {
     var ret = makeSimpleExpr2(expr);
     xpathParseCache[expr] = ret;
-    xpathLog(' ... simple 2');
+    if (xpathdebug) {
+      Log.write(' ... simple 2');
+    }
     return ret;
   }
 
   var cachekey = expr; // expr is modified during parse
+  if (xpathdebug) {
+    Timer.start('XPath parse', cachekey);
+  }
 
   var stack = [];
   var ahead = null;
@@ -80,7 +94,7 @@ function xpathParse(expr) {
   var parse_count = 0;
   var lexer_count = 0;
   var reduce_count = 0;
-
+  
   while (!done) {
     parse_count++;
     expr = expr.replace(/^\s*/, '');
@@ -114,22 +128,24 @@ function xpathParse(expr) {
     // and not explicitly set.
 
     if (rule &&
-        (rule == TOK_DIV ||
+        (rule == TOK_DIV || 
          rule == TOK_MOD ||
-         rule == TOK_AND ||
+         rule == TOK_AND || 
          rule == TOK_OR) &&
-        (!previous ||
-         previous.tag == TOK_AT ||
-         previous.tag == TOK_DSLASH ||
+        (!previous || 
+         previous.tag == TOK_AT || 
+         previous.tag == TOK_DSLASH || 
          previous.tag == TOK_SLASH ||
-         previous.tag == TOK_AXIS ||
+         previous.tag == TOK_AXIS || 
          previous.tag == TOK_DOLLAR)) {
       rule = TOK_QNAME;
     }
 
     if (rule) {
       expr = expr.substr(match.length);
-      xpathLog('token: ' + match + ' -- ' + rule.label);
+      if (xpathdebug) {
+        Log.write('token: ' + match + ' -- ' + rule.label);
+      }
       ahead = {
         tag: rule,
         match: match,
@@ -138,17 +154,23 @@ function xpathParse(expr) {
       };
 
     } else {
-      xpathLog('DONE');
+      if (xpathdebug) {
+        Log.write('DONE');
+      }
       done = true;
     }
 
     while (xpathReduce(stack, ahead)) {
       reduce_count++;
-      xpathLog('stack: ' + stackToString(stack));
+      if (xpathdebug) {
+        Log.write('stack: ' + stackToString(stack));
+      }
     }
   }
 
-  xpathLog('stack: ' + stackToString(stack));
+  if (xpathdebug) {
+    Log.write(stackToString(stack));
+  }
 
   if (stack.length != 1) {
     throw 'XPath parse error ' + cachekey + ':\n' + stackToString(stack);
@@ -157,8 +179,14 @@ function xpathParse(expr) {
   var result = stack[0].expr;
   xpathParseCache[cachekey] = result;
 
-  xpathLog('XPath parse: ' + parse_count + ' / ' +
-           lexer_count + ' / ' + reduce_count);
+  if (xpathdebug) {
+    Timer.end('XPath parse', cachekey);
+  }
+
+  if (xpathdebug) {
+    Log.write('XPath parse: ' + parse_count + ' / ' + 
+              lexer_count + ' / ' + reduce_count);
+  }
 
   return result;
 }
@@ -194,16 +222,18 @@ function xpathReduce(stack, ahead) {
   }
 
   var ret;
-  if (cand && (!ahead || cand.prec > ahead.prec ||
+  if (cand && (!ahead || cand.prec > ahead.prec || 
                (ahead.tag.left && cand.prec >= ahead.prec))) {
     for (var i = 0; i < cand.match.matchlength; ++i) {
       stack.pop();
     }
 
-    xpathLog('reduce ' + cand.tag.label + ' ' + cand.prec +
-             ' ahead ' + (ahead ? ahead.tag.label + ' ' + ahead.prec +
-                          (ahead.tag.left ? ' left' : '')
-                          : ' none '));
+    if (xpathdebug) {
+      Log.write('reduce ' + cand.tag.label + ' ' + cand.prec +
+                ' ahead ' + (ahead ? ahead.tag.label + ' ' + ahead.prec + 
+                             (ahead.tag.left ? ' left' : '')
+                             : ' none '));
+    }
 
     var matchexpr = mapExpr(cand.match, function(m) { return m.expr; });
     cand.expr = cand.rule[3].apply(null, matchexpr);
@@ -213,10 +243,12 @@ function xpathReduce(stack, ahead) {
 
   } else {
     if (ahead) {
-      xpathLog('shift ' + ahead.tag.label + ' ' + ahead.prec +
-               (ahead.tag.left ? ' left' : '') +
-               ' over ' + (cand ? cand.tag.label + ' ' +
-                           cand.prec : ' none'));
+      if (xpathdebug) {
+        Log.write('shift ' + ahead.tag.label + ' ' + ahead.prec + 
+                  (ahead.tag.left ? ' left' : '') +
+                  ' over ' + (cand ? cand.tag.label + ' ' + 
+                              cand.prec : ' none'));
+      }
       stack.push(ahead);
     }
     ret = false;
@@ -366,35 +398,25 @@ function stackToString(stack) {
 //
 //   getVariable(name) -- what the name says.
 //
-//   setNode(position) -- sets the context to the node at the given
-//   position. Needed to implement scoping rules for variables in
-//   XPath. (A variable is visible to all subsequent siblings, not
-//   only to its children.)
+//   setNode(node, position) -- sets the context to the new node and
+//   its corresponding position. Needed to implement scoping rules for
+//   variables in XPath. (A variable is visible to all subsequent
+//   siblings, not only to its children.)
 
-function ExprContext(node, opt_position, opt_nodelist, opt_parent) {
+function ExprContext(node, position, nodelist, parent) {
   this.node = node;
-  this.position = opt_position || 0;
-  this.nodelist = opt_nodelist || [ node ];
+  this.position = position || 0;
+  this.nodelist = nodelist || [ node ];
   this.variables = {};
-  this.parent = opt_parent || null;
-  if (opt_parent) {
-    this.root = opt_parent.root;
-  } else if (this.node.nodeType == DOM_DOCUMENT_NODE) {
-    // NOTE(mesch): DOM Spec stipulates that the ownerDocument of a
-    // document is null. Our root, however is the document that we are
-    // processing, so the initial context is created from its document
-    // node, which case we must handle here explcitly.
-    this.root = node;
-  } else {
-    this.root = node.ownerDocument;
-  }
+  this.parent = parent || null;
+  this.root = parent ? parent.root : node.ownerDocument;
 }
 
-ExprContext.prototype.clone = function(opt_node, opt_position, opt_nodelist) {
-  return new ExprContext(
-      opt_node || this.node,
-      typeof opt_position != 'undefined' ? opt_position : this.position,
-      opt_nodelist || this.nodelist, this);
+ExprContext.prototype.clone = function(node, position, nodelist) {
+  return new
+  ExprContext(node || this.node,
+              typeof position != 'undefined' ? position : this.position,
+              nodelist || this.nodelist, this);
 };
 
 ExprContext.prototype.setVariable = function(name, value) {
@@ -411,16 +433,12 @@ ExprContext.prototype.getVariable = function(name) {
   } else {
     return null;
   }
-};
+}
 
-ExprContext.prototype.setNode = function(position) {
-  this.node = this.nodelist[position];
+ExprContext.prototype.setNode = function(node, position) {
+  this.node = node;
   this.position = position;
-};
-
-ExprContext.prototype.contextSize = function() {
-  return this.nodelist.length;
-};
+}
 
 
 // XPath expression values. They are what XPath expressions evaluate
@@ -474,7 +492,7 @@ StringValue.prototype.numberValue = function() {
 }
 
 StringValue.prototype.nodeSetValue = function() {
-  throw this;
+  throw this + ' ' + Error().stack;
 }
 
 function BooleanValue(value) {
@@ -495,7 +513,7 @@ BooleanValue.prototype.numberValue = function() {
 }
 
 BooleanValue.prototype.nodeSetValue = function() {
-  throw this;
+  throw this + ' ' + Error().stack;
 }
 
 function NumberValue(value) {
@@ -516,7 +534,7 @@ NumberValue.prototype.numberValue = function() {
 }
 
 NumberValue.prototype.nodeSetValue = function() {
-  throw this;
+  throw this + ' ' + Error().stack;
 }
 
 function NodeSetValue(value) {
@@ -614,10 +632,10 @@ function xPathStep(nodes, steps, step, input, ctx) {
   }
 }
 
-function StepExpr(axis, nodetest, opt_predicate) {
+function StepExpr(axis, nodetest, predicate) {
   this.axis = axis;
   this.nodetest = nodetest;
-  this.predicate = opt_predicate || [];
+  this.predicate = predicate || [];
 }
 
 StepExpr.prototype.appendPredicate = function(p) {
@@ -808,7 +826,7 @@ FunctionCallExpr.prototype.evaluate = function(ctx) {
   if (f) {
     return f.call(this, ctx);
   } else {
-    xpathLog('XPath NO SUCH FUNCTION ' + fn);
+    Log.write('XPath NO SUCH FUNCTION ' + fn);
     return new BooleanValue(false);
   }
 };
@@ -817,7 +835,7 @@ FunctionCallExpr.prototype.xpathfunctions = {
   'last': function(ctx) {
     assert(this.args.length == 0);
     // NOTE(mesch): XPath position starts at 1.
-    return new NumberValue(ctx.contextSize());
+    return new NumberValue(ctx.nodelist.length);
   },
 
   'position': function(ctx) {
@@ -834,20 +852,19 @@ FunctionCallExpr.prototype.xpathfunctions = {
 
   'id': function(ctx) {
     assert(this.args.length == 1);
-    var e = this.args[0].evaluate(ctx);
+    var e = this.args.evaluate(ctx);
     var ret = [];
     var ids;
     if (e.type == 'node-set') {
       ids = [];
-      var en = e.nodeSetValue();
-      for (var i = 0; i < en.length; ++i) {
-        var v = xmlValue(en[i]).split(/\s+/);
+      for (var i = 0; i < e.length; ++i) {
+        var v = xmlValue(e[i]).split(/\s+/);
         for (var ii = 0; ii < v.length; ++ii) {
           ids.push(v[ii]);
         }
       }
     } else {
-      ids = e.stringValue().split(/\s+/);
+      ids = e.split(/\s+/);
     }
     var d = ctx.node.ownerDocument;
     for (var i = 0; i < ids.length; ++i) {
@@ -1107,10 +1124,19 @@ FunctionCallExpr.prototype.xpathfunctions = {
     }
   },
 
+  'ext-sprintf': function(ctx) {
+    assert(this.args.length >= 1);
+    var args = [];
+    for (var i = 0; i < this.args.length; ++i) {
+      args.push(this.args[i].evaluate(ctx).stringValue());
+    }
+    return new StringValue(sprintf.apply(null, args));
+  },
+
   // ext-cardinal() evaluates its single argument as a number, and
   // returns the current node that many times. It can be used in the
   // select attribute to iterate over an integer range.
-
+  
   'ext-cardinal': function(ctx) {
     assert(this.args.length >= 1);
     var c = this.args[0].evaluate(ctx).numberValue();
@@ -1132,19 +1158,16 @@ UnionExpr.prototype.evaluate = function(ctx) {
   var nodes2 = this.expr2.evaluate(ctx).nodeSetValue();
   var I1 = nodes1.length;
   for (var i2 = 0; i2 < nodes2.length; ++i2) {
-    var n = nodes2[i2];
-    var inBoth = false;
     for (var i1 = 0; i1 < I1; ++i1) {
-      if (nodes1[i1] == n) {
-        inBoth = true;
-        i1 = I1; // break inner loop
+      if (nodes1[i1] == nodes2[i2]) {
+        // break inner loop and continue outer loop, labels confuse
+        // the js compiler, so we don't use them here.
+        i1 = I1;
       }
     }
-    if (!inBoth) {
-      nodes1.push(n);
-    }
+    nodes1.push(nodes2[i2]);
   }
-  return new NodeSetValue(nodes1);
+  return new NodeSetValue(nodes2);
 };
 
 function PathExpr(filter, rel) {
@@ -1504,14 +1527,14 @@ function makeNodeTestExpr4(typeo, parenc) {
     return new NodeTestComment;
 
   case 'processing-instruction':
-    return new NodeTestPI('');
+    return new NodeTestPI;
   }
 }
 
 function makeNodeTestExpr5(typeo, target, parenc) {
   var type = typeo.replace(/\s*\($/, '');
   if (type != 'processing-instruction') {
-    throw type;
+    throw type + ' ' + Error().stack;
   }
   return new NodeTestPI(target.value);
 }
@@ -1607,9 +1630,9 @@ function makeSimpleExpr(expr) {
 }
 
 function makeSimpleExpr2(expr) {
-  var steps = stringSplit(expr, '/');
+  var steps = expr.split('/');
   var c = new LocationExpr();
-  for (var i = 0; i < steps.length; ++i) {
+  for (var i in steps) {
     var a = new NodeTestName(steps[i]);
     var b = new StepExpr('child', a);
     c.appendStep(b);
@@ -1692,7 +1715,7 @@ var TOK_BRACKO = { label: "[",   prec:   32, re: new RegExp("^\\[") };
 var TOK_BRACKC = { label: "]",               re: new RegExp("^\\]") };
 var TOK_DOLLAR = { label: "$",               re: new RegExp("^\\$") };
 
-var TOK_NCNAME = { label: "[ncname]", re: new RegExp('^' + XML_NC_NAME) };
+var TOK_NCNAME = { label: "[ncname]", re: new RegExp('^[a-z][-\\w]*','i') };
 
 var TOK_ASTERISK = { label: "*", prec: 15, re: new RegExp("^\\*"), left: true };
 var TOK_LITERALQ = { label: "[litq]", prec: 20, re: new RegExp("^'[^\\']*'") };
@@ -1709,7 +1732,7 @@ var TOK_NUMBER  = {
 
 var TOK_QNAME = {
   label: "[qname]",
-  re: new RegExp('^(' + XML_NC_NAME + ':)?' + XML_NC_NAME)
+  re: new RegExp('^([a-z][-\\w]*:)?[a-z][-\\w]*','i')
 };
 
 var TOK_NODEO = {
@@ -1839,7 +1862,7 @@ var xpathGrammarRules =
    [ XPathLocationPath, [ XPathAbsoluteLocationPath ], 18,
      passExpr ],
 
-   [ XPathAbsoluteLocationPath, [ TOK_SLASH, XPathRelativeLocationPath ], 18,
+   [ XPathAbsoluteLocationPath, [ TOK_SLASH, XPathRelativeLocationPath ], 18, 
      makeLocationExpr1 ],
    [ XPathAbsoluteLocationPath, [ TOK_DSLASH, XPathRelativeLocationPath ], 18,
      makeLocationExpr2 ],
@@ -1911,11 +1934,11 @@ var xpathGrammarRules =
    [ XPathUnionExpr, [ XPathUnionExpr, TOK_PIPE, XPathPathExpr ], 20,
      makeUnionExpr ],
 
-   [ XPathPathExpr, [ XPathLocationPath ], 20,
-     passExpr ],
-   [ XPathPathExpr, [ XPathFilterExpr ], 19,
-     passExpr ],
-   [ XPathPathExpr,
+   [ XPathPathExpr, [ XPathLocationPath ], 20, 
+     passExpr ], 
+   [ XPathPathExpr, [ XPathFilterExpr ], 19, 
+     passExpr ], 
+   [ XPathPathExpr, 
      [ XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath ], 20,
      makePathExpr1 ],
    [ XPathPathExpr,
@@ -1923,7 +1946,7 @@ var xpathGrammarRules =
      makePathExpr2 ],
 
    [ XPathFilterExpr, [ XPathPrimaryExpr, XPathPredicate, Q_MM ], 20,
-     makeFilterExpr ],
+     makeFilterExpr ], 
 
    [ XPathExpr, [ XPathPrimaryExpr ], 16,
      passExpr ],
@@ -2012,7 +2035,7 @@ function xpathParseInit() {
     xpathTokenRules[i].key = k++;
   }
 
-  xpathLog('XPath parse INIT: ' + k + ' rules');
+  Log.write('XPath parse INIT: ' + k + ' rules');
 
   // Another slight optimization: sort the rules into bins according
   // to the last element (observing quantifiers), so we can restrict
@@ -2038,7 +2061,7 @@ function xpathParseInit() {
       if (pattern[j] == Q_1M) {
         push_(xpathRules, pattern[j-1].key, rule);
         break;
-
+        
       } else if (pattern[j] == Q_MM || pattern[j] == Q_01) {
         push_(xpathRules, pattern[j-1].key, rule);
         --j;
@@ -2050,17 +2073,16 @@ function xpathParseInit() {
     }
   }
 
-  xpathLog('XPath parse INIT: ' + xpathRules.length + ' rule bins');
-
+  Log.write('XPath parse INIT: ' + xpathRules.length + ' rule bins');
+  
   var sum = 0;
   mapExec(xpathRules, function(i) {
     if (i) {
       sum += i.length;
     }
   });
-
-  xpathLog('XPath parse INIT: ' + (sum / xpathRules.length) +
-           ' average bin size');
+  
+  Log.write('XPath parse INIT: ' + (sum / xpathRules.length) + ' average bin size');
 }
 
 // Local utility functions that are used by the lexer or parser.
@@ -2097,11 +2119,11 @@ function xpathSort(input, sort) {
 
   var sortlist = [];
 
-  for (var i = 0; i < input.contextSize(); ++i) {
+  for (var i = 0; i < input.nodelist.length; ++i) {
     var node = input.nodelist[i];
     var sortitem = { node: node, key: [] };
     var context = input.clone(node, 0, [ node ]);
-
+    
     for (var j = 0; j < sort.length; ++j) {
       var s = sort[j];
       var value = s.expr.evaluate(context);
@@ -2130,7 +2152,7 @@ function xpathSort(input, sort) {
     nodes.push(sortlist[i].node);
   }
   input.nodelist = nodes;
-  input.setNode(0);
+  input.setNode(nodes[0], 0);
 }
 
 
@@ -2141,6 +2163,7 @@ function xpathSort(input, sort) {
 // NOTE: In browsers which do not follow the spec, this breaks only in
 // the case that numbers should be sorted as strings, which is very
 // uncommon.
+
 function xpathSortByKey(v1, v2) {
   // NOTE: Sort key vectors of different length never occur in
   // xsltSort.
@@ -2155,13 +2178,4 @@ function xpathSortByKey(v1, v2) {
   }
 
   return 0;
-}
-
-
-// Parses and then evaluates the given XPath expression in the given
-// input context. Notice that parsed xpath expressions are cached.
-function xpathEval(select, context) {
-  var expr = xpathParse(select);
-  var ret = expr.evaluate(context);
-  return ret;
 }

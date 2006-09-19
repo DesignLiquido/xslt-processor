@@ -12,4 +12,7 @@ AJAXSLT TODO
 
 - verify XPath support in IE
 
-- Add more XSLT tests.
+- COPYING: the wording "binary" in the redistribution conditions is
+  inappropriate for javascript code.
+
+- Add XSLT tests.

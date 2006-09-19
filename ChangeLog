@@ -1,27 +1,3 @@
-2006-09-10  Google Inc. <opensource@google.com>
-
-	* Version 0.5
-	* Released on http://code.google.com/hosting/
-	* General changes:
-	  - remove all uses of for-in iteration
-	  - rename misc.js to util.js
-	  - log window is now in simplelog.js
-	* XPath changes:
-	  - fixed id() function
-	  - fixed UnionExpr::evaluate()
-	  - added support for Unicode chracters
-	* XSLT changes:
-	  - fixed xsl:sort in xsl:for-each (again)
-	* DOM changes:
-	  - added a few methods
-	* XML parser changes:
-	  - parses CDATA sections
-	  - parses comments
-	  - parses XML declaration
-	  - parses Unicode XML markup
-	* Test changes:
-	  - added several jsunit tests
-
 2005-10-19  Google Inc. <opensource@google.com>
 
 	* Version 0.4
