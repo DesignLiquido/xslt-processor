@@ -548,6 +548,14 @@ function xsltCopyOf(dst, src) {
     var node = domCreateTextNode(dst.ownerDocument, src.nodeValue);
     domAppendChild(dst, node);
 
+  } else if (src.nodeType == DOM_CDATA_SECTION_NODE) {
+    var node = domCreateCDATASection(dst.ownerDocument, src.nodeValue);
+    domAppendChild(dst, node);
+
+  } else if (src.nodeType == DOM_COMMENT_NODE) {
+    var node = domCreateComment(dst.ownerDocument, src.nodeValue);
+    domAppendChild(dst, node);
+
   } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {
     domSetAttribute(dst, src.nodeName, src.nodeValue);
 

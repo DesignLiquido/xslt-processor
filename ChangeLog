@@ -6,6 +6,9 @@
 	  "ancestor-or-self", "preceding-sibling", "following-sibling".
 	* Fixes evaluation of XPath axes "preceding", "following".
 	* Added unittests for both.
+	* Fixed xmlEscape*() functions to escape *all* markup characters
+	  not just the first.
+	* Fixed xsl:copy-of to also copy CDATA and COMMENT nodes.
 
 2006-09-10  Google Inc. <opensource@google.com>
 

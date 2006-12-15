@@ -306,8 +306,8 @@ function xmlFullNodeName(n) {
 // reference start delimiter &. The escaped string can be used in XML
 // text portions (i.e. between tags).
 function xmlEscapeText(s) {
-  return ('' + s).replace(/&/, '&amp;').replace(/</, '&lt;').
-    replace(/>/, '&gt;');
+  return ('' + s).replace(/&/g, '&amp;').replace(/</g, '&lt;').
+    replace(/>/g, '&gt;');
 }
 
 // Escape XML special markup characters: tag delimiter < > entity
@@ -315,13 +315,13 @@ function xmlEscapeText(s) {
 // used in double quoted XML attribute value portions (i.e. in
 // attributes within start tags).
 function xmlEscapeAttr(s) {
-  return xmlEscapeText(s).replace(/\"/, '&quot;');
+  return xmlEscapeText(s).replace(/\"/g, '&quot;');
 }
 
 // Escape markup in XML text, but don't touch entity references. The
 // escaped string can be used as XML text (i.e. between tags).
 function xmlEscapeTags(s) {
-  return s.replace(/</, '&lt;').replace(/>/, '&gt;');
+  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 
