@@ -64,6 +64,20 @@ var expr = [
     "count(//*[class='u']|//*[class='u'])",
     "count(//*[class='u']|//*[id='u1'])",
 
+    // Axis expressions
+    "count(//*[@id='self']/ancestor-or-self::*)",
+    "count(//*[@id='self']/ancestor::*)",
+    "count(//*[@id='self']/attribute::*)",
+    "count(//*[@id='self']/child::*)",
+    "count(//*[@id='self']/descendant-or-self::*)",
+    "count(//*[@id='self']/descendant::*)",
+    "count(//*[@id='self']/following-sibling::*)",
+    "count(//*[@id='self']/following::*)",
+    "//*[@id='self']/parent::*/@id",
+    "count(//*[@id='self']/preceding-sibling::*)",
+    "count(//*[@id='self']/preceding::*)",
+    "//*[@id='self']/self::*/@id",
+
     // (Japanese)
     "/descendant-or-self::\u90e8\u5206",
     "//\u90e8\u5206",
@@ -366,6 +380,60 @@ function testEval() {
       }
     }
 
+    var result = xpathParse(e[0]).evaluate(ctx);
+    if (typeof e[1] == 'number') {
+      assertEquals(e[0], e[1], result.numberValue());
+    } else if (typeof e[1] == 'string') {
+      assertEquals(e[0], e[1], result.stringValue());
+    } else if (typeof e[1] == 'boolean') {
+      assertEquals(e[0], e[1], result.booleanValue());
+    }
+  }
+}
+
+// For the following axis expressions, we need full control over the
+// entire document, so we cannot evaluate them against document.body,
+// but use our own XML document here. We verify that they give the
+// right results by counting the nodes in their result node sets. For
+// the axes that contain only one node, we check that we found the
+// right node using the id. For axes that contain elements, we only
+// count the elements, so we don't have to worry about whitespace
+// normalization for the text nodes.
+var axisTests = [
+    [ "count(//*[@id='self']/ancestor-or-self::*)", 3 ],
+    [ "count(//*[@id='self']/ancestor::*)", 2 ],
+    [ "count(//*[@id='self']/attribute::node())", 1 ],
+    [ "count(//*[@id='self']/child::*)", 1 ],
+    [ "count(//*[@id='self']/descendant-or-self::*)", 3 ],
+    [ "count(//*[@id='self']/descendant::*)", 2 ],
+    [ "count(//*[@id='self']/following-sibling::*)", 3 ],
+    [ "count(//*[@id='self']/@*/following-sibling::*)", 0 ],
+    [ "count(//*[@id='self']/following::*)", 4 ],
+    [ "//*[@id='self']/parent::*/@id", "parent" ],
+    [ "count(/parent::*)", 0 ],
+    [ "count(//*[@id='self']/preceding-sibling::*)", 1 ],
+    [ "count(//*[@id='self']/@*/preceding-sibling::*)", 0 ],
+    [ "count(//*[@id='self']/preceding::*)", 2 ],
+    [ "//*[@id='self']/self::*/@id", "self" ]
+];
+
+function testAxes() {
+  var xml = [
+      '<page>',
+      ' <p></p>',
+      ' <list id="parent">',
+      '  <item></item>',
+      '  <item id="self"><d><d></d></d></item>',
+      '  <item></item>',
+      '  <item></item>',
+      '  <item></item>',
+      ' </list>',
+      ' <f></f>',
+      '</page>'
+  ].join("");
+  var ctx = new ExprContext(xmlParse(xml));
+  for (var i = 0; i < axisTests.length; ++i) {
+    var e = axisTests[i];
     var result = xpathParse(e[0]).evaluate(ctx);
     if (typeof e[1] == 'number') {
       assertEquals(e[0], e[1], result.numberValue());

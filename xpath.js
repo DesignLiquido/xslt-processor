@@ -634,12 +634,12 @@ StepExpr.prototype.evaluate = function(ctx) {
 
   if (this.axis ==  xpathAxis.ANCESTOR_OR_SELF) {
     nodelist.push(input);
-    for (var n = input.parentNode; n; n = input.parentNode) {
+    for (var n = input.parentNode; n; n = n.parentNode) {
       nodelist.push(n);
     }
 
   } else if (this.axis == xpathAxis.ANCESTOR) {
-    for (var n = input.parentNode; n; n = input.parentNode) {
+    for (var n = input.parentNode; n; n = n.parentNode) {
       nodelist.push(n);
     }
 
@@ -657,7 +657,7 @@ StepExpr.prototype.evaluate = function(ctx) {
     xpathCollectDescendants(nodelist, input);
 
   } else if (this.axis == xpathAxis.FOLLOWING) {
-    for (var n = input.parentNode; n; n = n.parentNode) {
+    for (var n = input; n; n = n.parentNode) {
       for (var nn = n.nextSibling; nn; nn = nn.nextSibling) {
         nodelist.push(nn);
         xpathCollectDescendants(nodelist, nn);
@@ -665,7 +665,7 @@ StepExpr.prototype.evaluate = function(ctx) {
     }
 
   } else if (this.axis == xpathAxis.FOLLOWING_SIBLING) {
-    for (var n = input.nextSibling; n; n = input.nextSibling) {
+    for (var n = input.nextSibling; n; n = n.nextSibling) {
       nodelist.push(n);
     }
 
@@ -678,7 +678,7 @@ StepExpr.prototype.evaluate = function(ctx) {
     }
 
   } else if (this.axis == xpathAxis.PRECEDING) {
-    for (var n = input.parentNode; n; n = n.parentNode) {
+    for (var n = input; n; n = n.parentNode) {
       for (var nn = n.previousSibling; nn; nn = nn.previousSibling) {
         nodelist.push(nn);
         xpathCollectDescendantsReverse(nodelist, nn);
@@ -686,7 +686,7 @@ StepExpr.prototype.evaluate = function(ctx) {
     }
 
   } else if (this.axis == xpathAxis.PRECEDING_SIBLING) {
-    for (var n = input.previousSibling; n; n = input.previousSibling) {
+    for (var n = input.previousSibling; n; n = n.previousSibling) {
       nodelist.push(n);
     }
 
