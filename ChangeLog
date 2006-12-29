@@ -1,3 +1,32 @@
+2006-12-28  Google Inc.  <opensource@google.com>
+
+	* Version 0.7
+	* Released as http://ajaxslt.googlecode.com/svn/tags/release-0-7/
+
+	* Fixed a bug that semicolons are dropped by the XML parser when a
+	text nodes also contains an entity.
+
+	* Fixed a bug that xsl:variable definitions with a node set value
+	encountered at the root level of the input document would throw an
+	exception.
+
+	* Fixed a bug that XPath expression @* always evaluated to the
+	empty node set.
+
+	* Fixed a bug that xsl:copy would copy only attribute and element
+	nodes.
+
+	* Fixed a bug that if xsl:apply-templates matches multiple
+	templates, the output is sorted according to the order of the
+	matching templates, and not according to the sort order defined
+	for the selected node set to which templates are applied.
+
+	* Added unittests for all fixed bugs.
+	
+	* Added wrapper function xmlOwnerDocument() to uniformly access
+	the document on both document nodes and other nodes and use it
+	throughout the xslt processor.
+
 2006-12-14  Google Inc.  <opensource@google.com>
 
 	* Version 0.6

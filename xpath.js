@@ -730,10 +730,12 @@ NodeTestAny.prototype.evaluate = function(ctx) {
   return this.value;
 };
 
-function NodeTestElement() {}
+function NodeTestElementOrAttribute() {}
 
-NodeTestElement.prototype.evaluate = function(ctx) {
-  return new BooleanValue(ctx.node.nodeType == DOM_ELEMENT_NODE);
+NodeTestElementOrAttribute.prototype.evaluate = function(ctx) {
+  return new BooleanValue(
+      ctx.node.nodeType == DOM_ELEMENT_NODE ||
+      ctx.node.nodeType == DOM_ATTRIBUTE_NODE);
 }
 
 function NodeTestText() {}
@@ -1480,7 +1482,7 @@ function makeAbbrevStep(abbrev) {
 }
 
 function makeNodeTestExpr1(asterisk) {
-  return new NodeTestElement;
+  return new NodeTestElementOrAttribute;
 }
 
 function makeNodeTestExpr2(ncname, colon, asterisk) {

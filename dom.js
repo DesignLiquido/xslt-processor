@@ -21,15 +21,18 @@ function xmlResolveEntities(s) {
 
   var ret = parts[0];
   for (var i = 1; i < parts.length; ++i) {
-    var rp = stringSplit(parts[i], ';');
-    if (rp.length == 1) {
+    var rp = parts[i].indexOf(';');
+    if (rp == -1) {
       // no entity reference: just a & but no ;
       ret += parts[i];
       continue;
     }
 
+    var entityName = parts[i].substring(0, rp);
+    var remainderText = parts[i].substring(rp + 1);
+
     var ch;
-    switch (rp[0]) {
+    switch (entityName) {
       case 'lt':
         ch = '<';
         break;
@@ -54,10 +57,10 @@ function xmlResolveEntities(s) {
         // through the W3C DOM. W3C DOM access is specified to resolve
         // entities.
         var span = domCreateElement(window.document, 'span');
-        span.innerHTML = '&' + rp[0] + '; ';
+        span.innerHTML = '&' + entityName + '; ';
         ch = span.childNodes[0].nodeValue.charAt(0);
     }
-    ret += ch + rp[1];
+    ret += ch + remainderText;
   }
 
   return ret;

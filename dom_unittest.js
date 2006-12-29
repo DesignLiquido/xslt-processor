@@ -115,3 +115,8 @@ function doTestXmlParse(dom, dom1) {
   assertEquals('location.attributes.length',
                dom.firstChild.childNodes[1].attributes.length, 2);
 }
+
+
+function testXmlResolveEntities() {
+  assertEquals('";"', xmlResolveEntities('&quot;;&quot;'));
+}

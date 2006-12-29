@@ -445,6 +445,14 @@ function testAxes() {
   }
 }
 
+
+function testAttributeAsterisk() {
+  var ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
+  var expr = xpathParse("count(/x/@*)");
+  assertEquals(2, expr.evaluate(ctx).numberValue());
+}
+
+
 // eval an xpath expression to a single node
 function evalNodeSet(expr, ctx) {
   var expr1 = xpathParse(expr);

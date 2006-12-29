@@ -41,19 +41,9 @@
 // @return the processed document, as XML text in a string.
 
 function xsltProcess(xmlDoc, stylesheet) {
-  xsltLog('XML STYLESHEET:');
-  xsltLogXml(xmlText(stylesheet));
-  xsltLog('XML INPUT:');
-  xsltLogXml(xmlText(xmlDoc));
-
   var output = domCreateDocumentFragment(new XDocument);
   xsltProcessContext(new ExprContext(xmlDoc), stylesheet, output);
-
   var ret = xmlText(output);
-
-  xsltLog('HTML OUTPUT:');
-  xsltLogXml(ret);
-
   return ret;
 }
 
@@ -64,10 +54,11 @@ function xsltProcess(xmlDoc, stylesheet) {
 // @param the root of the generated output, as DOM node.
 
 function xsltProcessContext(input, template, output) {
+  var outputDocument = xmlOwnerDocument(output);
 
   var nodename = template.nodeName.split(/:/);
   if (nodename.length == 1 || nodename[0] != 'xsl') {
-    xsltPassThrough(input, template, output);
+    xsltPassThrough(input, template, output, outputDocument);
 
   } else {
     switch(nodename[1]) {
@@ -90,15 +81,19 @@ function xsltProcessContext(input, template, output) {
 
       var mode = xmlGetAttribute(template, 'mode');
       var top = template.ownerDocument.documentElement;
+      var templates = [];
       for (var i = 0; i < top.childNodes.length; ++i) {
         var c = top.childNodes[i];
         if (c.nodeType == DOM_ELEMENT_NODE &&
             c.nodeName == 'xsl:template' &&
             c.getAttribute('mode') == mode) {
-          for (var j = 0; j < sortContext.contextSize(); ++j) {
-            var nj = sortContext.nodelist[j];
-            xsltProcessContext(sortContext.clone(nj, j), c, output);
-          }
+          templates.push(c);
+        }
+      }
+      for (var j = 0; j < sortContext.contextSize(); ++j) {
+        var nj = sortContext.nodelist[j];
+        for (var i = 0; i < templates.length; ++i) {
+          xsltProcessContext(sortContext.clone(nj, j), templates[i], output);
         }
       }
       break;
@@ -106,7 +101,7 @@ function xsltProcessContext(input, template, output) {
     case 'attribute':
       var nameexpr = xmlGetAttribute(template, 'name');
       var name = xsltAttributeValue(nameexpr, input);
-      var node = output.ownerDocument.createDocumentFragment();
+      var node = domCreateDocumentFragment(outputDocument);
       xsltChildNodes(input, template, node);
       var value = xmlValue(node);
       domSetAttribute(output, name, value);
@@ -139,21 +134,17 @@ function xsltProcessContext(input, template, output) {
       break;
 
     case 'comment':
-      var node = domCreateDocumentFragment(output.ownerDocument);
+      var node = domCreateDocumentFragment(outputDocument);
       xsltChildNodes(input, template, node);
       var commentData = xmlValue(node);
-      var commentNode = domCreateComment(output.ownerDocument, commentData);
+      var commentNode = domCreateComment(outputDocument, commentData);
       output.appendChild(commentNode);
       break;
 
     case 'copy':
-      if (input.node.nodeType == DOM_ELEMENT_NODE) {
-        var node = domCreateElement(output.ownerDocument, input.node.nodeName);
-        domAppendChild(output, node);
+      var node = xsltCopy(output, input.node, outputDocument);
+      if (node) {
         xsltChildNodes(input, template, node);
-
-      } else if (input.node.nodeType == DOM_ATTRIBUTE_NODE) {
-        domSetAttribute(output, input.node.nodeName, input.node.nodeValue);
       }
       break;
 
@@ -163,11 +154,11 @@ function xsltProcessContext(input, template, output) {
       if (value.type == 'node-set') {
         var nodes = value.nodeSetValue();
         for (var i = 0; i < nodes.length; ++i) {
-          xsltCopyOf(output, nodes[i]);
+          xsltCopyOf(output, nodes[i], outputDocument);
         }
 
       } else {
-        var node = domCreateTextNode(output.ownerDocument,value.stringValue());
+        var node = domCreateTextNode(outputDocument, value.stringValue());
         domAppendChild(output, node);
       }
       break;
@@ -179,7 +170,7 @@ function xsltProcessContext(input, template, output) {
     case 'element':
       var nameexpr = xmlGetAttribute(template, 'name');
       var name = xsltAttributeValue(nameexpr, input);
-      var node = domCreateElement(output.ownerDocument, name);
+      var node = domCreateElement(outputDocument, name);
       domAppendChild(output, node);
       xsltChildNodes(input, template, node);
       break;
@@ -264,14 +255,14 @@ function xsltProcessContext(input, template, output) {
 
     case 'text':
       var text = xmlValue(template);
-      var node = domCreateTextNode(output.ownerDocument, text);
+      var node = domCreateTextNode(outputDocument, text);
       output.appendChild(node);
       break;
 
     case 'value-of':
       var select = xmlGetAttribute(template, 'select');
       var value = xpathEval(select, input).stringValue();
-      var node = domCreateTextNode(output.ownerDocument, value);
+      var node = domCreateTextNode(outputDocument, value);
       output.appendChild(node);
       break;
 
@@ -353,7 +344,7 @@ function xsltVariable(input, template, override) {
   var value;
 
   if (template.childNodes.length > 0) {
-    var root = input.node.ownerDocument.createDocumentFragment();
+    var root = domCreateDocumentFragment(template.ownerDocument);
     xsltChildNodes(input, template, root);
     value = new NodeSetValue([root]);
 
@@ -427,15 +418,15 @@ function xsltChildNodes(input, template, output) {
 // output with all its attributes. Then continues traversing the
 // template node tree.
 
-function xsltPassThrough(input, template, output) {
+function xsltPassThrough(input, template, output, outputDocument) {
   if (template.nodeType == DOM_TEXT_NODE) {
     if (xsltPassText(template)) {
-      var node = domCreateTextNode(output.ownerDocument, template.nodeValue);
+      var node = domCreateTextNode(outputDocument, template.nodeValue);
       domAppendChild(output, node);
     }
 
   } else if (template.nodeType == DOM_ELEMENT_NODE) {
-    var node = domCreateElement(output.ownerDocument, template.nodeName);
+    var node = domCreateElement(outputDocument, template.nodeName);
     for (var i = 0; i < template.attributes.length; ++i) {
       var a = template.attributes[i];
       if (a) {
@@ -540,47 +531,65 @@ function xmlGetAttribute(node, name) {
 // expression. Recurses down the source node tree, which is part of
 // the input document.
 //
-// @param dst the node being copied to, part of output document,
-// @param src the node being copied, part in input document,
+// @param {Node} dst the node being copied to, part of output document,
+// @param {Node} src the node being copied, part in input document,
+// @param {Document} dstDocument
 
-function xsltCopyOf(dst, src) {
+function xsltCopyOf(dst, src, dstDocument) {
+  if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE ||
+      src.nodeType == DOM_DOCUMENT_NODE) {
+    for (var i = 0; i < src.childNodes.length; ++i) {
+      arguments.callee(dst, src.childNodes[i], dstDocument);
+    }
+  } else {
+    var node = xsltCopy(dst, src, dstDocument);
+    if (node) {
+      // This was an element node -- recurse to attributes and
+      // children.
+      for (var i = 0; i < src.attributes.length; ++i) {
+        arguments.callee(node, src.attributes[i], dstDocument);
+      }
+
+      for (var i = 0; i < src.childNodes.length; ++i) {
+        arguments.callee(node, src.childNodes[i], dstDocument);
+      }
+    }
+  }
+}
+
+
+// Implements xsl:copy for all node types.
+//
+// @param {Node} dst the node being copied to, part of output document,
+// @param {Node} src the node being copied, part in input document,
+// @param {Document} dstDocument
+// @return {Node|Null} If an element node was created, the element
+// node. Otherwise null.
+
+function xsltCopy(dst, src, dstDocument) {
+  if (src.nodeType == DOM_ELEMENT_NODE) {
+    var node = domCreateElement(dstDocument, src.nodeName);
+    domAppendChild(dst, node);
+    return node;
+  }
+
   if (src.nodeType == DOM_TEXT_NODE) {
-    var node = domCreateTextNode(dst.ownerDocument, src.nodeValue);
+    var node = domCreateTextNode(dstDocument, src.nodeValue);
     domAppendChild(dst, node);
 
   } else if (src.nodeType == DOM_CDATA_SECTION_NODE) {
-    var node = domCreateCDATASection(dst.ownerDocument, src.nodeValue);
+    var node = domCreateCDATASection(dstDocument, src.nodeValue);
     domAppendChild(dst, node);
 
   } else if (src.nodeType == DOM_COMMENT_NODE) {
-    var node = domCreateComment(dst.ownerDocument, src.nodeValue);
+    var node = domCreateComment(dstDocument, src.nodeValue);
     domAppendChild(dst, node);
 
   } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {
     domSetAttribute(dst, src.nodeName, src.nodeValue);
-
-  } else if (src.nodeType == DOM_ELEMENT_NODE) {
-    var node = domCreateElement(dst.ownerDocument, src.nodeName);
-    domAppendChild(dst, node);
-
-    // Recursion is implemented by the function calling itself via
-    // arguments.callee, independent of its name. Very convenient for
-    // renaming the function.
-
-    for (var i = 0; i < src.attributes.length; ++i) {
-      arguments.callee(node, src.attributes[i]);
-    }
-
-    for (var i = 0; i < src.childNodes.length; ++i) {
-      arguments.callee(node, src.childNodes[i]);
-    }
-
-  } else if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE ||
-             src.nodeType == DOM_DOCUMENT_NODE) {
-    for (var i = 0; i < src.childNodes.length; ++i) {
-      arguments.callee(dst, src.childNodes[i]);
-    }
   }
+
+  return null;
 }
 
 

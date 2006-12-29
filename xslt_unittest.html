@@ -68,5 +68,71 @@
   </xsl:stylesheet>
 </textarea>
 
+<textarea id="xml-apply-templates">
+  <all>
+    <item type="X">A</item>
+    <item type="Y">B</item>
+    <item type="X">C</item>
+  </all>
+</textarea>
+
+<textarea id="xslt-apply-templates">
+  <xsl:stylesheet>
+    <xsl:template match="/">
+      <xsl:apply-templates select="//item"/>
+    </xsl:template>
+    <xsl:template match="item[@type='X']">
+      <xsl:value-of select="."/>
+    </xsl:template>
+    <xsl:template match="item[@type='Y']">
+      <xsl:value-of select="."/>
+    </xsl:template>
+  </xsl:stylesheet>
+</textarea>
+
+<textarea id="xslt-global-variables">
+  <xsl:stylesheet>
+    <xsl:variable name="x" select="'x'"/>
+    <xsl:variable name="y" select="'y'"/>
+    <xsl:variable name="z">
+      <xsl:text>z</xsl:text>
+    </xsl:variable>
+    <xsl:template match="/">
+      <xsl:value-of select="$x"/>
+      <xsl:value-of select="$z"/>
+      <xsl:for-each select="//item">
+        <xsl:value-of select="$y"/>
+      </xsl:for-each>
+    </xsl:template>
+  </xsl:stylesheet>
+</textarea>
+
+<textarea id="xslt-top-level-output">
+  <xsl:stylesheet>
+    <xsl:template match="/">
+      <xsl:element name="x">
+        <xsl:attribute name="y">
+          <xsl:text>z</xsl:text>
+        </xsl:attribute>
+        <xsl:text>k</xsl:text>
+      </xsl:element>
+    </xsl:template>
+  </xsl:stylesheet>
+</textarea>
+
+<textarea id="xslt-copy">
+  <xsl:stylesheet>
+    <xsl:template match="/">
+      <xsl:for-each select="//item">
+        <xsl:copy>
+          <xsl:for-each select="@*|node()">
+            <xsl:copy/>
+          </xsl:for-each>
+        </xsl:copy>
+      </xsl:for-each>
+    </xsl:template>
+  </xsl:stylesheet>
+</textarea>
+
   </body>
 </html>

@@ -324,6 +324,21 @@ function xmlEscapeTags(s) {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/**
+ * Wrapper function to access the owner document uniformly for document
+ * and other nodes: for the document node, the owner document is the
+ * node itself, for all others it's the ownerDocument property.
+ *
+ * @param {Node} node
+ * @return {Document}
+ */
+function xmlOwnerDocument(node) {
+  if (node.nodeType == DOM_DOCUMENT_NODE) {
+    return node;
+  } else {
+    return node.ownerDocument;
+  }
+}
 
 // Wrapper around DOM methods so we can condense their invocations.
 function domGetAttribute(node, name) {
