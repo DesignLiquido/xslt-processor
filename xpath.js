@@ -150,6 +150,7 @@ function xpathParse(expr) {
 
   xpathLog('stack: ' + stackToString(stack));
 
+  // DGF any valid XPath should "reduce" to a single Expr token
   if (stack.length != 1) {
     throw 'XPath parse error ' + cachekey + ':\n' + stackToString(stack);
   }
@@ -169,6 +170,32 @@ function xpathCacheLookup(expr) {
   return xpathParseCache[expr];
 }
 
+/*DGF xpathReduce is where the magic happens in this parser.
+Skim down to the bottom of this file to find the table of 
+grammatical rules and precedence numbers, "The productions of the grammar".
+
+The idea here
+is that we want to take a stack of tokens and apply
+grammatical rules to them, "reducing" them to higher-level
+tokens.  Ultimately, any valid XPath should reduce to exactly one
+"Expr" token.
+
+Reduce too early or too late and you'll have two tokens that can't reduce
+to single Expr.  For example, you may hastily reduce a qname that
+should name a function, incorrectly treating it as a tag name.
+Or you may reduce too late, accidentally reducing the last part of the
+XPath into a top-level "Expr" that won't reduce with earlier parts of
+the XPath.
+
+A "cand" is a grammatical rule candidate, with a given precedence
+number.  "ahead" is the upcoming token, which also has a precedence
+number.  If the token has a higher precedence number than
+the rule candidate, we'll "shift" the token onto the token stack,
+instead of immediately applying the rule candidate.
+
+Some tokens have left associativity, in which case we shift when they
+have LOWER precedence than the candidate.
+*/
 function xpathReduce(stack, ahead) {
   var cand = null;
 
@@ -1834,6 +1861,9 @@ var ASSOC_LEFT = true;
 // -1 means that the precedence of the tokens in the pattern is used
 // instead. TODO: It shouldn't be necessary to explicitly assign
 // precedences to rules.
+
+// DGF As it stands, these precedences are purely empirical; we're
+// not sure they can be made to be consistent at all.
 
 var xpathGrammarRules =
   [
