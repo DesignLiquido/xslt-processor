@@ -29,7 +29,7 @@ TESTS AND USAGE EXAMPLES
 
  The files ending in _unittest.html are jsunit test pages. See
  <http://www.jsunit.net/>. There is a test runner online at
- <http://www.jsunit.net/Runner/testRunner.html>.
+ <http://www.jsunit.net/runner/testRunner.html>.
  
  The files xslt.html and xpath.html in the directory test are
  interactive tests. They can be run directly from the file system; no
