@@ -851,7 +851,7 @@ FunctionCallExpr.prototype.xpathfunctions = {
     } else {
       ids = e.stringValue().split(/\s+/);
     }
-    var d = ctx.node.ownerDocument;
+    var d = ctx.root;
     for (var i = 0; i < ids.length; ++i) {
       var n = d.getElementById(ids[i]);
       if (n) {
@@ -1440,6 +1440,7 @@ function makeLocationExpr6(rel, slash, step) {
 
 function makeLocationExpr7(rel, dslash, step) {
   rel.appendStep(makeAbbrevStep(dslash.value));
+  rel.appendStep(step);
   return rel;
 }
 
@@ -1896,7 +1897,7 @@ var xpathGrammarRules =
      passExpr ],
    [ XPathPrimaryExpr, [ XPathNumber ], 30,
      passExpr ],
-   [ XPathPrimaryExpr, [ XPathFunctionCall ], 30,
+   [ XPathPrimaryExpr, [ XPathFunctionCall ], 31,
      passExpr ],
 
    [ XPathFunctionCall, [ TOK_QNAME, TOK_PARENO, TOK_PARENC ], -1,
@@ -1918,13 +1919,13 @@ var xpathGrammarRules =
    [ XPathPathExpr, [ XPathFilterExpr ], 19,
      passExpr ],
    [ XPathPathExpr,
-     [ XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath ], 20,
+     [ XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath ], 19,
      makePathExpr1 ],
    [ XPathPathExpr,
-     [ XPathFilterExpr, TOK_DSLASH, XPathRelativeLocationPath ], 20,
+     [ XPathFilterExpr, TOK_DSLASH, XPathRelativeLocationPath ], 19,
      makePathExpr2 ],
 
-   [ XPathFilterExpr, [ XPathPrimaryExpr, XPathPredicate, Q_MM ], 20,
+   [ XPathFilterExpr, [ XPathPrimaryExpr, XPathPredicate, Q_MM ], 31,
      makeFilterExpr ],
 
    [ XPathExpr, [ XPathPrimaryExpr ], 16,

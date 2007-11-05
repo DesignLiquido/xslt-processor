@@ -119,6 +119,11 @@ var expr = [
     "child::*[self::\u7ae0 or self::\u4ed8\u9332]",
     "child::*[self::\u7ae0 or self::\u4ed8\u9332][position()=last()]",
 
+    //Selenium bugs
+    "id('nested1')/div[1]//input[2]",
+    "id('foo')//div[contains(@id, 'useful')]//input",
+
+
     // The following are all expressions that used to occur in google
     // maps XSLT templates.
     "$address",
