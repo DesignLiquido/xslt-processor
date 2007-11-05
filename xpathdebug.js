@@ -61,11 +61,11 @@ NodeTestAny.prototype.parseTree = function(indent) {
   return indent + '[nodetest] ' + this.toString() + '\n';
 }
 
-NodeTestElement.prototype.toString = function() {
+NodeTestElementOrAttribute.prototype.toString = function() {
   return '*';
 }
 
-NodeTestElement.prototype.parseTree = NodeTestAny.prototype.parseTree;
+NodeTestElementOrAttribute.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
 NodeTestText.prototype.toString = function() {
   return 'text()';
