@@ -671,6 +671,11 @@ StepExpr.prototype.appendPredicate = function(p) {
 StepExpr.prototype.evaluate = function(ctx) {
   var input = ctx.node;
   var nodelist = [];
+  var skipNodeTest = false;
+  
+  if (this.nodetest instanceof NodeTestAny) {
+    skipNodeTest = true;
+  }
 
   // NOTE(mesch): When this was a switch() statement, it didn't work
   // in Safari/2.0. Not sure why though; it resulted in the JavaScript
@@ -741,13 +746,15 @@ StepExpr.prototype.evaluate = function(ctx) {
     throw 'ERROR -- NO SUCH AXIS: ' + this.axis;
   }
 
-  // process node test
-  var nodelist0 = nodelist;
-  nodelist = [];
-  for (var i = 0; i < nodelist0.length; ++i) {
-    var n = nodelist0[i];
-    if (this.nodetest.evaluate(ctx.clone(n, i, nodelist0)).booleanValue()) {
-      nodelist.push(n);
+  if (!skipNodeTest) {
+    // process node test
+    var nodelist0 = nodelist;
+    nodelist = [];
+    for (var i = 0; i < nodelist0.length; ++i) {
+      var n = nodelist0[i];
+      if (this.nodetest.evaluate(ctx.clone(n, i, nodelist0)).booleanValue()) {
+        nodelist.push(n);
+      }
     }
   }
 
