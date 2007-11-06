@@ -233,6 +233,7 @@ function xpathReduce(stack, ahead) {
                           : ' none '));
 
     var matchexpr = mapExpr(cand.match, function(m) { return m.expr; });
+    xpathLog('going to apply ' + cand.rule[3].toString());
     cand.expr = cand.rule[3].apply(null, matchexpr);
 
     stack.push(cand);
@@ -397,13 +398,22 @@ function stackToString(stack) {
 //   position. Needed to implement scoping rules for variables in
 //   XPath. (A variable is visible to all subsequent siblings, not
 //   only to its children.)
+//
+//   set/isCaseInsensitive -- specifies whether node name tests should
+//   be case sensitive.  If you're executing xpaths against a regular
+//   HTML DOM, you probably don't want case-sensitivity, because
+//   browsers tend to disagree about whether elements & attributes
+//   should be upper/lower case.  If you're running xpaths in an
+//   XSLT instance, you probably DO want case sensitivity, as per the
+//   XSL spec.
 
-function ExprContext(node, opt_position, opt_nodelist, opt_parent) {
+function ExprContext(node, opt_position, opt_nodelist, opt_parent, opt_caseInsensitive) {
   this.node = node;
   this.position = opt_position || 0;
   this.nodelist = opt_nodelist || [ node ];
   this.variables = {};
   this.parent = opt_parent || null;
+  this.caseInsensitive = opt_caseInsensitive || false;
   if (opt_parent) {
     this.root = opt_parent.root;
   } else if (this.node.nodeType == DOM_DOCUMENT_NODE) {
@@ -421,7 +431,7 @@ ExprContext.prototype.clone = function(opt_node, opt_position, opt_nodelist) {
   return new ExprContext(
       opt_node || this.node,
       typeof opt_position != 'undefined' ? opt_position : this.position,
-      opt_nodelist || this.nodelist, this);
+      opt_nodelist || this.nodelist, this, this.caseInsensitive);
 };
 
 ExprContext.prototype.setVariable = function(name, value) {
@@ -449,6 +459,13 @@ ExprContext.prototype.contextSize = function() {
   return this.nodelist.length;
 };
 
+ExprContext.prototype.isCaseInsensitive = function() {
+  return this.caseInsensitive;
+};
+
+ExprContext.prototype.setCaseInsensitive = function(caseInsensitive) {
+  return this.caseInsensitive = caseInsensitive;
+};
 
 // XPath expression values. They are what XPath expressions evaluate
 // to. Strangely, the different value types are not specified in the
@@ -799,11 +816,17 @@ NodeTestNC.prototype.evaluate = function(ctx) {
 
 function NodeTestName(name) {
   this.name = name;
+  this.re = new RegExp('^' + name + '$', "i");
 }
 
 NodeTestName.prototype.evaluate = function(ctx) {
   var n = ctx.node;
-  return new BooleanValue(n.nodeName == this.name);
+  if (ctx.caseInsensitive) {
+    if (n.nodeName.length != this.name.length) return new BooleanValue(false);
+    return new BooleanValue(this.re.test(n.nodeName));
+  } else {
+    return new BooleanValue(n.nodeName == this.name);
+  }
 }
 
 function PredicateExpr(expr) {
