@@ -633,16 +633,47 @@ function LocationExpr() {
 }
 
 LocationExpr.prototype.appendStep = function(s) {
-  this.steps.push(s);
+  var combinedStep = this._combineSteps(this.steps[this.steps.length-1], s);
+  if (combinedStep) {
+    this.steps[this.steps.length-1] = combinedStep;
+  } else {
+    this.steps.push(s);
+  }
 }
 
 LocationExpr.prototype.prependStep = function(s) {
-  var steps0 = this.steps;
-  this.steps = [ s ];
-  for (var i = 0; i < steps0.length; ++i) {
-    this.steps.push(steps0[i]);
+  var combinedStep = this._combineSteps(s, this.steps[0]);
+  if (combinedStep) {
+    this.steps[0] = combinedStep;
+  } else {
+    this.steps.unshift(s);
   }
 };
+
+// DGF try to combine two steps into one step (perf enhancement)
+LocationExpr.prototype._combineSteps = function(prevStep, nextStep) {
+  if (!prevStep) return null;
+  if (!nextStep) return null;
+  var hasPredicates = (prevStep.predicates && prevStep.predicates.length > 0);
+  if (prevStep.nodetest instanceof NodeTestAny && !hasPredicates) {
+    // maybe suitable to be combined
+    if (prevStep.axis == xpathAxis.DESCENDANT_OR_SELF) {
+      if (nextStep.axis == xpathAxis.CHILD) {
+        nextStep.axis = xpathAxis.DESCENDANT;
+        return nextStep;
+      } else if (nextStep.axis == xpathAxis.SELF) {
+        nextStep.axis = xpathAxis.DESCENDANT_OR_SELF;
+        return nextStep;
+      }
+    } else if (prevStep.axis == xpathAxis.DESCENDANT) {
+      if (nextStep.axis == xpathAxis.SELF) {
+        nextStep.axis = xpathAxis.DESCENDANT;
+        return nextStep;
+      }
+    }
+  }
+  return null;
+}
 
 LocationExpr.prototype.evaluate = function(ctx) {
   var start;
@@ -1486,11 +1517,6 @@ function makeLocationExpr1(slash, rel) {
 
 function makeLocationExpr2(dslash, rel) {
   rel.absolute = true;
-  if (rel.steps.length > 0 && rel.steps[0].axis == xpathAxis.CHILD) {
-    // DGF perf enhancement: why take two steps when you could take one?
-    rel.steps[0].axis = xpathAxis.DESCENDANT_OR_SELF;
-    return rel;
-  }
   rel.prependStep(makeAbbrevStep(dslash.value));
   return rel;
 }
@@ -1521,12 +1547,6 @@ function makeLocationExpr6(rel, slash, step) {
 }
 
 function makeLocationExpr7(rel, dslash, step) {
-  if (step.axis == xpathAxis.CHILD) {
-    // DGF perf enhancement: why take two steps when you could take one?
-    step.axis = xpathAxis.DESCENDANT_OR_SELF;
-    rel.appendStep(step);
-    return rel;
-  }
   rel.appendStep(makeAbbrevStep(dslash.value));
   rel.appendStep(step);
   return rel;
@@ -1641,11 +1661,6 @@ function makePathExpr1(filter, slash, rel) {
 }
 
 function makePathExpr2(filter, dslash, rel) {
-  if (rel.steps.length > 0 && rel.steps[0].axis == xpathAxis.CHILD) {
-    // DGF perf enhancement: why take two steps when you could take one?
-    rel.steps[0].axis = xpathAxis.DESCENDANT_OR_SELF;
-    return new PathExpr(filter, rel);
-  }
   rel.prependStep(makeAbbrevStep(dslash.value));
   return new PathExpr(filter, rel);
 }
