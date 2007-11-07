@@ -491,11 +491,20 @@ XNode.prototype.removeAttribute = function(name) {
 
 XNode.prototype.getElementsByTagName = function(name) {
   var ret = [];
-  domTraverseElements(this, function(node) {
-    if (node.nodeName == name) {
+  var self = this;
+  if ("*" == name) {
+    domTraverseElements(this, function(node) {
+      if (self == node) return;
       ret.push(node);
-    }
-  }, null);
+    }, null);
+  } else {
+    domTraverseElements(this, function(node) {
+      if (self == node) return;
+      if (node.nodeName == name) {
+        ret.push(node);
+      }
+    }, null);
+  }
   return ret;
 }
 
