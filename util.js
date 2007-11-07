@@ -216,12 +216,13 @@ function removeFromArray(array, value, opt_notype) {
   return shift;
 }
 
-// Shallow-copies an array.
+// Shallow-copies an array to the end of another array
+// Basically Array.concat, but works with other non-array collections
 function copyArray(dst, src) {
   if (!src) return;
-  var srcLength = src.length;
-  for (var i = 0; i < srcLength; ++i) {
-    dst.push(src[i]);
+  var dstLength = dst.length;
+  for (var i = src.length - 1; i >= 0; --i) {
+    dst[i+dstLength] = src[i];
   }
 }
 
