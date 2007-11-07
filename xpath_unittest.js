@@ -122,7 +122,7 @@ var expr = [
     //Selenium bugs
     "id('nested1')/div[1]//input[2]",
     "id('foo')//div[contains(@id, 'useful')]//input",
-
+    "(//table[@class='stylee'])//th[text()='theHeaderText']/../td",
 
     // The following are all expressions that used to occur in google
     // maps XSLT templates.
