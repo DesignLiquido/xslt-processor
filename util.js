@@ -216,6 +216,7 @@ function removeFromArray(array, value, opt_notype) {
 
 // Shallow-copies an array.
 function copyArray(dst, src) {
+  if (!src) return;
   for (var i = 0; i < src.length; ++i) {
     dst.push(src[i]);
   }
