@@ -435,7 +435,21 @@ ExprContext.prototype.clone = function(opt_node, opt_position, opt_nodelist) {
 };
 
 ExprContext.prototype.setVariable = function(name, value) {
-  this.variables[name] = value;
+  if (value instanceof StringValue || value instanceof BooleanValue || 
+    value instanceof NumberValue || value instanceof NodeSetValue) {
+    this.variables[name] = value;
+    return;
+  }
+  if ('true' === value) {
+    this.variables[name] = new BooleanValue(true);
+  } else if ('false' === value) {
+    this.variables[name] = new BooleanValue(false);
+  } else if (TOK_NUMBER.re.test(value)) {
+    this.variables[name] = new NumberValue(value);
+  } else {
+    // DGF What if it's null?
+    this.variables[name] = new StringValue(value);
+  }
 };
 
 ExprContext.prototype.getVariable = function(name) {
