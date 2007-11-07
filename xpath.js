@@ -699,11 +699,17 @@ StepExpr.prototype.evaluate = function(ctx) {
     copyArray(nodelist, input.childNodes);
 
   } else if (this.axis == xpathAxis.DESCENDANT_OR_SELF) {
-    nodelist.push(input);
-    xpathCollectDescendants(nodelist, input);
+    if (this.nodetest.evaluate(ctx).booleanValue()) {
+      nodelist.push(input);
+    }
+    var tagName = xpathExtractTagNameFromNodeTest(this.nodetest);
+    xpathCollectDescendants(nodelist, input, tagName);
+    if (tagName) skipNodeTest = true;
 
   } else if (this.axis == xpathAxis.DESCENDANT) {
-    xpathCollectDescendants(nodelist, input);
+    var tagName = xpathExtractTagNameFromNodeTest(this.nodetest);
+    xpathCollectDescendants(nodelist, input, tagName);
+    if (tagName) skipNodeTest = true;
 
   } else if (this.axis == xpathAxis.FOLLOWING) {
     for (var n = input; n; n = n.parentNode) {
@@ -1466,6 +1472,11 @@ function makeLocationExpr1(slash, rel) {
 
 function makeLocationExpr2(dslash, rel) {
   rel.absolute = true;
+  if (rel.steps.length > 0 && rel.steps[0].axis == xpathAxis.CHILD) {
+    // DGF perf enhancement: why take two steps when you could take one?
+    rel.steps[0].axis = xpathAxis.DESCENDANT_OR_SELF;
+    return rel;
+  }
   rel.prependStep(makeAbbrevStep(dslash.value));
   return rel;
 }
@@ -1496,6 +1507,12 @@ function makeLocationExpr6(rel, slash, step) {
 }
 
 function makeLocationExpr7(rel, dslash, step) {
+  if (step.axis == xpathAxis.CHILD) {
+    // DGF perf enhancement: why take two steps when you could take one?
+    step.axis = xpathAxis.DESCENDANT_OR_SELF;
+    rel.appendStep(step);
+    return rel;
+  }
   rel.appendStep(makeAbbrevStep(dslash.value));
   rel.appendStep(step);
   return rel;
@@ -1610,6 +1627,11 @@ function makePathExpr1(filter, slash, rel) {
 }
 
 function makePathExpr2(filter, dslash, rel) {
+  if (rel.steps.length > 0 && rel.steps[0].axis == xpathAxis.CHILD) {
+    // DGF perf enhancement: why take two steps when you could take one?
+    rel.steps[0].axis = xpathAxis.DESCENDANT_OR_SELF;
+    return new PathExpr(filter, rel);
+  }
   rel.prependStep(makeAbbrevStep(dslash.value));
   return new PathExpr(filter, rel);
 }
@@ -2128,10 +2150,23 @@ function xpathParseInit() {
 
 // Local utility functions that are used by the lexer or parser.
 
-function xpathCollectDescendants(nodelist, node) {
+function xpathCollectDescendants(nodelist, node, opt_tagName) {
+  if (opt_tagName && node.getElementsByTagName) {
+    copyArray(nodelist, node.getElementsByTagName(opt_tagName));
+    return;
+  }
   for (var n = node.firstChild; n; n = n.nextSibling) {
     nodelist.push(n);
     arguments.callee(nodelist, n);
+  }
+}
+
+// DGF extract a tag name suitable for getElementsByTagName
+function xpathExtractTagNameFromNodeTest(nodetest) {
+  if (nodetest instanceof NodeTestName) {
+    return nodetest.name;
+  } else if (nodetest instanceof NodeTestAny || nodetest instanceof NodeTestElementOrAttribute) {
+    return "*";
   }
 }
 
