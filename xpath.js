@@ -2186,7 +2186,7 @@ function xpathCollectDescendants(nodelist, node, opt_tagName) {
   }
   for (var n = node.firstChild; n; n = n.nextSibling) {
     nodelist.push(n);
-    arguments.callee(nodelist, n);
+    xpathCollectDescendants(nodelist, n);
   }
 }
 
@@ -2202,7 +2202,7 @@ function xpathExtractTagNameFromNodeTest(nodetest) {
 function xpathCollectDescendantsReverse(nodelist, node) {
   for (var n = node.lastChild; n; n = n.previousSibling) {
     nodelist.push(n);
-    arguments.callee(nodelist, n);
+    xpathCollectDescendantsReverse(nodelist, n);
   }
 }
 
