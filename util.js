@@ -10,6 +10,8 @@ function xpathLog(msg) {};
 function xsltLog(msg) {};
 function xsltLogXml(msg) {};
 
+var ajaxsltIsIE6 = navigator.appVersion.match(/MSIE 6.0/);
+
 // Throws an exception if false.
 function assert(b) {
   if (!b) {
@@ -232,10 +234,15 @@ function xmlValue(node) {
 
   var ret = '';
   if (node.nodeType == DOM_TEXT_NODE ||
-      node.nodeType == DOM_CDATA_SECTION_NODE ||
-      node.nodeType == DOM_ATTRIBUTE_NODE) {
+      node.nodeType == DOM_CDATA_SECTION_NODE) {
     ret += node.nodeValue;
 
+  } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
+    if (ajaxsltIsIE6) {
+      ret += xmlValueIE6Hack(node);
+    } else {
+      ret += node.nodeValue;
+    }
   } else if (node.nodeType == DOM_ELEMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
@@ -244,6 +251,16 @@ function xmlValue(node) {
     }
   }
   return ret;
+}
+
+function xmlValueIE6Hack(node) {
+    // Issue 19, IE6 mangles href attribute when it's a javascript: url
+    var nodeName = node.nodeName;
+    var nodeValue = node.nodeValue;
+    if (nodeName.length != 4) return nodeValue;
+    if (!/^href$/i.test(nodeName)) return nodeValue;
+    if (!/^javascript:/.test(nodeValue)) return nodeValue;
+    return unescape(nodeValue);
 }
 
 // Returns the representation of a node as XML text.

@@ -344,6 +344,8 @@ var numExpr = [
       "\uff12\uff13\uff14" ],
     [ "substring('\uff11\uff12\uff13\uff14\uff15', 0, 3)",
       "\uff11\uff12" ],
+    /* selenium bug SEL-347, AJAXSLT issue 19 */
+    [ "count(//a[@href=\"javascript:doFoo('a', 'b')\"])", 1 ],
     /* variables */
     [ "$foo", 'bar', { foo: 'bar' } ],
     [ "$foo", 100, { foo: 100 } ],
@@ -384,7 +386,6 @@ function testEval() {
         }
       }
     }
-
     var result = xpathParse(e[0]).evaluate(ctx);
     if (typeof e[1] == 'number') {
       assertEquals(e[0], e[1], result.numberValue());
