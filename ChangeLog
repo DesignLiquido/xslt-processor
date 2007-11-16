@@ -1,3 +1,20 @@
+2007-11-16  Google Inc.  <opensource@google.com>
+
+	* Version 0.8
+	* Released as http://ajaxslt.googlecode.com/svn/tags/release-0-8/
+
+	* Fixed a bug in parsing XPaths that end with "//qname" (Issue 17)
+
+	* Added feature to optionally allow case-insensitive node name
+	comparisons; this is useful when using XPaths on HTML, where
+	node names are not consistent across browsers.
+
+	* Improved performance by relying on getElementsByTagName where
+	possible
+	
+	* Workaround IE bug where "javascript:" href attribute is URL
+	encoded.  (Issue 19)
+
 2006-12-28  Google Inc.  <opensource@google.com>
 
 	* Version 0.7
