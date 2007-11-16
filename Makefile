@@ -1,7 +1,7 @@
 # Currently, this Makefile has only a "dist" target.
 
 PACKAGE = ajaxslt
-VERSION = 0.5
+VERSION = 0.8
 
 DIST_FILES = \
   AUTHORS \
@@ -18,6 +18,7 @@ DIST_FILES = \
   test/xpath_script.js \
   test/xslt.html \
   test/xslt_script.js \
+  unittestsuite.html \
   util.js \
   xmltoken.js \
   xmltoken_unittest.html \
