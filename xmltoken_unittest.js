@@ -5,6 +5,13 @@
 //
 // Author: Junji Takagi <jtakagi@google.com>
 
+//********************************************
+// DGF BEWARE!  You MUST update this function if you add tests!
+//********************************************
+function exposeTestFunctionNames() {
+    return ['testRegexpUnicode', 'testXmlVersionInfo', 'testXmlCharRef', 'testXmlEntityRef', 'testXml10Name', 'testXml10Attribute', 'testXml11Name', 'testXml11Attribute', 'testXmlNcName'];
+}
+
 // Test if regexp matches the str and RegExp.exec returns exactly the match.
 function assertOk(comment, regexp, str, match) {
   assertNotNull(comment, regexp.exec(str));
@@ -295,7 +302,7 @@ function testXmlEntityRef() {
       '&\u0132\u0133;',
       '&\u0133\u0134;',
       '&\u0131\u0132\u0133\u0134;',
-      '&\u3001\u3030\u4d00\u9fff\ufffd;',
+      '&\u3001\u3030\u4d00\u9fff\ufffd;'
   ];
 
   var regexp10 = new RegExp(XML10_ENTITY_REF);

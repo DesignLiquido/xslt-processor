@@ -5,6 +5,12 @@
 //
 // Author: Steffen Meschkat <mesch@google.com>
 
+//********************************************
+// DGF BEWARE!  You MUST update this function if you add tests!
+//********************************************
+function exposeTestFunctionNames() {
+    return ['testForEachSort', 'testForEachSortAscending', 'testForEachSortDescending', 'testApplyTemplates', 'testGlobalVariables', 'testTopLevelOutput', 'testCopy'];
+}
 
 function el(id) {
   return document.getElementById(id);

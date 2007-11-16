@@ -7,7 +7,15 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
+//********************************************
+// DGF BEWARE!  You MUST update this function if you add tests!
+//********************************************
+function exposeTestFunctionNames() {
+    return ['testXmlParse', 'testXmlParseWeird', 'testXmlParseJapanese', 'testXmlResolveEntities'];
+}
+
 function testXmlParse() {
+  if (typeof(DOMParser) == 'undefined') return;
 
   var xml = [
       '<page>',
@@ -57,6 +65,7 @@ function testXmlParseWeird() {
 }
 
 function testXmlParseJapanese() {
+  if (typeof(DOMParser) == 'undefined') return;
 
   var xml = [
       '<\u30da\u30fc\u30b8>',

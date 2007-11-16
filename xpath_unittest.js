@@ -6,6 +6,13 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
+//********************************************
+// DGF BEWARE!  You MUST update this function if you add tests!
+//********************************************
+function exposeTestFunctionNames() {
+    return ['testParse', 'testEval', 'testAxes', 'testAttributeAsterisk', 'testEvalDom', 'testEvalDomJapanese'];
+}
+
 var expr = [
     "@*",
     "@*|node()",
@@ -503,7 +510,13 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
   var slashPageLocationAtLon = '/' + page + '/' + location + '/@' + lon;
 
   var ctx = new ExprContext(xmlParse(xml));
-  var ctx1 = new ExprContext((new DOMParser).parseFromString(xml, 'text/xml'));
+  // DGF if we have access to an official DOMParser, compare output with that also
+  var ctx1;
+  if (typeof(DOMParser) != 'undefined') {
+    ctx1 = new ExprContext((new DOMParser).parseFromString(xml, 'text/xml'));
+  } else {
+    ctx1 = ctx;
+  }
 
   var ns = evalNodeSet(page, ctx);
   assertEquals(page, ns.length, 1);
