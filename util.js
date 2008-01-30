@@ -447,3 +447,24 @@ function windowSetInterval(win, fun, time) {
 function windowClearInterval(win, id) {
   return win.clearInterval(id);
 }
+
+/**
+ * Escape the special regular expression characters when the regular expression
+ * is specified as a string.
+ *
+ * Based on: http://simonwillison.net/2006/Jan/20/escape/
+ */
+RegExp.escape = (function() {
+  var specials = [
+    '/', '.', '*', '+', '?', '|', '^', '$',
+    '(', ')', '[', ']', '{', '}', '\\'
+  ];
+    
+  var sRE = new RegExp(
+    '(\\' + specials.join('|\\') + ')', 'g'
+  );
+    
+  return function(text) {
+    return text.replace(sRE, '\\$1');
+  }
+})();

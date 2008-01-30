@@ -1031,6 +1031,14 @@ FunctionCallExpr.prototype.xpathfunctions = {
     var s1 = this.args[1].evaluate(ctx).stringValue();
     return new BooleanValue(s0.indexOf(s1) == 0);
   },
+  
+  'ends-with': function(ctx) {
+    assert(this.args.length == 2);
+    var s0 = this.args[0].evaluate(ctx).stringValue();
+    var s1 = this.args[1].evaluate(ctx).stringValue();
+    var re = new RegExp(RegExp.escape(s1) + '$');
+    return new BooleanValue(re.test(s0));
+  },
 
   'contains': function(ctx) {
     assert(this.args.length == 2);
