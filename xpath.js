@@ -1128,6 +1128,26 @@ FunctionCallExpr.prototype.xpathfunctions = {
     }
     return new StringValue(s0);
   },
+  
+  'matches': function(ctx) {
+    assert(this.args.length >= 2);
+    var s0 = this.args[0].evaluate(ctx).stringValue();
+    var s1 = this.args[1].evaluate(ctx).stringValue();
+    if (this.args.length > 2) {
+      var s2 = this.args[2].evaluate(ctx).stringValue();
+      if (/[^mi]/.test(s2)) {
+        throw 'Invalid regular expression syntax: ' + s2;
+      }
+    }
+    
+    try {
+      var re = new RegExp(s1, s2);
+    }
+    catch (e) {
+      throw 'Invalid matches argument: ' + s1;
+    }
+    return new BooleanValue(re.test(s0));
+  },
 
   'boolean': function(ctx) {
     assert(this.args.length == 1);

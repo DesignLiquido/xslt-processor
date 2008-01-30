@@ -338,11 +338,6 @@ var numExpr = [
     [ "'Hello World!'", 'Hello World!' ],
     [ "substring('12345', 1.5, 2.6)", "234" ],
     [ "substring('12345', 0, 3)", "12" ],
-    /* string expressions (Japanese) */
-    [ "substring('\u3042\u3044\u3046\u3048\u304a', -42, 1 div 0)",
-      "\u3042\u3044\u3046\u3048\u304a" ],
-    [ "normalize-space( '  \u3044\u308d\u306f\u306b\u307b\u3078\u3068 ' )",
-      "\u3044\u308d\u306f\u306b\u307b\u3078\u3068" ],
     [ "ends-with('foo', '')", true ],
     [ "ends-with('', 'foo')", false ],
     [ "ends-with('foo', 'foo')", true ],
@@ -350,6 +345,18 @@ var numExpr = [
     [ "ends-with('foobar', 'foo')", false ],
     [ "ends-with('barfoo', 'foo')", true ],
     [ "ends-with('foo\\$+', '\\$+')", true ],
+    [ "matches('ajaxslt', 'xsl')", true ],
+    [ "matches('ajaxslt', 'lt$')", true ],
+    [ "matches('ajaxslt', '[pqr]')", false ],
+    [ "matches('ajaxslt', '^AJAX')", false ],
+    [ "matches('ajaxslt', '^AJAX', 'i')", true ],
+    [ "matches('ajaxslt', 'a', 'z')", 'Invalid regular expression syntax: z' ],
+    [ "matches('ajaxslt', '?')", 'Invalid matches argument: ?' ],
+    /* string expressions (Japanese) */
+    [ "substring('\u3042\u3044\u3046\u3048\u304a', -42, 1 div 0)",
+      "\u3042\u3044\u3046\u3048\u304a" ],
+    [ "normalize-space( '  \u3044\u308d\u306f\u306b\u307b\u3078\u3068 ' )",
+      "\u3044\u308d\u306f\u306b\u307b\u3078\u3068" ],
     [ "contains('\u5357\u7121\u5999\u6cd5\u9023\u83ef\u7d4c','\u7d4c')",
       true ],
     [ "contains('\u5357\u7121\u5999\u6cd5\u9023\u83ef\u7d4c','\u5357')",
@@ -402,7 +409,14 @@ function testEval() {
         }
       }
     }
-    var result = xpathParse(e[0]).evaluate(ctx);
+    // allow exceptions to be caught and asserted upon
+    try {
+      var result = xpathParse(e[0]).evaluate(ctx);
+    }
+    catch (ex) {
+      assertEquals(ex, ex, e[1]);
+      continue;
+    }
     if (typeof e[1] == 'number') {
       assertEquals(e[0], e[1], result.numberValue());
     } else if (typeof e[1] == 'string') {
