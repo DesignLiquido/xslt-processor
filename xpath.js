@@ -407,7 +407,10 @@ function stackToString(stack) {
 //   XSLT instance, you probably DO want case sensitivity, as per the
 //   XSL spec.
 
-function ExprContext(node, opt_position, opt_nodelist, opt_parent, opt_caseInsensitive, opt_ignoreAttributesWithoutValue) {
+function ExprContext(node, opt_position, opt_nodelist, opt_parent,
+  opt_caseInsensitive, opt_ignoreAttributesWithoutValue,
+  opt_returnOnFirstMatch)
+{
   this.node = node;
   this.position = opt_position || 0;
   this.nodelist = opt_nodelist || [ node ];
@@ -415,6 +418,7 @@ function ExprContext(node, opt_position, opt_nodelist, opt_parent, opt_caseInsen
   this.parent = opt_parent || null;
   this.caseInsensitive = opt_caseInsensitive || false;
   this.ignoreAttributesWithoutValue = opt_ignoreAttributesWithoutValue || false;
+  this.returnOnFirstMatch = opt_returnOnFirstMatch || false;
   if (opt_parent) {
     this.root = opt_parent.root;
   } else if (this.node.nodeType == DOM_DOCUMENT_NODE) {
@@ -433,7 +437,7 @@ ExprContext.prototype.clone = function(opt_node, opt_position, opt_nodelist) {
       opt_node || this.node,
       typeof opt_position != 'undefined' ? opt_position : this.position,
       opt_nodelist || this.nodelist, this, this.caseInsensitive,
-      this.ignoreAttributesWithoutValue);
+      this.ignoreAttributesWithoutValue, this.returnOnFirstMatch);
 };
 
 ExprContext.prototype.setVariable = function(name, value) {
@@ -489,6 +493,14 @@ ExprContext.prototype.isIgnoreAttributesWithoutValue = function() {
 
 ExprContext.prototype.setIgnoreAttributesWithoutValue = function(ignore) {
   return this.ignoreAttributesWithoutValue = ignore;
+};
+
+ExprContext.prototype.isReturnOnFirstMatch = function() {
+  return this.returnOnFirstMatch;
+};
+
+ExprContext.prototype.setReturnOnFirstMatch = function(returnOnFirstMatch) {
+  return this.returnOnFirstMatch = returnOnFirstMatch;
 };
 
 // XPath expression values. They are what XPath expressions evaluate
@@ -709,6 +721,9 @@ function xPathStep(nodes, steps, step, input, ctx) {
       nodes.push(nodelist[i]);
     } else {
       xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+    }
+    if (ctx.returnOnFirstMatch && nodes.length) {
+      break;
     }
   }
 }
