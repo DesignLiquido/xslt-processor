@@ -409,7 +409,7 @@ function stackToString(stack) {
 
 function ExprContext(node, opt_position, opt_nodelist, opt_parent,
   opt_caseInsensitive, opt_ignoreAttributesWithoutValue,
-  opt_returnOnFirstMatch)
+  opt_returnOnFirstMatch, opt_inPlayAttributes)
 {
   this.node = node;
   this.position = opt_position || 0;
@@ -419,6 +419,7 @@ function ExprContext(node, opt_position, opt_nodelist, opt_parent,
   this.caseInsensitive = opt_caseInsensitive || false;
   this.ignoreAttributesWithoutValue = opt_ignoreAttributesWithoutValue || false;
   this.returnOnFirstMatch = opt_returnOnFirstMatch || false;
+  this.inPlayAttributes = opt_inPlayAttributes;
   if (opt_parent) {
     this.root = opt_parent.root;
   } else if (this.node.nodeType == DOM_DOCUMENT_NODE) {
@@ -437,7 +438,7 @@ ExprContext.prototype.clone = function(opt_node, opt_position, opt_nodelist) {
       opt_node || this.node,
       typeof opt_position != 'undefined' ? opt_position : this.position,
       opt_nodelist || this.nodelist, this, this.caseInsensitive,
-      this.ignoreAttributesWithoutValue, this.returnOnFirstMatch);
+      this.ignoreAttributesWithoutValue, this.returnOnFirstMatch, this.inPlayAttributes);
 };
 
 ExprContext.prototype.setVariable = function(name, value) {
@@ -501,6 +502,25 @@ ExprContext.prototype.isReturnOnFirstMatch = function() {
 
 ExprContext.prototype.setReturnOnFirstMatch = function(returnOnFirstMatch) {
   return this.returnOnFirstMatch = returnOnFirstMatch;
+};
+
+ExprContext.prototype.getInPlayAttributes = function(inPlayAttributes) {
+  return this.inPlayAttributes;
+};
+
+/**
+ * "In play attributes" are the attributes that will be copied for nodes in
+ * XPath node sets. It should probably be set to the return value of the
+ * getAttributeNodeTestNames() function, having passed in the parsed XPath
+ * object as its parameter. If in play attributes are not specified, all
+ * attributes are copied (with the possible exception of "attributes without
+ * value").
+ *
+ * @param inPlayAttributes  the set of attribute names to be referenced when
+ *                          copying attributes as part of XPath evaluation
+ */
+ExprContext.prototype.setInPlayAttributes = function(inPlayAttributes) {
+  return this.inPlayAttributes = inPlayAttributes;
 };
 
 // XPath expression values. They are what XPath expressions evaluate
@@ -763,13 +783,18 @@ StepExpr.prototype.evaluate = function(ctx) {
     }
 
   } else if (this.axis == xpathAxis.ATTRIBUTE) {
-    if (ctx.ignoreAttributesWithoutValue) {
-      copyArrayIgnoringAttributesWithoutValue(nodelist, input.attributes);
+    if (ctx.inPlayAttributes && !ctx.inPlayAttributes['*']) {
+      copyArrayOfNamedAttributes(nodelist, input.attributes, ctx.inPlayAttributes);
     }
     else {
-      copyArray(nodelist, input.attributes);
+      if (ctx.ignoreAttributesWithoutValue) {
+        copyArrayIgnoringAttributesWithoutValue(nodelist, input.attributes);
+      }
+      else {
+        copyArray(nodelist, input.attributes);
+      }
     }
-
+    
   } else if (this.axis == xpathAxis.CHILD) {
     copyArray(nodelist, input.childNodes);
 
