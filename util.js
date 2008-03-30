@@ -279,7 +279,19 @@ function xmlValue(node) {
   } else if (node.nodeType == DOM_ELEMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-    for (var i = 0; i < node.childNodes.length; ++i) {
+    // IE, Safari, Opera, and friends
+    var innerText = node.innerText;
+    if (innerText != undefined) {
+      return innerText;
+    }
+    // Firefox
+    var textContent = node.textContent;
+    if (textContent != undefined) {
+      return textContent;
+    }
+    // pobrecito!
+    var len = node.childNodes.length;
+    for (var i = 0; i < len; ++i) {
       ret += arguments.callee(node.childNodes[i]);
     }
   }
@@ -496,13 +508,7 @@ function getAttributeNodeTestNames(object, names) {
   }
   if (typeof(object) == 'object') {
     if (object.axis == 'attribute') {
-      // the node test name is not defined for the all attributes selector
-      if (object.nodetest.name == undefined) {
-        names['*'] = true;
-      }
-      else {
-        names[object.nodetest.name] = true;
-      }
+      names[object.nodetest.name] = true;
     }
     for (var attr in object) {
       getAttributeNodeTestNames(object[attr], names);
