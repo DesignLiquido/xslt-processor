@@ -19,6 +19,7 @@ function exposeTestFunctionNames() {
         , 'testEvalDomJapanese'
         , 'testGetAttributeNodeTestNames'
         , 'testOnlyNamedAttributesAreCopied'
+        , 'testXMLValueAcrossBrowsers'
     ];
 }
 
@@ -630,4 +631,15 @@ function testOnlyNamedAttributesAreCopied() {
   
   // restore the function
   copyArrayOfNamedAttributes = originalFunction;
+}
+
+function testXMLValueAcrossBrowsers() {
+  // this test should be run in various browsers to ensure that the
+  // browser-specific properties innerText and textContent are being calculated
+  // correctly
+  var node = document.createElement('div');
+  node.innerHTML = '<p> Here is some <strong>funky </strong> text'
+    + '<ul> <li>that contains</li> <li> spaces and stuff</li> </ul></p>';
+  assertEquals(' Here is some funky  text that contains  spaces and stuff ',
+    xmlValue(node));
 }
