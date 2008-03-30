@@ -508,7 +508,13 @@ function getAttributeNodeTestNames(object, names) {
   }
   if (typeof(object) == 'object') {
     if (object.axis == 'attribute') {
-      names[object.nodetest.name] = true;
+      // the node test name is not defined for the all attributes selector
+      if (object.nodetest.name == undefined) {
+        names['*'] = true;
+      }
+      else {
+        names[object.nodetest.name] = true;
+      }
     }
     for (var attr in object) {
       getAttributeNodeTestNames(object[attr], names);
