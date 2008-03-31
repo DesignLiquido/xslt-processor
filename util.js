@@ -259,8 +259,9 @@ function copyArrayIgnoringAttributesWithoutValue(dst, src)
 
 // Returns the text value of a node; for nodes without children this
 // is the nodeValue, for nodes with children this is the concatenation
-// of the value of all children.
-function xmlValue(node) {
+// of the value of all children. Browser-specific optimizations are used by
+// default; they can be disabled by passing "true" in as the second parameter.
+function xmlValue(node, disallowBrowserSpecificOptimization) {
   if (!node) {
     return '';
   }
@@ -279,15 +280,17 @@ function xmlValue(node) {
   } else if (node.nodeType == DOM_ELEMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-    // IE, Safari, Opera, and friends
-    var innerText = node.innerText;
-    if (innerText != undefined) {
-      return innerText;
-    }
-    // Firefox
-    var textContent = node.textContent;
-    if (textContent != undefined) {
-      return textContent;
+    if (!disallowBrowserSpecificOptimization) {
+      // IE, Safari, Opera, and friends
+      var innerText = node.innerText;
+      if (innerText != undefined) {
+        return innerText;
+      }
+      // Firefox
+      var textContent = node.textContent;
+      if (textContent != undefined) {
+        return textContent;
+      }
     }
     // pobrecito!
     var len = node.childNodes.length;
