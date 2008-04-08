@@ -738,16 +738,48 @@ LocationExpr.prototype.evaluate = function(ctx) {
 function xPathStep(nodes, steps, step, input, ctx) {
   var s = steps[step];
   var ctx2 = ctx.clone(input);
-  var nodelist = s.evaluate(ctx2).nodeSetValue();
-
-  for (var i = 0; i < nodelist.length; ++i) {
-    if (step == steps.length - 1) {
-      nodes.push(nodelist[i]);
-    } else {
-      xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+  
+  if (ctx.returnOnFirstMatch && !stepPredicateContainsPositionalSelector(s)) {
+    var nodelist = s.evaluate(ctx2).nodeSetValue();
+    // the predicates were not processed in the last evaluate(), so that we can
+    // process them here with the returnOnFirstMatch optimization. We do a
+    // depth-first grab at any nodes that pass the predicate tests. There is no
+    // way to optimize when predicates contain positional selectors, including
+    // indexes or uses of the last() or position() functions, because they
+    // typically require the entire nodelist for context. Process without
+    // optimization if we encounter such selectors.
+    nodelistLoop:
+    for (var i = 0; i < nodelist.length; ++i) {
+      var n = nodelist[i];
+      for (var j = 0; j < s.predicate.length; ++j) {
+        if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
+          continue nodelistLoop;
+        }
+      }
+      // n survived the predicate tests!
+      if (step == steps.length - 1) {
+        nodes.push(n);
+      }
+      else {
+        xPathStep(nodes, steps, step + 1, n, ctx);
+      }
+      if (nodes.length > 0) {
+        break;
+      }
     }
-    if (ctx.returnOnFirstMatch && nodes.length) {
-      break;
+  }
+  else {
+    // set returnOnFirstMatch to false for the cloned ExprContext, because
+    // behavior in StepExpr.prototype.evaluate is driven off its value. Note
+    // that the original context may still have true for this value.
+    ctx2.returnOnFirstMatch = false;
+    var nodelist = s.evaluate(ctx2).nodeSetValue();
+    for (var i = 0; i < nodelist.length; ++i) {
+      if (step == steps.length - 1) {
+        nodes.push(nodelist[i]);
+      } else {
+        xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+      }
     }
   }
 }
@@ -869,13 +901,15 @@ StepExpr.prototype.evaluate = function(ctx) {
   }
 
   // process predicates
-  for (var i = 0; i < this.predicate.length; ++i) {
-    var nodelist0 = nodelist;
-    nodelist = [];
-    for (var ii = 0; ii < nodelist0.length; ++ii) {
-      var n = nodelist0[ii];
-      if (this.predicate[i].evaluate(ctx.clone(n, ii, nodelist0)).booleanValue()) {
-        nodelist.push(n);
+  if (!ctx.returnOnFirstMatch) {
+    for (var i = 0; i < this.predicate.length; ++i) {
+      var nodelist0 = nodelist;
+      nodelist = [];
+      for (var ii = 0; ii < nodelist0.length; ++ii) {
+        var n = nodelist0[ii];
+        if (this.predicate[i].evaluate(ctx.clone(n, ii, nodelist0)).booleanValue()) {
+          nodelist.push(n);
+        }
       }
     }
   }

@@ -526,5 +526,36 @@ function getAttributeNodeTestNames(object, names) {
   return names;
 }
 
+function stepPredicateContainsPositionalSelector(step) {
+  for (var i = 0; i < step.predicate.length; ++i) {
+    var predicate = step.predicate[i];
+    if (predicate.expr instanceof NumberExpr) {
+      // this is an indexing predicate
+      return true;
+    }
+    if (predicateExprContainsPositionalSelector(predicate)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function predicateExprContainsPositionalSelector(predicate) {
+  if (!predicate || !predicate.expr) {
+    return false;
+  }
+  if (predicate.expr instanceof FunctionCallExpr) {
+    var value = predicate.expr.name.value;
+    return (value == 'last' || value == 'position');
+  }
+  if (predicateExprContainsPositionalSelector(predicate.expr.expr1)) {
+    return true;
+  }
+  if (predicateExprContainsPositionalSelector(predicate.expr.expr2)) {
+    return true;
+  }
+  return false;
+}
+
 
 
