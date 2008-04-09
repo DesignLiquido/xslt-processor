@@ -526,36 +526,32 @@ function getAttributeNodeTestNames(object, names) {
   return names;
 }
 
-function stepPredicateContainsPositionalSelector(step) {
-  for (var i = 0; i < step.predicate.length; ++i) {
-    var predicate = step.predicate[i];
-    if (predicate.expr instanceof NumberExpr) {
-      // this is an indexing predicate
-      return true;
-    }
-    if (predicateExprContainsPositionalSelector(predicate)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function predicateExprContainsPositionalSelector(predicate) {
-  if (!predicate || !predicate.expr) {
+/**
+ * Determines whether a predicate expression contains a "positional selector".
+ * A positional selector filters nodes from the nodelist input based on their
+ * position within that list. When such selectors are encountered, the
+ * evaluation of the predicate cannot be depth-first, because the positional
+ * selector may be based on the result of evaluating predicates that precede
+ * it.
+ */
+function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
+  if (!expr) {
     return false;
   }
-  if (predicate.expr instanceof FunctionCallExpr) {
-    var value = predicate.expr.name.value;
+  if (expr instanceof NumberExpr && !isRecursiveCall) {
+    // this is an indexing predicate
+    return true;
+  }
+  if (expr instanceof FunctionCallExpr) {
+    var value = expr.name.value;
     return (value == 'last' || value == 'position');
   }
-  if (predicateExprContainsPositionalSelector(predicate.expr.expr1)) {
-    return true;
-  }
-  if (predicateExprContainsPositionalSelector(predicate.expr.expr2)) {
-    return true;
+  if (expr instanceof BinaryExpr) {
+    return (
+      predicateExprHasPositionalSelector(expr.expr1, true) ||
+      predicateExprHasPositionalSelector(expr.expr2, true));
   }
   return false;
 }
-
 
 

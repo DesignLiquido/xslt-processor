@@ -739,7 +739,7 @@ function xPathStep(nodes, steps, step, input, ctx) {
   var s = steps[step];
   var ctx2 = ctx.clone(input);
   
-  if (ctx.returnOnFirstMatch && !stepPredicateContainsPositionalSelector(s)) {
+  if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
     var nodelist = s.evaluate(ctx2).nodeSetValue();
     // the predicates were not processed in the last evaluate(), so that we can
     // process them here with the returnOnFirstMatch optimization. We do a
@@ -748,10 +748,12 @@ function xPathStep(nodes, steps, step, input, ctx) {
     // indexes or uses of the last() or position() functions, because they
     // typically require the entire nodelist for context. Process without
     // optimization if we encounter such selectors.
+    var nLength = nodelist.length;
+    var pLength = s.predicate.length;
     nodelistLoop:
-    for (var i = 0; i < nodelist.length; ++i) {
+    for (var i = 0; i < nLength; ++i) {
       var n = nodelist[i];
-      for (var j = 0; j < s.predicate.length; ++j) {
+      for (var j = 0; j < pLength; ++j) {
         if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
           continue nodelistLoop;
         }
@@ -788,10 +790,20 @@ function StepExpr(axis, nodetest, opt_predicate) {
   this.axis = axis;
   this.nodetest = nodetest;
   this.predicate = opt_predicate || [];
+  this.hasPositionalPredicate = false;
+  for (var i = 0; i < this.predicate.length; ++i) {
+    if (predicateExprHasPositionalSelector(this.predicate[i].expr)) {
+      this.hasPositionalPredicate = true;
+      break;
+    }
+  }
 }
 
 StepExpr.prototype.appendPredicate = function(p) {
   this.predicate.push(p);
+  if (!this.hasPositionalPredicate) {
+    this.hasPositionalPredicate = predicateExprHasPositionalSelector(p.expr);
+  }
 }
 
 StepExpr.prototype.evaluate = function(ctx) {
