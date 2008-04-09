@@ -17,8 +17,6 @@ function exposeTestFunctionNames() {
         , 'testAttributeAsterisk'
         , 'testEvalDom'
         , 'testEvalDomJapanese'
-        , 'testGetAttributeNodeTestNames'
-        , 'testOnlyNamedAttributesAreCopied'
         , 'testXMLValueAcrossBrowsers'
     ];
 }
@@ -585,52 +583,6 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
   n = evalNodeSet(slashPageLocationAtLon, ctx1)[0];
   assertEquals(slashPageLocationAtLon, n.nodeName, lon);
   assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
-}
-
-function testGetAttributeNodeTestNames() {
-  var xpath = "//a[@href='foo' and attribute::target='bar']";
-  var names = getAttributeNodeTestNames(xpathParse(xpath));
-  assertTrue('href should have beenpresent', names['href']);
-  assertTrue('target should have beenpresent', names['target']);
-  
-  xpath = "//a/b[text()='baz']";
-  names = getAttributeNodeTestNames(xpathParse(xpath));
-  var count = 0;
-  for (var name in names) {
-    ++count;
-  }
-  assertEquals('no attributes should have been found', 0, count);
-  
-  xpath = "//table/tr[@class='qux']/@*";
-  names = getAttributeNodeTestNames(xpathParse(xpath));
-  assertTrue('class should have been present', names['class']);
-  assertTrue('* should have been present', names['*']);
-}
-
-function testOnlyNamedAttributesAreCopied() {
-  // hijack the function so we can count the number of times it's called
-  // (basically make a mockery)
-  var originalFunction = copyArrayOfNamedAttributes;
-  var callCount = 0;
-  copyArrayOfNamedAttributes = function() { ++callCount; };
-  
-  var xpath = "//p[@class='f']";
-  var xpathObj = xpathParse(xpath);
-  var xml = '<div><p class="f">Hello <em>World!</em></p>'
-    + '<hr class="end" /></div>';
-    
-  var ctx = new ExprContext(xmlParse(xml));
-  var result = xpathObj.evaluate(ctx);
-  assertEquals('copyArrayOfNamedAttributes should not have been called',
-    0, callCount);
-  
-  ctx.optimizeFor(xpathObj);
-  result = xpathObj.evaluate(ctx);
-  assertTrue('copyArrayOfNamedAttributes should have been called',
-    callCount > 0);
-  
-  // restore the function
-  copyArrayOfNamedAttributes = originalFunction;
 }
 
 function testXMLValueAcrossBrowsers() {
