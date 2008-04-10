@@ -18,6 +18,7 @@ function exposeTestFunctionNames() {
         , 'testEvalDom'
         , 'testEvalDomJapanese'
         , 'testXMLValueAcrossBrowsers'
+        , 'testHasPositionalPredicateDetermination'
     ];
 }
 
@@ -604,3 +605,32 @@ function testXMLValueAcrossBrowsers() {
     assertEquals(value, xmlValue(node, true));
   }
 }
+
+function testHasPositionalPredicateDetermination() {
+  var tests = [
+    [ "//a", false ]
+    , [ "//a[1]", true ]
+    , [ "//a[1][@foo]", true ]
+    , [ "//a[last()]", true ]
+    , [ "//a[position()=1]", true ]
+    , [ "//a[@foo]", false ]
+    , [ "//a[@foo='1']", false ]
+    , [ "//a[@foo and position()=2]", true ]
+    , [ "//a[(@foo or position()=2)]", true ]
+    , [ "//a[@foo][2]", true ]
+    , [ "//a[0+1]", true ]
+    , [ "//a[(0+1)]", true ]
+    , [ "//a[string-length('bar')]", true ]
+    , [ "//a[b[@baz='1'] and position()=2]", true ]
+    , [ "//a[b[1]]", false ]
+    , [ "//a[b[position()=1][2]]", false ]
+  ];
+    
+  for (var i = 0; i < tests.length; ++i) {
+    var test = tests[i];
+    assertEquals(test[0],
+      xpathParse(test[0]).steps[0].hasPositionalPredicate, test[1]);
+  }
+}
+
+
