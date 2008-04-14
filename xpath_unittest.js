@@ -19,6 +19,7 @@ function exposeTestFunctionNames() {
         , 'testEvalDomJapanese'
         , 'testXMLValueAcrossBrowsers'
         , 'testHasPositionalPredicateDetermination'
+        , 'testReturnOnFirstMatch'
     ];
 }
 
@@ -630,6 +631,43 @@ function testHasPositionalPredicateDetermination() {
     var test = tests[i];
     assertEquals(test[0],
       xpathParse(test[0]).steps[0].hasPositionalPredicate, test[1]);
+  }
+}
+
+function testReturnOnFirstMatch() {
+  var xml = '<body> \
+    <a href="#">top</a> \
+    <div> \
+      <a href="http://code.google.com/p/ajaxslt">ajaxslt</a> \
+      <p><a href="http://sourceforge.net/projects/goog-ajaxslt/"> \
+        old site</a></p> \
+    </div> \
+  </body>';
+  var tests = [
+    [ "//a", 3 ]
+    , [ "//a[contains(@href, 'ajaxslt')]", 2 ]
+    , [ "//div/descendant::a", 2 ]
+    , [ "(//div | //p)/a", 2 ]
+  ];
+    
+  var parsedXML = xmlParse(xml);
+  var ctx = new ExprContext(parsedXML);
+  for (var i = 0; i < tests.length; ++i) {
+    var test = tests[i];
+    var expr = xpathParse(test[0]);
+        
+    ctx.setReturnOnFirstMatch(false);
+    var normalResults = expr.evaluate(ctx);
+    assertEquals("normal results count: " + test[0], test[1],
+      normalResults.value.length);
+            
+    ctx.setReturnOnFirstMatch(true);
+    var firstMatchResults = expr.evaluate(ctx);
+    assertEquals("first match results count: " + test[0], 1,
+      firstMatchResults.value.length);
+        
+    assertEquals("firstMatchResults[0] corresponds to normalResults[0]: "
+      + test[0], normalResults.value[0], firstMatchResults.value[0]);
   }
 }
 
