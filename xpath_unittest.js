@@ -20,6 +20,7 @@ function exposeTestFunctionNames() {
         , 'testXMLValueAcrossBrowsers'
         , 'testHasPositionalPredicateDetermination'
         , 'testReturnOnFirstMatch'
+        , 'testVsNativeImplementation'
     ];
 }
 
@@ -671,4 +672,162 @@ function testReturnOnFirstMatch() {
   }
 }
 
-
+// these tests are courtesy of http://www.llamalab.com/js/xpath/benchmark.html
+function testVsNativeImplementation() {
+    var html = '<h1>XPath Dummy Page</h1> \
+    <div id="first"> \
+      <ol> \
+        <li>first</li> \
+        <li class="second">second</li> \
+        <li>third</li> \
+        <li>forth</li> \
+        <li id="fifth">fifth</li> \
+        <li>sixth</li> \
+        <li>seventh</li> \
+        <li id="eighth">eighth</li> \
+        <li>ninth</li> \
+        <li>tenth</li> \
+      </ol> \
+      <ul> \
+        <li class="apple fruit green">apple</li> \
+        <li>banana</li> \
+        <li id="orange">orange</li> \
+        <li class="mellon">mellon</li> \
+        <li>pear</li> \
+      <ul> \
+    </div> \
+    <div id="div2"> \
+      <h2>Lorem Ipsum 1</h2> \
+      <p> \
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed \
+        do eiusmod tempor <strong>incididunt</strong> ut labore et  \
+        <sub>dolore</sub> magna aliqua. Ut enim ad minim veniam, quis  \
+        nostrud exercitation ullamco <em>laboris</em> nisi ut  \
+        aliquip ex ea commodo consequat. \
+      </p> \
+      <p class="huge"> \
+        Duis <sub>aute</sub> irure dolor in reprehenderit in voluptate  \
+        velit esse cillum dolore eu fugiat <strong id="nulla">nulla</strong> \
+        pariatur. Excepteur sint occaecat cupidatat non proident, sunt  \
+        in <sup>culpa</sup> qui officia deserunt mollit anim <em>id</em>  \
+        est laborum. \
+      </p> \
+    </div> \
+    <div id="div3"> \
+      <form id="pet" name="pet" action="." method="POST"> \
+        <select name="species"> \
+          <option value="cat">cat</option> \
+          <option value="dog">dog</option> \
+          <option value="ape" selected="selected">ape</option> \
+          <option value="horse">horse</option> \
+          <option value="giraff">giraff</option> \
+          <option value="rhino">rhino</option> \
+          <option value="fish">fish</option> \
+        </select> \
+        <input type="text" name="name" value="bax"/> \
+        <input type="radio" name="gender" value="male" checked="checked"/> \
+        <input type="radio" name="gender" value="female"/> \
+        <input type="text" name="age" value="10"/> \
+        <input type="text" name="weight" value="100"/> \
+        <input type="text" ame="height" value="1"/> \
+        <input type="text" name="length" value="5"/> \
+        <textarea name="description">happy</textarea> \
+        <button type="submit">Update</button> \
+        <button type="button">Feed</button> \
+        <button type="button">Terminate</button> \
+      </form> \
+    </div> \
+    <div id="div4"> \
+      <span style="font-weight:bold">foo</span> \
+      <span style="font-style:italic">bar</span> \
+      <span style="text-decoration:underline">baz</span> \
+    </div> \
+    <div id="div5"> \
+      <span class="level1">Level 1 \
+        <span class="level2">Level 2 \
+          <span class="level3">Level 3 \
+            <span class="level4">Level 4 \
+              <span class="level5">Level 5 \
+                <span class="level6">Level 6 \
+                  <span class="level7">Level 7 \
+                    <span class="level8">Level 8 \
+                      <span class="level9">Level 9 \
+                        <span class="level10" id="level10">Level 10</span> \
+                      </span> \
+                    </span> \
+                  </span> \
+                </span> \
+              </span> \
+            </span> \
+          </span> \
+         </span> \
+      </span> \
+    </div> \
+    <div id="div6"> \
+      <h2>Lorem Ipsum 2</h2> \
+      <p class="small"> \
+        Duis <sub>aute</sub> irure dolor in reprehenderit in voluptate  \
+        velit esse cillum dolore eu fugiat <strong>nulla</strong> \
+        pariatur. Excepteur sint occaecat cupidatat non proident, sunt  \
+        in <sup>culpa</sup> qui officia deserunt mollit anim <em>id</em>  \
+        est laborum. \
+      </p> \
+      <p> \
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed  \
+        do eiusmod tempor <strong>incididunt</strong> ut labore et  \
+        <sub>dolore</sub> magna aliqua. Ut enim ad minim veniam, quis  \
+        nostrud exercitation ullamco <em>laboris</em> nisi ut  \
+        aliquip ex ea commodo consequat. \
+      </p> \
+    </div> \
+    <a id="last" href="http://llamalab.com" title="LlamaLab">LlamaLab</a>';
+    
+    // the reference result was derived from Firefox 2's native evaluate()
+    // using the iframe setup below. Failures are commented out. As they are
+    // fixed, they should be uncommented.
+    var tests = [
+          [ 'id("level10")/ancestor::SPAN', 9 ]
+        , [ 'id("level10")/ancestor-or-self::SPAN', 10 ]
+        , [ '//attribute::*', 71 ]
+        , [ 'child::HTML/child::BODY/child::H1', 1 ]
+        //, [ 'descendant::node()', 230 ]
+        , [ 'descendant-or-self::SPAN', 13 ]
+        , [ 'id("first")/following::text()', 111 ]
+        , [ 'id("first")/following-sibling::node()', 12 ]
+        , [ 'id("level10")/parent::node()', 1 ]
+        , [ 'id("last")/preceding::text()', 147 ]
+        , [ 'id("last")/preceding-sibling::node()', 14 ]
+        , [ '/HTML/BODY/H1/self::node()', 1 ]
+        , [ '//*[@name]', 9 ]
+        , [ 'id("pet")/SELECT[@name="species"]/OPTION[@selected]/@value', 1 ]
+        , [ 'descendant::INPUT[@name="name"]/@value', 1 ]
+        , [ 'id("pet")/INPUT[@name="gender" and @checked]/@value', 1 ]
+        , [ '//TEXTAREA[@name="description"]/text()', 1 ]
+        , [ 'id("div1")|id("div2")|id("div3 div4 div5")', 4 ]
+        //, [ '//LI[1]', 2 ]
+        //, [ '//LI[last()]/text()', 2 ]
+        //, [ '//LI[position() mod 2]/@class', 1 ]
+        , [ '//text()[.="foo"]', 1 ]
+        , [ 'descendant-or-self::SPAN[position() > 2]', 11 ]
+        , [ 'descendant::*[contains(@class," fruit ")]', 1 ]
+    ];
+    
+    var iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    var doc = iframe.contentDocument;
+    var body = doc.documentElement.getElementsByTagName('body')[0];
+    body.innerHTML = html;
+    
+    var context = new ExprContext(doc);
+    context.setCaseInsensitive(true);
+    for (var i = 0; i < tests.length; ++i) {
+        var test = tests[i];
+        var xpathObj = xpathParse(test[0]);
+        var xpathResult = xpathObj.evaluate(context);
+        var nodeCount = (xpathResult && xpathResult.value)
+            ? xpathResult.value.length : 0;
+        assertEquals(test[0], test[1], nodeCount);
+    }
+    
+    document.body.removeChild(iframe);
+}
