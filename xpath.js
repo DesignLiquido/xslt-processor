@@ -815,7 +815,22 @@ StepExpr.prototype.evaluate = function(ctx) {
           copyArray(nodelist, input.attributes);
         }
         else {
-          nodelist.push(input.attributes[this.nodetest.name]);
+          if (this.nodetest.name == 'style') {
+            var value = input.getAttribute('style');
+            if (value && typeof(value) != 'string') {
+              // this is the case where indexing into the attributes array
+              // doesn't give us the attribute node in IE - we create our own
+              // node instead
+              nodelist.push(XNode.create(DOM_ATTRIBUTE_NODE, 'style',
+                value.cssText, document));
+            }
+            else {
+              nodelist.push(input.attributes[this.nodetest.name]);
+            }
+          }
+          else {
+            nodelist.push(input.attributes[this.nodetest.name]);
+          }
         }
       }
     }

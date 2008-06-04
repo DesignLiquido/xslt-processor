@@ -400,7 +400,8 @@ var numExpr = [
     [ "count(//*[@id='u1']|//*[@id='u2'])", 2 ],
     [ "count(//*[@id='u1']|//*[@class='u'])", 3 ],
     [ "count(//*[@class='u']|//*[@class='u'])", 3 ],
-    [ "count(//*[@class='u']|//*[@id='u1'])", 3 ]
+    [ "count(//*[@class='u']|//*[@id='u1'])", 3 ],
+    [ "count(//*[contains(@style, 'visible')])", 1 ]
 ];
 
 function testEval() {
