@@ -6,46 +6,57 @@ function exposeTestFunctionNames() {
 
 // these tests are courtesy of http://www.llamalab.com/js/xpath/benchmark.html
 function testVsNativeImplementation() {
+    if (!hasNativeXPath()) {
+        return;
+    }
+
     // the reference result was derived from Firefox 2's native evaluate()
     // using the iframe setup below. Failures are commented out. As they are
     // fixed, they should be uncommented.
     var tests = [
-          [ 'id("level10")/ancestor::SPAN', 9 ]
-        , [ 'id("level10")/ancestor-or-self::SPAN', 10 ]
-        //, [ '//attribute::*', 92 ]                                            // IE fails with "0"
-        , [ 'child::HTML/child::BODY/child::H1', 1 ]
-        //, [ 'descendant::node()', 230 ]                                       // Firefox fails with "90"
-        , [ 'descendant-or-self::SPAN', 13 ]
-        //, [ 'id("first")/following::text()', 112 ]                            // IE fails with "80"
-        //, [ 'id("first")/following-sibling::node()', 13 ]                     // IE fails with "7"
-        , [ 'id("level10")/parent::node()', 1 ]
-        //, [ 'id("last")/preceding::text()', 156 ]                             // IE fails with "94"
-        //, [ 'id("last")/preceding-sibling::node()', 15 ]                      // IE fails with "7"
-        , [ '/HTML/BODY/H1/self::node()', 1 ]
-        //, [ '//*[@name]', 9 ]                                                 // IE fails with "0"
-        //, [ 'id("pet")/SELECT[@name="species"]/OPTION[@selected]/@value', 1 ] // IE fails with "7"
-        //, [ 'descendant::INPUT[@name="name"]/@value', 1 ]                     // IE fails with "0"
-        //, [ 'id("pet")/INPUT[@name="gender" and @checked]/@value', 1 ]        // IE fails with "2"
-        , [ '//TEXTAREA[@name="description"]/text()', 1 ]
-        , [ 'id("div1")|id("div2")|id("div3 div4 div5")', 4 ]
-        //, [ '//LI[1]', 2 ]                                                    // Firefox fails with "1"
-        //, [ '//LI[last()]/text()', 2 ]                                        // Firefox fails with "1"
-        //, [ '//LI[position() mod 2]/@class', 1 ]                              // Firefox fails with "0"
-        , [ '//text()[.="foo"]', 1 ]
-        , [ 'descendant-or-self::SPAN[position() > 2]', 11 ]
-        //, [ 'descendant::*[contains(@class," fruit ")]', 1 ]                  // IE fails with "0"
+          'id("level10")/ancestor::SPAN'
+        , 'id("level10")/ancestor-or-self::SPAN'
+        , '//attribute::*'
+        , 'child::HTML/child::BODY/child::H1'
+        //, 'descendant::node()'                                       // Firefox 3.0 fails 251:90
+        , 'descendant-or-self::SPAN'
+        , 'id("first")/following::text()'                              // Opera 9.5 fails 104:105
+        , 'id("first")/following-sibling::node()'                      // Opera 9.5 fails 13:14
+        , 'id("level10")/parent::node()'
+        , 'id("last")/preceding::text()'
+        , 'id("last")/preceding-sibling::node()'
+        , '/HTML/BODY/H1/self::node()'
+        , '//*[@name]'
+        , 'id("pet")/SELECT[@name="species"]/OPTION[@selected]/@value'
+        , 'descendant::INPUT[@name="name"]/@value'
+        , 'id("pet")/INPUT[@name="gender" and @checked]/@value'
+        , '//TEXTAREA[@name="description"]/text()'
+        , 'id("div1")|id("div2")|id("div3 div4 div5")'
+        , '//LI[1]'
+        , '//LI[last()]/text()'
+        , '//LI[position() mod 2]/@class'
+        , '//text()[.="foo"]'
+        , 'descendant-or-self::SPAN[position() > 2]'
+        , 'descendant::*[contains(@class," fruit ")]'
     ];
     
     var context = new ExprContext(document);
     context.setCaseInsensitive(true);
     for (var i = 0; i < tests.length; ++i) {
         var test = tests[i];
-        var xpathObj = xpathParse(test[0]);
+        var xpathObj = xpathParse(test);
         var xpathResult = xpathObj.evaluate(context);
         var nodeCount = (xpathResult && xpathResult.value)
             ? xpathResult.value.length : 0;
-        assertEquals(test[0], test[1], nodeCount);
+        assertEquals(test, getNativeXPathCount(test), nodeCount);
     }
+}
+
+/**
+ * Detects whether native XPath is available.
+ */
+function hasNativeXPath() {
+    return document.evaluate != undefined;
 }
 
 /**

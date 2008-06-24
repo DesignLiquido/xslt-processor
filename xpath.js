@@ -681,8 +681,9 @@ LocationExpr.prototype._combineSteps = function(prevStep, nextStep) {
     // maybe suitable to be combined
     if (prevStep.axis == xpathAxis.DESCENDANT_OR_SELF) {
       if (nextStep.axis == xpathAxis.CHILD) {
-        nextStep.axis = xpathAxis.DESCENDANT;
-        return nextStep;
+        // HBC - commenting out, because this is not a valid reduction
+        //nextStep.axis = xpathAxis.DESCENDANT;
+        //return nextStep;
       } else if (nextStep.axis == xpathAxis.SELF) {
         nextStep.axis = xpathAxis.DESCENDANT_OR_SELF;
         return nextStep;

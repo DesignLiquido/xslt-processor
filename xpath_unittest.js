@@ -407,6 +407,7 @@ var numExpr = [
 function testEval() {
   for (var i = 0; i < numExpr.length; ++i) {
     var ctx = new ExprContext(document.body);
+    ctx.setCaseInsensitive(true);
     var e = numExpr[i];
     if (e[2]) {
       for (var k in e[2]) {
@@ -609,6 +610,9 @@ function testXMLValueAcrossBrowsers() {
 }
 
 function testHasPositionalPredicateDetermination() {
+  // These XPaths all start with "//", which is equivalent to
+  // "/descendant-or-self::node()/", a step unto itself. So we check the second
+  // step for the positional predicate, not the first.
   var tests = [
     [ "//a", false ]
     , [ "//a[1]", true ]
@@ -631,7 +635,7 @@ function testHasPositionalPredicateDetermination() {
   for (var i = 0; i < tests.length; ++i) {
     var test = tests[i];
     assertEquals(test[0],
-      xpathParse(test[0]).steps[0].hasPositionalPredicate, test[1]);
+      xpathParse(test[0]).steps[1].hasPositionalPredicate, test[1]);
   }
 }
 
