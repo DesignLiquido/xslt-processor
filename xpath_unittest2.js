@@ -10,15 +10,14 @@ function testVsNativeImplementation() {
         return;
     }
 
-    // the reference result was derived from Firefox 2's native evaluate()
-    // using the iframe setup below. Failures are commented out. As they are
-    // fixed, they should be uncommented.
+    // the reference results are derived from the native evaluate()
+    // implementation, if available.
     var tests = [
           'id("level10")/ancestor::SPAN'
         , 'id("level10")/ancestor-or-self::SPAN'
         , '//attribute::*'
         , 'child::HTML/child::BODY/child::H1'
-        //, 'descendant::node()'                                       // Firefox 3.0 fails 251:90
+        , 'descendant::node()'                                         // Opera 9.5 fails 249:250
         , 'descendant-or-self::SPAN'
         , 'id("first")/following::text()'                              // Opera 9.5 fails 104:105
         , 'id("first")/following-sibling::node()'                      // Opera 9.5 fails 13:14

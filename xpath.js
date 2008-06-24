@@ -2347,7 +2347,10 @@ function xpathCollectDescendants(nodelist, node, opt_tagName) {
 function xpathExtractTagNameFromNodeTest(nodetest) {
   if (nodetest instanceof NodeTestName) {
     return nodetest.name;
-  } else if (nodetest instanceof NodeTestAny || nodetest instanceof NodeTestElementOrAttribute) {
+  } else if (/* nodetest instanceof NodeTestAny || */ nodetest instanceof NodeTestElementOrAttribute) {
+    // HBC - commented out the NodeTestAny in the above condition; it causes
+    // non-element nodes to be excluded! The XPath spec says "node()" must
+    // match all node types.
     return "*";
   }
 }
