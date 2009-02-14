@@ -653,6 +653,7 @@ function testReturnOnFirstMatch() {
     , [ "//a[contains(@href, 'ajaxslt')]", 2 ]
     , [ "//div/descendant::a", 2 ]
     , [ "(//div | //p)/a", 2 ]
+    , [ "(//a)[2]", 1 ]
   ];
     
   var parsedXML = xmlParse(xml);

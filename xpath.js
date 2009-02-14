@@ -1453,7 +1453,11 @@ function FilterExpr(expr, predicate) {
 }
 
 FilterExpr.prototype.evaluate = function(ctx) {
+  var flag = ctx.returnOnFirstMatch;
+  ctx.setReturnOnFirstMatch(false);
   var nodes = this.expr.evaluate(ctx).nodeSetValue();
+  ctx.setReturnOnFirstMatch(flag);
+  
   for (var i = 0; i < this.predicate.length; ++i) {
     var nodes0 = nodes;
     nodes = [];
