@@ -1418,14 +1418,7 @@ function PathExpr(filter, rel) {
 }
 
 PathExpr.prototype.evaluate = function(ctx) {
-  // the filter expression should be evaluated in its entirety with no
-  // optimization, as we can't backtrack to it after having moved on to
-  // evaluating the relative location path
-  var flag = ctx.returnOnFirstMatch;
-  ctx.setReturnOnFirstMatch(false);
   var nodes = this.filter.evaluate(ctx).nodeSetValue();
-  ctx.setReturnOnFirstMatch(flag);
-  
   var nodes1 = [];
   if (ctx.returnOnFirstMatch) {
     for (var i = 0; i < nodes.length; ++i) {
@@ -1453,6 +1446,10 @@ function FilterExpr(expr, predicate) {
 }
 
 FilterExpr.prototype.evaluate = function(ctx) {
+  // the filter expression should be evaluated in its entirety with no
+  // optimization, as we can't backtrack to it after having moved on to
+  // evaluating the relative location path. See the testReturnOnFirstMatch
+  // unit test.
   var flag = ctx.returnOnFirstMatch;
   ctx.setReturnOnFirstMatch(false);
   var nodes = this.expr.evaluate(ctx).nodeSetValue();
