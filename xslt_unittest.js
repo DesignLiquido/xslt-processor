@@ -5,10 +5,12 @@
 //
 // Author: Steffen Meschkat <mesch@google.com>
 
+import {xsltProcess} from "./xslt.js"
+import {xmlParse} from "./dom.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************
-function exposeTestFunctionNames() {
+window.exposeTestFunctionNames = function() {
     return ['testForEachSort', 'testForEachSortAscending', 'testForEachSortDescending', 'testApplyTemplates', 'testGlobalVariables', 'testTopLevelOutput', 'testCopy'];
 }
 
@@ -16,49 +18,49 @@ function el(id) {
   return document.getElementById(id);
 }
 
-function testForEachSort() {
+window.testForEachSort = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-for-each-sort').value);
   const html = xsltProcess(xml, xslt);
   assertEquals("CAB", html);
 }
 
-function testForEachSortAscending() {
+window.testForEachSortAscending = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-for-each-sort-ascending').value);
   const html = xsltProcess(xml, xslt);
   assertEquals("ABC", html);
 }
 
-function testForEachSortDescending() {
+window.testForEachSortDescending = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-for-each-sort-descending').value);
   const html = xsltProcess(xml, xslt);
   assertEquals("CBA", html);
 }
 
-function testApplyTemplates() {
+window.testApplyTemplates = function() {
   const xml = xmlParse(el('xml-apply-templates').value);
   const xslt = xmlParse(el('xslt-apply-templates').value);
   const html = xsltProcess(xml, xslt);
   assertEquals("ABC", html);
 }
 
-function testGlobalVariables() {
+window.testGlobalVariables = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-global-variables').value);
   const html = xsltProcess(xml, xslt);
   assertEquals("xzyyy", html);
 }
 
-function testTopLevelOutput() {
+window.testTopLevelOutput = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-top-level-output').value);
   const html = xsltProcess(xml, xslt);
   assertEquals('<x y="z">k</x>', html);
 }
 
-function testCopy() {
+window.testCopy = function() {
   const xml = xmlParse(el('xml').value);
   const xslt = xmlParse(el('xslt-copy').value);
   const html = xsltProcess(xml, xslt);

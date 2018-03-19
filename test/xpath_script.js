@@ -6,6 +6,8 @@
 //
 //
 // Author: Steffen Meschkat <mesch@google.com>
+import {Log} from "../simplelog.js"
+import {xpathParse} from "../xpath.js"
 
 logging = true;
 xpathdebug = true;
@@ -31,14 +33,14 @@ function xpath_test(form) {
     var expr = xpathParse(text);
     Log.writeRaw('<tt><b>' + text + '</b></tt>');
     Log.writeRaw('<pre>' + expr.parseTree('') + '</pre>');
-    
+
     options[i].selected = false;
     if (i < options.length - 1) {
       options[i+1].selected = true;
     } else {
       options[0].selected = true;
     }
-    
+
   } catch (e) {
     Log.write('EXCEPTION ' + e);
   }

@@ -6,6 +6,8 @@
 //
 //
 // Author: Steffen Meschkat <mesch@google.com>
+import {xmlParse} from "../dom.js"
+import {xsltProcess} from "../xslt.js"
 
 logging = true;
 xsltdebug = true;

@@ -40,7 +40,15 @@
 // @return an expression object that can be evaluated with an
 // expression context.
 
-function xpathParse(expr) {
+import {XNode} from "./dom.js"
+//import {xpathLog} from "./simplelog.js"
+import {mapExec, mapExpr, reverseInplace, copyArray, copyArrayIgnoringAttributesWithoutValue, xmlValue, regExpEscape, predicateExprHasPositionalSelector} from "./util.js"
+import {XML_NC_NAME} from "./xmltoken.js"
+import {DOM_DOCUMENT_NODE, DOM_ATTRIBUTE_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE, DOM_COMMENT_NODE, DOM_PROCESSING_INSTRUCTION_NODE} from "./dom.js"
+
+function xpathLog() {};
+
+export function xpathParse(expr) {
   xpathLog(`parse ${expr}`);
   xpathParseInit();
 
@@ -163,7 +171,7 @@ function xpathParse(expr) {
   return result;
 }
 
-var xpathParseCache = {};
+let xpathParseCache = {};
 
 function xpathCacheLookup(expr) {
   return xpathParseCache[expr];
@@ -413,7 +421,7 @@ function stackToString(stack) {
 //   significantly, and makes sense if you a) use "node()" when you mean "*",
 //   and b) use "//" when you mean "/descendant::*/".
 
-class ExprContext {
+export class ExprContext {
   constructor(
     node,
     opt_position,
@@ -559,7 +567,7 @@ class ExprContext {
 //   Node objects.
 //
 
-class StringValue {
+export class StringValue {
   constructor(value) {
     this.value = value;
     this.type = 'string';
@@ -582,7 +590,7 @@ class StringValue {
   }
 }
 
-class BooleanValue {
+export class BooleanValue {
   constructor(value) {
     this.value = value;
     this.type = 'boolean';
@@ -605,7 +613,7 @@ class BooleanValue {
   }
 }
 
-class NumberValue {
+export class NumberValue {
   constructor(value) {
     this.value = value;
     this.type = 'number';
@@ -628,7 +636,7 @@ class NumberValue {
   }
 }
 
-class NodeSetValue {
+export class NodeSetValue {
   constructor(value) {
     this.value = value;
     this.type = 'node-set';
@@ -672,7 +680,7 @@ class NodeSetValue {
 // parseTree(indent) -- returns a parse tree representation of the
 // expression (defined in xsltdebug.js).
 
-class TokenExpr {
+export class TokenExpr {
   constructor(m) {
     this.value = m;
   }
@@ -682,7 +690,7 @@ class TokenExpr {
   }
 }
 
-class LocationExpr {
+export class LocationExpr {
   constructor() {
     this.absolute = false;
     this.steps = [];
@@ -798,7 +806,7 @@ function xPathStep(nodes, steps, step, input, ctx) {
   }
 }
 
-class StepExpr {
+export class StepExpr {
   constructor(axis, nodetest, opt_predicate) {
     this.axis = axis;
     this.nodetest = nodetest;
@@ -968,7 +976,7 @@ class StepExpr {
   }
 }
 
-class NodeTestAny {
+export class NodeTestAny {
   constructor() {
     this.value = new BooleanValue(true);
   }
@@ -978,7 +986,7 @@ class NodeTestAny {
   }
 }
 
-class NodeTestElementOrAttribute {
+export class NodeTestElementOrAttribute {
   evaluate(ctx) {
     return new BooleanValue(
         ctx.node.nodeType == DOM_ELEMENT_NODE ||
@@ -986,19 +994,19 @@ class NodeTestElementOrAttribute {
   }
 }
 
-class NodeTestText {
+export class NodeTestText {
   evaluate(ctx) {
     return new BooleanValue(ctx.node.nodeType == DOM_TEXT_NODE);
   }
 }
 
-class NodeTestComment {
+export class NodeTestComment {
   evaluate(ctx) {
     return new BooleanValue(ctx.node.nodeType == DOM_COMMENT_NODE);
   }
 }
 
-class NodeTestPI {
+export class NodeTestPI {
   constructor(target) {
     this.target = target;
   }
@@ -1010,7 +1018,7 @@ class NodeTestPI {
   }
 }
 
-class NodeTestNC {
+export class NodeTestNC {
   constructor(nsprefix) {
     this.regex = new RegExp(`^${nsprefix}:`);
     this.nsprefix = nsprefix;
@@ -1022,7 +1030,7 @@ class NodeTestNC {
   }
 }
 
-class NodeTestName {
+export class NodeTestName {
   constructor(name) {
     this.name = name;
     this.re = new RegExp(`^${name}$`, "i");
@@ -1039,7 +1047,7 @@ class NodeTestName {
   }
 }
 
-class PredicateExpr {
+export class PredicateExpr {
   constructor(expr) {
     this.expr = expr;
   }
@@ -1057,29 +1065,7 @@ class PredicateExpr {
   }
 }
 
-class FunctionCallExpr {
-  constructor(name) {
-    this.name = name;
-    this.args = [];
-  }
-
-  appendArg(arg) {
-    this.args.push(arg);
-  }
-
-  evaluate(ctx) {
-    const fn = `${this.name.value}`;
-    const f = this.xpathfunctions[fn];
-    if (f) {
-      return f.call(this, ctx);
-    } else {
-      xpathLog(`XPath NO SUCH FUNCTION ${fn}`);
-      return new BooleanValue(false);
-    }
-  }
-}
-
-FunctionCallExpr.prototype.xpathfunctions = {
+let xpathfunctions = {
   'last'(ctx) {
     assert(this.args.length == 0);
     // NOTE(mesch): XPath position starts at 1.
@@ -1177,7 +1163,7 @@ FunctionCallExpr.prototype.xpathfunctions = {
     assert(this.args.length == 2);
     const s0 = this.args[0].evaluate(ctx).stringValue();
     const s1 = this.args[1].evaluate(ctx).stringValue();
-    const re = new RegExp(`${RegExp.escape(s1)}$`);
+    const re = new RegExp(`${regExpEscape(s1)}$`);
     return new BooleanValue(re.test(s0));
   },
 
@@ -1416,7 +1402,29 @@ FunctionCallExpr.prototype.xpathfunctions = {
   }
 };
 
-class UnionExpr {
+export class FunctionCallExpr {
+  constructor(name) {
+    this.name = name;
+    this.args = [];
+  }
+
+  appendArg(arg) {
+    this.args.push(arg);
+  }
+
+  evaluate(ctx) {
+    const fn = `${this.name.value}`;
+    const f = xpathfunctions[fn];
+    if (f) {
+      return f.call(this, ctx);
+    } else {
+      xpathLog(`XPath NO SUCH FUNCTION ${fn}`);
+      return new BooleanValue(false);
+    }
+  }
+}
+
+export class UnionExpr {
   constructor(expr1, expr2) {
     this.expr1 = expr1;
     this.expr2 = expr2;
@@ -1444,7 +1452,7 @@ class UnionExpr {
   }
 }
 
-class PathExpr {
+export class PathExpr {
   constructor(filter, rel) {
     this.filter = filter;
     this.rel = rel;
@@ -1474,7 +1482,7 @@ class PathExpr {
   }
 }
 
-class FilterExpr {
+export class FilterExpr {
   constructor(expr, predicate) {
     this.expr = expr;
     this.predicate = predicate;
@@ -1505,7 +1513,7 @@ class FilterExpr {
   }
 }
 
-class UnaryMinusExpr {
+export class UnaryMinusExpr {
   constructor(expr) {
     this.expr = expr;
   }
@@ -1515,7 +1523,7 @@ class UnaryMinusExpr {
   }
 }
 
-class BinaryExpr {
+export class BinaryExpr {
   constructor(expr1, op, expr2) {
     this.expr1 = expr1;
     this.expr2 = expr2;
@@ -1683,7 +1691,7 @@ class BinaryExpr {
   }
 }
 
-class LiteralExpr {
+export class LiteralExpr {
   constructor(value) {
     this.value = value;
   }
@@ -1693,7 +1701,7 @@ class LiteralExpr {
   }
 }
 
-class NumberExpr {
+export class NumberExpr {
   constructor(value) {
     this.value = value;
   }
@@ -1703,7 +1711,7 @@ class NumberExpr {
   }
 }
 
-class VariableExpr {
+export class VariableExpr {
   constructor(name) {
     this.name = name;
   }
@@ -1938,7 +1946,7 @@ function makeSimpleExpr(expr) {
 }
 
 function makeSimpleExpr2(expr) {
-  const steps = stringSplit(expr, '/');
+  const steps = expr.split('/');
   const c = new LocationExpr();
   for (let i = 0; i < steps.length; ++i) {
     const a = new NodeTestName(steps[i]);
@@ -1950,7 +1958,7 @@ function makeSimpleExpr2(expr) {
 
 // The axes of XPath expressions.
 
-var xpathAxis = {
+const xpathAxis = {
   ANCESTOR_OR_SELF: 'ancestor-or-self',
   ANCESTOR: 'ancestor',
   ATTRIBUTE: 'attribute',
@@ -1992,58 +2000,58 @@ const xpathAxesRe = [
 // NOTE: tabular formatting is the big exception, but here it should
 // be OK.
 
-const TOK_PIPE =   { label: "|",   prec:   17, re: new RegExp("^\\|") };
-var TOK_DSLASH = { label: "//",  prec:   19, re: new RegExp("^//")  };
-var TOK_SLASH =  { label: "/",   prec:   30, re: new RegExp("^/")   };
-var TOK_AXIS =   { label: "::",  prec:   20, re: new RegExp("^::")  };
-const TOK_COLON =  { label: ":",   prec: 1000, re: new RegExp("^:")  };
-const TOK_AXISNAME = { label: "[axis]", re: new RegExp(`^(${xpathAxesRe})`) };
-const TOK_PARENO = { label: "(",   prec:   34, re: new RegExp("^\\(") };
-const TOK_PARENC = { label: ")",               re: new RegExp("^\\)") };
-const TOK_DDOT =   { label: "..",  prec:   34, re: new RegExp("^\\.\\.") };
-const TOK_DOT =    { label: ".",   prec:   34, re: new RegExp("^\\.") };
-var TOK_AT =     { label: "@",   prec:   34, re: new RegExp("^@")   };
+let TOK_PIPE =   { label: "|",   prec:   17, re: new RegExp("^\\|") };
+let TOK_DSLASH = { label: "//",  prec:   19, re: new RegExp("^//")  };
+let TOK_SLASH =  { label: "/",   prec:   30, re: new RegExp("^/")   };
+let TOK_AXIS =   { label: "::",  prec:   20, re: new RegExp("^::")  };
+let TOK_COLON =  { label: ":",   prec: 1000, re: new RegExp("^:")  };
+let TOK_AXISNAME = { label: "[axis]", re: new RegExp(`^(${xpathAxesRe})`) };
+let TOK_PARENO = { label: "(",   prec:   34, re: new RegExp("^\\(") };
+let TOK_PARENC = { label: ")",               re: new RegExp("^\\)") };
+let TOK_DDOT =   { label: "..",  prec:   34, re: new RegExp("^\\.\\.") };
+let TOK_DOT =    { label: ".",   prec:   34, re: new RegExp("^\\.") };
+let TOK_AT =     { label: "@",   prec:   34, re: new RegExp("^@")   };
 
-const TOK_COMMA =  { label: ",",               re: new RegExp("^,") };
+let TOK_COMMA =  { label: ",",               re: new RegExp("^,") };
 
-var TOK_OR =     { label: "or",  prec:   10, re: new RegExp("^or\\b") };
-var TOK_AND =    { label: "and", prec:   11, re: new RegExp("^and\\b") };
-const TOK_EQ =     { label: "=",   prec:   12, re: new RegExp("^=")   };
-const TOK_NEQ =    { label: "!=",  prec:   12, re: new RegExp("^!=")  };
-const TOK_GE =     { label: ">=",  prec:   13, re: new RegExp("^>=")  };
-const TOK_GT =     { label: ">",   prec:   13, re: new RegExp("^>")   };
-const TOK_LE =     { label: "<=",  prec:   13, re: new RegExp("^<=")  };
-const TOK_LT =     { label: "<",   prec:   13, re: new RegExp("^<")   };
-const TOK_PLUS =   { label: "+",   prec:   14, re: new RegExp("^\\+"), left: true };
-const TOK_MINUS =  { label: "-",   prec:   14, re: new RegExp("^\\-"), left: true };
-var TOK_DIV =    { label: "div", prec:   15, re: new RegExp("^div\\b"), left: true };
-var TOK_MOD =    { label: "mod", prec:   15, re: new RegExp("^mod\\b"), left: true };
+let TOK_OR =     { label: "or",  prec:   10, re: new RegExp("^or\\b") };
+let TOK_AND =    { label: "and", prec:   11, re: new RegExp("^and\\b") };
+let TOK_EQ =     { label: "=",   prec:   12, re: new RegExp("^=")   };
+let TOK_NEQ =    { label: "!=",  prec:   12, re: new RegExp("^!=")  };
+let TOK_GE =     { label: ">=",  prec:   13, re: new RegExp("^>=")  };
+let TOK_GT =     { label: ">",   prec:   13, re: new RegExp("^>")   };
+let TOK_LE =     { label: "<=",  prec:   13, re: new RegExp("^<=")  };
+let TOK_LT =     { label: "<",   prec:   13, re: new RegExp("^<")   };
+let TOK_PLUS =   { label: "+",   prec:   14, re: new RegExp("^\\+"), left: true };
+let TOK_MINUS =  { label: "-",   prec:   14, re: new RegExp("^\\-"), left: true };
+let TOK_DIV =    { label: "div", prec:   15, re: new RegExp("^div\\b"), left: true };
+let TOK_MOD =    { label: "mod", prec:   15, re: new RegExp("^mod\\b"), left: true };
 
-const TOK_BRACKO = { label: "[",   prec:   32, re: new RegExp("^\\[") };
-const TOK_BRACKC = { label: "]",               re: new RegExp("^\\]") };
-var TOK_DOLLAR = { label: "$",               re: new RegExp("^\\$") };
+let TOK_BRACKO = { label: "[",   prec:   32, re: new RegExp("^\\[") };
+let TOK_BRACKC = { label: "]",               re: new RegExp("^\\]") };
+let TOK_DOLLAR = { label: "$",               re: new RegExp("^\\$") };
 
-const TOK_NCNAME = { label: "[ncname]", re: new RegExp(`^${XML_NC_NAME}`) };
+let TOK_NCNAME = { label: "[ncname]", re: new RegExp(`^${XML_NC_NAME}`) };
 
-const TOK_ASTERISK = { label: "*", prec: 15, re: new RegExp("^\\*"), left: true };
-const TOK_LITERALQ = { label: "[litq]", prec: 20, re: new RegExp("^'[^\\']*'") };
-const TOK_LITERALQQ = {
+let TOK_ASTERISK = { label: "*", prec: 15, re: new RegExp("^\\*"), left: true };
+let TOK_LITERALQ = { label: "[litq]", prec: 20, re: new RegExp("^'[^\\']*'") };
+let TOK_LITERALQQ = {
   label: "[litqq]",
   prec: 20,
   re: new RegExp('^"[^\\"]*"')
 };
 
-var TOK_NUMBER  = {
+let TOK_NUMBER  = {
   label: "[number]",
   prec: 35,
   re: new RegExp('^\\d+(\\.\\d*)?') };
 
-var TOK_QNAME = {
+let TOK_QNAME = {
   label: "[qname]",
   re: new RegExp(`^(${XML_NC_NAME}:)?${XML_NC_NAME}`)
 };
 
-const TOK_NODEO = {
+let TOK_NODEO = {
   label: "[nodetest-start]",
   re: new RegExp('^(processing-instruction|comment|text|node)\\(')
 };
@@ -2056,7 +2064,7 @@ const TOK_NODEO = {
 // NOTE: order of this list is important, because the first match
 // counts. Cf. DDOT and DOT, and AXIS and COLON.
 
-var xpathTokenRules = [
+const xpathTokenRules = [
     TOK_DSLASH,
     TOK_SLASH,
     TOK_DDOT,
@@ -2135,9 +2143,9 @@ const xpathNonTerminals = [
 ];
 
 // Quantifiers that are used in the productions of the grammar.
-var Q_01 = { label: "?" };
-var Q_MM = { label: "*" };
-var Q_1M = { label: "+" };
+const Q_01 = { label: "?" };
+const Q_MM = { label: "*" };
+const Q_1M = { label: "+" };
 
 // Tag for left associativity (right assoc is implied by undefined).
 const ASSOC_LEFT = true;
@@ -2162,6 +2170,7 @@ const ASSOC_LEFT = true;
 // -1 means that the precedence of the tokens in the pattern is used
 // instead. TODO: It shouldn't be necessary to explicitly assign
 // precedences to rules.
+
 
 // DGF As it stands, these precedences are purely empirical; we're
 // not sure they can be made to be consistent at all.
@@ -2446,7 +2455,7 @@ function xpathDomEval(expr, node) {
 
 // Utility function to sort a list of nodes. Used by xsltSort() and
 // nxslSelect().
-function xpathSort(input, sort) {
+export function xpathSort(input, sort) {
   if (sort.length == 0) {
     return;
   }
@@ -2515,7 +2524,7 @@ function xpathSortByKey(v1, v2) {
 
 // Parses and then evaluates the given XPath expression in the given
 // input context. Notice that parsed xpath expressions are cached.
-function xpathEval(select, context) {
+export function xpathEval(select, context) {
   const expr = xpathParse(select);
   const ret = expr.evaluate(context);
   return ret;

@@ -6,45 +6,21 @@
 
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
-function xpathLog(msg) {}
-function xsltLog(msg) {}
-function xsltLogXml(msg) {}
 
-const ajaxsltIsIE6 = navigator.appVersion.match(/MSIE 6.0/);
-
+import {FunctionCallExpr, UnaryMinusExpr, BinaryExpr, NumberExpr} from "./xpath.js"
+import {DOM_TEXT_NODE, DOM_CDATA_SECTION_NODE, DOM_ELEMENT_NODE, DOM_DOCUMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_ATTRIBUTE_NODE, DOM_COMMENT_NODE} from "./dom.js"
 // Throws an exception if false.
-function assert(b) {
+export function assertNotFalse(b) {
   if (!b) {
     throw "Assertion failed";
   }
 }
 
-// Splits a string s at all occurrences of character c. This is like
-// the split() method of the string object, but IE omits empty
-// strings, which violates the invariant (s.split(x).join(x) == s).
-function stringSplit(s, c) {
-  let a = s.indexOf(c);
-  if (a == -1) {
-    return [ s ];
-  }
-  const parts = [];
-  parts.push(s.substr(0,a));
-  while (a != -1) {
-    const a1 = s.indexOf(c, a + 1);
-    if (a1 != -1) {
-      parts.push(s.substr(a + 1, a1 - a - 1));
-    } else {
-      parts.push(s.substr(a + 1));
-    }
-    a = a1;
-  }
-  return parts;
-}
 
 // The following function does what document.importNode(node, true)
 // would do for us here; however that method is broken in Safari/1.3,
 // so we have to emulate it.
-function xmlImportNode(doc, node) {
+function DELETEDxmlImportNode(doc, node) {
   if (node.nodeType == DOM_TEXT_NODE) {
     return domCreateTextNode(doc, node.nodeValue);
 
@@ -61,7 +37,7 @@ function xmlImportNode(doc, node) {
     }
 
     for (let c = node.firstChild; c; c = c.nextSibling) {
-      const cn = arguments.callee(doc, c);
+      const cn = DELETEDxmlImportNode(doc, c);
       domAppendChild(newNode, cn);
     }
 
@@ -82,7 +58,7 @@ function xmlImportNode(doc, node) {
 // by the typed value. In particular, objects can't be used as keys.
 //
 // @constructor
-class Set {
+class DELETEDSet {
   constructor() {
     this.keys = [];
   }
@@ -177,7 +153,7 @@ class Set {
 
 // Applies the given function to each element of the array, preserving
 // this, and passing the index.
-function mapExec(array, func) {
+export function mapExec(array, func) {
   for (let i = 0; i < array.length; ++i) {
     func.call(this, array[i], i);
   }
@@ -185,7 +161,7 @@ function mapExec(array, func) {
 
 // Returns an array that contains the return value of the given
 // function applied to every element of the input array.
-function mapExpr(array, func) {
+export function mapExpr(array, func) {
   const ret = [];
   for (let i = 0; i < array.length; ++i) {
     ret.push(func(array[i]));
@@ -194,7 +170,7 @@ function mapExpr(array, func) {
 }
 
 // Reverses the given array in place.
-function reverseInplace(array) {
+export function reverseInplace(array) {
   for (let i = 0; i < array.length / 2; ++i) {
     const h = array[i];
     const ii = array.length - i - 1;
@@ -218,7 +194,7 @@ function removeFromArray(array, value, opt_notype) {
 
 // Shallow-copies an array to the end of another array
 // Basically Array.concat, but works with other non-array collections
-function copyArray(dst, src) {
+export function copyArray(dst, src) {
   if (!src) return;
   const dstLength = dst.length;
   for (let i = src.length - 1; i >= 0; --i) {
@@ -232,7 +208,7 @@ function copyArray(dst, src) {
  * significant extra processing when evaluating attribute steps. With this
  * function, we ignore any such attributes that has an empty string value.
  */
-function copyArrayIgnoringAttributesWithoutValue(dst, src)
+export function copyArrayIgnoringAttributesWithoutValue(dst, src)
 {
   if (!src) return;
   for (let i = src.length - 1; i >= 0; --i) {
@@ -248,7 +224,7 @@ function copyArrayIgnoringAttributesWithoutValue(dst, src)
 // is the nodeValue, for nodes with children this is the concatenation
 // of the value of all children. Browser-specific optimizations are used by
 // default; they can be disabled by passing "true" in as the second parameter.
-function xmlValue(node, disallowBrowserSpecificOptimization) {
+export function xmlValue(node, disallowBrowserSpecificOptimization) {
   if (!node) {
     return '';
   }
@@ -259,11 +235,7 @@ function xmlValue(node, disallowBrowserSpecificOptimization) {
     ret += node.nodeValue;
 
   } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
-    if (ajaxsltIsIE6) {
-      ret += xmlValueIE6Hack(node);
-    } else {
-      ret += node.nodeValue;
-    }
+    ret += node.nodeValue;
   } else if (node.nodeType == DOM_ELEMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
@@ -282,24 +254,14 @@ function xmlValue(node, disallowBrowserSpecificOptimization) {
     // pobrecito!
     const len = node.childNodes.length;
     for (let i = 0; i < len; ++i) {
-      ret += arguments.callee(node.childNodes[i]);
+      ret += xmlValue(node.childNodes[i]);
     }
   }
   return ret;
 }
 
-function xmlValueIE6Hack(node) {
-    // Issue 19, IE6 mangles href attribute when it's a javascript: url
-    const nodeName = node.nodeName;
-    const nodeValue = node.nodeValue;
-    if (nodeName.length != 4) return nodeValue;
-    if (!/^href$/i.test(nodeName)) return nodeValue;
-    if (!/^javascript:/.test(nodeValue)) return nodeValue;
-    return unescape(nodeValue);
-}
-
 // Returns the representation of a node as XML text.
-function xmlText(node, opt_cdata) {
+export function xmlText(node, opt_cdata) {
   const buf = [];
   xmlTextR(node, buf, opt_cdata);
   return buf.join('');
@@ -333,7 +295,7 @@ function xmlTextR(node, buf, cdata) {
     } else {
       buf.push('>');
       for (var i = 0; i < node.childNodes.length; ++i) {
-        arguments.callee(node.childNodes[i], buf, cdata);
+        xmlTextR(node.childNodes[i], buf, cdata);
       }
       buf.push(`</${xmlFullNodeName(node)}>`);
     }
@@ -341,7 +303,7 @@ function xmlTextR(node, buf, cdata) {
   } else if (node.nodeType == DOM_DOCUMENT_NODE ||
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
     for (var i = 0; i < node.childNodes.length; ++i) {
-      arguments.callee(node.childNodes[i], buf, cdata);
+      xmlTextR(node.childNodes[i], buf, cdata);
     }
   }
 }
@@ -357,7 +319,7 @@ function xmlFullNodeName(n) {
 // Escape XML special markup chracters: tag delimiter < > and entity
 // reference start delimiter &. The escaped string can be used in XML
 // text portions (i.e. between tags).
-function xmlEscapeText(s) {
+export function xmlEscapeText(s) {
   return (`${s}`).replace(/&/g, '&amp;').replace(/</g, '&lt;').
     replace(/>/g, '&gt;');
 }
@@ -372,9 +334,9 @@ function xmlEscapeAttr(s) {
 
 // Escape markup in XML text, but don't touch entity references. The
 // escaped string can be used as XML text (i.e. between tags).
-function xmlEscapeTags(s) {
-  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+//function xmlEscapeTags(s) {
+//  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+//}
 
 /**
  * Wrapper function to access the owner document uniformly for document
@@ -384,7 +346,7 @@ function xmlEscapeTags(s) {
  * @param {Node} node
  * @return {Document}
  */
-function xmlOwnerDocument(node) {
+export function xmlOwnerDocument(node) {
   if (node.nodeType == DOM_DOCUMENT_NODE) {
     return node;
   } else {
@@ -393,19 +355,19 @@ function xmlOwnerDocument(node) {
 }
 
 // Wrapper around DOM methods so we can condense their invocations.
-function domGetAttribute(node, name) {
+export function domGetAttribute(node, name) {
   return node.getAttribute(name);
 }
 
-function domSetAttribute(node, name, value) {
+export function domSetAttribute(node, name, value) {
   return node.setAttribute(name, value);
 }
 
-function domRemoveAttribute(node, name) {
+function DELETEdomRemoveAttribute(node, name) {
   return node.removeAttribute(name);
 }
 
-function domAppendChild(node, child) {
+export function domAppendChild(node, child) {
   return node.appendChild(child);
 }
 
@@ -413,52 +375,52 @@ function domRemoveChild(node, child) {
   return node.removeChild(child);
 }
 
-function domReplaceChild(node, newChild, oldChild) {
+function DELETEdomReplaceChild(node, newChild, oldChild) {
   return node.replaceChild(newChild, oldChild);
 }
 
-function domInsertBefore(node, newChild, oldChild) {
+function DELETEdomInsertBefore(node, newChild, oldChild) {
   return node.insertBefore(newChild, oldChild);
 }
 
-function domRemoveNode(node) {
+function DELETEdomRemoveNode(node) {
   return domRemoveChild(node.parentNode, node);
 }
 
-function domCreateTextNode(doc, text) {
+export function domCreateTextNode(doc, text) {
   return doc.createTextNode(text);
 }
 
-function domCreateElement(doc, name) {
+export function domCreateElement(doc, name) {
   return doc.createElement(name);
 }
 
-function domCreateAttribute(doc, name) {
+function DELETEdomCreateAttribute(doc, name) {
   return doc.createAttribute(name);
 }
 
-function domCreateCDATASection(doc, data) {
+export function domCreateCDATASection(doc, data) {
   return doc.createCDATASection(data);
 }
 
-function domCreateComment(doc, text) {
+export function domCreateComment(doc, text) {
   return doc.createComment(text);
 }
 
-function domCreateDocumentFragment(doc) {
+export function domCreateDocumentFragment(doc) {
   return doc.createDocumentFragment();
 }
 
-function domGetElementById(doc, id) {
+function DELETEdomGetElementById(doc, id) {
   return doc.getElementById(id);
 }
 
 // Same for window methods.
-function windowSetInterval(win, fun, time) {
+function DELETEwindowSetInterval(win, fun, time) {
   return win.setInterval(fun, time);
 }
 
-function windowClearInterval(win, id) {
+function DELETEwindowClearInterval(win, id) {
   return win.clearInterval(id);
 }
 
@@ -468,18 +430,18 @@ function windowClearInterval(win, id) {
  *
  * Based on: http://simonwillison.net/2006/Jan/20/escape/
  */
-RegExp.escape = ((() => {
-  const specials = [
-    '/', '.', '*', '+', '?', '|', '^', '$',
-    '(', ')', '[', ']', '{', '}', '\\'
-  ];
+ const regExpSpecials = [
+   '/', '.', '*', '+', '?', '|', '^', '$',
+   '(', ')', '[', ']', '{', '}', '\\'
+ ];
 
-  const sRE = new RegExp(
-    `(\\${specials.join('|\\')})`, 'g'
-  );
+ const sRE = new RegExp(
+   `(\\${regExpSpecials.join('|\\')})`, 'g'
+ );
 
-  return text => text.replace(sRE, '\\$1')
-}))();
+export function regExpEscape(text) {
+  return text.replace(sRE, '\\$1')
+}
 
 /**
  * Determines whether a predicate expression contains a "positional selector".
@@ -489,7 +451,7 @@ RegExp.escape = ((() => {
  * selector may be based on the result of evaluating predicates that precede
  * it.
  */
-function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
+export function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
   if (!expr) {
     return false;
   }

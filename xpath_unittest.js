@@ -6,10 +6,13 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
+import {xpathParse, ExprContext, StringValue, BooleanValue, NumberValue} from "./xpath.js"
+import {xmlValue, assertNotFalse} from "./util.js"
+import {xmlParse} from "./dom.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************
-function exposeTestFunctionNames() {
+window.exposeTestFunctionNames = function() {
     return [
         'testParse'
         , 'testEval'
@@ -323,9 +326,9 @@ const expr = [
     "visibleurl"
 ];
 
-function testParse() {
+window.testParse = function() {
   for (let i = 0; i < expr.length; ++i) {
-    assert(expr[i], xpathParse(expr[i]));
+    assertNotFalse(expr[i], xpathParse(expr[i]));
   }
 }
 
@@ -404,7 +407,7 @@ const numExpr = [
     [ "count(//*[contains(@style, 'visible')])", 1 ]
 ];
 
-function testEval() {
+window.testEval = function() {
   for (const e of numExpr) {
     let ctx = new ExprContext(document.body);
     ctx.setCaseInsensitive(true);
@@ -464,7 +467,7 @@ const axisTests = [
     [ "//*[@id='self']/self::*/@id", "self" ]
 ];
 
-function testAxes() {
+window.testAxes = function() {
   const xml = [
       '<page>',
       ' <p></p>',
@@ -493,7 +496,7 @@ function testAxes() {
 }
 
 
-function testAttributeAsterisk() {
+window.testAttributeAsterisk = function() {
   const ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
   const expr = xpathParse("count(/x/@*)");
   assertEquals(2, expr.evaluate(ctx).numberValue());
@@ -507,7 +510,7 @@ function evalNodeSet(expr, ctx) {
   return e.nodeSetValue();
 }
 
-function testEvalDom() {
+window.testEvalDom = function() {
   const xml = [
       '<page>',
       '<request>',
@@ -520,7 +523,7 @@ function testEvalDom() {
   doTestEvalDom(xml, 'page', 'location', 'lat', '100', 'lon', '200');
 }
 
-function testEvalDomJapanese() {
+window.testEvalDomJapanese = function() {
   const xml = [
       '<\u30da\u30fc\u30b8>',
       '<\u30ea\u30af\u30a8\u30b9\u30c8>',
@@ -588,7 +591,7 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
   assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
 }
 
-function testXMLValueAcrossBrowsers() {
+window.testXMLValueAcrossBrowsers = function() {
   // this test should be run in various browsers to ensure that the
   // browser-specific properties innerText and textContent are being calculated
   // correctly
@@ -608,7 +611,7 @@ function testXMLValueAcrossBrowsers() {
   }
 }
 
-function testHasPositionalPredicateDetermination() {
+window.testHasPositionalPredicateDetermination = function() {
   // These XPaths all start with "//", which is equivalent to
   // "/descendant-or-self::node()/", a step unto itself. So we check the second
   // step for the positional predicate, not the first.
@@ -637,7 +640,7 @@ function testHasPositionalPredicateDetermination() {
   }
 }
 
-function testReturnOnFirstMatch() {
+window.testReturnOnFirstMatch = function() {
   const xml = '<body> \
     <a href="#">top</a> \
     <div> \

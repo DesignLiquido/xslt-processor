@@ -6,18 +6,17 @@
 // An XML parse and a minimal DOM implementation that just supports
 // the subset of the W3C DOM that is used in the XSLT implementation.
 
-// NOTE: The split() method in IE omits empty result strings. This is
-// utterly annoying. So we don't use it here.
-
+import {domSetAttribute, domAppendChild, domCreateTextNode, domCreateElement, domCreateCDATASection, domCreateComment} from "./util.js"
+import {XML10_VERSION_INFO, XML10_NAME, XML10_ATTRIBUTE, XML11_VERSION_INFO, XML11_NAME, XML11_ATTRIBUTE} from "./xmltoken.js"
 // Resolve entities in XML text fragments. According to the DOM
 // specification, the DOM is supposed to resolve entity references at
 // the API level. I.e. no entity references are passed through the
 // API. See "Entities and the DOM core", p.12, DOM 2 Core
 // Spec. However, different browsers actually pass very different
 // values at the API. See <http://mesch.nyc/test-xml-quote>.
-function xmlResolveEntities(s) {
+export function xmlResolveEntities(s) {
 
-  const parts = stringSplit(s, '&');
+  const parts = s.split('&');
 
   let ret = parts[0];
   for (let i = 1; i < parts.length; ++i) {
@@ -74,7 +73,7 @@ const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
-function xmlParse(xml) {
+export function xmlParse(xml) {
   const regex_empty = /\/$/;
 
   let regex_tagname;
@@ -119,9 +118,9 @@ function xmlParse(xml) {
   // content: CDATA or comments.
   let slurp = '';
 
-  const x = stringSplit(xml, '<');
+  const x = xml.split('<');
   for (let i = 1; i < x.length; ++i) {
-    const xx = stringSplit(x[i], '>');
+    const xx = x[i].split('>');
     const tag = xx[0];
     let text = xmlResolveEntities(xx[1] || '');
 
@@ -211,17 +210,17 @@ function xmlParse(xml) {
 
 // Based on <http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/
 // core.html#ID-1950641247>
-const DOM_ELEMENT_NODE = 1;
-const DOM_ATTRIBUTE_NODE = 2;
-const DOM_TEXT_NODE = 3;
-const DOM_CDATA_SECTION_NODE = 4;
+export const DOM_ELEMENT_NODE = 1;
+export const DOM_ATTRIBUTE_NODE = 2;
+export const DOM_TEXT_NODE = 3;
+export const DOM_CDATA_SECTION_NODE = 4;
 const DOM_ENTITY_REFERENCE_NODE = 5;
 const DOM_ENTITY_NODE = 6;
-const DOM_PROCESSING_INSTRUCTION_NODE = 7;
-const DOM_COMMENT_NODE = 8;
-const DOM_DOCUMENT_NODE = 9;
+export const DOM_PROCESSING_INSTRUCTION_NODE = 7;
+export const DOM_COMMENT_NODE = 8;
+export const DOM_DOCUMENT_NODE = 9;
 const DOM_DOCUMENT_TYPE_NODE = 10;
-const DOM_DOCUMENT_FRAGMENT_NODE = 11;
+export const DOM_DOCUMENT_FRAGMENT_NODE = 11;
 const DOM_NOTATION_NODE = 12;
 
 // Traverses the element nodes in the DOM section underneath the given
@@ -242,7 +241,7 @@ function domTraverseElements(node, opt_pre, opt_post) {
 
   for (let c = node.firstChild; c; c = c.nextSibling) {
     if (c.nodeType == DOM_ELEMENT_NODE) {
-      ret = arguments.callee.call(this, c, opt_pre, opt_post);
+      ret = domTraverseElements.call(this, c, opt_pre, opt_post);
       if (typeof ret == 'boolean' && !ret) {
         return false;
       }
@@ -264,7 +263,7 @@ let _unusedXNodes = [];
 // where we can't reuse the HTML DOM for parsing our own XML, and for
 // Safari, where it is too expensive to have the template processor
 // operate on native DOM nodes.
-class XNode {
+export class XNode {
   constructor(type, name, opt_value, opt_owner) {
     this.attributes = [];
     this.childNodes = [];
@@ -514,7 +513,7 @@ class XNode {
   }
 }
 
-class XDocument extends XNode {
+export class XDocument extends XNode {
   constructor() {
     // NOTE(mesch): Acocording to the DOM Spec, ownerDocument of a
     // document node is null.

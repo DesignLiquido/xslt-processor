@@ -10,7 +10,7 @@
 
 // Detect whether RegExp supports Unicode characters or not.
 
-const REGEXP_UNICODE = (() => {
+export const REGEXP_UNICODE = (() => {
   const tests = [' ', '\u0120', -1,  // Konquerer 3.4.0 fails here.
                '!', '\u0120', -1,
                '\u0120', '\u0120', 0,
@@ -35,11 +35,11 @@ const REGEXP_UNICODE = (() => {
 
 const XML_S = '[ \t\r\n]+';
 const XML_EQ = `(${XML_S})?=(${XML_S})?`;
-const XML_CHAR_REF = '&#[0-9]+;|&#x[0-9a-fA-F]+;';
+export const XML_CHAR_REF = '&#[0-9]+;|&#x[0-9a-fA-F]+;';
 
 // XML 1.0 tokens.
 
-const XML10_VERSION_INFO = `${XML_S}version${XML_EQ}("1\\.0"|'1\\.0')`;
+export const XML10_VERSION_INFO = `${XML_S}version${XML_EQ}("1\\.0"|'1\\.0')`;
 const XML10_BASE_CHAR = (REGEXP_UNICODE) ?
   '\u0041-\u005a\u0061-\u007a\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff' +
   '\u0100-\u0131\u0134-\u013e\u0141-\u0148\u014a-\u017e\u0180-\u01c3' +
@@ -107,12 +107,12 @@ const XML10_EXTENDER = (REGEXP_UNICODE) ?
   '';
 const XML10_LETTER = XML10_BASE_CHAR + XML10_IDEOGRAPHIC;
 const XML10_NAME_CHAR = `${XML10_LETTER + XML10_DIGIT}\\._:${XML10_COMBINING_CHAR}${XML10_EXTENDER}-`;
-const XML10_NAME = `[${XML10_LETTER}_:][${XML10_NAME_CHAR}]*`;
+export const XML10_NAME = `[${XML10_LETTER}_:][${XML10_NAME_CHAR}]*`;
 
-const XML10_ENTITY_REF = `&${XML10_NAME};`;
+export const XML10_ENTITY_REF = `&${XML10_NAME};`;
 const XML10_REFERENCE = `${XML10_ENTITY_REF}|${XML_CHAR_REF}`;
-const XML10_ATT_VALUE = `"(([^<&"]|${XML10_REFERENCE})*)"|'(([^<&']|${XML10_REFERENCE})*)'`;
-const XML10_ATTRIBUTE =
+export const XML10_ATT_VALUE = `"(([^<&"]|${XML10_REFERENCE})*)"|'(([^<&']|${XML10_REFERENCE})*)'`;
+export const XML10_ATTRIBUTE =
   `(${XML10_NAME})${XML_EQ}(${XML10_ATT_VALUE})`;
 
 // XML 1.1 tokens.
@@ -122,7 +122,7 @@ const XML10_ATTRIBUTE =
 // surrogate pairs, but any browser doesn't support surrogate paris in
 // character classes of regular expression, so avoid including them for now.
 
-const XML11_VERSION_INFO = `${XML_S}version${XML_EQ}("1\\.1"|'1\\.1')`;
+export const XML11_VERSION_INFO = `${XML_S}version${XML_EQ}("1\\.1"|'1\\.1')`;
 const XML11_NAME_START_CHAR = (REGEXP_UNICODE) ?
   ':A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370-\u037d' +
   '\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff' +
@@ -130,16 +130,16 @@ const XML11_NAME_START_CHAR = (REGEXP_UNICODE) ?
   ':A-Z_a-z';
 const XML11_NAME_CHAR = XML11_NAME_START_CHAR +
   ((REGEXP_UNICODE) ? '\\.0-9\u00b7\u0300-\u036f\u203f-\u2040-' : '\\.0-9-');
-const XML11_NAME = `[${XML11_NAME_START_CHAR}][${XML11_NAME_CHAR}]*`;
+export const XML11_NAME = `[${XML11_NAME_START_CHAR}][${XML11_NAME_CHAR}]*`;
 
-const XML11_ENTITY_REF = `&${XML11_NAME};`;
+export const XML11_ENTITY_REF = `&${XML11_NAME};`;
 const XML11_REFERENCE = `${XML11_ENTITY_REF}|${XML_CHAR_REF}`;
-const XML11_ATT_VALUE = `"(([^<&"]|${XML11_REFERENCE})*)"|'(([^<&']|${XML11_REFERENCE})*)'`;
-const XML11_ATTRIBUTE =
+export const XML11_ATT_VALUE = `"(([^<&"]|${XML11_REFERENCE})*)"|'(([^<&']|${XML11_REFERENCE})*)'`;
+export const XML11_ATTRIBUTE =
   `(${XML11_NAME})${XML_EQ}(${XML11_ATT_VALUE})`;
 
 // XML Namespace tokens.
 // Used in XML parser and XPath parser.
 
 const XML_NC_NAME_CHAR = `${XML10_LETTER + XML10_DIGIT}\\._${XML10_COMBINING_CHAR}${XML10_EXTENDER}-`;
-const XML_NC_NAME = `[${XML10_LETTER}_][${XML_NC_NAME_CHAR}]*`;
+export const XML_NC_NAME = `[${XML10_LETTER}_][${XML_NC_NAME_CHAR}]*`;
