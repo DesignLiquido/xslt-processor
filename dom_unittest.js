@@ -17,7 +17,7 @@ function exposeTestFunctionNames() {
 function testXmlParse() {
   if (typeof(DOMParser) == 'undefined') return;
 
-  var xml = [
+  const xml = [
       '<page>',
       '<request>',
       '<q id="q">new york</q>',
@@ -30,24 +30,24 @@ function testXmlParse() {
   dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
   doTestXmlParse(dom, dom1);
 
-  dom = xmlParse('<?xml version="1.0"?>' + xml);
-  dom1 = xmlParse("<?xml version='1.1'?>" + xml);
+  dom = xmlParse(`<?xml version="1.0"?>${xml}`);
+  dom1 = xmlParse(`<?xml version='1.1'?>${xml}`);
   doTestXmlParse(dom, dom1);
 
-  var tag = 'q';
-  var byTag = dom.getElementsByTagName(tag);
+  const tag = 'q';
+  const byTag = dom.getElementsByTagName(tag);
   assertEquals(1, byTag.length);
   assertEquals(tag, byTag[0].nodeName);
 
-  var id = 'q';
-  var byId = dom.getElementById(id);
+  const id = 'q';
+  const byId = dom.getElementById(id);
   assertNotNull(byId);
   assertEquals(id, byId.getAttribute('id'));
 }
 
 function testXmlParseWeird() {
 
-  var xml = [
+  const xml = [
       '<_>',
       '<_.:->',
       '<:>!"#$%&\'()*+,-./:;&lt;=&gt;?[\\]^_`{|}~</:>',
@@ -59,15 +59,15 @@ function testXmlParseWeird() {
   // DOMParser seems not supporting a tagname that starts with ':', so
   // avoid comparing xmlParse() and DomParser.parseFromString() here.
 
-  dom = xmlParse('<?xml version="1.0"?>' + xml);
-  dom1 = xmlParse("<?xml version='1.1'?>" + xml);
+  dom = xmlParse(`<?xml version="1.0"?>${xml}`);
+  dom1 = xmlParse(`<?xml version='1.1'?>${xml}`);
   doTestXmlParse(dom, dom1);
 }
 
 function testXmlParseJapanese() {
   if (typeof(DOMParser) == 'undefined') return;
 
-  var xml = [
+  const xml = [
       '<\u30da\u30fc\u30b8>',
       '<\u30ea\u30af\u30a8\u30b9\u30c8>',
       '<\u30af\u30a8\u30ea>\u6771\u4eac</\u30af\u30a8\u30ea>',
@@ -81,8 +81,8 @@ function testXmlParseJapanese() {
   dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
   doTestXmlParse(dom, dom1);
 
-  dom = xmlParse('<?xml version="1.0"?>' + xml);
-  dom1 = xmlParse("<?xml version='1.1'?>" + xml);
+  dom = xmlParse(`<?xml version="1.0"?>${xml}`);
+  dom1 = xmlParse(`<?xml version='1.1'?>${xml}`);
   doTestXmlParse(dom, dom1);
 }
 

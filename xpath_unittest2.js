@@ -12,7 +12,7 @@ function testVsNativeImplementation() {
 
     // the reference results are derived from the native evaluate()
     // implementation, if available.
-    var tests = [
+    const tests = [
           'id("level10")/ancestor::SPAN'
         , 'id("level10")/ancestor-or-self::SPAN'
         , '//attribute::*'
@@ -38,14 +38,14 @@ function testVsNativeImplementation() {
         , 'descendant-or-self::SPAN[position() > 2]'
         , 'descendant::*[contains(@class," fruit ")]'
     ];
-    
-    var context = new ExprContext(document);
+
+    const context = new ExprContext(document);
     context.setCaseInsensitive(true);
-    for (var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
-        var xpathObj = xpathParse(test);
-        var xpathResult = xpathObj.evaluate(context);
-        var nodeCount = (xpathResult && xpathResult.value)
+
+    for (const test of tests) {
+        const xpathObj = xpathParse(test);
+        const xpathResult = xpathObj.evaluate(context);
+        const nodeCount = (xpathResult && xpathResult.value)
             ? xpathResult.value.length : 0;
         assertEquals(test, getNativeXPathCount(test), nodeCount);
     }
@@ -63,9 +63,9 @@ function hasNativeXPath() {
  * reference.
  */
 function getNativeXPathCount(xpath) {
-    var results = document.evaluate(xpath, document, null,
+    const results = document.evaluate(xpath, document, null,
         XPathResult.ANY_TYPE, null);
-    var count = 0;
+    let count = 0;
     while (results.iterateNext()) {
         ++count;
     }

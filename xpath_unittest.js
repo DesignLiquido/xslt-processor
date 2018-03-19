@@ -23,7 +23,7 @@ function exposeTestFunctionNames() {
     ];
 }
 
-var expr = [
+const expr = [
     "@*",
     "@*|node()",
     "/descendant-or-self::div",
@@ -324,12 +324,12 @@ var expr = [
 ];
 
 function testParse() {
-  for (var i = 0; i < expr.length; ++i) {
+  for (let i = 0; i < expr.length; ++i) {
     assert(expr[i], xpathParse(expr[i]));
   }
 }
 
-var numExpr = [
+const numExpr = [
     /* number expressions */
     [ "1+1", 2 ],
     [ "floor( -3.1415 )", -4 ],
@@ -405,13 +405,12 @@ var numExpr = [
 ];
 
 function testEval() {
-  for (var i = 0; i < numExpr.length; ++i) {
-    var ctx = new ExprContext(document.body);
+  for (const e of numExpr) {
+    let ctx = new ExprContext(document.body);
     ctx.setCaseInsensitive(true);
-    var e = numExpr[i];
     if (e[2]) {
-      for (var k in e[2]) {
-        var v = e[2][k];
+      for (const k in e[2]) {
+        const v = e[2][k];
         if (typeof v == 'number') {
           ctx.setVariable(k, new NumberValue(v));
         } else if (typeof v == 'string') {
@@ -447,7 +446,7 @@ function testEval() {
 // right node using the id. For axes that contain elements, we only
 // count the elements, so we don't have to worry about whitespace
 // normalization for the text nodes.
-var axisTests = [
+const axisTests = [
     [ "count(//*[@id='self']/ancestor-or-self::*)", 3 ],
     [ "count(//*[@id='self']/ancestor::*)", 2 ],
     [ "count(//*[@id='self']/attribute::node())", 1 ],
@@ -466,7 +465,7 @@ var axisTests = [
 ];
 
 function testAxes() {
-  var xml = [
+  const xml = [
       '<page>',
       ' <p></p>',
       ' <list id="parent">',
@@ -479,10 +478,10 @@ function testAxes() {
       ' <f></f>',
       '</page>'
   ].join("");
-  var ctx = new ExprContext(xmlParse(xml));
-  for (var i = 0; i < axisTests.length; ++i) {
-    var e = axisTests[i];
-    var result = xpathParse(e[0]).evaluate(ctx);
+  const ctx = new ExprContext(xmlParse(xml));
+
+  for (const e of axisTests) {
+    const result = xpathParse(e[0]).evaluate(ctx);
     if (typeof e[1] == 'number') {
       assertEquals(e[0], e[1], result.numberValue());
     } else if (typeof e[1] == 'string') {
@@ -495,21 +494,21 @@ function testAxes() {
 
 
 function testAttributeAsterisk() {
-  var ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
-  var expr = xpathParse("count(/x/@*)");
+  const ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
+  const expr = xpathParse("count(/x/@*)");
   assertEquals(2, expr.evaluate(ctx).numberValue());
 }
 
 
 // eval an xpath expression to a single node
 function evalNodeSet(expr, ctx) {
-  var expr1 = xpathParse(expr);
-  var e = expr1.evaluate(ctx);
+  const expr1 = xpathParse(expr);
+  const e = expr1.evaluate(ctx);
   return e.nodeSetValue();
 }
 
 function testEvalDom() {
-  var xml = [
+  const xml = [
       '<page>',
       '<request>',
       '<q>new york</q>',
@@ -522,7 +521,7 @@ function testEvalDom() {
 }
 
 function testEvalDomJapanese() {
-  var xml = [
+  const xml = [
       '<\u30da\u30fc\u30b8>',
       '<\u30ea\u30af\u30a8\u30b9\u30c8>',
       '<\u30af\u30a8\u30ea>\u6771\u4eac</\u30af\u30a8\u30ea>',
@@ -538,20 +537,20 @@ function testEvalDomJapanese() {
 }
 
 function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
-  var slashPage = '/' + page;
-  var slashPageLocationAtLat = '/' + page + '/' + location + '/@' + lat;
-  var slashPageLocationAtLon = '/' + page + '/' + location + '/@' + lon;
+  const slashPage = `/${page}`;
+  const slashPageLocationAtLat = `/${page}/${location}/@${lat}`;
+  const slashPageLocationAtLon = `/${page}/${location}/@${lon}`;
 
-  var ctx = new ExprContext(xmlParse(xml));
+  const ctx = new ExprContext(xmlParse(xml));
   // DGF if we have access to an official DOMParser, compare output with that also
-  var ctx1;
+  let ctx1;
   if (typeof(DOMParser) != 'undefined') {
     ctx1 = new ExprContext((new DOMParser).parseFromString(xml, 'text/xml'));
   } else {
     ctx1 = ctx;
   }
 
-  var ns = evalNodeSet(page, ctx);
+  let ns = evalNodeSet(page, ctx);
   assertEquals(page, ns.length, 1);
 
   ns = evalNodeSet(page, ctx1);
@@ -593,10 +592,10 @@ function testXMLValueAcrossBrowsers() {
   // this test should be run in various browsers to ensure that the
   // browser-specific properties innerText and textContent are being calculated
   // correctly
-  var node = document.createElement('div');
+  const node = document.createElement('div');
   node.innerHTML = '<p> Here is some <strong>funky </strong> text'
     + '<ul> <li>that contains</li> <li> spaces and stuff</li> </ul></p>';
-  var value = xmlValue(node);
+  const value = xmlValue(node);
   try {
     assertEquals(' Here is some funky  text that contains  spaces and stuff ',
       value);
@@ -613,7 +612,7 @@ function testHasPositionalPredicateDetermination() {
   // These XPaths all start with "//", which is equivalent to
   // "/descendant-or-self::node()/", a step unto itself. So we check the second
   // step for the positional predicate, not the first.
-  var tests = [
+  const tests = [
     [ "//a", false ]
     , [ "//a[1]", true ]
     , [ "//a[1][@foo]", true ]
@@ -631,16 +630,15 @@ function testHasPositionalPredicateDetermination() {
     , [ "//a[b[1]]", false ]
     , [ "//a[b[position()=1][2]]", false ]
   ];
-    
-  for (var i = 0; i < tests.length; ++i) {
-    var test = tests[i];
+
+  for (const test of tests) {
     assertEquals(test[0],
       xpathParse(test[0]).steps[1].hasPositionalPredicate, test[1]);
   }
 }
 
 function testReturnOnFirstMatch() {
-  var xml = '<body> \
+  const xml = '<body> \
     <a href="#">top</a> \
     <div> \
       <a href="http://code.google.com/p/ajaxslt">ajaxslt</a> \
@@ -648,31 +646,30 @@ function testReturnOnFirstMatch() {
         old site</a></p> \
     </div> \
   </body>';
-  var tests = [
+  const tests = [
     [ "//a", 3 ]
     , [ "//a[contains(@href, 'ajaxslt')]", 2 ]
     , [ "//div/descendant::a", 2 ]
     , [ "(//div | //p)/a", 2 ]
     , [ "(//a)[2]", 1 ]
   ];
-    
-  var parsedXML = xmlParse(xml);
-  var ctx = new ExprContext(parsedXML);
-  for (var i = 0; i < tests.length; ++i) {
-    var test = tests[i];
-    var expr = xpathParse(test[0]);
-        
+
+  const parsedXML = xmlParse(xml);
+  const ctx = new ExprContext(parsedXML);
+
+  for (const test of tests) {
+    const expr = xpathParse(test[0]);
+
     ctx.setReturnOnFirstMatch(false);
-    var normalResults = expr.evaluate(ctx);
-    assertEquals("normal results count: " + test[0], test[1],
+    const normalResults = expr.evaluate(ctx);
+    assertEquals(`normal results count: ${test[0]}`, test[1],
       normalResults.value.length);
-            
+
     ctx.setReturnOnFirstMatch(true);
-    var firstMatchResults = expr.evaluate(ctx);
-    assertEquals("first match results count: " + test[0], 1,
+    const firstMatchResults = expr.evaluate(ctx);
+    assertEquals(`first match results count: ${test[0]}`, 1,
       firstMatchResults.value.length);
-        
-    assertEquals("firstMatchResults[0] corresponds to normalResults[0]: "
-      + test[0], normalResults.value[0], firstMatchResults.value[0]);
+
+    assertEquals(`firstMatchResults[0] corresponds to normalResults[0]: ${test[0]}`, normalResults.value[0], firstMatchResults.value[0]);
   }
 }

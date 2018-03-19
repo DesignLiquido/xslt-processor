@@ -6,11 +6,11 @@
 
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
-function xpathLog(msg) {};
-function xsltLog(msg) {};
-function xsltLogXml(msg) {};
+function xpathLog(msg) {}
+function xsltLog(msg) {}
+function xsltLogXml(msg) {}
 
-var ajaxsltIsIE6 = navigator.appVersion.match(/MSIE 6.0/);
+const ajaxsltIsIE6 = navigator.appVersion.match(/MSIE 6.0/);
 
 // Throws an exception if false.
 function assert(b) {
@@ -23,14 +23,14 @@ function assert(b) {
 // the split() method of the string object, but IE omits empty
 // strings, which violates the invariant (s.split(x).join(x) == s).
 function stringSplit(s, c) {
-  var a = s.indexOf(c);
+  let a = s.indexOf(c);
   if (a == -1) {
     return [ s ];
   }
-  var parts = [];
+  const parts = [];
   parts.push(s.substr(0,a));
   while (a != -1) {
-    var a1 = s.indexOf(c, a + 1);
+    const a1 = s.indexOf(c, a + 1);
     if (a1 != -1) {
       parts.push(s.substr(a + 1, a1 - a - 1));
     } else {
@@ -52,21 +52,20 @@ function xmlImportNode(doc, node) {
     return domCreateCDATASection(doc, node.nodeValue);
 
   } else if (node.nodeType == DOM_ELEMENT_NODE) {
-    var newNode = domCreateElement(doc, node.nodeName);
-    for (var i = 0; i < node.attributes.length; ++i) {
-      var an = node.attributes[i];
-      var name = an.nodeName;
-      var value = an.nodeValue;
+    const newNode = domCreateElement(doc, node.nodeName);
+
+    for (const an of node.attributes) {
+      const name = an.nodeName;
+      const value = an.nodeValue;
       domSetAttribute(newNode, name, value);
     }
 
-    for (var c = node.firstChild; c; c = c.nextSibling) {
-      var cn = arguments.callee(doc, c);
+    for (let c = node.firstChild; c; c = c.nextSibling) {
+      const cn = arguments.callee(doc, c);
       domAppendChild(newNode, cn);
     }
 
     return newNode;
-
   } else {
     return domCreateComment(doc, node.nodeName);
   }
@@ -83,102 +82,103 @@ function xmlImportNode(doc, node) {
 // by the typed value. In particular, objects can't be used as keys.
 //
 // @constructor
-function Set() {
-  this.keys = [];
-}
-
-Set.prototype.size = function() {
-  return this.keys.length;
-}
-
-// Adds the entry to the set, ignoring if it is present.
-Set.prototype.add = function(key, opt_value) {
-  var value = opt_value || 1;
-  if (!this.contains(key)) {
-    this[':' + key] = value;
-    this.keys.push(key);
+class Set {
+  constructor() {
+    this.keys = [];
   }
-}
 
-// Sets the entry in the set, adding if it is not yet present.
-Set.prototype.set = function(key, opt_value) {
-  var value = opt_value || 1;
-  if (!this.contains(key)) {
-    this[':' + key] = value;
-    this.keys.push(key);
-  } else {
-    this[':' + key] = value;
+  size() {
+    return this.keys.length;
   }
-}
 
-// Increments the key's value by 1. This works around the fact that
-// numbers are always passed by value, never by reference, so that we
-// can't increment the value returned by get(), or the iterator
-// argument. Sets the key's value to 1 if it doesn't exist yet.
-Set.prototype.inc = function(key) {
-  if (!this.contains(key)) {
-    this[':' + key] = 1;
-    this.keys.push(key);
-  } else {
-    this[':' + key]++;
+  // Adds the entry to the set, ignoring if it is present.
+  add(key, opt_value) {
+    const value = opt_value || 1;
+    if (!this.contains(key)) {
+      this[`:${key}`] = value;
+      this.keys.push(key);
+    }
   }
-}
 
-Set.prototype.get = function(key) {
-  if (this.contains(key)) {
-    return this[':' + key];
-  } else {
-    var undefined;
-    return undefined;
+  // Sets the entry in the set, adding if it is not yet present.
+  set(key, opt_value) {
+    const value = opt_value || 1;
+    if (!this.contains(key)) {
+      this[`:${key}`] = value;
+      this.keys.push(key);
+    } else {
+      this[`:${key}`] = value;
+    }
   }
-}
 
-// Removes the entry from the set.
-Set.prototype.remove = function(key) {
-  if (this.contains(key)) {
-    delete this[':' + key];
-    removeFromArray(this.keys, key, true);
+  // Increments the key's value by 1. This works around the fact that
+  // numbers are always passed by value, never by reference, so that we
+  // can't increment the value returned by get(), or the iterator
+  // argument. Sets the key's value to 1 if it doesn't exist yet.
+  inc(key) {
+    if (!this.contains(key)) {
+      this[`:${key}`] = 1;
+      this.keys.push(key);
+    } else {
+      this[`:${key}`]++;
+    }
   }
-}
 
-// Tests if an entry is in the set.
-Set.prototype.contains = function(entry) {
-  return typeof this[':' + entry] != 'undefined';
-}
-
-// Gets a list of values in the set.
-Set.prototype.items = function() {
-  var list = [];
-  for (var i = 0; i < this.keys.length; ++i) {
-    var k = this.keys[i];
-    var v = this[':' + k];
-    list.push(v);
+  get(key) {
+    if (this.contains(key)) {
+      return this[`:${key}`];
+    } else {
+      let undefined;
+      return undefined;
+    }
   }
-  return list;
-}
 
-
-// Invokes function f for every key value pair in the set as a method
-// of the set.
-Set.prototype.map = function(f) {
-  for (var i = 0; i < this.keys.length; ++i) {
-    var k = this.keys[i];
-    f.call(this, k, this[':' + k]);
+  // Removes the entry from the set.
+  remove(key) {
+    if (this.contains(key)) {
+      delete this[`:${key}`];
+      removeFromArray(this.keys, key, true);
+    }
   }
-}
 
-Set.prototype.clear = function() {
-  for (var i = 0; i < this.keys.length; ++i) {
-    delete this[':' + this.keys[i]];
+  // Tests if an entry is in the set.
+  contains(entry) {
+    return typeof this[`:${entry}`] != 'undefined';
   }
-  this.keys.length = 0;
+
+  // Gets a list of values in the set.
+  items() {
+    const list = [];
+
+    for (const k of this.keys) {
+      const v = this[`:${k}`];
+      list.push(v);
+    }
+
+    return list;
+  }
+
+  // Invokes function f for every key value pair in the set as a method
+  // of the set.
+  map(f) {
+    for (const k of this.keys) {
+      f.call(this, k, this[`:${k}`]);
+    }
+  }
+
+  clear() {
+    for (let i = 0; i < this.keys.length; ++i) {
+      delete this[`:${this.keys[i]}`];
+    }
+    this.keys.length = 0;
+  }
 }
 
 
 // Applies the given function to each element of the array, preserving
 // this, and passing the index.
 function mapExec(array, func) {
-  for (var i = 0; i < array.length; ++i) {
+  for (let i = 0; i < array.length; ++i) {
     func.call(this, array[i], i);
   }
 }
@@ -186,18 +186,18 @@ function mapExec(array, func) {
 // Returns an array that contains the return value of the given
 // function applied to every element of the input array.
 function mapExpr(array, func) {
-  var ret = [];
-  for (var i = 0; i < array.length; ++i) {
+  const ret = [];
+  for (let i = 0; i < array.length; ++i) {
     ret.push(func(array[i]));
   }
   return ret;
-};
+}
 
 // Reverses the given array in place.
 function reverseInplace(array) {
-  for (var i = 0; i < array.length / 2; ++i) {
-    var h = array[i];
-    var ii = array.length - i - 1;
+  for (let i = 0; i < array.length / 2; ++i) {
+    const h = array[i];
+    const ii = array.length - i - 1;
     array[i] = array[ii];
     array[ii] = h;
   }
@@ -206,8 +206,8 @@ function reverseInplace(array) {
 // Removes value from array. Returns the number of instances of value
 // that were removed from array.
 function removeFromArray(array, value, opt_notype) {
-  var shift = 0;
-  for (var i = 0; i < array.length; ++i) {
+  let shift = 0;
+  for (let i = 0; i < array.length; ++i) {
     if (array[i] === value || (opt_notype && array[i] == value)) {
       array.splice(i--, 1);
       shift++;
@@ -220,8 +220,8 @@ function removeFromArray(array, value, opt_notype) {
 // Basically Array.concat, but works with other non-array collections
 function copyArray(dst, src) {
   if (!src) return;
-  var dstLength = dst.length;
-  for (var i = src.length - 1; i >= 0; --i) {
+  const dstLength = dst.length;
+  for (let i = src.length - 1; i >= 0; --i) {
     dst[i+dstLength] = src[i];
   }
 }
@@ -235,7 +235,7 @@ function copyArray(dst, src) {
 function copyArrayIgnoringAttributesWithoutValue(dst, src)
 {
   if (!src) return;
-  for (var i = src.length - 1; i >= 0; --i) {
+  for (let i = src.length - 1; i >= 0; --i) {
     // this test will pass so long as the attribute has a non-empty string
     // value, even if that value is "false", "0", "undefined", etc.
     if (src[i].nodeValue) {
@@ -253,7 +253,7 @@ function xmlValue(node, disallowBrowserSpecificOptimization) {
     return '';
   }
 
-  var ret = '';
+  let ret = '';
   if (node.nodeType == DOM_TEXT_NODE ||
       node.nodeType == DOM_CDATA_SECTION_NODE) {
     ret += node.nodeValue;
@@ -269,19 +269,19 @@ function xmlValue(node, disallowBrowserSpecificOptimization) {
              node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
     if (!disallowBrowserSpecificOptimization) {
       // IE, Safari, Opera, and friends
-      var innerText = node.innerText;
+      const innerText = node.innerText;
       if (innerText != undefined) {
         return innerText;
       }
       // Firefox
-      var textContent = node.textContent;
+      const textContent = node.textContent;
       if (textContent != undefined) {
         return textContent;
       }
     }
     // pobrecito!
-    var len = node.childNodes.length;
-    for (var i = 0; i < len; ++i) {
+    const len = node.childNodes.length;
+    for (let i = 0; i < len; ++i) {
       ret += arguments.callee(node.childNodes[i]);
     }
   }
@@ -290,8 +290,8 @@ function xmlValue(node, disallowBrowserSpecificOptimization) {
 
 function xmlValueIE6Hack(node) {
     // Issue 19, IE6 mangles href attribute when it's a javascript: url
-    var nodeName = node.nodeName;
-    var nodeValue = node.nodeValue;
+    const nodeName = node.nodeName;
+    const nodeValue = node.nodeValue;
     if (nodeName.length != 4) return nodeValue;
     if (!/^href$/i.test(nodeName)) return nodeValue;
     if (!/^javascript:/.test(nodeValue)) return nodeValue;
@@ -300,7 +300,7 @@ function xmlValueIE6Hack(node) {
 
 // Returns the representation of a node as XML text.
 function xmlText(node, opt_cdata) {
-  var buf = [];
+  const buf = [];
   xmlTextR(node, buf, opt_cdata);
   return buf.join('');
 }
@@ -313,19 +313,18 @@ function xmlTextR(node, buf, cdata) {
     if (cdata) {
       buf.push(node.nodeValue);
     } else {
-      buf.push('<![CDATA[' + node.nodeValue + ']]>');
+      buf.push(`<![CDATA[${node.nodeValue}]]>`);
     }
 
   } else if (node.nodeType == DOM_COMMENT_NODE) {
-    buf.push('<!--' + node.nodeValue + '-->');
+    buf.push(`<!--${node.nodeValue}-->`);
 
   } else if (node.nodeType == DOM_ELEMENT_NODE) {
-    buf.push('<' + xmlFullNodeName(node));
+    buf.push(`<${xmlFullNodeName(node)}`);
     for (var i = 0; i < node.attributes.length; ++i) {
-      var a = node.attributes[i];
+      const a = node.attributes[i];
       if (a && a.nodeName && a.nodeValue) {
-        buf.push(' ' + xmlFullNodeName(a) + '="' +
-                 xmlEscapeAttr(a.nodeValue) + '"');
+        buf.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
       }
     }
 
@@ -336,7 +335,7 @@ function xmlTextR(node, buf, cdata) {
       for (var i = 0; i < node.childNodes.length; ++i) {
         arguments.callee(node.childNodes[i], buf, cdata);
       }
-      buf.push('</' + xmlFullNodeName(node) + '>');
+      buf.push(`</${xmlFullNodeName(node)}>`);
     }
 
   } else if (node.nodeType == DOM_DOCUMENT_NODE ||
@@ -348,8 +347,8 @@ function xmlTextR(node, buf, cdata) {
 }
 
 function xmlFullNodeName(n) {
-  if (n.prefix && n.nodeName.indexOf(n.prefix + ':') != 0) {
-    return n.prefix + ':' + n.nodeName;
+  if (n.prefix && n.nodeName.indexOf(`${n.prefix}:`) != 0) {
+    return `${n.prefix}:${n.nodeName}`;
   } else {
     return n.nodeName;
   }
@@ -359,7 +358,7 @@ function xmlFullNodeName(n) {
 // reference start delimiter &. The escaped string can be used in XML
 // text portions (i.e. between tags).
 function xmlEscapeText(s) {
-  return ('' + s).replace(/&/g, '&amp;').replace(/</g, '&lt;').
+  return (`${s}`).replace(/&/g, '&amp;').replace(/</g, '&lt;').
     replace(/>/g, '&gt;');
 }
 
@@ -469,20 +468,18 @@ function windowClearInterval(win, id) {
  *
  * Based on: http://simonwillison.net/2006/Jan/20/escape/
  */
-RegExp.escape = (function() {
-  var specials = [
+RegExp.escape = ((() => {
+  const specials = [
     '/', '.', '*', '+', '?', '|', '^', '$',
     '(', ')', '[', ']', '{', '}', '\\'
   ];
-    
-  var sRE = new RegExp(
-    '(\\' + specials.join('|\\') + ')', 'g'
+
+  const sRE = new RegExp(
+    `(\\${specials.join('|\\')})`, 'g'
   );
-    
-  return function(text) {
-    return text.replace(sRE, '\\$1');
-  }
-})();
+
+  return text => text.replace(sRE, '\\$1')
+}))();
 
 /**
  * Determines whether a predicate expression contains a "positional selector".
@@ -501,7 +498,7 @@ function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
     return true;
   }
   if (expr instanceof FunctionCallExpr) {
-    var value = expr.name.value;
+    const value = expr.name.value;
     return (value == 'last' || value == 'position');
   }
   if (expr instanceof BinaryExpr) {
@@ -545,5 +542,3 @@ function exprReturnsNumberValue(expr) {
   }
   return false;
 }
-
-

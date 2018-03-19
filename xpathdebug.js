@@ -8,16 +8,16 @@ TokenExpr.prototype.toString = function() {
 }
 
 TokenExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[token] ' + this.value + '\n';
+  const ret = `${indent}[token] ${this.value}\n`;
   return ret;
 }
 
 LocationExpr.prototype.toString = function() {
-  var ret = '';
+  let ret = '';
   if (this.absolute) {
     ret += '/';
   }
-  for (var i = 0; i < this.steps.length; ++i) {
+  for (let i = 0; i < this.steps.length; ++i) {
     if (i > 0) {
       ret += '/';
     }
@@ -27,66 +27,53 @@ LocationExpr.prototype.toString = function() {
 }
 
 LocationExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[location] ' + 
-  (this.absolute ? 'absolute' : 'relative') + '\n';
-  for (var i = 0; i < this.steps.length; ++i) {
-    ret += this.steps[i].parseTree(indent + ' ');
-  }  
+  let ret = `${indent}[location] ${this.absolute ? 'absolute' : 'relative'}\n`;
+  for (let i = 0; i < this.steps.length; ++i) {
+    ret += this.steps[i].parseTree(`${indent} `);
+  }
   return ret;
 }
 
 StepExpr.prototype.toString = function() {
-  var ret = this.axis + '::' + this.nodetest.toString();
-  for (var i = 0; i < this.predicate.length; ++i) {
+  let ret = `${this.axis}::${this.nodetest.toString()}`;
+  for (let i = 0; i < this.predicate.length; ++i) {
     ret += this.predicate[i].toString();
   }
   return ret;
 }
 
 StepExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[step]\n' + 
-  indent + ' [axis] ' + this.axis + '\n' + 
-  this.nodetest.parseTree(indent + ' ');
-  for (var i = 0; i < this.predicate.length; ++i) {
-    ret += this.predicate[i].parseTree(indent + ' ');
-  }  
+  let ret = `${indent}[step]\n${indent} [axis] ${this.axis}\n${this.nodetest.parseTree(indent + ' ')}`;
+  for (let i = 0; i < this.predicate.length; ++i) {
+    ret += this.predicate[i].parseTree(`${indent} `);
+  }
   return ret;
 }
 
-NodeTestAny.prototype.toString = function() {
-  return 'node()';
-}
+NodeTestAny.prototype.toString = () => 'node()'
 
 NodeTestAny.prototype.parseTree = function(indent) {
-  return indent + '[nodetest] ' + this.toString() + '\n';
+  return `${indent}[nodetest] ${this.toString()}\n`;
 }
 
-NodeTestElementOrAttribute.prototype.toString = function() {
-  return '*';
-}
+NodeTestElementOrAttribute.prototype.toString = () => '*'
 
 NodeTestElementOrAttribute.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
-NodeTestText.prototype.toString = function() {
-  return 'text()';
-}
+NodeTestText.prototype.toString = () => 'text()'
 
 NodeTestText.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
-NodeTestComment.prototype.toString = function() {
-  return 'comment()';
-}
+NodeTestComment.prototype.toString = () => 'comment()'
 
 NodeTestComment.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
-NodeTestPI.prototype.toString = function() {
-  return 'processing-instruction()';
-}
+NodeTestPI.prototype.toString = () => 'processing-instruction()'
 
 NodeTestPI.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
 NodeTestNC.prototype.toString = function() {
-  return this.nsprefix + ':*';
+  return `${this.nsprefix}:*`;
 }
 
 NodeTestNC.prototype.parseTree = NodeTestAny.prototype.parseTree;
@@ -98,18 +85,18 @@ NodeTestName.prototype.toString = function() {
 NodeTestName.prototype.parseTree = NodeTestAny.prototype.parseTree;
 
 PredicateExpr.prototype.toString = function() {
-  var ret = '[' + this.expr.toString() + ']';
+  const ret = `[${this.expr.toString()}]`;
   return ret;
 }
 
 PredicateExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[predicate]\n' + this.expr.parseTree(indent + ' ');
+  const ret = `${indent}[predicate]\n${this.expr.parseTree(indent + ' ')}`;
   return ret;
 }
 
 FunctionCallExpr.prototype.toString = function() {
-  var ret = this.name.value + '(';
-  for (var i = 0; i < this.args.length; ++i) {
+  let ret = `${this.name.value}(`;
+  for (let i = 0; i < this.args.length; ++i) {
     if (i > 0) {
       ret += ', ';
     }
@@ -120,99 +107,87 @@ FunctionCallExpr.prototype.toString = function() {
 }
 
 FunctionCallExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[function call] ' + this.name.value + '\n';
-  for (var i = 0; i < this.args.length; ++i) {
-    ret += this.args[i].parseTree(indent + ' ');
+  let ret = `${indent}[function call] ${this.name.value}\n`;
+  for (let i = 0; i < this.args.length; ++i) {
+    ret += this.args[i].parseTree(`${indent} `);
   }
   return ret;
 }
 
 UnionExpr.prototype.toString = function() {
-  return this.expr1.toString() + ' | ' + this.expr2.toString();
+  return `${this.expr1.toString()} | ${this.expr2.toString()}`;
 }
 
 UnionExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[union]\n' + 
-  this.expr1.parseTree(indent + ' ') + 
-  this.expr2.parseTree(indent + ' ');
+  const ret = `${indent}[union]\n${this.expr1.parseTree(indent + ' ')}${this.expr2.parseTree(indent + ' ')}`;
   return ret;
 }
 
 PathExpr.prototype.toString = function() {
-  var ret = '{path: {' + this.filter.toString() + '} {' + this.rel.toString() + 
-  '}}';
+  const ret = `{path: {${this.filter.toString()}} {${this.rel.toString()}}}`;
   return ret;
 }
 
 PathExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[path]\n' + 
-  indent + '- filter:\n' +
-  this.filter.parseTree(indent + ' ') + 
-  indent + '- location path:\n' +
-  this.rel.parseTree(indent + ' ');
+  const ret = `${indent}[path]\n${indent}- filter:\n${this.filter.parseTree(indent + ' ')}${indent}- location path:\n${this.rel.parseTree(indent + ' ')}`;
   return ret;
 }
 
 FilterExpr.prototype.toString = function() {
-  var ret = this.expr.toString();
-  for (var i = 0; i < this.predicate.length; ++i) {
+  let ret = this.expr.toString();
+  for (let i = 0; i < this.predicate.length; ++i) {
     ret += this.predicate[i].toString();
   }
   return ret;
 }
 
 FilterExpr.prototype.parseTree = function(indent) {
-  var ret = indent + '[filter]\n' + 
-  indent + '- expr:\n' +
-  this.expr.parseTree(indent + ' ');
-  indent + '- predicates:\n';
-  for (var i = 0; i < this.predicate.length; ++i) {
-    ret += this.predicate[i].parseTree(indent + ' ');
+  let ret = `${indent}[filter]\n${indent}- expr:\n${this.expr.parseTree(indent + ' ')}`;
+  `${indent}- predicates:\n`;
+  for (let i = 0; i < this.predicate.length; ++i) {
+    ret += this.predicate[i].parseTree(`${indent} `);
   }
   return ret;
 }
 
 UnaryMinusExpr.prototype.toString = function() {
-  return '-' + this.expr.toString();
+  return `-${this.expr.toString()}`;
 }
 
 UnaryMinusExpr.prototype.parseTree = function(indent) {
-  return indent + '[unary] -\n' + this.expr.parseTree(indent + ' ');
+  return `${indent}[unary] -\n${this.expr.parseTree(indent + ' ')}`;
 }
 
 BinaryExpr.prototype.toString = function() {
-  return this.expr1.toString() + ' ' + this.op.value + ' ' + 
-  this.expr2.toString();
+  return `${this.expr1.toString()} ${this.op.value} ${this.expr2.toString()}`;
 }
 
 BinaryExpr.prototype.parseTree = function(indent) {
-  return indent + '[binary] ' + this.op.value + '\n' + 
-  this.expr1.parseTree(indent + ' ') + 
-  this.expr2.parseTree(indent + ' ');
+  return `${indent}[binary] ${this.op.value}\n${this.expr1.parseTree(indent + ' ')}${this.expr2.parseTree(indent + ' ')}`;
 }
 
 LiteralExpr.prototype.toString = function() {
-  return '"' + this.value + '"';
+  return `"${this.value}"`;
 }
 
 LiteralExpr.prototype.parseTree = function(indent) {
-  return indent + '[literal] ' + this.toString() + '\n';
+  return `${indent}[literal] ${this.toString()}\n`;
 }
 
 NumberExpr.prototype.toString = function() {
-  return '' + this.value;
+  return `${this.value}`;
 }
 
 NumberExpr.prototype.parseTree = function(indent) {
-  return indent + '[number] ' + this.toString() + '\n';
+  return `${indent}[number] ${this.toString()}\n`;
 }
 
 VariableExpr.prototype.toString = function() {
-  return '$' + this.name;
+  return `$${this.name}`;
 }
 
 VariableExpr.prototype.parseTree = function(indent) {
-  return indent + '[variable] ' + this.toString() + '\n';
+  return `${indent}[variable] ${this.toString()}\n`;
 }
 
 XNode.prototype.toString = function() {
@@ -220,12 +195,11 @@ XNode.prototype.toString = function() {
 }
 
 ExprContext.prototype.toString = function() {
-  return '[' + this.position + '/' + this.nodelist.length + '] ' + 
-  this.node.nodeName;
+  return `[${this.position}/${this.nodelist.length}] ${this.node.nodeName}`;
 }
 
 function Value_toString() {
-  return this.type + ': ' + this.value;
+  return `${this.type}: ${this.value}`;
 }
 
 StringValue.prototype.toString = Value_toString;
