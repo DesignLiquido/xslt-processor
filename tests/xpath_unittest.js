@@ -8,7 +8,7 @@
 //         Junji Takagi <jtakagi@google.com>
 
 import {xpathParse, ExprContext, StringValue, BooleanValue, NumberValue} from "../src/xpath.js"
-import {xmlValue, assertNotFalse} from "../src/util.js"
+import {xmlValue, assert} from "../src/util.js"
 import {xmlParse} from "../src/dom.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
@@ -329,7 +329,7 @@ const expr = [
 
 window.testParse = function() {
   for (let i = 0; i < expr.length; ++i) {
-    assertNotFalse(expr[i], xpathParse(expr[i]));
+    assert(expr[i], xpathParse(expr[i]));
   }
 }
 

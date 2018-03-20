@@ -22,7 +22,7 @@ import {
     DOM_COMMENT_NODE
 } from "./dom.js"
 // Throws an exception if false.
-export function assertNotFalse(b) {
+export function assert(b) {
     if (!b) {
         throw "Assertion failed";
     }

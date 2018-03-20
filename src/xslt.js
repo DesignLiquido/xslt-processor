@@ -90,7 +90,6 @@ function xsltProcessContext(input, template, output) {
     const nodename = template.nodeName.split(/:/);
     if (nodename.length == 1 || nodename[0] != 'xsl') {
         xsltPassThrough(input, template, output, outputDocument);
-
     } else {
         switch (nodename[1]) {
             case 'apply-imports':
@@ -113,17 +112,18 @@ function xsltProcessContext(input, template, output) {
                 const mode = xmlGetAttribute(template, 'mode');
                 var top = template.ownerDocument.documentElement;
                 const templates = [];
-                for (var i = 0; i < top.childNodes.length; ++i) {
-                    var c = top.childNodes[i];
+                for (let i = 0; i < top.childNodes.length; ++i) {
+                    let c = top.childNodes[i];
                     if (c.nodeType == DOM_ELEMENT_NODE &&
                         c.nodeName == 'xsl:template' &&
-                        c.getAttribute('mode') == mode) {
+                        (!mode || c.getAttribute('mode') == mode)
+                    ) {
                         templates.push(c);
                     }
                 }
                 for (let j = 0; j < sortContext.contextSize(); ++j) {
                     const nj = sortContext.nodelist[j];
-                    for (var i = 0; i < templates.length; ++i) {
+                    for (let i = 0; i < templates.length; ++i) {
                         xsltProcessContext(sortContext.clone(nj, j), templates[i], output);
                     }
                 }
@@ -628,7 +628,6 @@ function xsltCopy(dst, src, dstDocument) {
 // match (see [XSLT] section 5.2, paragraph 1).
 function xsltMatch(match, context) {
     const expr = xpathParse(match);
-
     let ret;
     // Shortcut for the most common case.
     if (expr.steps && !expr.absolute && expr.steps.length == 1 &&
@@ -651,6 +650,5 @@ function xsltMatch(match, context) {
             node = node.parentNode;
         }
     }
-
     return ret;
 }

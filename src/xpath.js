@@ -39,6 +39,7 @@
 // @return an expression object that can be evaluated with an
 // expression context.
 import {
+    assert,
     mapExec,
     mapExpr,
     reverseInplace,
@@ -848,10 +849,6 @@ export class StepExpr {
         if (this.nodetest instanceof NodeTestAny) {
             skipNodeTest = true;
         }
-
-        // NOTE(mesch): When this was a switch() statement, it didn't work
-        // in Safari/2.0. Not sure why though; it resulted in the JavaScript
-        // console output "undefined" (without any line number or so).
 
         if (this.axis == xpathAxis.ANCESTOR_OR_SELF) {
             nodelist.push(input);

@@ -8,6 +8,4 @@ XSLT-processor TODO
 
 - implement XPath extension functions conforming to the specification
 
-- verify XPath support in IE
-
 - Add more XSLT tests.
