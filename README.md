@@ -1,15 +1,30 @@
-XSLT-processor -- A JAVASCRIPT XSLT PROCESSOR LIBRARY
+XSLT-processor -- A JavaScript XSLT Processor Library
 ===========
 
-HOWTO
-======
+Howto
+----
+
+Install xslt-processor using npm::
+
+```
+npm install xslt-processor
+```
+
+Within your ES2015+ code, import the two main functions and apply them:
+
+```
+import {xsltProcess, xmlParse} from "xslt-processor"
+
+const xml = xmlParse(xmlString); // xmlString: string of xml file contents
+const xslt = xmlParse(xsltString); // xsltString: string of xslt file contents
+const outXmlString = xsltProcess(xml, xslt); // outXmlString: output xml string.
+```
+
+If you write pre-2015 JS code, make adjustments as needed.
 
 
-
-
-
-INTRODUCTION
-======
+Introduction
+----
 XSLT-processor is an implementation of XSLT in JavaScript. Because XSLT uses
 XPath, it is also an implementation of XPath that can be used
 independently of XSLT. This implementation has the advantange that it
@@ -30,8 +45,8 @@ generate a suitable DOM representation of the input documents if they
 are present as text.
 
 
-TESTS AND USAGE EXAMPLES
-======
+Tests and usage examples
+----
 The files ending in _unittest.html are jsunit test pages. See
 <http://www.jsunit.net/>.
 
@@ -42,8 +57,8 @@ HTTP server is needed.
 Both unit tests and interactive tests demonstrate the use of the
 library functions. There is not much more documentation so far.
 
-CONFORMANCE
-======
+Conformance
+----
 A few features that are required by the XSLT and XPath standards were
 left out. They are marked in the source code using alert()
 statements. See xslt.js.
@@ -59,8 +74,8 @@ There are a few nonstandard XPath functions. Grep xpath.js for "ext-"
 to see their definitions.
 
 
-REFERENCES
-======
+References
+----
 [XPATH] XPath Specification
      <http://www.w3.org/TR/1999/REC-xpath-19991116>.
 [XSLT] XSLT Specification
