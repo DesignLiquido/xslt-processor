@@ -85,49 +85,6 @@ const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
 const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
-// Splits string at delimiter when not inside of quotation marks
-function xmlSplit(str) {
-    let parts = [],
-        tag = false,
-        quotes = false,
-        doublequotes = false,
-        comment = false,
-        start = 0;
-    for (let i = 0; i < str.length; ++i) {
-        let char = str[i];
-        if (tag && char === "'") {
-            quotes = !quotes;
-        } else if (tag && char === "\"") {
-            doublequotes = !doublequotes;
-        } else if (tag && char === ">" && !quotes && !doublequotes) {
-            parts.push({type:'tag', text: str.slice(start, i)});
-            start = i + 1;
-            tag = false;
-            quotes = false;
-            doublequotes = false;
-        } else if (!tag && char === "<") {
-            parts.push(str.slice(start, i));
-            if (str.slice(i+1,i+4)==="!--") {
-                let endTagIndex = str.slice(i+4).indexOf('-->');
-                if (endTagIndex) {
-                    parts.push({type: 'comment', text: str.slice(i+4, i+endTagIndex+4)});
-                    i += endTagIndex+7;
-                }
-            } else if (str.slice(i+1,i+9)==="![CDATA[") {
-                let endTagIndex = str.slice(i+9).indexOf(']]>');
-                if (endTagIndex) {
-                    parts.push({type: 'cdata', text: str.slice(i+9, i+endTagIndex+9)});
-                    i += endTagIndex+12;
-                }
-            } else {
-                tag = true;
-            }
-            start = i + 1;
-        }
-    }
-    parts.push(str.slice(start));
-    return parts;
-}
 
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
@@ -163,48 +120,69 @@ export function xmlParse(xml) {
     let parent = root;
     stack.push(parent);
 
-    const x = xmlSplit(xml);
-    for (let i = 1; i < x.length; i=i+2) {
-        const tag = x[i];
-        const text = xmlResolveEntities(x[i+1]);
+    let tag = false,
+        quotes = false,
+        doublequotes = false,
+        start = 0;
+    for (let i = 0; i < xml.length; ++i) {
+        let char = xml.charAt(i);
+        if (tag && char === "'") {
+            quotes = !quotes;
+        } else if (tag && char === "\"") {
+            doublequotes = !doublequotes;
+        } else if (tag && char === ">" && !quotes && !doublequotes) {
+            let text = xml.slice(start, i);
+            if (text.charAt(0) == '/') {
+                stack.pop();
+                parent = stack[stack.length - 1];
+            } else if (text.charAt(0) == '?') {
+                // Ignore XML declaration and processing instructions
+            } else if (text.charAt(0) == '!') {
+                // Ignore malformed notation and comments
+            } else {
+                const empty = text.match(regex_empty);
+                const tagname = regex_tagname.exec(text)[1];
+                var node = domCreateElement(xmldoc, tagname);
 
-        if (tag.type === 'cdata') {
-            let node = domCreateCDATASection(xmldoc, tag.text);
-            domAppendChild(parent, node);
-            parent = node;
-            stack.push(node);
-        } else if (tag.type === 'comment') {
-            let node = domCreateComment(xmldoc, tag.text);
-            domAppendChild(parent, node);
-            parent = node;
-            stack.push(node);
-        } else if (tag.text.charAt(0) == '/') {
-            stack.pop();
-            parent = stack[stack.length - 1];
-        } else if (tag.text.charAt(0) == '?') {
-            // Ignore XML declaration and processing instructions
-        } else if (tag.text.charAt(0) == '!') {
-            // Ignore malformed notation and comments
-        } else {
-            const empty = tag.text.match(regex_empty);
-            const tagname = regex_tagname.exec(tag.text)[1];
-            var node = domCreateElement(xmldoc, tagname);
+                let att;
+                while (att = regex_attribute.exec(text)) {
+                    const val = xmlResolveEntities(att[5] || att[7] || '');
+                    domSetAttribute(node, att[1], val);
+                }
 
-            let att;
-            while (att = regex_attribute.exec(tag.text)) {
-                const val = xmlResolveEntities(att[5] || att[7] || '');
-                domSetAttribute(node, att[1], val);
+                domAppendChild(parent, node);
+                if (!empty) {
+                    parent = node;
+                    stack.push(node);
+                }
             }
-
-            domAppendChild(parent, node);
-            if (!empty) {
-                parent = node;
-                stack.push(node);
+            start = i + 1;
+            tag = false;
+            quotes = false;
+            doublequotes = false;
+        } else if (!tag && char === "<") {
+            let text = xml.slice(start, i)
+            if (text && parent != root) {
+                domAppendChild(parent, domCreateTextNode(xmldoc, text));
             }
-        }
-
-        if (text && parent != root) {
-            domAppendChild(parent, domCreateTextNode(xmldoc, text));
+            if (xml.slice(i+1,i+4)==="!--") {
+                let endTagIndex = xml.slice(i+4).indexOf('-->');
+                if (endTagIndex) {
+                    let node = domCreateComment(xmldoc, xml.slice(i+4, i+endTagIndex+4));
+                    domAppendChild(parent, node);
+                    i += endTagIndex+7;
+                }
+            } else if (xml.slice(i+1,i+9)==="![CDATA[") {
+                let endTagIndex = xml.slice(i+9).indexOf(']]>');
+                if (endTagIndex) {
+                    let node = domCreateCDATASection(xmldoc, xml.slice(i+9, i+endTagIndex+9));
+                    domAppendChild(parent, node);
+                    i += endTagIndex+12;
+                }
+            } else {
+                tag = true;
+            }
+            start = i + 1;
         }
     }
 
