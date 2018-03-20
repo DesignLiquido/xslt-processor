@@ -1,11 +1,3 @@
 XSLT-processor TODO
 
-- complete README: COMPLIANCE section
-
-- add HOWTO section to README
-
-- implement the W3C DOM binding for XPath and XSLT
-
-- implement XPath extension functions conforming to the specification
-
-- Add more XSLT tests.
+- Deal with namespaces (if namespaces are not the same in XSLT and XML document, matches do no occur.)
