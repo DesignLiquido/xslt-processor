@@ -1,0 +1,32 @@
+{
+  "name": "xslt-processor",
+  "version": "0.9.0",
+  "description": "a JavaScript XSLT Processor",
+  "main": "dist/xslt-processor.js",
+  "module": "src/index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup src/index.js -f cjs -o dist/xslt-processor.js",
+    "prepublish": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fiduswriter/xslt-processor.git"
+  },
+  "keywords": [
+    "xslt"
+  ],
+  "author": "Johannes Wilm",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/fiduswriter/xslt-processor/issues"
+  },
+  "homepage": "https://github.com/fiduswriter/xslt-processor#readme",
+  "devDependencies": {
+    "rollup": "^0.57.1"
+  }
+}
