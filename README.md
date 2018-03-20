@@ -12,7 +12,7 @@ npm install xslt-processor
 
 Within your ES2015+ code, import the two main functions and apply them:
 
-```
+```js
 import {xsltProcess, xmlParse} from "xslt-processor"
 
 const xml = xmlParse(xmlString); // xmlString: string of xml file contents
