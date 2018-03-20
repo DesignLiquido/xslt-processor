@@ -1,3 +1,4 @@
+// Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
 //
@@ -71,6 +72,24 @@ const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
 const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
+// Splits string at delimiter when not inside of quotation marks
+function escapedSplit(str, delimiter) {
+  let parts = [], quotes = false, doublequotes = false, start = 0;
+  for (let i = 0; i < str.length; ++i) {
+    let char = str[i];
+    if (char==="'") {
+      quotes = !quotes;
+    } else if (char==="\"") {
+      doublequotes = !doublequotes;
+    } else if (char===delimiter && !quotes && !doublequotes) {
+      parts.push(str.slice(start,i));
+      start = i+1;
+    }
+  }
+  parts.push(str.slice(start,str.length))
+  return parts;
+}
+
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
 export function xmlParse(xml) {
@@ -118,9 +137,9 @@ export function xmlParse(xml) {
   // content: CDATA or comments.
   let slurp = '';
 
-  const x = xml.split('<');
+  const x = escapedSplit(xml, '<');
   for (let i = 1; i < x.length; ++i) {
-    const xx = x[i].split('>');
+    const xx = escapedSplit(x[i],'>');
     const tag = xx[0];
     let text = xmlResolveEntities(xx[1] || '');
 

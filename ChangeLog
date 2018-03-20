@@ -1,3 +1,10 @@
+2018-03-20  Johannes Wilm <johannes@fiduswriter.org>
+
+	* Version 0.9
+	* Changed code to ES2015+ style
+	* Fixed a bug where xml parsing choked on < and > inside of quotation marks.
+	* Renamed to xslt-processor
+
 2007-11-16  Google Inc.  <opensource@google.com>
 
 	* Version 0.8
@@ -11,7 +18,7 @@
 
 	* Improved performance by relying on getElementsByTagName where
 	possible
-	
+
 	* Workaround IE bug where "javascript:" href attribute is URL
 	encoded.  (Issue 19)
 
@@ -39,7 +46,7 @@
 	for the selected node set to which templates are applied.
 
 	* Added unittests for all fixed bugs.
-	
+
 	* Added wrapper function xmlOwnerDocument() to uniformly access
 	the document on both document nodes and other nodes and use it
 	throughout the xslt processor.
@@ -85,22 +92,22 @@
 	* Version 0.4
 	* XPath changes:
 	  - Optimize parsing of very common and simple expressions.
-	  - Fix use of XPath operator names -- div, mod, and, or -- 
+	  - Fix use of XPath operator names -- div, mod, and, or --
 	    as node names in abbreviated step expressions.
 	  - Fix root node -- it is now set to ownerDocument.
-	* XSLT changes: 
+	* XSLT changes:
 	  - Fix xsl:sort in xsl:for-each.
 	* DOM changes:
 	  - Add replaceChild(), insertBefore(), removeChild().
-	    These are still not needed in XSLT processing, but 
+	    These are still not needed in XSLT processing, but
 	    in another client of the DOM implementation.
-	  - DOM nodes are recycled instead of garbage collected, 
+	  - DOM nodes are recycled instead of garbage collected,
 	    in order to improve performance in some browsers.
 	* Test changes:
 	  - Add many more test cases to the XPath tests.
 	  - Add a note mentioning jsunit in the README.
 	  - Add a DOM unittest file.
-	
+
 2005-08-27  Google Inc. <opensource@google.com>
 
 	* Version 0.3 (not released on sourceforge)
@@ -111,7 +118,7 @@
 	  - Fix filter expressions.
 	* XSLT changes:
 	  - Fix xsl:sort.
-	* DOM changes: 
+	* DOM changes:
 	  - Avoid using String.split() that breaks in IE.
 	  - Coerce nodeType to number and nodeName and nodeValue to string.
 	  - Fix SGML entity replacement of single quotes in attribute values.
@@ -119,7 +126,7 @@
 	  - Fix end tags of script elements in test HTML files.
 	  - Add jsunit tests for xpath.js.
 
-	
+
 2005-06-29  Google Inc. <opensource@google.com>
 
 	* Version 0.2

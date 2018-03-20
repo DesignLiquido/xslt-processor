@@ -1,3 +1,6 @@
+// Copyright 2018 Johannes Wilm
+// Copyright 2005, Google Inc.
+
 import {xpathParse} from "./xpath.js"
 
 window.exposeTestFunctionNames = function() {
