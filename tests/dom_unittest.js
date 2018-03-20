@@ -1,3 +1,4 @@
+// Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
 //
@@ -7,14 +8,16 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
+import {xmlResolveEntities, xmlParse} from "../src/dom.js"
+import {xmlText} from "../src/util.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************
-function exposeTestFunctionNames() {
+window.exposeTestFunctionNames = function() {
     return ['testXmlParse', 'testXmlParseWeird', 'testXmlParseJapanese', 'testXmlResolveEntities'];
 }
 
-function testXmlParse() {
+window.testXmlParse = function() {
   if (typeof(DOMParser) == 'undefined') return;
 
   const xml = [
@@ -26,8 +29,8 @@ function testXmlParse() {
       '</page>'
   ].join('');
 
-  dom = xmlParse(xml);
-  dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
+  let dom = xmlParse(xml);
+  let dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
   doTestXmlParse(dom, dom1);
 
   dom = xmlParse(`<?xml version="1.0"?>${xml}`);
@@ -45,7 +48,7 @@ function testXmlParse() {
   assertEquals(id, byId.getAttribute('id'));
 }
 
-function testXmlParseWeird() {
+window.testXmlParseWeird = function() {
 
   const xml = [
       '<_>',
@@ -59,12 +62,12 @@ function testXmlParseWeird() {
   // DOMParser seems not supporting a tagname that starts with ':', so
   // avoid comparing xmlParse() and DomParser.parseFromString() here.
 
-  dom = xmlParse(`<?xml version="1.0"?>${xml}`);
-  dom1 = xmlParse(`<?xml version='1.1'?>${xml}`);
+  let dom = xmlParse(`<?xml version="1.0"?>${xml}`);
+  let dom1 = xmlParse(`<?xml version='1.1'?>${xml}`);
   doTestXmlParse(dom, dom1);
 }
 
-function testXmlParseJapanese() {
+window.testXmlParseJapanese = function() {
   if (typeof(DOMParser) == 'undefined') return;
 
   const xml = [
@@ -77,8 +80,8 @@ function testXmlParseJapanese() {
       '</\u30da\u30fc\u30b8>'
   ].join('');
 
-  dom = xmlParse(xml);
-  dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
+  let dom = xmlParse(xml);
+  let dom1 = (new DOMParser).parseFromString(xml, 'text/xml');
   doTestXmlParse(dom, dom1);
 
   dom = xmlParse(`<?xml version="1.0"?>${xml}`);
@@ -126,6 +129,6 @@ function doTestXmlParse(dom, dom1) {
 }
 
 
-function testXmlResolveEntities() {
+window.testXmlResolveEntities = function() {
   assertEquals('";"', xmlResolveEntities('&quot;;&quot;'));
 }

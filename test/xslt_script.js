@@ -1,3 +1,4 @@
+// Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
 //
@@ -6,28 +7,34 @@
 //
 //
 // Author: Steffen Meschkat <mesch@google.com>
+import {
+    xmlParse
+} from "../src/dom.js"
+import {
+    xsltProcess
+} from "../src/xslt.js"
 
 logging = true;
 xsltdebug = true;
 
 function el(id) {
-  return document.getElementById(id);
+    return document.getElementById(id);
 }
 
 function test_xslt() {
-  var xml = xmlParse(el('xml').value);
-  var xslt = xmlParse(el('xslt').value);
-  var html = xsltProcess(xml, xslt);
-  el('html').value = html;
-  el('htmldisplay').innerHTML = html;
+    var xml = xmlParse(el('xml').value);
+    var xslt = xmlParse(el('xslt').value);
+    var html = xsltProcess(xml, xslt);
+    el('html').value = html;
+    el('htmldisplay').innerHTML = html;
 }
 
 function cleanxml() {
-  cleanvalue('xml');
-  cleanvalue('xslt');
+    cleanvalue('xml');
+    cleanvalue('xslt');
 }
 
 function cleanvalue(id) {
-  var x = el(id);
-  x.value = x.value.replace(/^\s*/, '').replace(/\n\s*/g, '\n');
+    var x = el(id);
+    x.value = x.value.replace(/^\s*/, '').replace(/\n\s*/g, '\n');
 }

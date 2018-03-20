@@ -1,11 +1,16 @@
-function exposeTestFunctionNames() {
+// Copyright 2018 Johannes Wilm
+// Copyright 2005, Google Inc.
+
+import {xpathParse} from "../src/xpath.js"
+
+window.exposeTestFunctionNames = function() {
     return [
         'testVsNativeImplementation'
     ];
 }
 
 // these tests are courtesy of http://www.llamalab.com/js/xpath/benchmark.html
-function testVsNativeImplementation() {
+window.testVsNativeImplementation = function() {
     if (!hasNativeXPath()) {
         return;
     }

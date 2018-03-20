@@ -1,12 +1,14 @@
+// Copyright 2018 Johannes Wilm
 // Copyright 2005-2006 Google
 //
 // Author: Steffen Meschkat <mesch@google.com>
 //
 // A very simple logging facility, used in test/xpath.html.
+import {xmlEscapeText} from "../src/util.js"
 
 const logging__ = true;
 
-class Log {
+export class Log {
   static write(s) {
     if (logging__) {
       this.lines.push(xmlEscapeText(s));
@@ -72,7 +74,7 @@ class Log {
 Log.lines = [];
 
 // Reimplement the log functions from util.js to use the simple log.
-function xpathLog(msg) {
+export function xpathLog(msg) {
   Log.write(msg);
 }
 function xsltLog(msg) {}
