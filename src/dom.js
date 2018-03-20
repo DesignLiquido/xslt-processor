@@ -91,6 +91,7 @@ function xmlSplit(str) {
         tag = false,
         quotes = false,
         doublequotes = false,
+        comment = false,
         start = 0;
     for (let i = 0; i < str.length; ++i) {
         let char = str[i];
@@ -99,18 +100,32 @@ function xmlSplit(str) {
         } else if (tag && char === "\"") {
             doublequotes = !doublequotes;
         } else if (tag && char === ">" && !quotes && !doublequotes) {
-            parts.push(str.slice(start, i));
+            parts.push({type:'tag', text: str.slice(start, i)});
             start = i + 1;
             tag = false;
             quotes = false;
             doublequotes = false;
         } else if (!tag && char === "<") {
             parts.push(str.slice(start, i));
+            if (str.slice(i+1,i+4)==="!--") {
+                let endTagIndex = str.slice(i+4).indexOf('-->');
+                if (endTagIndex) {
+                    parts.push({type: 'comment', text: str.slice(i+4, i+endTagIndex+4)});
+                    i += endTagIndex+7;
+                }
+            } else if (str.slice(i+1,i+9)==="![CDATA[") {
+                let endTagIndex = str.slice(i+9).indexOf(']]>');
+                if (endTagIndex) {
+                    parts.push({type: 'cdata', text: str.slice(i+9, i+endTagIndex+9)});
+                    i += endTagIndex+12;
+                }
+            } else {
+                tag = true;
+            }
             start = i + 1;
-            tag = true;
         }
     }
-    parts.push(str.slice(start, str.length))
+    parts.push(str.slice(start));
     return parts;
 }
 
@@ -143,94 +158,40 @@ export function xmlParse(xml) {
 
     const xmldoc = new XDocument();
     const root = xmldoc;
-
-    // For the record: in Safari, we would create native DOM nodes, but
-    // in Opera that is not possible, because the DOM only allows HTML
-    // element nodes to be created, so we have to do our own DOM nodes.
-
-    // xmldoc = document.implementation.createDocument('','',null);
-    // root = xmldoc; // .createDocumentFragment();
-    // NOTE(mesch): using the DocumentFragment instead of the Document
-    // crashes my Safari 1.2.4 (v125.12).
     const stack = [];
 
     let parent = root;
     stack.push(parent);
 
-    // The token that delimits a section that contains markup as
-    // content: CDATA or comments.
-    let slurp = '';
-
     const x = xmlSplit(xml);
     for (let i = 1; i < x.length; i=i+2) {
         const tag = x[i];
-        let text = xmlResolveEntities(x[i+1]);
+        const text = xmlResolveEntities(x[i+1]);
 
-        if (slurp) {
-            // In a "slurp" section (CDATA or comment): only check for the
-            // end of the section, otherwise append the whole text.
-            var end = x[i].indexOf(slurp);
-            if (end != -1) {
-                var data = x[i].substring(0, end);
-                parent.nodeValue += `<${data}`;
-                stack.pop();
-                parent = stack[stack.length - 1];
-                text = x[i].substring(end + slurp.length);
-                slurp = '';
-            } else {
-                parent.nodeValue += `<${x[i]}`;
-                text = null;
-            }
-
-        } else if (tag.indexOf('![CDATA[') == 0) {
-            var start = '![CDATA['.length;
-            var end = x[i].indexOf(']]>');
-            if (end != -1) {
-                var data = x[i].substring(start, end);
-                var node = domCreateCDATASection(xmldoc, data);
-                domAppendChild(parent, node);
-            } else {
-                var data = x[i].substring(start);
-                text = null;
-                var node = domCreateCDATASection(xmldoc, data);
-                domAppendChild(parent, node);
-                parent = node;
-                stack.push(node);
-                slurp = ']]>';
-            }
-
-        } else if (tag.indexOf('!--') == 0) {
-            var start = '!--'.length;
-            var end = x[i].indexOf('-->');
-            if (end != -1) {
-                var data = x[i].substring(start, end);
-                var node = domCreateComment(xmldoc, data);
-                domAppendChild(parent, node);
-            } else {
-                var data = x[i].substring(start);
-                text = null;
-                var node = domCreateComment(xmldoc, data);
-                domAppendChild(parent, node);
-                parent = node;
-                stack.push(node);
-                slurp = '-->';
-            }
-
-        } else if (tag.charAt(0) == '/') {
+        if (tag.type === 'cdata') {
+            let node = domCreateCDATASection(xmldoc, tag.text);
+            domAppendChild(parent, node);
+            parent = node;
+            stack.push(node);
+        } else if (tag.type === 'comment') {
+            let node = domCreateComment(xmldoc, tag.text);
+            domAppendChild(parent, node);
+            parent = node;
+            stack.push(node);
+        } else if (tag.text.charAt(0) == '/') {
             stack.pop();
             parent = stack[stack.length - 1];
-
-        } else if (tag.charAt(0) == '?') {
+        } else if (tag.text.charAt(0) == '?') {
             // Ignore XML declaration and processing instructions
-        } else if (tag.charAt(0) == '!') {
-            // Ignore notation and comments
+        } else if (tag.text.charAt(0) == '!') {
+            // Ignore malformed notation and comments
         } else {
-            const empty = tag.match(regex_empty);
-            const tagname = regex_tagname.exec(tag)[1];
+            const empty = tag.text.match(regex_empty);
+            const tagname = regex_tagname.exec(tag.text)[1];
             var node = domCreateElement(xmldoc, tagname);
 
             let att;
-            while (att = regex_attribute.exec(tag)) {
+            while (att = regex_attribute.exec(tag.text)) {
                 const val = xmlResolveEntities(att[5] || att[7] || '');
                 domSetAttribute(node, att[1], val);
             }
