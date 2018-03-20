@@ -86,20 +86,28 @@ const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
 // Splits string at delimiter when not inside of quotation marks
-function escapedSplit(str, delimiter) {
+function xmlSplit(str) {
     let parts = [],
+        tag = false,
         quotes = false,
         doublequotes = false,
         start = 0;
     for (let i = 0; i < str.length; ++i) {
         let char = str[i];
-        if (char === "'") {
+        if (tag && char === "'") {
             quotes = !quotes;
-        } else if (char === "\"") {
+        } else if (tag && char === "\"") {
             doublequotes = !doublequotes;
-        } else if (char === delimiter && !quotes && !doublequotes) {
+        } else if (tag && char === ">" && !quotes && !doublequotes) {
             parts.push(str.slice(start, i));
             start = i + 1;
+            tag = false;
+            quotes = false;
+            doublequotes = false;
+        } else if (!tag && char === "<") {
+            parts.push(str.slice(start, i));
+            start = i + 1;
+            tag = true;
         }
     }
     parts.push(str.slice(start, str.length))
@@ -153,11 +161,10 @@ export function xmlParse(xml) {
     // content: CDATA or comments.
     let slurp = '';
 
-    const x = escapedSplit(xml, '<');
-    for (let i = 1; i < x.length; ++i) {
-        const xx = escapedSplit(x[i], '>');
-        const tag = xx[0];
-        let text = xmlResolveEntities(xx[1] || '');
+    const x = xmlSplit(xml);
+    for (let i = 1; i < x.length; i=i+2) {
+        const tag = x[i];
+        let text = xmlResolveEntities(x[i+1]);
 
         if (slurp) {
             // In a "slurp" section (CDATA or comment): only check for the
