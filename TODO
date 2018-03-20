@@ -1,3 +1,0 @@
-XSLT-processor TODO
-
-- Deal with namespaces (if namespaces are not the same in XSLT and XML document, matches do no occur.)
