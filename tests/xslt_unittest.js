@@ -6,8 +6,8 @@
 //
 // Author: Steffen Meschkat <mesch@google.com>
 
-import {xsltProcess} from "./xslt.js"
-import {xmlParse} from "./dom.js"
+import {xsltProcess} from "../src/xslt.js"
+import {xmlParse} from "../src/dom.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************

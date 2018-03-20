@@ -7,7 +7,7 @@
 // <http://www.w3.org/TR/xml11/#sec-common-syn> and
 // <http://www.w3.org/TR/REC-xml-names/#NT-NCName> for the specifications.
 //
-// Author: Junji Takagi <jtakagi@google.com>
+// Original author: Junji Takagi <jtakagi@google.com>
 // Detect whether RegExp supports Unicode characters or not.
 export const REGEXP_UNICODE = (() => {
     const tests = [' ', '\u0120', -1, // Konquerer 3.4.0 fails here.

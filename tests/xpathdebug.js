@@ -5,7 +5,7 @@
 // Debug stuff for the XPath parser. Also used by XSLT.
 import {
     XNode
-} from "./dom.js"
+} from "../src/dom.js"
 import {
     ExprContext,
     StringValue,
@@ -32,7 +32,7 @@ import {
     LiteralExpr,
     NumberExpr,
     VariableExpr
-} from "./xpath.js"
+} from "../src/xpath.js"
 
 TokenExpr.prototype.toString = function() {
     return this.value;

@@ -9,10 +9,10 @@
 // Author: Steffen Meschkat <mesch@google.com>
 import {
     Log
-} from "../simplelog.js"
+} from "./simplelog.js"
 import {
     xpathParse
-} from "../xpath.js"
+} from "../src/xpath.js"
 
 logging = true;
 xpathdebug = true;

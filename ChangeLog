@@ -1,6 +1,6 @@
 2018-03-20  Johannes Wilm <johannes@fiduswriter.org>
 
-	* Version 0.9
+	* Version 0.9.0
 	* Changed code to ES2015+ style
 	* Fixed a bug where xml parsing choked on < and > inside of quotation marks.
 	* Renamed to xslt-processor

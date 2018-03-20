@@ -4,7 +4,7 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //
 // A very simple logging facility, used in test/xpath.html.
-import {xmlEscapeText} from "./util.js"
+import {xmlEscapeText} from "../src/util.js"
 
 const logging__ = true;
 

@@ -1,18 +1,18 @@
--*- mode: text -*- 
+-*- mode: text -*-
 
-AJAXSLT -- AN XSLT PROCESSOR LIBRARY FOR AJAX APPLICATIONS
+XSLT-processor -- A JAVASCRIPT XSLT PROCESSOR LIBRARY
 
 
 INTRODUCTION
 
- AJAXSLT is an implementation of XSLT in JavaScript. Because XSLT uses
+ XSLT-processor is an implementation of XSLT in JavaScript. Because XSLT uses
  XPath, it is also an implementation of XPath that can be used
  independently of XSLT. This implementation has the advantange that it
  makes XSLT uniformly available on more browsers than natively provide
  it, and that it can be extended to still more browsers if
  necessary.
 
- AJAXSLT is interesting for developers who strive aggressively for
+ XSLT-processor is interesting for developers who strive aggressively for
  cross browser compatibility of their advanced web applications.
 
  This implementation of XSLT operates at the DOM level on its input
@@ -28,9 +28,8 @@ INTRODUCTION
 TESTS AND USAGE EXAMPLES
 
  The files ending in _unittest.html are jsunit test pages. See
- <http://www.jsunit.net/>. There is a test runner online at
- <http://www.jsunit.net/runner/testRunner.html>.
- 
+ <http://www.jsunit.net/>.
+
  The files xslt.html and xpath.html in the directory test are
  interactive tests. They can be run directly from the file system; no
  HTTP server is needed.
@@ -53,42 +52,7 @@ CONFORMANCE
 
  There are a few nonstandard XPath functions. Grep xpath.js for "ext-"
  to see their definitions.
-
-
-BROWSER COMPATIBILITY
-
- The library works in these browsers:
  
- - Firefox/1.0, Firefox/1.5
-
- - Internet Explorer/6.0
-
- - Safari/1.2, Safari/1.3, Safari/2.0
-
- - Opera/8.0, Opera/8.5
-
- - Omniweb TODO(mesch): verify this.
-
-
-Remarks:
-
- Safari/1.2 JavaScript is very slow, and apply larger stylesheets
- usually results in Safari freezing for a few seconds, and showing
- the beach ball.
-
- Safari/2.0 has XSLT built in, but it is not exposed to JavaScript,
- but is only applied to XML documents that have a stylesheet
- declaration when they are loaded.
-
- Internet Explorer exposes XSLT via the transformNode() method on the
- XML DOM. However, this is not avaiable if ActiveX is disabled.
-
- Firefox exposes XSLT via the XSLTProcessor() object, and XPath in the
- document object in the DOM, so we don't need all this there.
-
- The library probably still works in Opera/7.5, but we don't
- explicitly support this browser version anymore.
-
 
 REFERENCES
 

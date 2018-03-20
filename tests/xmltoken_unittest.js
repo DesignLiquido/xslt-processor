@@ -17,7 +17,7 @@ import {
     XML11_ENTITY_REF,
     XML11_ATT_VALUE,
     XML_NC_NAME
-} from "./xmltoken.js"
+} from "../src/xmltoken.js"
 
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!

@@ -31,11 +31,7 @@
 // remaining XSLT features.
 //
 //
-// Author: Steffen Meschkat <mesch@google.com>
-import {
-    XDocument,
-    xmlResolveEntities
-} from "./dom.js"
+// Original author: Steffen Meschkat <mesch@google.com>
 import {
     xmlValue,
     xmlText,
@@ -58,6 +54,8 @@ import {
     xpathEval
 } from "./xpath.js"
 import {
+    XDocument,
+    xmlResolveEntities,
     DOM_DOCUMENT_NODE,
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_CDATA_SECTION_NODE,

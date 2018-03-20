@@ -32,16 +32,12 @@
 // that are used internally follow after them.
 //
 //
-// Author: Steffen Meschkat <mesch@google.com>
+// Original author: Steffen Meschkat <mesch@google.com>
 // The entry point for the parser.
 //
 // @param expr a string that contains an XPath expression.
 // @return an expression object that can be evaluated with an
 // expression context.
-import {
-    XNode
-} from "./dom.js"
-//import {xpathLog} from "./simplelog.js"
 import {
     mapExec,
     mapExpr,
@@ -56,6 +52,7 @@ import {
     XML_NC_NAME
 } from "./xmltoken.js"
 import {
+    XNode,
     DOM_DOCUMENT_NODE,
     DOM_ATTRIBUTE_NODE,
     DOM_ELEMENT_NODE,

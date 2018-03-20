@@ -7,9 +7,9 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
-import {xpathParse, ExprContext, StringValue, BooleanValue, NumberValue} from "./xpath.js"
-import {xmlValue, assertNotFalse} from "./util.js"
-import {xmlParse} from "./dom.js"
+import {xpathParse, ExprContext, StringValue, BooleanValue, NumberValue} from "../src/xpath.js"
+import {xmlValue, assertNotFalse} from "../src/util.js"
+import {xmlParse} from "../src/dom.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************

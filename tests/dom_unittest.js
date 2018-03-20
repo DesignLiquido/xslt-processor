@@ -8,8 +8,8 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 
-import {xmlResolveEntities, xmlParse} from "./dom.js"
-import {xmlText} from "./util.js"
+import {xmlResolveEntities, xmlParse} from "../src/dom.js"
+import {xmlText} from "../src/util.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************
