@@ -22,61 +22,11 @@ import {
     XML11_NAME,
     XML11_ATTRIBUTE
 } from "./xmltoken.js"
-// Resolve entities in XML text fragments. According to the DOM
-// specification, the DOM is supposed to resolve entity references at
-// the API level. I.e. no entity references are passed through the
-// API. See "Entities and the DOM core", p.12, DOM 2 Core
-// Spec. However, different browsers actually pass very different
-// values at the API. See <http://mesch.nyc/test-xml-quote>.
-export function xmlResolveEntities(s) {
+import he from "he"
 
-    const parts = s.split('&');
-
-    let ret = parts[0];
-    for (let i = 1; i < parts.length; ++i) {
-        const rp = parts[i].indexOf(';');
-        if (rp == -1) {
-            // no entity reference: just a & but no ;
-            ret += parts[i];
-            continue;
-        }
-
-        const entityName = parts[i].substring(0, rp);
-        const remainderText = parts[i].substring(rp + 1);
-
-        let ch;
-        switch (entityName) {
-            case 'lt':
-                ch = '<';
-                break;
-            case 'gt':
-                ch = '>';
-                break;
-            case 'amp':
-                ch = '&';
-                break;
-            case 'quot':
-                ch = '"';
-                break;
-            case 'apos':
-                ch = '\'';
-                break;
-            case 'nbsp':
-                ch = String.fromCharCode(160);
-                break;
-            default:
-                // Cool trick: let the DOM do the entity decoding. We assign
-                // the entity text through non-W3C DOM properties and read it
-                // through the W3C DOM. W3C DOM access is specified to resolve
-                // entities.
-                const span = domCreateElement(window.document, 'span');
-                span.innerHTML = `&${entityName}; `;
-                ch = span.childNodes[0].nodeValue.charAt(0);
-        }
-        ret += ch + remainderText;
-    }
-
-    return ret;
+// Resolve entities in XML text fragments
+export function xmlResolveEntities(str) {
+    return he.decode(str)
 }
 
 const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
