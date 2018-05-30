@@ -61,12 +61,13 @@ import {
     DOM_COMMENT_NODE,
     DOM_PROCESSING_INSTRUCTION_NODE
 } from "./dom.js"
+import {
+    toString
+} from "./xpathdebug.js"
 
-function xpathLog() {};
-
-export function xpathParse(expr) {
+export function xpathParse(expr, xpathLog=message=>{}) {
     xpathLog(`parse ${expr}`);
-    xpathParseInit();
+    xpathParseInit(xpathLog);
 
     const cached = xpathCacheLookup(expr);
     if (cached) {
@@ -166,7 +167,7 @@ export function xpathParse(expr) {
             done = true;
         }
 
-        while (xpathReduce(stack, ahead)) {
+        while (xpathReduce(stack, ahead, xpathLog)) {
             reduce_count++;
             xpathLog(`stack: ${stackToString(stack)}`);
         }
@@ -219,7 +220,7 @@ instead of immediately applying the rule candidate.
 Some tokens have left associativity, in which case we shift when they
 have LOWER precedence than the candidate.
 */
-function xpathReduce(stack, ahead) {
+function xpathReduce(stack, ahead, xpathLog) {
     let cand = null;
 
     if (stack.length > 0) {
@@ -255,7 +256,7 @@ function xpathReduce(stack, ahead) {
                       : ' none '}`);
 
         const matchexpr = mapExpr(cand.match, m => m.expr);
-        xpathLog(`going to apply ${cand.rule[3].toString()}`);
+        xpathLog(`going to apply ${toString(cand.rule[3])}`);
         cand.expr = cand.rule[3].apply(null, matchexpr);
 
         stack.push(cand);
@@ -690,10 +691,10 @@ export class NodeSetValue {
 //
 // evaluate(context) -- evaluates the expression, returns a value.
 //
-// toString() -- returns the XPath text representation of the
+// toString(expr) -- returns the XPath text representation of the
 // expression (defined in xsltdebug.js).
 //
-// parseTree(indent) -- returns a parse tree representation of the
+// parseTree(expr, indent) -- returns a parse tree representation of the
 // expression (defined in xsltdebug.js).
 
 export class TokenExpr {
@@ -1422,7 +1423,6 @@ export class FunctionCallExpr {
         if (f) {
             return f.call(this, ctx);
         } else {
-            xpathLog(`XPath NO SUCH FUNCTION ${fn}`);
             return new BooleanValue(false);
         }
     }
@@ -2538,7 +2538,7 @@ const xpathGrammarRules = [
 
 var xpathRules = [];
 
-function xpathParseInit() {
+function xpathParseInit(xpathLog) {
     if (xpathRules.length) {
         return;
     }

@@ -443,7 +443,7 @@ export class XNode {
 
 export class XDocument extends XNode {
     constructor() {
-        // NOTE(mesch): Acocording to the DOM Spec, ownerDocument of a
+        // NOTE(mesch): According to the DOM Spec, ownerDocument of a
         // document node is null.
         super(DOM_DOCUMENT_NODE, '#document', null, null);
         this.documentElement = null;

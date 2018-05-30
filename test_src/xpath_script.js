@@ -16,7 +16,9 @@ import {
 import {
     expr
 } from "../tests_src/xpath_unittest.js"
-
+import {
+    parseTree
+} from "../src/xpathdebug.js"
 
 window.logging = true;
 window.xpathdebug = true;
@@ -30,19 +32,20 @@ window.load_expr = () => {
     s.selectedIndex = 0;
 }
 
+let log = new Log()
+
 window.xpath_test = form => {
-    Log.clear();
+    log.clear();
     try {
         const i = form.cases.selectedIndex;
         const options = form.cases.options;
 
         const text = options[i].value;
-        Log.writeRaw(`<tt><b>${text}</b></tt>`);
+        log.writeRaw(`<tt><b>${text}</b></tt>`);
 
-        const expr = xpathParse(text);
-        console.log({expr});
-        Log.writeRaw(`<tt><b>${text}</b></tt>`);
-        //Log.writeRaw(`<pre>${expr.parseTree('')}</pre>`);
+        const expr = xpathParse(text, message => log.write(message));
+        log.writeRaw(`<tt><b>${text}</b></tt>`);
+        log.writeRaw(`<pre>${parseTree(expr, '')}</pre>`);
 
         options[i].selected = false;
         if (i < options.length - 1) {
@@ -52,6 +55,6 @@ window.xpath_test = form => {
         }
 
     } catch (e) {
-        Log.write(`EXCEPTION ${e}`);
+        log.write(`EXCEPTION ${e}`);
     }
 }
