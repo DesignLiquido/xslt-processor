@@ -7,8 +7,9 @@
 //
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
+import he from "he"
 
-import {xmlResolveEntities, xmlParse} from "../src/dom.js"
+import {xmlParse} from "../src/dom.js"
 import {xmlText} from "../src/util.js"
 //********************************************
 // DGF BEWARE!  You MUST update this function if you add tests!
@@ -130,5 +131,5 @@ function doTestXmlParse(dom, dom1) {
 
 
 window.testXmlResolveEntities = function() {
-  assertEquals('";"', xmlResolveEntities('&quot;;&quot;'));
+  assertEquals('";"', he.decode('&quot;;&quot;'));
 }

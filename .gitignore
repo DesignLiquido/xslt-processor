@@ -2,3 +2,5 @@ localtests/
 node_modules/
 dist/
 .git/
+test_dist/
+tests_dist/

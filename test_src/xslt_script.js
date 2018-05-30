@@ -14,27 +14,27 @@ import {
     xsltProcess
 } from "../src/xslt.js"
 
-logging = true;
-xsltdebug = true;
+window.logging = true;
+window.xsltdebug = true;
 
-function el(id) {
+window.el = function(id) {
     return document.getElementById(id);
 }
 
-function test_xslt() {
-    var xml = xmlParse(el('xml').value);
-    var xslt = xmlParse(el('xslt').value);
-    var html = xsltProcess(xml, xslt);
+window.test_xslt = function() {
+    const xml = xmlParse(el('xml').value);
+    const xslt = xmlParse(el('xslt').value);
+    const html = xsltProcess(xml, xslt);
     el('html').value = html;
     el('htmldisplay').innerHTML = html;
 }
 
-function cleanxml() {
+window.cleanxml = function() {
     cleanvalue('xml');
     cleanvalue('xslt');
 }
 
-function cleanvalue(id) {
-    var x = el(id);
+window.cleanvalue = function(id) {
+    const x = el(id);
     x.value = x.value.replace(/^\s*/, '').replace(/\n\s*/g, '\n');
 }

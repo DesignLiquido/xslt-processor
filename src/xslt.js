@@ -32,6 +32,8 @@
 //
 //
 // Original author: Steffen Meschkat <mesch@google.com>
+import he from "he"
+
 import {
     xmlValue,
     xmlText,
@@ -55,7 +57,6 @@ import {
 } from "./xpath.js"
 import {
     XDocument,
-    xmlResolveEntities,
     DOM_DOCUMENT_NODE,
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_CDATA_SECTION_NODE,
@@ -541,7 +542,7 @@ function xsltAttributeValue(value, context) {
 
 
 // Wrapper function to access attribute values of template element
-// nodes. Currently this calls xmlResolveEntities because in some DOM
+// nodes. Currently this calls he.decode because in some DOM
 // implementations the return value of node.getAttributeValue()
 // contains unresolved XML entities, although the DOM spec requires
 // that entity references are resolved by te DOM.
@@ -551,7 +552,7 @@ function xmlGetAttribute(node, name) {
     // application.
     const value = domGetAttribute(node, name);
     if (value) {
-        return xmlResolveEntities(value);
+        return he.decode(value);
     } else {
         return value;
     }

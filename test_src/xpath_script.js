@@ -14,10 +14,10 @@ import {
     xpathParse
 } from "../src/xpath.js"
 
-logging = true;
-xpathdebug = true;
+window.logging = true;
+window.xpathdebug = true;
 
-function load_expr() {
+window.load_expr = function () {
     var s = document.getElementById('s');
     for (var i = 0; i < expr.length; ++i) {
         var o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
@@ -26,7 +26,7 @@ function load_expr() {
     s.selectedIndex = 0;
 }
 
-function xpath_test(form) {
+window.xpath_test = function(form) {
     Log.clear();
     try {
         var i = form.cases.selectedIndex;

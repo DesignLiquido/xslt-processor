@@ -6,6 +6,8 @@
 //
 // An XML parse and a minimal DOM implementation that just supports
 // the subset of the W3C DOM that is used in the XSLT implementation.
+import he from "he"
+
 import {
     domSetAttribute,
     domAppendChild,
@@ -22,12 +24,7 @@ import {
     XML11_NAME,
     XML11_ATTRIBUTE
 } from "./xmltoken.js"
-import he from "he"
 
-// Resolve entities in XML text fragments
-export function xmlResolveEntities(str) {
-    return he.decode(str)
-}
 
 const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
 const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
@@ -96,7 +93,7 @@ export function xmlParse(xml) {
 
                 let att;
                 while (att = regex_attribute.exec(text)) {
-                    const val = xmlResolveEntities(att[5] || att[7] || '');
+                    const val = he.decode(att[5] || att[7] || '');
                     domSetAttribute(node, att[1], val);
                 }
 
