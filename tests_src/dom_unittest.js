@@ -90,7 +90,7 @@ window.testXmlParseJapanese = function() {
   doTestXmlParse(dom, dom1);
 }
 
-function doTestXmlParse(dom, dom1) {
+window.doTestXmlParse = function(dom, dom1) {
   assertEquals('xmlText', xmlText(dom), xmlText(dom1));
 
   assertEquals('#document',

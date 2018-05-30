@@ -27,7 +27,7 @@ window.exposeTestFunctionNames = function() {
     ];
 }
 
-const expr = [
+export const expr = [
     "@*",
     "@*|node()",
     "/descendant-or-self::div",

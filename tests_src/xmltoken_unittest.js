@@ -6,7 +6,6 @@
 //
 // Author: Junji Takagi <jtakagi@google.com>
 import {
-    REGEXP_UNICODE,
     XML_CHAR_REF,
     XML10_VERSION_INFO,
     XML10_NAME,
@@ -23,7 +22,7 @@ import {
 // DGF BEWARE!  You MUST update this function if you add tests!
 //********************************************
 window.exposeTestFunctionNames = function() {
-    return ['testRegexpUnicode', 'testXmlVersionInfo', 'testXmlCharRef', 'testXmlEntityRef', 'testXml10Name', 'testXml10Attribute', 'testXml11Name', 'testXml11Attribute', 'testXmlNcName'];
+    return ['testXmlVersionInfo', 'testXmlCharRef', 'testXmlEntityRef', 'testXml10Name', 'testXml10Attribute', 'testXml11Name', 'testXml11Attribute', 'testXmlNcName'];
 }
 
 // Test if regexp matches the str and RegExp.exec returns exactly the match.
@@ -80,11 +79,6 @@ function doTestXmlName(comment, regexp,
                 ngFirstChars[i] + ngSecondChars[j]);
         }
     }
-}
-
-// Test REGEXP_UNICODE to make sure the browser supports Unicode in RegExp.
-window.testRegexpUnicode = function() {
-    assertTrue('REGEXP_UNICODE', REGEXP_UNICODE);
 }
 
 // Test XML10_VERSION_INFO and XML11_VERSION_INFO.

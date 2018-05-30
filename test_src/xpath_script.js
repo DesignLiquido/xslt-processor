@@ -13,31 +13,36 @@ import {
 import {
     xpathParse
 } from "../src/xpath.js"
+import {
+    expr
+} from "../tests_src/xpath_unittest.js"
+
 
 window.logging = true;
 window.xpathdebug = true;
 
-window.load_expr = function () {
-    var s = document.getElementById('s');
-    for (var i = 0; i < expr.length; ++i) {
-        var o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
+window.load_expr = () => {
+    const s = document.getElementById('s');
+    for (let i = 0; i < expr.length; ++i) {
+        const o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
         s.options[s.options.length] = o;
     }
     s.selectedIndex = 0;
 }
 
-window.xpath_test = function(form) {
+window.xpath_test = form => {
     Log.clear();
     try {
-        var i = form.cases.selectedIndex;
-        var options = form.cases.options;
+        const i = form.cases.selectedIndex;
+        const options = form.cases.options;
 
-        var text = options[i].value;
-        Log.writeRaw('<tt><b>' + text + '</b></tt>');
+        const text = options[i].value;
+        Log.writeRaw(`<tt><b>${text}</b></tt>`);
 
-        var expr = xpathParse(text);
-        Log.writeRaw('<tt><b>' + text + '</b></tt>');
-        Log.writeRaw('<pre>' + expr.parseTree('') + '</pre>');
+        const expr = xpathParse(text);
+        console.log({expr});
+        Log.writeRaw(`<tt><b>${text}</b></tt>`);
+        //Log.writeRaw(`<pre>${expr.parseTree('')}</pre>`);
 
         options[i].selected = false;
         if (i < options.length - 1) {
@@ -47,6 +52,6 @@ window.xpath_test = function(form) {
         }
 
     } catch (e) {
-        Log.write('EXCEPTION ' + e);
+        Log.write(`EXCEPTION ${e}`);
     }
 }
