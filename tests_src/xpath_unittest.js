@@ -426,7 +426,7 @@ window.testEval = function() {
     }
     // allow exceptions to be caught and asserted upon
     try {
-      var result = xpathParse(e[0]).evaluate(ctx);
+      let result = xpathParse(e[0]).evaluate(ctx);
     }
     catch (ex) {
       assertEquals(ex, ex, e[1]);
@@ -575,7 +575,7 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
   assertEquals(slashPage, evalNodeSet(slashPage, ctx)[0].nodeName, page);
   assertEquals(slashPage, evalNodeSet(slashPage, ctx1)[0].nodeName, page);
 
-  var n = evalNodeSet(slashPageLocationAtLat, ctx)[0];
+  let n = evalNodeSet(slashPageLocationAtLat, ctx)[0];
   assertEquals(slashPageLocationAtLat, n.nodeName, lat);
   assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
 
@@ -583,7 +583,7 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
   assertEquals(slashPageLocationAtLat, n.nodeName, lat);
   assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
 
-  var n = evalNodeSet(slashPageLocationAtLon, ctx)[0];
+  let n = evalNodeSet(slashPageLocationAtLon, ctx)[0];
   assertEquals(slashPageLocationAtLon, n.nodeName, lon);
   assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
 

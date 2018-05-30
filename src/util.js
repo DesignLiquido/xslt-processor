@@ -159,7 +159,7 @@ function xmlTextR(node, buf, cdata) {
 
     } else if (node.nodeType == DOM_ELEMENT_NODE) {
         buf.push(`<${xmlFullNodeName(node)}`);
-        for (var i = 0; i < node.attributes.length; ++i) {
+        for (let i = 0; i < node.attributes.length; ++i) {
             const a = node.attributes[i];
             if (a && a.nodeName && a.nodeValue) {
                 buf.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
@@ -170,7 +170,7 @@ function xmlTextR(node, buf, cdata) {
             buf.push('/>');
         } else {
             buf.push('>');
-            for (var i = 0; i < node.childNodes.length; ++i) {
+            for (let i = 0; i < node.childNodes.length; ++i) {
                 xmlTextR(node.childNodes[i], buf, cdata);
             }
             buf.push(`</${xmlFullNodeName(node)}>`);
@@ -178,7 +178,7 @@ function xmlTextR(node, buf, cdata) {
 
     } else if (node.nodeType == DOM_DOCUMENT_NODE ||
         node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-        for (var i = 0; i < node.childNodes.length; ++i) {
+        for (let i = 0; i < node.childNodes.length; ++i) {
             xmlTextR(node.childNodes[i], buf, cdata);
         }
     }
@@ -316,7 +316,7 @@ export function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
 
 function exprReturnsNumberValue(expr) {
     if (expr instanceof FunctionCallExpr) {
-        var isMember = {
+        let isMember = {
             last: true,
             position: true,
             count: true,
@@ -331,7 +331,7 @@ function exprReturnsNumberValue(expr) {
     } else if (expr instanceof UnaryMinusExpr) {
         return true;
     } else if (expr instanceof BinaryExpr) {
-        var isMember = {
+        let isMember = {
             '+': true,
             '-': true,
             '*': true,

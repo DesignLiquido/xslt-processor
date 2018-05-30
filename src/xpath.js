@@ -82,14 +82,14 @@ export function xpathParse(expr, xpathLog=message=>{}) {
     // (page/overlay/locations/location).
 
     if (expr.match(/^(\$|@)?\w+$/i)) {
-        var ret = makeSimpleExpr(expr);
+        let ret = makeSimpleExpr(expr);
         xpathParseCache[expr] = ret;
         xpathLog(' ... simple');
         return ret;
     }
 
     if (expr.match(/^\w+(\/\w+)*$/i)) {
-        var ret = makeSimpleExpr2(expr);
+        let ret = makeSimpleExpr2(expr);
         xpathParseCache[expr] = ret;
         xpathLog(' ... simple 2');
         return ret;
@@ -115,7 +115,7 @@ export function xpathParse(expr, xpathLog=message=>{}) {
         let rule = null;
         let match = '';
         for (let i = 0; i < xpathTokenRules.length; ++i) {
-            var result = xpathTokenRules[i].re.exec(expr);
+            let result = xpathTokenRules[i].re.exec(expr);
             lexer_count++;
             if (result && result.length > 0 && result[0].length > match.length) {
                 rule = xpathTokenRules[i];
@@ -180,7 +180,7 @@ export function xpathParse(expr, xpathLog=message=>{}) {
         throw `XPath parse error ${cachekey}:\n${stackToString(stack)}`;
     }
 
-    var result = stack[0].expr;
+    let result = stack[0].expr;
     xpathParseCache[cachekey] = result;
 
     xpathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
@@ -228,7 +228,7 @@ function xpathReduce(stack, ahead, xpathLog) {
         const ruleset = xpathRules[top.tag.key];
 
         if (ruleset) {
-            for (var i = 0; i < ruleset.length; ++i) {
+            for (let i = 0; i < ruleset.length; ++i) {
                 const rule = ruleset[i];
                 const match = xpathMatchStack(stack, rule[1]);
                 if (match.length) {
@@ -247,7 +247,7 @@ function xpathReduce(stack, ahead, xpathLog) {
     let ret;
     if (cand && (!ahead || cand.prec > ahead.prec ||
             (ahead.tag.left && cand.prec >= ahead.prec))) {
-        for (var i = 0; i < cand.match.matchlength; ++i) {
+        for (let i = 0; i < cand.match.matchlength; ++i) {
             stack.pop();
         }
 
@@ -358,7 +358,7 @@ function xpathGrammarPrecedence(frame) {
 
         } else {
             for (let i = 0; i < frame.rule[1].length; ++i) {
-                var p = xpathTokenPrecedence(frame.rule[1][i]);
+                let p = xpathTokenPrecedence(frame.rule[1][i]);
                 ret = Math.max(ret, p);
             }
         }
@@ -367,7 +367,7 @@ function xpathGrammarPrecedence(frame) {
 
     } else if (frame.length) { /* Q_ match */
         for (let j = 0; j < frame.length; ++j) {
-            var p = xpathGrammarPrecedence(frame[j]);
+            let p = xpathGrammarPrecedence(frame[j]);
             ret = Math.max(ret, p);
         }
     }
@@ -777,7 +777,7 @@ function xPathStep(nodes, steps, step, input, ctx) {
     const ctx2 = ctx.clone(input);
 
     if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
-        var nodelist = s.evaluate(ctx2).nodeSetValue();
+        let nodelist = s.evaluate(ctx2).nodeSetValue();
         // the predicates were not processed in the last evaluate(), so that we can
         // process them here with the returnOnFirstMatch optimization. We do a
         // depth-first grab at any nodes that pass the predicate tests. There is no
@@ -788,7 +788,7 @@ function xPathStep(nodes, steps, step, input, ctx) {
         const nLength = nodelist.length;
         const pLength = s.predicate.length;
         nodelistLoop:
-            for (var i = 0; i < nLength; ++i) {
+            for (let i = 0; i < nLength; ++i) {
                 const n = nodelist[i];
                 for (let j = 0; j < pLength; ++j) {
                     if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
@@ -810,8 +810,8 @@ function xPathStep(nodes, steps, step, input, ctx) {
         // behavior in StepExpr.prototype.evaluate is driven off its value. Note
         // that the original context may still have true for this value.
         ctx2.returnOnFirstMatch = false;
-        var nodelist = s.evaluate(ctx2).nodeSetValue();
-        for (var i = 0; i < nodelist.length; ++i) {
+        let nodelist = s.evaluate(ctx2).nodeSetValue();
+        for (let i = 0; i < nodelist.length; ++i) {
             if (step == steps.length - 1) {
                 nodes.push(nodelist[i]);
             } else {
@@ -853,12 +853,12 @@ export class StepExpr {
 
         if (this.axis == xpathAxis.ANCESTOR_OR_SELF) {
             nodelist.push(input);
-            for (var n = input.parentNode; n; n = n.parentNode) {
+            for (let n = input.parentNode; n; n = n.parentNode) {
                 nodelist.push(n);
             }
 
         } else if (this.axis == xpathAxis.ANCESTOR) {
-            for (var n = input.parentNode; n; n = n.parentNode) {
+            for (let n = input.parentNode; n; n = n.parentNode) {
                 nodelist.push(n);
             }
 
@@ -902,25 +902,25 @@ export class StepExpr {
             if (this.nodetest.evaluate(ctx).booleanValue()) {
                 nodelist.push(input);
             }
-            var tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
             xpathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
 
         } else if (this.axis == xpathAxis.DESCENDANT) {
-            var tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
             xpathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
 
         } else if (this.axis == xpathAxis.FOLLOWING) {
-            for (var n = input; n; n = n.parentNode) {
-                for (var nn = n.nextSibling; nn; nn = nn.nextSibling) {
+            for (let n = input; n; n = n.parentNode) {
+                for (let nn = n.nextSibling; nn; nn = nn.nextSibling) {
                     nodelist.push(nn);
                     xpathCollectDescendants(nodelist, nn);
                 }
             }
 
         } else if (this.axis == xpathAxis.FOLLOWING_SIBLING) {
-            for (var n = input.nextSibling; n; n = n.nextSibling) {
+            for (let n = input.nextSibling; n; n = n.nextSibling) {
                 nodelist.push(n);
             }
 
@@ -933,15 +933,15 @@ export class StepExpr {
             }
 
         } else if (this.axis == xpathAxis.PRECEDING) {
-            for (var n = input; n; n = n.parentNode) {
-                for (var nn = n.previousSibling; nn; nn = nn.previousSibling) {
+            for (let n = input; n; n = n.parentNode) {
+                for (let nn = n.previousSibling; nn; nn = nn.previousSibling) {
                     nodelist.push(nn);
                     xpathCollectDescendantsReverse(nodelist, nn);
                 }
             }
 
         } else if (this.axis == xpathAxis.PRECEDING_SIBLING) {
-            for (var n = input.previousSibling; n; n = n.previousSibling) {
+            for (let n = input.previousSibling; n; n = n.previousSibling) {
                 nodelist.push(n);
             }
 
@@ -954,10 +954,10 @@ export class StepExpr {
 
         if (!skipNodeTest) {
             // process node test
-            var nodelist0 = nodelist;
+            let nodelist0 = nodelist;
             nodelist = [];
-            for (var i = 0; i < nodelist0.length; ++i) {
-                var n = nodelist0[i];
+            for (let i = 0; i < nodelist0.length; ++i) {
+                let n = nodelist0[i];
                 if (this.nodetest.evaluate(ctx.clone(n, i, nodelist0)).booleanValue()) {
                     nodelist.push(n);
                 }
@@ -966,11 +966,11 @@ export class StepExpr {
 
         // process predicates
         if (!ctx.returnOnFirstMatch) {
-            for (var i = 0; i < this.predicate.length; ++i) {
-                var nodelist0 = nodelist;
+            for (let i = 0; i < this.predicate.length; ++i) {
+                let nodelist0 = nodelist;
                 nodelist = [];
                 for (let ii = 0; ii < nodelist0.length; ++ii) {
-                    var n = nodelist0[ii];
+                    let n = nodelist0[ii];
                     if (this.predicate[i].evaluate(ctx.clone(n, ii, nodelist0)).booleanValue()) {
                         nodelist.push(n);
                     }
@@ -1098,7 +1098,7 @@ let xpathfunctions = {
         if (e.type == 'node-set') {
             ids = [];
             const en = e.nodeSetValue();
-            for (var i = 0; i < en.length; ++i) {
+            for (let i = 0; i < en.length; ++i) {
                 const v = xmlValue(en[i]).split(/\s+/);
                 for (let ii = 0; ii < v.length; ++ii) {
                     ids.push(v[ii]);
@@ -1108,7 +1108,7 @@ let xpathfunctions = {
             ids = e.stringValue().split(/\s+/);
         }
         const d = ctx.root;
-        for (var i = 0; i < ids.length; ++i) {
+        for (let i = 0; i < ids.length; ++i) {
             const n = d.getElementById(ids[i]);
             if (n) {
                 ret.push(n);
@@ -1216,13 +1216,13 @@ let xpathfunctions = {
         const s1 = this.args[1].evaluate(ctx).numberValue();
         let ret;
         if (this.args.length == 2) {
-            var i1 = Math.max(0, Math.round(s1) - 1);
+            let i1 = Math.max(0, Math.round(s1) - 1);
             ret = s0.substr(i1);
 
         } else {
             const s2 = this.args[2].evaluate(ctx).numberValue();
             const i0 = Math.round(s1) - 1;
-            var i1 = Math.max(0, i0);
+            let i1 = Math.max(0, i0);
             const i2 = Math.round(s2) - Math.max(0, -i0);
             ret = s0.substr(i1, i2);
         }
@@ -1267,14 +1267,14 @@ let xpathfunctions = {
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
         if (this.args.length > 2) {
-            var s2 = this.args[2].evaluate(ctx).stringValue();
+            let s2 = this.args[2].evaluate(ctx).stringValue();
             if (/[^mi]/.test(s2)) {
                 throw `Invalid regular expression syntax: ${s2}`;
             }
         }
 
         try {
-            var re = new RegExp(s1, s2);
+            let re = new RegExp(s1, s2);
         } catch (e) {
             throw `Invalid matches argument: ${s1}`;
         }
@@ -1466,7 +1466,7 @@ export class PathExpr {
         const nodes = this.filter.evaluate(ctx).nodeSetValue();
         let nodes1 = [];
         if (ctx.returnOnFirstMatch) {
-            for (var i = 0; i < nodes.length; ++i) {
+            for (let i = 0; i < nodes.length; ++i) {
                 nodes1 = this.rel.evaluate(ctx.clone(nodes[i], i, nodes)).nodeSetValue();
                 if (nodes1.length > 0) {
                     break;
@@ -1474,7 +1474,7 @@ export class PathExpr {
             }
             return new NodeSetValue(nodes1);
         } else {
-            for (var i = 0; i < nodes.length; ++i) {
+            for (let i = 0; i < nodes.length; ++i) {
                 const nodes0 = this.rel.evaluate(ctx.clone(nodes[i], i, nodes)).nodeSetValue();
                 for (let ii = 0; ii < nodes0.length; ++ii) {
                     nodes1.push(nodes0[ii]);
@@ -1625,12 +1625,12 @@ export class BinaryExpr {
         } else if (v1.type == 'node-set' || v2.type == 'node-set') {
 
             if (v1.type == 'number') {
-                var s = v1.numberValue();
-                var n = v2.nodeSetValue();
+                let s = v1.numberValue();
+                let n = v2.nodeSetValue();
 
                 ret = false;
-                for (var i = 0; i < n.length; ++i) {
-                    var nn = xmlValue(n[i]) - 0;
+                for (let i = 0; i < n.length; ++i) {
+                    let nn = xmlValue(n[i]) - 0;
                     if (cmp(s, nn)) {
                         ret = true;
                         break;
@@ -1638,12 +1638,12 @@ export class BinaryExpr {
                 }
 
             } else if (v2.type == 'number') {
-                var n = v1.nodeSetValue();
-                var s = v2.numberValue();
+                let n = v1.nodeSetValue();
+                let s = v2.numberValue();
 
                 ret = false;
-                for (var i = 0; i < n.length; ++i) {
-                    var nn = xmlValue(n[i]) - 0;
+                for (let i = 0; i < n.length; ++i) {
+                    let nn = xmlValue(n[i]) - 0;
                     if (cmp(nn, s)) {
                         ret = true;
                         break;
@@ -1651,12 +1651,12 @@ export class BinaryExpr {
                 }
 
             } else if (v1.type == 'string') {
-                var s = v1.stringValue();
-                var n = v2.nodeSetValue();
+                let s = v1.stringValue();
+                let n = v2.nodeSetValue();
 
                 ret = false;
-                for (var i = 0; i < n.length; ++i) {
-                    var nn = xmlValue(n[i]);
+                for (let i = 0; i < n.length; ++i) {
+                    let nn = xmlValue(n[i]);
                     if (cmp(s, nn)) {
                         ret = true;
                         break;
@@ -1664,12 +1664,12 @@ export class BinaryExpr {
                 }
 
             } else if (v2.type == 'string') {
-                var n = v1.nodeSetValue();
-                var s = v2.stringValue();
+                let n = v1.nodeSetValue();
+                let s = v2.stringValue();
 
                 ret = false;
-                for (var i = 0; i < n.length; ++i) {
-                    var nn = xmlValue(n[i]);
+                for (let i = 0; i < n.length; ++i) {
+                    let nn = xmlValue(n[i]);
                     if (cmp(nn, s)) {
                         ret = true;
                         break;
@@ -1932,17 +1932,17 @@ function makeSimpleExpr(expr) {
     if (expr.charAt(0) == '$') {
         return new VariableExpr(expr.substr(1));
     } else if (expr.charAt(0) == '@') {
-        var a = new NodeTestName(expr.substr(1));
-        var b = new StepExpr('attribute', a);
-        var c = new LocationExpr();
+        let a = new NodeTestName(expr.substr(1));
+        let b = new StepExpr('attribute', a);
+        let c = new LocationExpr();
         c.appendStep(b);
         return c;
     } else if (expr.match(/^[0-9]+$/)) {
         return new NumberExpr(expr);
     } else {
-        var a = new NodeTestName(expr);
-        var b = new StepExpr('child', a);
-        var c = new LocationExpr();
+        let a = new NodeTestName(expr);
+        let b = new StepExpr('child', a);
+        let c = new LocationExpr();
         c.appendStep(b);
         return c;
     }
@@ -2536,7 +2536,7 @@ const xpathGrammarRules = [
 // structures and will be called right here. It merely takes the
 // counter variables out of the global scope.
 
-var xpathRules = [];
+let xpathRules = [];
 
 function xpathParseInit(xpathLog) {
     if (xpathRules.length) {
@@ -2560,7 +2560,7 @@ function xpathParseInit(xpathLog) {
     });
 
     let k = 1;
-    for (var i = 0; i < xpathNonTerminals.length; ++i) {
+    for (let i = 0; i < xpathNonTerminals.length; ++i) {
         xpathNonTerminals[i].key = k++;
     }
 
@@ -2675,7 +2675,7 @@ export function xpathSort(input, sort) {
 
     const sortlist = [];
 
-    for (var i = 0; i < input.contextSize(); ++i) {
+    for (let i = 0; i < input.contextSize(); ++i) {
         const node = input.nodelist[i];
         const sortitem = {
             node,
@@ -2712,7 +2712,7 @@ export function xpathSort(input, sort) {
     sortlist.sort(xpathSortByKey);
 
     const nodes = [];
-    for (var i = 0; i < sortlist.length; ++i) {
+    for (let i = 0; i < sortlist.length; ++i) {
         nodes.push(sortlist[i].node);
     }
     input.nodelist = nodes;

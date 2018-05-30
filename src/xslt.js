@@ -98,8 +98,8 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'apply-templates':
-                var select = xmlGetAttribute(template, 'select');
-                var nodes;
+                let select = xmlGetAttribute(template, 'select');
+                let nodes;
                 if (select) {
                     nodes = xpathEval(select, input).nodeSetValue();
                 } else {
@@ -111,7 +111,7 @@ function xsltProcessContext(input, template, output) {
                 xsltSort(sortContext, template);
 
                 const mode = xmlGetAttribute(template, 'mode');
-                var top = template.ownerDocument.documentElement;
+                let top = template.ownerDocument.documentElement;
                 const templates = [];
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
@@ -131,11 +131,11 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'attribute':
-                var nameexpr = xmlGetAttribute(template, 'name');
-                var name = xsltAttributeValue(nameexpr, input);
-                var node = domCreateDocumentFragment(outputDocument);
+                let nameexpr = xmlGetAttribute(template, 'name');
+                let name = xsltAttributeValue(nameexpr, input);
+                let node = domCreateDocumentFragment(outputDocument);
                 xsltChildNodes(input, template, node);
-                var value = xmlValue(node);
+                let value = xmlValue(node);
                 domSetAttribute(output, name, value);
                 break;
 
@@ -144,14 +144,14 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'call-template':
-                var name = xmlGetAttribute(template, 'name');
-                var top = template.ownerDocument.documentElement;
+                let name = xmlGetAttribute(template, 'name');
+                let top = template.ownerDocument.documentElement;
 
                 const paramContext = input.clone();
                 xsltWithParam(paramContext, template);
 
-                for (var i = 0; i < top.childNodes.length; ++i) {
-                    var c = top.childNodes[i];
+                for (let i = 0; i < top.childNodes.length; ++i) {
+                    let c = top.childNodes[i];
                     if (c.nodeType == DOM_ELEMENT_NODE &&
                         c.nodeName == 'xsl:template' &&
                         domGetAttribute(c, 'name') == name) {
@@ -166,7 +166,7 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'comment':
-                var node = domCreateDocumentFragment(outputDocument);
+                let node = domCreateDocumentFragment(outputDocument);
                 xsltChildNodes(input, template, node);
                 const commentData = xmlValue(node);
                 const commentNode = domCreateComment(outputDocument, commentData);
@@ -174,23 +174,23 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'copy':
-                var node = xsltCopy(output, input.node, outputDocument);
+                let node = xsltCopy(output, input.node, outputDocument);
                 if (node) {
                     xsltChildNodes(input, template, node);
                 }
                 break;
 
             case 'copy-of':
-                var select = xmlGetAttribute(template, 'select');
-                var value = xpathEval(select, input);
+                let select = xmlGetAttribute(template, 'select');
+                let value = xpathEval(select, input);
                 if (value.type == 'node-set') {
-                    var nodes = value.nodeSetValue();
-                    for (var i = 0; i < nodes.length; ++i) {
+                    let nodes = value.nodeSetValue();
+                    for (let i = 0; i < nodes.length; ++i) {
                         xsltCopyOf(output, nodes[i], outputDocument);
                     }
 
                 } else {
-                    var node = domCreateTextNode(outputDocument, value.stringValue());
+                    let node = domCreateTextNode(outputDocument, value.stringValue());
                     domAppendChild(output, node);
                 }
                 break;
@@ -200,9 +200,9 @@ function xsltProcessContext(input, template, output) {
                 break;
 
             case 'element':
-                var nameexpr = xmlGetAttribute(template, 'name');
-                var name = xsltAttributeValue(nameexpr, input);
-                var node = domCreateElement(outputDocument, name);
+                let nameexpr = xmlGetAttribute(template, 'name');
+                let name = xsltAttributeValue(nameexpr, input);
+                let node = domCreateElement(outputDocument, name);
                 domAppendChild(output, node);
                 xsltChildNodes(input, template, node);
                 break;
@@ -287,14 +287,14 @@ function xsltProcessContext(input, template, output) {
 
             case 'text':
                 const text = xmlValue(template);
-                var node = domCreateTextNode(outputDocument, text);
+                let node = domCreateTextNode(outputDocument, text);
                 output.appendChild(node);
                 break;
 
             case 'value-of':
-                var select = xmlGetAttribute(template, 'select');
-                var value = xpathEval(select, input).stringValue();
-                var node = domCreateTextNode(outputDocument, value);
+                let select = xmlGetAttribute(template, 'select');
+                let value = xpathEval(select, input).stringValue();
+                let node = domCreateTextNode(outputDocument, value);
                 output.appendChild(node);
                 break;
 
@@ -455,12 +455,12 @@ function xsltChildNodes(input, template, output) {
 function xsltPassThrough(input, template, output, outputDocument) {
     if (template.nodeType == DOM_TEXT_NODE) {
         if (xsltPassText(template)) {
-            var node = domCreateTextNode(outputDocument, template.nodeValue);
+            let node = domCreateTextNode(outputDocument, template.nodeValue);
             domAppendChild(output, node);
         }
 
     } else if (template.nodeType == DOM_ELEMENT_NODE) {
-        var node = domCreateElement(outputDocument, template.nodeName);
+        let node = domCreateElement(outputDocument, template.nodeName);
 
         for (const a of template.attributes) {
             if (a) {
@@ -570,7 +570,7 @@ function xmlGetAttribute(node, name) {
 function xsltCopyOf(dst, src, dstDocument) {
     if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE ||
         src.nodeType == DOM_DOCUMENT_NODE) {
-        for (var i = 0; i < src.childNodes.length; ++i) {
+        for (let i = 0; i < src.childNodes.length; ++i) {
             xsltCopyOf(dst, src.childNodes[i], dstDocument);
         }
     } else {
@@ -578,11 +578,11 @@ function xsltCopyOf(dst, src, dstDocument) {
         if (node) {
             // This was an element node -- recurse to attributes and
             // children.
-            for (var i = 0; i < src.attributes.length; ++i) {
+            for (let i = 0; i < src.attributes.length; ++i) {
                 xsltCopyOf(node, src.attributes[i], dstDocument);
             }
 
-            for (var i = 0; i < src.childNodes.length; ++i) {
+            for (let i = 0; i < src.childNodes.length; ++i) {
                 xsltCopyOf(node, src.childNodes[i], dstDocument);
             }
         }
@@ -600,21 +600,21 @@ function xsltCopyOf(dst, src, dstDocument) {
 
 function xsltCopy(dst, src, dstDocument) {
     if (src.nodeType == DOM_ELEMENT_NODE) {
-        var node = domCreateElement(dstDocument, src.nodeName);
+        let node = domCreateElement(dstDocument, src.nodeName);
         domAppendChild(dst, node);
         return node;
     }
 
     if (src.nodeType == DOM_TEXT_NODE) {
-        var node = domCreateTextNode(dstDocument, src.nodeValue);
+        let node = domCreateTextNode(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
 
     } else if (src.nodeType == DOM_CDATA_SECTION_NODE) {
-        var node = domCreateCDATASection(dstDocument, src.nodeValue);
+        let node = domCreateCDATASection(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
 
     } else if (src.nodeType == DOM_COMMENT_NODE) {
-        var node = domCreateComment(dstDocument, src.nodeValue);
+        let node = domCreateComment(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
 
     } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {

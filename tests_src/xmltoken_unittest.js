@@ -43,14 +43,14 @@ function doTestXmlName(comment, regexp,
     okFirstChars, ngFirstChars,
     okSecondChars, ngSecondChars) {
     const okSecondString = okSecondChars.join('');
-    for (var i = 0; i < okFirstChars.length; i++) {
+    for (let i = 0; i < okFirstChars.length; i++) {
         assertOk(`${comment} with ok #${i}`, regexp,
             okFirstChars[i],
             okFirstChars[i]);
         assertOk(`${comment} with ok #${i} + oks`, regexp,
             okFirstChars[i] + okSecondString,
             okFirstChars[i] + okSecondString);
-        for (var j = 0; j < okSecondChars.length; j++) {
+        for (let j = 0; j < okSecondChars.length; j++) {
             assertOk(`${comment} with ok #${i} + ok #${j}`, regexp,
                 okFirstChars[i] + okSecondChars[j],
                 okFirstChars[i] + okSecondChars[j]);
@@ -62,7 +62,7 @@ function doTestXmlName(comment, regexp,
                 okFirstChars[i] + okSecondChars[j] + ngSecondChars[k],
                 okFirstChars[i] + okSecondChars[j]);
         }
-        var j = i % ngSecondChars.length;
+        let j = i % ngSecondChars.length;
         assertOk(`${comment} with ok #${i} + ng #${j}`, regexp,
             okFirstChars[i] + ngSecondChars[j],
             okFirstChars[i]);
@@ -70,11 +70,11 @@ function doTestXmlName(comment, regexp,
             okFirstChars[i] + okSecondString + ngSecondChars[j],
             okFirstChars[i] + okSecondString);
     }
-    for (var i = 0; i < ngFirstChars.length; i++) {
+    for (let i = 0; i < ngFirstChars.length; i++) {
         assertNg(`${comment} with ng #${i}`, regexp,
             ngFirstChars[i]);
         // It doesn't make sense to test with ngFirstChars[i] + okSecondChars[j].
-        for (var j = 0; j < ngSecondChars.length; j++) {
+        for (let j = 0; j < ngSecondChars.length; j++) {
             assertNg(`${comment} with ng #${i} + ng #${j}`, regexp,
                 ngFirstChars[i] + ngSecondChars[j]);
         }
@@ -155,21 +155,21 @@ window.testXmlVersionInfo = function() {
         ' version="1_1"' // Must be '1.1'
     ];
 
-    var regexp = new RegExp(XML10_VERSION_INFO);
-    for (var i = 0; i < okVersion10.length; i++) {
+    let regexp = new RegExp(XML10_VERSION_INFO);
+    for (let i = 0; i < okVersion10.length; i++) {
         assertOk(`XML10_VERSION_INFO with ok #${i}`, regexp,
             okVersion10[i], okVersion10[i]);
     }
-    for (var i = 0; i < ngVersion10.length; i++) {
+    for (let i = 0; i < ngVersion10.length; i++) {
         assertNg(`XML10_VERSION_INFO with ng #${i}`, regexp,
             ngVersion10[i]);
     }
-    var regexp = new RegExp(XML11_VERSION_INFO);
-    for (var i = 0; i < okVersion11.length; i++) {
+    let regexp = new RegExp(XML11_VERSION_INFO);
+    for (let i = 0; i < okVersion11.length; i++) {
         assertOk(`XML11_VERSION_INFO with ok #${i}`, regexp,
             okVersion11[i], okVersion11[i]);
     }
-    for (var i = 0; i < ngVersion11.length; i++) {
+    for (let i = 0; i < ngVersion11.length; i++) {
         assertNg(`XML11_VERSION_INFO with ng #${i}`, regexp,
             ngVersion11[i]);
     }
@@ -263,11 +263,11 @@ window.testXmlCharRef = function() {
     ];
 
     const regexp = new RegExp(XML_CHAR_REF);
-    for (var i = 0; i < okCharRef.length; i++) {
+    for (let i = 0; i < okCharRef.length; i++) {
         assertOk(`XML_CHAR_REF with ok #${i}`, regexp,
             okCharRef[i], okCharRef[i]);
     }
-    for (var i = 0; i < ngCharRef.length; i++) {
+    for (let i = 0; i < ngCharRef.length; i++) {
         assertNg(`XML_CHAR_REF with ng #${i}`, regexp,
             ngCharRef[i]);
     }
@@ -313,26 +313,26 @@ window.testXmlEntityRef = function() {
     ];
 
     const regexp10 = new RegExp(XML10_ENTITY_REF);
-    for (var i = 0; i < okEntityRef.length; i++) {
+    for (let i = 0; i < okEntityRef.length; i++) {
         assertOk(`XML10_ENTITY_REF with ok #${i}`, regexp10,
             okEntityRef[i], okEntityRef[i]);
     }
-    for (var i = 0; i < ngEntityRef.length; i++) {
+    for (let i = 0; i < ngEntityRef.length; i++) {
         assertNg(`XML10_ENTITY_REF with ng #${i}`, regexp10,
             ngEntityRef[i]);
     }
 
     const regexp11 = new RegExp(XML11_ENTITY_REF);
-    for (var i = 0; i < okEntityRef.length; i++) {
+    for (let i = 0; i < okEntityRef.length; i++) {
         assertOk(`XML11_ENTITY_REF with ok #${i}`, regexp11,
             okEntityRef[i], okEntityRef[i]);
     }
-    for (var i = 0; i < ngEntityRef.length; i++) {
+    for (let i = 0; i < ngEntityRef.length; i++) {
         assertNg(`XML11_ENTITY_REF with ng #${i}`, regexp11,
             ngEntityRef[i]);
     }
 
-    for (var i = 0; i < edgeEntityRef.length; i++) {
+    for (let i = 0; i < edgeEntityRef.length; i++) {
         assertNg(`XML10_ENTITY_REF with edge #${i}`, regexp10,
             edgeEntityRef[i]);
         assertOk(`XML11_ENTITY_REF with edge #${i}`, regexp11,
@@ -545,19 +545,19 @@ const edgeAttValues = [ // Invalid XML10_ATT_VALUE but valid XML11_ATT_VALUE
 // should fail here.
 window.testXml10Attribute = function() {
     const regexp = new RegExp(XML10_ATT_VALUE);
-    for (var i = 0; i < okAttValues.length; i++) {
+    for (let i = 0; i < okAttValues.length; i++) {
         assertOk(`XML10_ATT_VALUE with ok #${i}`, regexp,
             okAttValues[i], okAttValues[i]);
     }
-    for (var i = 0; i < ngAttValues.length; i++) {
+    for (let i = 0; i < ngAttValues.length; i++) {
         assertNg(`XML10_ATT_VALUE with ng #${i}`, regexp,
             ngAttValues[i]);
     }
-    for (var i = 0; i < ngAttValues2.length; i += 2) {
+    for (let i = 0; i < ngAttValues2.length; i += 2) {
         assertOk(`XML10_ATT_VALUE with ng2 #${i / 2}`, regexp,
             ngAttValues2[i], ngAttValues2[i + 1]);
     }
-    for (var i = 0; i < edgeAttValues.length; i++) {
+    for (let i = 0; i < edgeAttValues.length; i++) {
         assertNg(`XML10_ATT_VALUE with ng2 #${i}`, regexp,
             edgeAttValues[i]);
     }
@@ -703,19 +703,19 @@ window.testXml11Name = function() {
 // should succeed here.
 window.testXml11Attribute = function() {
     const regexp = new RegExp(XML11_ATT_VALUE);
-    for (var i = 0; i < okAttValues.length; i++) {
+    for (let i = 0; i < okAttValues.length; i++) {
         assertOk(`XML11_ATT_VALUE with ok #${i}`, regexp,
             okAttValues[i], okAttValues[i]);
     }
-    for (var i = 0; i < ngAttValues.length; i++) {
+    for (let i = 0; i < ngAttValues.length; i++) {
         assertNg(`XML11_ATT_VALUE with ng #${i}`, regexp,
             ngAttValues[i]);
     }
-    for (var i = 0; i < ngAttValues2.length; i += 2) {
+    for (let i = 0; i < ngAttValues2.length; i += 2) {
         assertOk(`XML11_ATT_VALUE with ng2 #${i / 2}`, regexp,
             ngAttValues2[i], ngAttValues2[i + 1]);
     }
-    for (var i = 0; i < edgeAttValues.length; i++) {
+    for (let i = 0; i < edgeAttValues.length; i++) {
         assertOk(`XML11_ATT_VALUE with ng2 #${i}`, regexp,
             edgeAttValues[i], edgeAttValues[i]);
     }

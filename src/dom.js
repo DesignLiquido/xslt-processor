@@ -89,7 +89,7 @@ export function xmlParse(xml) {
             } else {
                 const empty = text.match(regex_empty);
                 const tagname = regex_tagname.exec(text)[1];
-                var node = domCreateElement(xmldoc, tagname);
+                let node = domCreateElement(xmldoc, tagname);
 
                 let att;
                 while (att = regex_attribute.exec(text)) {
