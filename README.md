@@ -45,6 +45,11 @@ generate a suitable DOM representation of the input documents if they
 are present as text.
 
 
+Not-yet-supported XSLT processor directives
+----
+This project is pre-release and not all elements are supported (for example, import and include) which might make this project unready to replace your current parser. See [THIS](https://github.com/fiduswriter/xslt-processor/blob/master/src/xslt.js#L95) switch() call to know which.
+
+
 Tests and usage examples
 ----
 The files ending in _unittest.html are jsunit test pages. See
