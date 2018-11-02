@@ -56,19 +56,6 @@ export function reverseInplace(array) {
     }
 }
 
-// Removes value from array. Returns the number of instances of value
-// that were removed from array.
-function removeFromArray(array, value, opt_notype) {
-    let shift = 0;
-    for (let i = 0; i < array.length; ++i) {
-        if (array[i] === value || (opt_notype && array[i] == value)) {
-            array.splice(i--, 1);
-            shift++;
-        }
-    }
-    return shift;
-}
-
 // Shallow-copies an array to the end of another array
 // Basically Array.concat, but works with other non-array collections
 export function copyArray(dst, src) {
@@ -205,7 +192,7 @@ export function xmlEscapeText(s) {
 // used in double quoted XML attribute value portions (i.e. in
 // attributes within start tags).
 function xmlEscapeAttr(s) {
-    return xmlEscapeText(s).replace(/\"/g, '&quot;');
+    return xmlEscapeText(s).replace(/"/g, '&quot;');
 }
 
 // Escape markup in XML text, but don't touch entity references. The
@@ -241,10 +228,6 @@ export function domSetAttribute(node, name, value) {
 
 export function domAppendChild(node, child) {
     return node.appendChild(child);
-}
-
-function domRemoveChild(node, child) {
-    return node.removeChild(child);
 }
 
 export function domCreateTextNode(doc, text) {

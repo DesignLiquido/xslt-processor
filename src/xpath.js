@@ -65,7 +65,7 @@ import {
     toString
 } from "./xpathdebug.js"
 
-export function xpathParse(expr, xpathLog=message=>{}) {
+export function xpathParse(expr, xpathLog=()=>{}) {
     xpathLog(`parse ${expr}`);
     xpathParseInit(xpathLog);
 
@@ -925,7 +925,7 @@ export class StepExpr {
             }
 
         } else if (this.axis == xpathAxis.NAMESPACE) {
-            alert('not implemented: axis namespace');
+            throw('not implemented: axis namespace');
 
         } else if (this.axis == xpathAxis.PARENT) {
             if (input.parentNode) {
@@ -987,7 +987,7 @@ export class NodeTestAny {
         this.value = new BooleanValue(true);
     }
 
-    evaluate(ctx) {
+    evaluate() {
         return this.value;
     }
 }
@@ -1117,12 +1117,12 @@ let xpathfunctions = {
         return new NodeSetValue(ret);
     },
 
-    'local-name' (ctx) {
-        alert('not implmented yet: XPath function local-name()');
+    'local-name' () {
+        throw('not implmented yet: XPath function local-name()');
     },
 
-    'namespace-uri' (ctx) {
-        alert('not implmented yet: XPath function namespace-uri()');
+    'namespace-uri' () {
+        throw('not implmented yet: XPath function namespace-uri()');
     },
 
     'name' (ctx) {
@@ -1266,15 +1266,16 @@ let xpathfunctions = {
         assert(this.args.length >= 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
+        let s2;
         if (this.args.length > 2) {
-            let s2 = this.args[2].evaluate(ctx).stringValue();
+            s2 = this.args[2].evaluate(ctx).stringValue();
             if (/[^mi]/.test(s2)) {
                 throw `Invalid regular expression syntax: ${s2}`;
             }
         }
-
+        let re;
         try {
-            let re = new RegExp(s1, s2);
+            re = new RegExp(s1, s2);
         } catch (e) {
             throw `Invalid matches argument: ${s1}`;
         }
@@ -1292,12 +1293,12 @@ let xpathfunctions = {
         return new BooleanValue(ret);
     },
 
-    'true' (ctx) {
+    'true' () {
         assert(this.args.length == 0);
         return new BooleanValue(true);
     },
 
-    'false' (ctx) {
+    'false' () {
         assert(this.args.length == 0);
         return new BooleanValue(false);
     },
@@ -1596,7 +1597,7 @@ export class BinaryExpr {
                 break;
 
             default:
-                alert(`BinaryExpr.evaluate: ${this.op.value}`);
+                throw(`BinaryExpr.evaluate: ${this.op.value}`);
         }
         return ret;
     }
@@ -1699,7 +1700,7 @@ export class LiteralExpr {
         this.value = value;
     }
 
-    evaluate(ctx) {
+    evaluate() {
         return new StringValue(this.value);
     }
 }
@@ -1709,7 +1710,7 @@ export class NumberExpr {
         this.value = value;
     }
 
-    evaluate(ctx) {
+    evaluate() {
         return new NumberValue(this.value);
     }
 }
@@ -1752,7 +1753,7 @@ function makeLocationExpr2(dslash, rel) {
     return rel;
 }
 
-function makeLocationExpr3(slash) {
+function makeLocationExpr3() {
     const ret = new LocationExpr();
     ret.appendStep(makeAbbrevStep('.'));
     ret.absolute = true;
@@ -1821,11 +1822,11 @@ function makeAbbrevStep(abbrev) {
     }
 }
 
-function makeNodeTestExpr1(asterisk) {
+function makeNodeTestExpr1() {
     return new NodeTestElementOrAttribute;
 }
 
-function makeNodeTestExpr2(ncname, colon, asterisk) {
+function makeNodeTestExpr2(ncname) {
     return new NodeTestNC(ncname.value);
 }
 
@@ -1833,7 +1834,7 @@ function makeNodeTestExpr3(qname) {
     return new NodeTestName(qname.value);
 }
 
-function makeNodeTestExpr4(typeo, parenc) {
+function makeNodeTestExpr4(typeo) {
     const type = typeo.value.replace(/\s*\($/, '');
     switch (type) {
         case 'node':
@@ -1850,7 +1851,7 @@ function makeNodeTestExpr4(typeo, parenc) {
     }
 }
 
-function makeNodeTestExpr5(typeo, target, parenc) {
+function makeNodeTestExpr5(typeo, target) {
     const type = typeo.replace(/\s*\($/, '');
     if (type != 'processing-instruction') {
         throw type;
@@ -1858,19 +1859,19 @@ function makeNodeTestExpr5(typeo, target, parenc) {
     return new NodeTestPI(target.value);
 }
 
-function makePredicateExpr(pareno, expr, parenc) {
+function makePredicateExpr(pareno, expr) {
     return new PredicateExpr(expr);
 }
 
-function makePrimaryExpr(pareno, expr, parenc) {
+function makePrimaryExpr(pareno, expr) {
     return expr;
 }
 
-function makeFunctionCallExpr1(name, pareno, parenc) {
+function makeFunctionCallExpr1(name) {
     return new FunctionCallExpr(name);
 }
 
-function makeFunctionCallExpr2(name, pareno, arg1, args, parenc) {
+function makeFunctionCallExpr2(name, pareno, arg1, args) {
     const ret = new FunctionCallExpr(name);
     ret.appendArg(arg1);
     for (let i = 0; i < args.length; ++i) {
@@ -2564,7 +2565,7 @@ function xpathParseInit(xpathLog) {
         xpathNonTerminals[i].key = k++;
     }
 
-    for (i = 0; i < xpathTokenRules.length; ++i) {
+    for (let i = 0; i < xpathTokenRules.length; ++i) {
         xpathTokenRules[i].key = k++;
     }
 
@@ -2586,7 +2587,7 @@ function xpathParseInit(xpathLog) {
         array[position].push(element);
     }
 
-    for (i = 0; i < xpathGrammarRules.length; ++i) {
+    for (let i = 0; i < xpathGrammarRules.length; ++i) {
         const rule = xpathGrammarRules[i];
         const pattern = rule[1];
 
@@ -2655,15 +2656,6 @@ function xpathCollectDescendantsReverse(nodelist, node) {
         nodelist.push(n);
         xpathCollectDescendantsReverse(nodelist, n);
     }
-}
-
-
-// The entry point for the library: match an expression against a DOM
-// node. Returns an XPath value.
-function xpathDomEval(expr, node) {
-    const expr1 = xpathParse(expr);
-    const ret = expr1.evaluate(new ExprContext(node));
-    return ret;
 }
 
 // Utility function to sort a list of nodes. Used by xsltSort() and

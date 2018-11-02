@@ -92,27 +92,25 @@ function xsltProcessContext(input, template, output) {
     if (nodename.length == 1 || nodename[0] != 'xsl') {
         xsltPassThrough(input, template, output, outputDocument);
     } else {
+        let name, top, nameexpr, node, select, value, nodes, sortContext, mode, templates, paramContext, commentData, commentNode, test, match, text;
         switch (nodename[1]) {
             case 'apply-imports':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'apply-templates':
-                let select = xmlGetAttribute(template, 'select');
-                let nodes;
+                select = xmlGetAttribute(template, 'select');
                 if (select) {
                     nodes = xpathEval(select, input).nodeSetValue();
                 } else {
                     nodes = input.node.childNodes;
                 }
 
-                const sortContext = input.clone(nodes[0], 0, nodes);
+                sortContext = input.clone(nodes[0], 0, nodes);
                 xsltWithParam(sortContext, template);
                 xsltSort(sortContext, template);
 
-                const mode = xmlGetAttribute(template, 'mode');
-                let top = template.ownerDocument.documentElement;
-                const templates = [];
+                mode = xmlGetAttribute(template, 'mode');
+                top = template.ownerDocument.documentElement;
+                templates = [];
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
                     if (c.nodeType == DOM_ELEMENT_NODE &&
@@ -129,25 +127,21 @@ function xsltProcessContext(input, template, output) {
                     }
                 }
                 break;
-
             case 'attribute':
-                let nameexpr = xmlGetAttribute(template, 'name');
-                let name = xsltAttributeValue(nameexpr, input);
-                let node = domCreateDocumentFragment(outputDocument);
+                nameexpr = xmlGetAttribute(template, 'name');
+                name = xsltAttributeValue(nameexpr, input);
+                node = domCreateDocumentFragment(outputDocument);
                 xsltChildNodes(input, template, node);
-                let value = xmlValue(node);
+                value = xmlValue(node);
                 domSetAttribute(output, name, value);
                 break;
-
             case 'attribute-set':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'call-template':
-                let name = xmlGetAttribute(template, 'name');
-                let top = template.ownerDocument.documentElement;
+                name = xmlGetAttribute(template, 'name');
+                top = template.ownerDocument.documentElement;
 
-                const paramContext = input.clone();
+                paramContext = input.clone();
                 xsltWithParam(paramContext, template);
 
                 for (let i = 0; i < top.childNodes.length; ++i) {
@@ -160,31 +154,27 @@ function xsltProcessContext(input, template, output) {
                     }
                 }
                 break;
-
             case 'choose':
                 xsltChoose(input, template, output);
                 break;
-
             case 'comment':
-                let node = domCreateDocumentFragment(outputDocument);
+                node = domCreateDocumentFragment(outputDocument);
                 xsltChildNodes(input, template, node);
-                const commentData = xmlValue(node);
-                const commentNode = domCreateComment(outputDocument, commentData);
+                commentData = xmlValue(node);
+                commentNode = domCreateComment(outputDocument, commentData);
                 output.appendChild(commentNode);
                 break;
-
             case 'copy':
-                let node = xsltCopy(output, input.node, outputDocument);
+                node = xsltCopy(output, input.node, outputDocument);
                 if (node) {
                     xsltChildNodes(input, template, node);
                 }
                 break;
-
             case 'copy-of':
-                let select = xmlGetAttribute(template, 'select');
-                let value = xpathEval(select, input);
+                select = xmlGetAttribute(template, 'select');
+                value = xpathEval(select, input);
                 if (value.type == 'node-set') {
-                    let nodes = value.nodeSetValue();
+                    nodes = value.nodeSetValue();
                     for (let i = 0; i < nodes.length; ++i) {
                         xsltCopyOf(output, nodes[i], outputDocument);
                     }
@@ -194,129 +184,88 @@ function xsltProcessContext(input, template, output) {
                     domAppendChild(output, node);
                 }
                 break;
-
             case 'decimal-format':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'element':
-                let nameexpr = xmlGetAttribute(template, 'name');
-                let name = xsltAttributeValue(nameexpr, input);
-                let node = domCreateElement(outputDocument, name);
+                nameexpr = xmlGetAttribute(template, 'name');
+                name = xsltAttributeValue(nameexpr, input);
+                node = domCreateElement(outputDocument, name);
                 domAppendChild(output, node);
                 xsltChildNodes(input, template, node);
                 break;
-
             case 'fallback':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'for-each':
                 xsltForEach(input, template, output);
                 break;
-
             case 'if':
-                const test = xmlGetAttribute(template, 'test');
+                test = xmlGetAttribute(template, 'test');
                 if (xpathEval(test, input).booleanValue()) {
                     xsltChildNodes(input, template, output);
                 }
                 break;
-
             case 'import':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'include':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'key':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'message':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'namespace-alias':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'number':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'otherwise':
-                alert(`error if here: ${nodename[1]}`);
-                break;
-
+                throw(`error if here: ${nodename[1]}`);
             case 'output':
                 // Ignored. -- Since we operate on the DOM, and all further use
                 // of the output of the XSL transformation is determined by the
                 // browser that we run in, this parameter is not applicable to
                 // this implementation.
                 break;
-
             case 'preserve-space':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'processing-instruction':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'sort':
                 // just ignore -- was handled by xsltSort()
                 break;
-
             case 'strip-space':
-                alert(`not implemented: ${nodename[1]}`);
-                break;
-
+                throw(`not implemented: ${nodename[1]}`);
             case 'stylesheet':
             case 'transform':
                 xsltChildNodes(input, template, output);
                 break;
-
             case 'template':
-                const match = xmlGetAttribute(template, 'match');
+                match = xmlGetAttribute(template, 'match');
                 if (match && xsltMatch(match, input)) {
                     xsltChildNodes(input, template, output);
                 }
                 break;
-
             case 'text':
-                const text = xmlValue(template);
-                let node = domCreateTextNode(outputDocument, text);
+                text = xmlValue(template);
+                node = domCreateTextNode(outputDocument, text);
                 output.appendChild(node);
                 break;
-
             case 'value-of':
-                let select = xmlGetAttribute(template, 'select');
-                let value = xpathEval(select, input).stringValue();
-                let node = domCreateTextNode(outputDocument, value);
+                select = xmlGetAttribute(template, 'select');
+                value = xpathEval(select, input).stringValue();
+                node = domCreateTextNode(outputDocument, value);
                 output.appendChild(node);
                 break;
-
             case 'param':
                 xsltVariable(input, template, false);
                 break;
-
             case 'variable':
                 xsltVariable(input, template, true);
                 break;
-
             case 'when':
-                alert(`error if here: ${nodename[1]}`);
-                break;
-
+                throw(`error if here: ${nodename[1]}`);
             case 'with-param':
-                alert(`error if here: ${nodename[1]}`);
-                break;
-
+                throw(`error if here: ${nodename[1]}`);
             default:
-                alert(`error if here: ${nodename[1]}`);
-                break;
+                throw(`error if here: ${nodename[1]}`);
         }
     }
 }
@@ -556,7 +505,7 @@ function xmlGetAttribute(node, name) {
     } else {
         return value;
     }
-};
+}
 
 
 // Implements xsl:copy-of for node-set values of the select

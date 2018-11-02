@@ -85,6 +85,7 @@ export let parseTree = function(expr, indent) {
             break;
         case UnaryMinusExpr:
             ret = `${indent}[unary] -\n${parseTree(expr.expr, `${indent} `)}`;
+            break;
         case BinaryExpr:
             ret = `${indent}[binary] ${expr.op.value}\n${parseTree(expr.expr1, `${indent} `)}${parseTree(expr.expr2, `${indent} `)}`;
             break;
@@ -200,6 +201,7 @@ export let toString = function(expr) {
             break;
         case PredicateExpr:
             ret = `[${toString(expr.expr)}]`;
+            break;
         default:
             break;
     }

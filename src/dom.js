@@ -52,7 +52,7 @@ export function xmlParse(xml) {
         } else {
             // VersionInfo is missing, or unknown version number.
             // TODO : Fallback to XML 1.0 or XML 1.1, or just return null?
-            alert('VersionInfo is missing, or unknown version number.');
+            throw('VersionInfo is missing, or unknown version number.');
         }
     } else {
         // When an XML declaration is missing it's an XML 1.0 document.
@@ -92,7 +92,7 @@ export function xmlParse(xml) {
                 let node = domCreateElement(xmldoc, tagname);
 
                 let att;
-                while (att = regex_attribute.exec(text)) {
+                while ((att = regex_attribute.exec(text))) {
                     const val = he.decode(att[5] || att[7] || '');
                     domSetAttribute(node, att[1], val);
                 }
@@ -142,14 +142,14 @@ export const DOM_ELEMENT_NODE = 1;
 export const DOM_ATTRIBUTE_NODE = 2;
 export const DOM_TEXT_NODE = 3;
 export const DOM_CDATA_SECTION_NODE = 4;
-const DOM_ENTITY_REFERENCE_NODE = 5;
-const DOM_ENTITY_NODE = 6;
+// const DOM_ENTITY_REFERENCE_NODE = 5;
+// const DOM_ENTITY_NODE = 6;
 export const DOM_PROCESSING_INSTRUCTION_NODE = 7;
 export const DOM_COMMENT_NODE = 8;
 export const DOM_DOCUMENT_NODE = 9;
-const DOM_DOCUMENT_TYPE_NODE = 10;
+// const DOM_DOCUMENT_TYPE_NODE = 10;
 export const DOM_DOCUMENT_FRAGMENT_NODE = 11;
-const DOM_NOTATION_NODE = 12;
+// const DOM_NOTATION_NODE = 12;
 
 // Traverses the element nodes in the DOM section underneath the given
 // node and invokes the given callbacks as methods on every element

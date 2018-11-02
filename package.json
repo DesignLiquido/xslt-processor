@@ -20,7 +20,9 @@
     "build_test": "npm run build_tests && npm run build_xpath_script && npm run build_xslt_script",
     "build_xpath_script": "rollup test_src/xpath_script.js -c -f iife -o test_dist/xpath_script.js",
     "build_xslt_script": "rollup test_src/xslt_script.js -c -f iife -o test_dist/xslt_script.js",
-    "prepublish": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run lint",
+    "lint": "eslint src/"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,7 @@
     "rollup-plugin-commonjs": "^9.1.2"
   },
   "dependencies": {
+    "eslint": "^5.8.0",
     "he": "^1.1.1"
   }
 }
