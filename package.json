@@ -9,7 +9,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "rollup src/index.js -c -f cjs -o dist/xslt-processor.js",
     "build_tests": "npm run build_dom_unittests && npm run build_xmltoken_unittests && npm run build_xpath_unittests && npm run build_xpath_unittests2 && npm run build_xslt_unittest",
     "build_dom_unittests": "rollup tests_src/dom_unittest.js -c -f iife -o tests_dist/dom_unittest.js",
@@ -38,6 +38,12 @@
   },
   "homepage": "https://github.com/fiduswriter/xslt-processor#readme",
   "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "babel-core": "7.0.0-bridge.0",
+    "isomorphic-jsx": "^0.2.0",
+    "jest": "^23.6.0",
     "rollup": "^0.57.1",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-commonjs": "^9.1.2"
