@@ -155,28 +155,26 @@ window.testXmlVersionInfo = function() {
         ' version="1_1"' // Must be '1.1'
     ];
 
-    (() => {
-		 let regexp = new RegExp(XML10_VERSION_INFO);
-		 for (let i = 0; i < okVersion10.length; i++) {
-			  assertOk(`XML10_VERSION_INFO with ok #${i}`, regexp,
-					okVersion10[i], okVersion10[i]);
-		 }
-		 for (let i = 0; i < ngVersion10.length; i++) {
-			  assertNg(`XML10_VERSION_INFO with ng #${i}`, regexp,
-					ngVersion10[i]);
-		 }
-    })();
-    (() => {
-		 let regexp = new RegExp(XML11_VERSION_INFO);
-		 for (let i = 0; i < okVersion11.length; i++) {
-			  assertOk(`XML11_VERSION_INFO with ok #${i}`, regexp,
-					okVersion11[i], okVersion11[i]);
-		 }
-		 for (let i = 0; i < ngVersion11.length; i++) {
-			  assertNg(`XML11_VERSION_INFO with ng #${i}`, regexp,
-					ngVersion11[i]);
-		 }
-    })();
+
+	 let regexp = new RegExp(XML10_VERSION_INFO);
+	 for (let i = 0; i < okVersion10.length; i++) {
+		  assertOk(`XML10_VERSION_INFO with ok #${i}`, regexp,
+				okVersion10[i], okVersion10[i]);
+	 }
+	 for (let i = 0; i < ngVersion10.length; i++) {
+		  assertNg(`XML10_VERSION_INFO with ng #${i}`, regexp,
+				ngVersion10[i]);
+	 }
+
+	 regexp = new RegExp(XML11_VERSION_INFO);
+	 for (let i = 0; i < okVersion11.length; i++) {
+		  assertOk(`XML11_VERSION_INFO with ok #${i}`, regexp,
+				okVersion11[i], okVersion11[i]);
+	 }
+	 for (let i = 0; i < ngVersion11.length; i++) {
+		  assertNg(`XML11_VERSION_INFO with ng #${i}`, regexp,
+				ngVersion11[i]);
+	 }
 }
 
 // Test XML_CHAR_REF.

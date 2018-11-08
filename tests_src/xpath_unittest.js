@@ -599,24 +599,23 @@ function doTestEvalDom(xml, page, location, lat, latValue, lon, lonValue) {
     assertEquals(slashPage, evalNodeSet(slashPage, ctx)[0].nodeName, page);
     assertEquals(slashPage, evalNodeSet(slashPage, ctx1)[0].nodeName, page);
 
-    (() => {
-		 let n = evalNodeSet(slashPageLocationAtLat, ctx)[0];
-		 assertEquals(slashPageLocationAtLat, n.nodeName, lat);
-		 assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
 
-		 n = evalNodeSet(slashPageLocationAtLat, ctx1)[0];
-		 assertEquals(slashPageLocationAtLat, n.nodeName, lat);
-		 assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
-    })();
-    (() => {
-		 let n = evalNodeSet(slashPageLocationAtLon, ctx)[0];
-		 assertEquals(slashPageLocationAtLon, n.nodeName, lon);
-		 assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
+	 let n = evalNodeSet(slashPageLocationAtLat, ctx)[0];
+	 assertEquals(slashPageLocationAtLat, n.nodeName, lat);
+	 assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
 
-		 n = evalNodeSet(slashPageLocationAtLon, ctx1)[0];
-		 assertEquals(slashPageLocationAtLon, n.nodeName, lon);
-		 assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
-    })();
+	 n = evalNodeSet(slashPageLocationAtLat, ctx1)[0];
+	 assertEquals(slashPageLocationAtLat, n.nodeName, lat);
+	 assertEquals(slashPageLocationAtLat, n.nodeValue, latValue);
+
+	 n = evalNodeSet(slashPageLocationAtLon, ctx)[0];
+	 assertEquals(slashPageLocationAtLon, n.nodeName, lon);
+	 assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
+
+	 n = evalNodeSet(slashPageLocationAtLon, ctx1)[0];
+	 assertEquals(slashPageLocationAtLon, n.nodeName, lon);
+	 assertEquals(slashPageLocationAtLon, n.nodeValue, lonValue);
+
 }
 
 window.testXMLValueAcrossBrowsers = function() {
