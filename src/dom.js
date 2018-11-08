@@ -117,14 +117,14 @@ export function xmlParse(xml) {
                 if (endTagIndex) {
                     let node = domCreateComment(xmldoc, xml.slice(i+4, i+endTagIndex+4));
                     domAppendChild(parent, node);
-                    i += endTagIndex+7;
+                    i += endTagIndex+6;
                 }
             } else if (xml.slice(i+1,i+9)==="![CDATA[") {
                 let endTagIndex = xml.slice(i+9).indexOf(']]>');
                 if (endTagIndex) {
                     let node = domCreateCDATASection(xmldoc, xml.slice(i+9, i+endTagIndex+9));
                     domAppendChild(parent, node);
-                    i += endTagIndex+12;
+                    i += endTagIndex+11;
                 }
             } else {
                 tag = true;
