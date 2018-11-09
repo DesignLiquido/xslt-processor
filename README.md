@@ -31,13 +31,13 @@ If you write pre-2015 JS code, make adjustments as needed.
 
 ## Introduction
 
-XSLT-processor is an implementation of XSLT in JavaScript. Because XSLT uses
-XPath, it is also an implementation of XPath that can be used
-independently of XSLT. This implementation has the advantange that it
+XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses
+XPath, it also contains an implementation of XPath that can be used
+independently of XSLT. This implementation has the advantage that it
 makes XSLT uniformly available whenever the browser's native XSLTProcessor()
 is not available such as in node.js or in web workers.
 
-XSLT-processor is a modernized version of the old Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
+XSLT-processor is a modernized version of the Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
 which was written before XSLTProcessor() became available in browsers.
 
 This implementation of XSLT operates at the DOM level on its input
@@ -60,7 +60,7 @@ Both unit tests and interactive tests demonstrate the use of the library functio
 
 ## Conformance
 
-A few features that are required by the XSLT and XPath standards were left out.
+A few features that are required by the XSLT and XPath standards were left out (but patches to add them are welcome).
 They are marked in the source code using throw-statements. See xslt.js.
 
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
