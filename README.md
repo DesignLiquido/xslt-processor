@@ -37,8 +37,10 @@ independently of XSLT. This implementation has the advantage that it
 makes XSLT uniformly available whenever the browser's native XSLTProcessor()
 is not available such as in node.js or in web workers.
 
-XSLT-processor is a modernized version of the Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
-which was written before XSLTProcessor() became available in browsers.
+XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
+which was written before XSLTProcessor() became available in browsers, but the 
+code base has been updated to comply with ES2015+ and to make it work outside of 
+browsers.
 
 This implementation of XSLT operates at the DOM level on its input
 documents. It internally uses a DOM implementation to create the
