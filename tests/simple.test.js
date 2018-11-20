@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from 'xslt-processor'
+import { xsltProcess, xmlParse } from '../src'
 
 describe('xslt', () => {
 
@@ -43,4 +43,3 @@ describe('xslt', () => {
 	})
 
 })
-
