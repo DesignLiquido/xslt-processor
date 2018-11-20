@@ -73,9 +73,9 @@ export function xmlParse(xml) {
         start = 0;
     for (let i = 0; i < xml.length; ++i) {
         let char = xml.charAt(i);
-        if (tag && char === "'") {
+        if (tag && !doublequotes && char === "'") {
             quotes = !quotes;
-        } else if (tag && char === "\"") {
+        } else if (tag && !quotes && char === "\"") {
             doublequotes = !doublequotes;
         } else if (tag && char === ">" && !quotes && !doublequotes) {
             let text = xml.slice(start, i);
