@@ -57,12 +57,14 @@ are present as text.
 New tests are written in Jest an can be run by calling: `npm test`.
 
 The files xslt.html and xpath.html in the directory test are interactive tests. They can be run directly from the file system; no HTTP server is needed.
-Both interactive tests and interactive tests demonstrate the use of the library functions. There is not much more documentation so far.
+Both interactive tests and automatic tests demonstrate the use of the library functions. There is not much more documentation so far.
 
 ## Conformance
 
 A few features that are required by the XSLT and XPath standards were left out (but patches to add them are welcome).
-They are marked in the source code using throw-statements. See xslt.js.
+See our [TODO](TODO.md) for a list of missing features that we are aware of (please add more items by means of PRs).
+
+Issues are also marked in the source code using throw-statements.
 
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
 
