@@ -2,7 +2,7 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import { xsltProcess, xmlParse } from '../src'
 
-describe('xslt', () => {
+describe('simple', () => {
 
 	it('simple test', () => {
 		const xmlString = <root>
