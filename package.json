@@ -11,9 +11,6 @@
   "scripts": {
     "test": "jest",
     "build": "rollup src/index.js -c -f cjs -o dist/xslt-processor.js",
-    "build_tests": "npm run build_xpath_unittests && npm run build_xpath_unittests2",
-    "build_xpath_unittests": "rollup tests_src/xpath_unittest.js -c -f iife --output.name xpath_unittest -o tests_dist/xpath_unittest.js",
-    "build_xpath_unittests2": "rollup tests_src/xpath_unittest2.js -c -f iife -o tests_dist/xpath_unittest2.js",
     "build_test": "npm run build_tests && npm run build_xpath_script && npm run build_xslt_script",
     "build_xpath_script": "rollup test_src/xpath_script.js -c -f iife -o test_dist/xpath_script.js",
     "build_xslt_script": "rollup test_src/xslt_script.js -c -f iife -o test_dist/xslt_script.js",

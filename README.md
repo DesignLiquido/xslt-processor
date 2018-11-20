@@ -23,7 +23,7 @@ import { xsltProcess, xmlParse } from 'xslt-processor'
 const outXmlString = xsltProcess(
 	xmlParse(xmlString),
 	xmlParse(xsltString)
-); 
+);
 ```
 
 If you write pre-2015 JS code, make adjustments as needed.
@@ -38,8 +38,8 @@ makes XSLT uniformly available whenever the browser's native XSLTProcessor()
 is not available such as in node.js or in web workers.
 
 XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
-which was written before XSLTProcessor() became available in browsers, but the 
-code base has been updated to comply with ES2015+ and to make it work outside of 
+which was written before XSLTProcessor() became available in browsers, but the
+code base has been updated to comply with ES2015+ and to make it work outside of
 browsers.
 
 This implementation of XSLT operates at the DOM level on its input
@@ -56,9 +56,8 @@ are present as text.
 
 New tests are written in Jest an can be run by calling: `npm test`.
 
-Old tests are written in [jsunit](http://www.jsunit.net). The files ending in `_unittest.html` are jsunit test pages.
 The files xslt.html and xpath.html in the directory test are interactive tests. They can be run directly from the file system; no HTTP server is needed.
-Both unit tests and interactive tests demonstrate the use of the library functions. There is not much more documentation so far.
+Both interactive tests and interactive tests demonstrate the use of the library functions. There is not much more documentation so far.
 
 ## Conformance
 
