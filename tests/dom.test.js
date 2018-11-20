@@ -83,49 +83,57 @@ describe('dom parsing', () => {
 
 
 const doTestXmlParse = (dom1, dom2) => {
-    assert.equal(xmlText(dom1), xmlText(dom2));
+    assert.equal(xmlText(dom1), xmlText(dom2), 'xmlText');
 
     assert.equal(
         dom1.nodeName,
-        dom2.nodeName
+        dom2.nodeName,
+        '#document'
     );
 
-    assert.equal(dom1.documentElement, dom1.firstChild);
-    assert.equal(dom2.documentElement, dom2.firstChild);
+    assert.equal(dom1.documentElement, dom1.firstChild, 'documentElement');
+    assert.equal(dom2.documentElement, dom2.firstChild, 'documentElement');
 
-    assert.equal(dom1.parentNode, null);
-    assert.equal(dom2.parentNode, null);
+    assert.equal(dom1.parentNode, null, 'parentNode');
+    assert.equal(dom2.parentNode, null, 'parentNode');
 
-    assert.equal(dom1.documentElement.parentNode, dom1);
-    assert.equal(dom2.documentElement.parentNode, dom2);
+    assert.equal(dom1.documentElement.parentNode, dom1, 'parentNode');
+    assert.equal(dom2.documentElement.parentNode, dom2, 'parentNode');
 
     assert.equal(
         dom1.documentElement.nodeName,
-        dom2.documentElement.nodeName
+        dom2.documentElement.nodeName,
+        'page'
     );
     assert.equal(
         dom1.childNodes.length,
-        dom2.childNodes.length
+        dom2.childNodes.length,
+        'dom.childNodes.length'
     );
     assert.equal(
         dom1.childNodes.length,
-        dom2.childNodes.length
+        dom2.childNodes.length,
+        'dom.childNodes.length'
     );
     assert.equal(
         dom1.firstChild.childNodes.length,
-        dom2.firstChild.childNodes.length
+        dom2.firstChild.childNodes.length,
+        'dom.childNodes.length'
     );
     assert.equal(
         dom1.firstChild.childNodes.length,
-        dom2.firstChild.childNodes.length
+        dom2.firstChild.childNodes.length,
+        'dom.childNodes.length'
     );
 
     assert.equal(
         dom1.firstChild.childNodes[1].attributes.length,
-        dom2.firstChild.childNodes[1].attributes.length
+        dom2.firstChild.childNodes[1].attributes.length,
+        'location.attributes.length'
     );
     assert.equal(
         dom1.firstChild.childNodes[1].attributes.length,
-        2
+        2,
+        'location.attributes.length'
     );
 }
