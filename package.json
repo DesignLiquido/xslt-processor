@@ -38,12 +38,12 @@
     "babel-core": "7.0.0-bridge.0",
     "isomorphic-jsx": "^0.2.0",
     "jest": "^23.6.0",
+    "eslint": "^5.8.0",
     "rollup": "^0.57.1",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-commonjs": "^9.1.2"
   },
   "dependencies": {
-    "eslint": "^5.8.0",
     "he": "^1.1.1"
   }
 }
