@@ -4,3 +4,4 @@ dist/
 .git/
 test_dist/
 tests_dist/
+package-lock.json
