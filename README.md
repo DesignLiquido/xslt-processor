@@ -26,6 +26,12 @@ const outXmlString = xsltProcess(
 );
 ```
 
+To access the Xpath-parser, import it like this:
+
+```js
+import { xpathParse } from 'xslt-processor'
+```
+
 If you write pre-2015 JS code, make adjustments as needed.
 
 
