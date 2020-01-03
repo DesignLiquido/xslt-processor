@@ -1117,8 +1117,20 @@ let xpathfunctions = {
         return new NodeSetValue(ret);
     },
 
-    'local-name' () {
-        throw('not implemented yet: XPath function local-name()');
+    'local-name' (ctx) {
+        assert(this.args.length == 1 || this.args.length == 0);
+        let n;
+        if (this.args.length == 0) {
+            n = [ctx.node];
+        } else {
+            n = this.args[0].evaluate(ctx).nodeSetValue();
+        }
+
+        if (n.length == 0) {
+            return new StringValue('');
+        } else {
+            return new StringValue(n[0].nodeName.replace(/^[^:]+:/, ''));
+        }
     },
 
     'namespace-uri' () {
