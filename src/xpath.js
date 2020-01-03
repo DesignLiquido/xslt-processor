@@ -1118,11 +1118,11 @@ let xpathfunctions = {
     },
 
     'local-name' () {
-        throw('not implmented yet: XPath function local-name()');
+        throw('not implemented yet: XPath function local-name()');
     },
 
     'namespace-uri' () {
-        throw('not implmented yet: XPath function namespace-uri()');
+        throw('not implemented yet: XPath function namespace-uri()');
     },
 
     'name' (ctx) {
