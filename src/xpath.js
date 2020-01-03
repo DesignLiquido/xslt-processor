@@ -1090,6 +1090,10 @@ let xpathfunctions = {
         return new NumberValue(v.nodeSetValue().length);
     },
 
+    'generate-id' (ctx) {
+        throw('not implmented yet: XPath function generate-id()');
+    },
+
     'id' (ctx) {
         assert(this.args.length == 1);
         const e = this.args[0].evaluate(ctx);
