@@ -72,9 +72,16 @@ import {
 // @param xmlDoc The input document root, as DOM node.
 // @param template The stylesheet document root, as DOM node.
 // @return the processed document, as XML text in a string.
-export function xsltProcess(xmlDoc, stylesheet) {
+export function xsltProcess(xmlDoc, stylesheet,parameters) {
     const output = domCreateDocumentFragment(new XDocument);
-    xsltProcessContext(new ExprContext(xmlDoc), stylesheet, output);
+    const expressionContext = new ExprContext(xmlDoc);
+    if(parameters && typeof(parameters)==='object'){
+        for (const [key, value] of Object.entries(parameters)) {
+           expressionContext.setVariable(key,new StringValue(value));
+          }
+    }
+    expressionContext.setVariable()
+    xsltProcessContext(expressionContext, stylesheet, output,parameters);
     const ret = xmlText(output);
     return ret;
 }
@@ -85,7 +92,7 @@ export function xsltProcess(xmlDoc, stylesheet) {
 // @param template The stylesheet document root, as DOM node.
 // @param the root of the generated output, as DOM node.
 
-function xsltProcessContext(input, template, output) {
+function xsltProcessContext(input, template, output,parameters) {
     const outputDocument = xmlOwnerDocument(output);
 
     const nodename = template.nodeName.split(/:/);
