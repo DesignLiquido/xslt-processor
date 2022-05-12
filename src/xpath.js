@@ -1120,7 +1120,13 @@ let xpathfunctions = {
         }
         return new NodeSetValue(ret);
     },
-
+    'xml-to-json'(ctx){
+        assert(this.args.length <  2);
+        return new StringValue(
+            JSON.stringify( (!this.args.length)? 'null': xmlValue(ctx.node)
+            )
+        );
+    },
     'local-name' (ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
         let n;
