@@ -4,6 +4,11 @@
 
 _A JavaScript XSLT processor without native library dependencies._
 
+## Unmaintained
+
+This package is looking for a maintainer. Please contact me if you are interested. We used XSLT for one thing and for that one purpose we are now using a replacement JavaScript library: [https://github.com/fiduswriter/mathml2omml](https://github.com/fiduswriter/mathml2omml).
+
+
 ## Howto
 
 Install xslt-processor using npm::
