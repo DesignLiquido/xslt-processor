@@ -1090,7 +1090,7 @@ let xpathfunctions = {
         return new NumberValue(v.nodeSetValue().length);
     },
 
-    'generate-id' (ctx) {
+    'generate-id' (_ctx) {
         throw('not implmented yet: XPath function generate-id()');
     },
 
@@ -1120,8 +1120,8 @@ let xpathfunctions = {
         }
         return new NodeSetValue(ret);
     },
-    'xml-to-json'(ctx){
-        assert(this.args.length <  2);
+    'xml-to-json'(ctx) {
+        assert(this.args.length < 2);
         return new StringValue(
             JSON.stringify( (!this.args.length)? 'null': xmlValue(ctx.node)
             )

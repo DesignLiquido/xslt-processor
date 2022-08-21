@@ -75,7 +75,7 @@ import {
 export function xsltProcess(xmlDoc, stylesheet,parameters) {
     const output = domCreateDocumentFragment(new XDocument);
     const expressionContext = new ExprContext(xmlDoc);
-    if(parameters && typeof(parameters)==='object'){
+    if(parameters && typeof(parameters)==='object') {
         for (const [key, value] of Object.entries(parameters)) {
            expressionContext.setVariable(key,new StringValue(value));
           }
@@ -92,7 +92,7 @@ export function xsltProcess(xmlDoc, stylesheet,parameters) {
 // @param template The stylesheet document root, as DOM node.
 // @param the root of the generated output, as DOM node.
 
-function xsltProcessContext(input, template, output,parameters) {
+function xsltProcessContext(input, template, output, _parameters) {
     const outputDocument = xmlOwnerDocument(output);
 
     const nodename = template.nodeName.split(/:/);
