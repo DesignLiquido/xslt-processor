@@ -14,7 +14,8 @@ import {
     domCreateTextNode,
     domCreateElement,
     domCreateCDATASection,
-    domCreateComment
+    domCreateComment,
+    namespaceMapAt
 } from "./util.js"
 import {
     XML10_VERSION_INFO,
@@ -96,12 +97,30 @@ export function xmlParse(xml) {
                     const val = he.decode(att[5] || att[7] || '');
                     domSetAttribute(node, att[1], val);
                 }
-
+                
                 domAppendChild(parent, node);
                 if (!empty) {
                     parent = node;
                     stack.push(node);
                 }
+                
+                const namespaceMap = namespaceMapAt(node);
+                if (node.prefix != null) {
+                	if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
+                	// else, prefix is undefined. do anything?
+                } else {
+                	if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
+                }
+                for (let i=0;i<node.attributes.length;++i) {
+                	if (node.attributes[i].prefix != null) {
+                		if (node.attributes[i].prefix in namespaceMap) {
+                			node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
+                		}
+                		// else, prefix undefined.
+                	}
+                	// elements with no prefix always have no namespace, so do nothing here.
+                }
+
             }
             start = i + 1;
             tag = false;
@@ -184,6 +203,14 @@ function domTraverseElements(node, opt_pre, opt_post) {
     }
 }
 
+function qualifiedNameToParts(name) {
+	if (name.includes(':')) {
+		return name.split(':');
+	} else {
+		return [ null, name ];
+	}
+}
+
 let _unusedXNodes = [];
 
 // Our W3C DOM Node implementation. Note we call it XNode because we
@@ -192,19 +219,21 @@ let _unusedXNodes = [];
 // Safari, where it is too expensive to have the template processor
 // operate on native DOM nodes.
 export class XNode {
-    constructor(type, name, opt_value, opt_owner) {
+    constructor(type, name, opt_value, opt_owner, opt_namespace) {
         this.attributes = [];
         this.childNodes = [];
 
-        this.init(type, name, opt_value, opt_owner);
+        this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
 
-    init(type, name, value, owner) {
+    init(type, name, value, owner, namespace) {
         this.nodeType = type - 0;
         this.nodeName = `${name}`;
         this.nodeValue = `${value}`;
         this.ownerDocument = owner;
-
+        this.namespaceURI = namespace || null;
+        [ this.prefix, this.localName ] = qualifiedNameToParts(`${name}`);
+        
         this.firstChild = null;
         this.lastChild = null;
         this.nextSibling = null;
@@ -238,13 +267,13 @@ export class XNode {
         node.init.call(0, '', '', null);
     }
 
-    create(type, name, value, owner) {
+    create(type, name, value, owner, namespace) {
         if (_unusedXNodes.length > 0) {
             const node = _unusedXNodes.pop();
-            node.init(type, name, value, owner);
+            node.init(type, name, value, owner, namespace);
             return node;
         } else {
-            return new XNode(type, name, value, owner);
+            return new XNode(type, name, value, owner, namespace);
         }
     }
 
@@ -390,6 +419,18 @@ export class XNode {
         }
         this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this));
     }
+    
+    setAttributeNS(namespace, name, value) {
+    	for (let i=0; i<this.attributes.length; ++i) {
+    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == qualifiedNameToParts(`${name}`)[1]) {
+    			this.attributes[i].nodeValue = `${value}`;
+    			this.attributes[i].nodeName = `${name}`;
+    			this.attributes[i].prefix = qualifiedNameToParts(`${name}`)[0];
+    			return;
+    		}
+    	}
+    	this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
+    }
 
     getAttribute(name) {
         for (let i = 0; i < this.attributes.length; ++i) {
@@ -398,6 +439,33 @@ export class XNode {
             }
         }
         return null;
+    }
+    
+    getAttributeNS(namespace, localName) {
+    	for (let i=0; i<this.attributes.length; ++i) {
+    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+    			return this.attributes[i].nodeValue;
+    		}
+    	}
+    	return null;
+    }
+
+    hasAttribute(name) {
+        for (let i = 0; i < this.attributes.length; ++i) {
+            if (this.attributes[i].nodeName == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    hasAttributeNS(namespace, localName) {
+    	for (let i=0; i<this.attributes.length; ++i) {
+    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+    			return true;
+    		}
+    	}
+    	return false;
     }
 
     removeAttribute(name) {
@@ -408,6 +476,16 @@ export class XNode {
             }
         }
         this.attributes = a;
+    }
+    
+    removeAttributeNS(namespace, localName) {
+    	const a = [];
+    	for (let i=0; i<this.attributes.length; ++i) {
+    		if (this.attributes[i].localName != localName || this.attributes[i].namespaceURI != namespace) {
+    			a.push(this.attributes[i]);
+    		}
+    	}
+    	this.attributes = a;
     }
 
     getElementsByTagName(name) {
@@ -422,6 +500,35 @@ export class XNode {
             domTraverseElements(this, node => {
                 if (self == node) return;
                 if (node.nodeName == name) {
+                    ret.push(node);
+                }
+            }, null);
+        }
+        return ret;
+    }
+
+    getElementsByTagNameNS(namespace, localName) {
+        const ret = [];
+        const self = this;
+        if ("*" == namespace && '*' == localName) {
+            domTraverseElements(this, node => {
+                if (self == node) return;
+                ret.push(node);
+            }, null);
+        } else if ('*' == namespace) {
+        	domTraverseElements(this, node=>{
+        		if (self == node) return;
+        		if (node.localName == localName) ret.push(node);
+        	}, null);
+        } else if ('*' == localName) {
+        	domTraverseElements(this, node=>{
+        		if (self == node) return;
+        		if (node.namespaceURI == namespace) ret.push(node);
+        	}, null);
+        } else {
+            domTraverseElements(this, node => {
+                if (self == node) return;
+                if (node.localName == localName && node.namespaceURI == namespace) {
                     ret.push(node);
                 }
             }, null);
@@ -462,6 +569,10 @@ export class XDocument extends XNode {
     createElement(name) {
         return super.create(DOM_ELEMENT_NODE, name, null, this);
     }
+    
+    createElementNS(namespace, name) {
+    	return super.create(DOM_ELEMENT_NODE, name, null, this, namespace);
+    }
 
     createDocumentFragment() {
         return super.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment',
@@ -474,6 +585,10 @@ export class XDocument extends XNode {
 
     createAttribute(name) {
         return super.create(DOM_ATTRIBUTE_NODE, name, null, this);
+    }
+
+    createAttributeNS(namespace, name) {
+        return super.create(DOM_ATTRIBUTE_NODE, name, null, this, namespace);
     }
 
     createComment(data) {

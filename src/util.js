@@ -324,3 +324,26 @@ function exprReturnsNumberValue(expr) {
     }
     return false;
 }
+
+// (viat) given an XNode (see dom.js), returns an object mapping prefixes to their corresponding namespaces in its scope.
+// default namespace is treated as if its prefix were the empty string.
+export function namespaceMapAt(node) {
+	const map = {
+		// reserved namespaces https://www.w3.org/TR/REC-xml-names/#xmlReserved
+		xmlns: 'http://www.w3.org/2000/xmlns/',
+		xml: 'http://www.w3.org/XML/1998/namespace'
+	}
+	let n = node;
+	while (n != null) {
+		for (let i=0;i<n.attributes.length;i++) {
+			if (n.attributes[i].nodeName.startsWith('xmlns:')) {
+				const prefix = n.attributes[i].nodeName.split(':')[1];
+				if (!(prefix in map)) map[prefix] = n.attributes[i].nodeValue;
+			} else if (n.attributes[i].nodeName == 'xmlns') {
+				if (!('' in map)) map[''] = n.attributes[i].nodeValue || null;
+			}
+		}
+		n = n.parentNode;
+	}
+	return map;
+}

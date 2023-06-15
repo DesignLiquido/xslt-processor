@@ -45,7 +45,8 @@ import {
     domCreateElement,
     domCreateCDATASection,
     domCreateComment,
-    domCreateDocumentFragment
+    domCreateDocumentFragment,
+    namespaceMapAt
 } from "./util.js"
 import {
     xpathParse,
@@ -95,14 +96,13 @@ export function xsltProcess(xmlDoc, stylesheet,parameters) {
 function xsltProcessContext(input, template, output, _parameters) {
     const outputDocument = xmlOwnerDocument(output);
 
-    const nodename = template.nodeName.split(/:/);
-    if (nodename.length == 1 || nodename[0] != 'xsl') {
+    if (!isXsltElement(template)) {
         xsltPassThrough(input, template, output, outputDocument);
     } else {
         let name, top, nameexpr, node, select, value, nodes, sortContext, mode, templates, paramContext, commentData, commentNode, test, match, text;
-        switch (nodename[1]) {
+        switch (template.localName) {
             case 'apply-imports':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'apply-templates':
                 select = xmlGetAttribute(template, 'select');
                 if (select) {
@@ -121,7 +121,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
                     if (c.nodeType == DOM_ELEMENT_NODE &&
-                        c.nodeName == 'xsl:template' &&
+                        isXsltElement(c,'template') &&
                         (!mode || c.getAttribute('mode') == mode)
                     ) {
                         templates.push(c);
@@ -143,7 +143,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 domSetAttribute(output, name, value);
                 break;
             case 'attribute-set':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'call-template':
                 name = xmlGetAttribute(template, 'name');
                 top = template.ownerDocument.documentElement;
@@ -154,7 +154,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
                     if (c.nodeType == DOM_ELEMENT_NODE &&
-                        c.nodeName == 'xsl:template' &&
+                        isXsltElement(c,'template') &&
                         domGetAttribute(c, 'name') == name) {
                         xsltChildNodes(paramContext, c, output);
                         break;
@@ -192,7 +192,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 }
                 break;
             case 'decimal-format':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'element':
                 nameexpr = xmlGetAttribute(template, 'name');
                 name = xsltAttributeValue(nameexpr, input);
@@ -201,7 +201,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 xsltChildNodes(input, template, node);
                 break;
             case 'fallback':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'for-each':
                 xsltForEach(input, template, output);
                 break;
@@ -212,19 +212,19 @@ function xsltProcessContext(input, template, output, _parameters) {
                 }
                 break;
             case 'import':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'include':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'key':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'message':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'namespace-alias':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'number':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'otherwise':
-                throw(`error if here: ${nodename[1]}`);
+                throw(`error if here: ${template.localName}`);
             case 'output':
                 // Ignored. -- Since we operate on the DOM, and all further use
                 // of the output of the XSL transformation is determined by the
@@ -232,14 +232,14 @@ function xsltProcessContext(input, template, output, _parameters) {
                 // this implementation.
                 break;
             case 'preserve-space':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'processing-instruction':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'sort':
                 // just ignore -- was handled by xsltSort()
                 break;
             case 'strip-space':
-                throw(`not implemented: ${nodename[1]}`);
+                throw(`not implemented: ${template.localName}`);
             case 'stylesheet':
             case 'transform':
                 xsltChildNodes(input, template, output);
@@ -268,11 +268,11 @@ function xsltProcessContext(input, template, output, _parameters) {
                 xsltVariable(input, template, true);
                 break;
             case 'when':
-                throw(`error if here: ${nodename[1]}`);
+                throw(`error if here: ${template.localName}`);
             case 'with-param':
-                throw(`error if here: ${nodename[1]}`);
+                throw(`error if here: ${template.localName}`);
             default:
-                throw(`error if here: ${nodename[1]}`);
+                throw(`error if here: ${template.localName}`);
         }
     }
 }
@@ -285,7 +285,7 @@ function xsltProcessContext(input, template, output, _parameters) {
 
 function xsltWithParam(input, template) {
     for (const c of template.childNodes) {
-        if (c.nodeType == DOM_ELEMENT_NODE && c.nodeName == 'xsl:with-param') {
+        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c,'with-param')) {
             xsltVariable(input, c, true);
         }
     }
@@ -303,7 +303,7 @@ function xsltSort(input, template) {
     const sort = [];
 
     for (const c of template.childNodes) {
-        if (c.nodeType == DOM_ELEMENT_NODE && c.nodeName == 'xsl:sort') {
+        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c,'sort')) {
             const select = xmlGetAttribute(c, 'select');
             const expr = xpathParse(select);
             const type = xmlGetAttribute(c, 'data-type') || 'text';
@@ -360,14 +360,14 @@ function xsltChoose(input, template, output) {
         if (childNode.nodeType != DOM_ELEMENT_NODE) {
             continue;
 
-        } else if (childNode.nodeName == 'xsl:when') {
+        } else if (isXsltElement(childNode,'when')) {
             const test = xmlGetAttribute(childNode, 'test');
             if (xpathEval(test, input).booleanValue()) {
                 xsltChildNodes(input, childNode, output);
                 break;
             }
 
-        } else if (childNode.nodeName == 'xsl:otherwise') {
+        } else if (isXsltElement(childNode,'otherwise')) {
             xsltChildNodes(input, childNode, output);
             break;
         }
@@ -449,7 +449,7 @@ function xsltPassText(template) {
     }
 
     let element = template.parentNode;
-    if (element.nodeName == 'xsl:text') {
+    if (isXsltElement(element,'text')) {
         return true;
     }
 
@@ -608,4 +608,12 @@ function xsltMatch(match, context) {
         }
     }
     return ret;
+}
+
+
+// Test if the given element is an XSLT element, optionally the one with the given name
+function isXsltElement(element, opt_wantedName) {
+	if (opt_wantedName && element.localName != opt_wantedName) return false;
+	if (element.namespaceURI) return element.namespaceURI == 'http://www.w3.org/1999/XSL/Transform';
+	else return element.prefix == 'xsl'; // backwards compatibility with earlier versions of xslt-processor
 }

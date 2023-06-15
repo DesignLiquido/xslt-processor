@@ -1139,12 +1139,23 @@ let xpathfunctions = {
         if (n.length == 0) {
             return new StringValue('');
         } else {
-            return new StringValue(n[0].nodeName.replace(/^[^:]+:/, ''));
+            return new StringValue(n[0].localName);
         }
     },
+    'namespace-uri' (ctx) {
+        assert(this.args.length == 1 || this.args.length == 0);
+        let n;
+        if (this.args.length == 0) {
+            n = [ctx.node];
+        } else {
+            n = this.args[0].evaluate(ctx).nodeSetValue();
+        }
 
-    'namespace-uri' () {
-        throw('not implemented yet: XPath function namespace-uri()');
+        if (n.length == 0) {
+            return new StringValue('');
+        } else {
+            return new StringValue(n[0].namespaceURI||'');
+        }
     },
 
     'name' (ctx) {
@@ -2014,7 +2025,7 @@ const xpathAxesRe = [
     xpathAxis.PRECEDING_SIBLING,
     xpathAxis.PRECEDING,
     xpathAxis.SELF
-].join('|');
+].join('(?=::)|')+'(?=::)'; //(viat) bodgy fix because namespace-uri() was getting detected as the namespace axis. maybe less bodgy fix later.
 
 
 // The tokens of the language. The label property is just used for
