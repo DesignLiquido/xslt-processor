@@ -62,7 +62,7 @@ are present as text.
 
 New tests are written in Jest an can be run by calling: `npm test`.
 
-The files `xslt.html` and `xpath.html` in the directory test are interactive tests. They can be run directly from the file system; no HTTP server is needed.
+The files `xslt.html` and `xpath.html` in the directory `interactive-tests` are interactive tests. They can be run directly from the file system; no HTTP server is needed.
 Both interactive tests and automatic tests demonstrate the use of the library functions. There is not much more documentation so far.
 
 ## Conformance
