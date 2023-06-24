@@ -4,14 +4,9 @@
 
 _A JavaScript XSLT processor without native library dependencies._
 
-## Unmaintained
-
-This package is looking for a maintainer. Please contact me if you are interested. We used XSLT for one thing and for that one purpose we are now using a replacement JavaScript library: [https://github.com/fiduswriter/mathml2omml](https://github.com/fiduswriter/mathml2omml).
-
-
 ## Howto
 
-Install xslt-processor using npm::
+Install xslt-processor using npm:
 
 ```
 npm install xslt-processor
@@ -45,11 +40,11 @@ If you write pre-2015 JS code, make adjustments as needed.
 XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses
 XPath, it also contains an implementation of XPath that can be used
 independently of XSLT. This implementation has the advantage that it
-makes XSLT uniformly available whenever the browser's native XSLTProcessor()
-is not available such as in node.js or in web workers.
+makes XSLT uniformly available whenever the browser's native `XSLTProcessor()`
+is not available such as in Node.js or in web workers.
 
 XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
-which was written before XSLTProcessor() became available in browsers, but the
+which was written before `XSLTProcessor()` became available in browsers, but the
 code base has been updated to comply with ES2015+ and to make it work outside of
 browsers.
 
@@ -67,7 +62,7 @@ are present as text.
 
 New tests are written in Jest an can be run by calling: `npm test`.
 
-The files xslt.html and xpath.html in the directory test are interactive tests. They can be run directly from the file system; no HTTP server is needed.
+The files `xslt.html` and `xpath.html` in the directory test are interactive tests. They can be run directly from the file system; no HTTP server is needed.
 Both interactive tests and automatic tests demonstrate the use of the library functions. There is not much more documentation so far.
 
 ## Conformance
@@ -83,15 +78,11 @@ The implementation is all agnostic about namespaces. It just expects
 XSLT elements to have tags that carry the xsl: prefix, but we
 disregard all namespace declaration for them.
 
-There are a few nonstandard XPath functions. Grep xpath.js for `ext-` to see their definitions.
-
+There are a few nonstandard XPath functions. Grep `xpath.js` for `ext-` to see their definitions.
 
 ## References
 
-- XPath Specification http://www.w3.org/TR/1999/REC-xpath-19991116
-
-- XSLT Specification http://www.w3.org/TR/1999/REC-xslt-19991116
-
-- W3C DOM Level 3 Core Specification http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
-
-- ECMAScript Language Specification http://www.ecma-international.org/publications/standards/Ecma-262.htm
+- XPath Specification: http://www.w3.org/TR/1999/REC-xpath-19991116
+- XSLT Specification: http://www.w3.org/TR/1999/REC-xslt-19991116
+- W3C DOM Level 3 Core Specification: http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
+- ECMAScript Language Specification: http://www.ecma-international.org/publications/standards/Ecma-262.htm
