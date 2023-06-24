@@ -11,11 +11,11 @@
   "scripts": {
     "test": "jest",
     "build": "rollup src/index.js -c -f cjs -o dist/xslt-processor.js",
-    "build_test": "npm run build_tests && npm run build_xpath_script && npm run build_xslt_script",
+    "build_test": "yarn build_tests && yarn build_xpath_script && yarn build_xslt_script",
     "build_xpath_script": "rollup test_src/xpath_script.js -c -f iife -o test_dist/xpath_script.js",
     "build_xslt_script": "rollup test_src/xslt_script.js -c -f iife -o test_dist/xslt_script.js",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run lint",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn lint",
     "lint": "eslint src/"
   },
   "repository": {
@@ -43,7 +43,8 @@
     "rollup-plugin-buble": "^0.19.6",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-terser": "^4.0.3"
+    "rollup-plugin-terser": "^4.0.3",
+    "typescript": "^5.1.3"
   },
   "dependencies": {
     "he": "^1.2.0"

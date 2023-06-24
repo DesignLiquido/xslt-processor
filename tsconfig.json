@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "module": "esnext",
+        "target": "ES2017",
+        "rootDir": ".",
+        "allowJs": true,
+        "sourceMap": true,
+        "declaration": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+    },
+    "exclude": [
+        "babel.config.js",
+        "dist/**/*"
+    ]
+}
