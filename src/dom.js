@@ -6,7 +6,7 @@
 //
 // An XML parse and a minimal DOM implementation that just supports
 // the subset of the W3C DOM that is used in the XSLT implementation.
-import he from "he"
+import he from 'he';
 
 import {
     domSetAttribute,
@@ -16,7 +16,7 @@ import {
     domCreateCDATASection,
     domCreateComment,
     namespaceMapAt
-} from "./util.js"
+} from './util.js';
 import {
     XML10_VERSION_INFO,
     XML10_NAME,
@@ -24,15 +24,13 @@ import {
     XML11_VERSION_INFO,
     XML11_NAME,
     XML11_ATTRIBUTE
-} from "./xmltoken.js"
-
+} from './xmltoken.js';
 
 const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
 const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
 
 const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
-
 
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
@@ -53,7 +51,7 @@ export function xmlParse(xml) {
         } else {
             // VersionInfo is missing, or unknown version number.
             // TODO : Fallback to XML 1.0 or XML 1.1, or just return null?
-            throw('VersionInfo is missing, or unknown version number.');
+            throw 'VersionInfo is missing, or unknown version number.';
         }
     } else {
         // When an XML declaration is missing it's an XML 1.0 document.
@@ -76,9 +74,9 @@ export function xmlParse(xml) {
         let char = xml.charAt(i);
         if (tag && !doublequotes && char === "'") {
             quotes = !quotes;
-        } else if (tag && !quotes && char === "\"") {
+        } else if (tag && !quotes && char === '"') {
             doublequotes = !doublequotes;
-        } else if (tag && char === ">" && !quotes && !doublequotes) {
+        } else if (tag && char === '>' && !quotes && !doublequotes) {
             let text = xml.slice(start, i);
             if (text.charAt(0) == '/') {
                 stack.pop();
@@ -97,53 +95,52 @@ export function xmlParse(xml) {
                     const val = he.decode(att[5] || att[7] || '');
                     domSetAttribute(node, att[1], val);
                 }
-                
+
                 domAppendChild(parent, node);
                 if (!empty) {
                     parent = node;
                     stack.push(node);
                 }
-                
-                const namespaceMap = namespaceMapAt(node);
-                if (node.prefix != null) {
-                	if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
-                	// else, prefix is undefined. do anything?
-                } else {
-                	if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
-                }
-                for (let i=0;i<node.attributes.length;++i) {
-                	if (node.attributes[i].prefix != null) {
-                		if (node.attributes[i].prefix in namespaceMap) {
-                			node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
-                		}
-                		// else, prefix undefined.
-                	}
-                	// elements with no prefix always have no namespace, so do nothing here.
-                }
 
+                const namespaceMap = namespaceMapAt(node);
+                if (node.prefix !== null) {
+                    if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
+                    // else, prefix is undefined. do anything?
+                } else {
+                    if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
+                }
+                for (let i = 0; i < node.attributes.length; ++i) {
+                    if (node.attributes[i].prefix !== null) {
+                        if (node.attributes[i].prefix in namespaceMap) {
+                            node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
+                        }
+                        // else, prefix undefined.
+                    }
+                    // elements with no prefix always have no namespace, so do nothing here.
+                }
             }
             start = i + 1;
             tag = false;
             quotes = false;
             doublequotes = false;
-        } else if (!tag && char === "<") {
-            let text = xml.slice(start, i)
+        } else if (!tag && char === '<') {
+            let text = xml.slice(start, i);
             if (text && parent != root) {
                 domAppendChild(parent, domCreateTextNode(xmldoc, text));
             }
-            if (xml.slice(i+1,i+4)==="!--") {
-                let endTagIndex = xml.slice(i+4).indexOf('-->');
+            if (xml.slice(i + 1, i + 4) === '!--') {
+                let endTagIndex = xml.slice(i + 4).indexOf('-->');
                 if (endTagIndex) {
-                    let node = domCreateComment(xmldoc, xml.slice(i+4, i+endTagIndex+4));
+                    let node = domCreateComment(xmldoc, xml.slice(i + 4, i + endTagIndex + 4));
                     domAppendChild(parent, node);
-                    i += endTagIndex+6;
+                    i += endTagIndex + 6;
                 }
-            } else if (xml.slice(i+1,i+9)==="![CDATA[") {
-                let endTagIndex = xml.slice(i+9).indexOf(']]>');
+            } else if (xml.slice(i + 1, i + 9) === '![CDATA[') {
+                let endTagIndex = xml.slice(i + 9).indexOf(']]>');
                 if (endTagIndex) {
-                    let node = domCreateCDATASection(xmldoc, xml.slice(i+9, i+endTagIndex+9));
+                    let node = domCreateCDATASection(xmldoc, xml.slice(i + 9, i + endTagIndex + 9));
                     domAppendChild(parent, node);
-                    i += endTagIndex+11;
+                    i += endTagIndex + 11;
                 }
             } else {
                 tag = true;
@@ -204,11 +201,11 @@ function domTraverseElements(node, opt_pre, opt_post) {
 }
 
 function qualifiedNameToParts(name) {
-	if (name.includes(':')) {
-		return name.split(':');
-	} else {
-		return [ null, name ];
-	}
+    if (name.includes(':')) {
+        return name.split(':');
+    } else {
+        return [null, name];
+    }
 }
 
 let _unusedXNodes = [];
@@ -232,8 +229,8 @@ export class XNode {
         this.nodeValue = `${value}`;
         this.ownerDocument = owner;
         this.namespaceURI = namespace || null;
-        [ this.prefix, this.localName ] = qualifiedNameToParts(`${name}`);
-        
+        [this.prefix, this.localName] = qualifiedNameToParts(`${name}`);
+
         this.firstChild = null;
         this.lastChild = null;
         this.nextSibling = null;
@@ -419,17 +416,20 @@ export class XNode {
         }
         this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this));
     }
-    
+
     setAttributeNS(namespace, name, value) {
-    	for (let i=0; i<this.attributes.length; ++i) {
-    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == qualifiedNameToParts(`${name}`)[1]) {
-    			this.attributes[i].nodeValue = `${value}`;
-    			this.attributes[i].nodeName = `${name}`;
-    			this.attributes[i].prefix = qualifiedNameToParts(`${name}`)[0];
-    			return;
-    		}
-    	}
-    	this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
+        for (let i = 0; i < this.attributes.length; ++i) {
+            if (
+                this.attributes[i].namespaceURI == namespace &&
+                this.attributes[i].localName == qualifiedNameToParts(`${name}`)[1]
+            ) {
+                this.attributes[i].nodeValue = `${value}`;
+                this.attributes[i].nodeName = `${name}`;
+                this.attributes[i].prefix = qualifiedNameToParts(`${name}`)[0];
+                return;
+            }
+        }
+        this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
     }
 
     getAttribute(name) {
@@ -440,14 +440,14 @@ export class XNode {
         }
         return null;
     }
-    
+
     getAttributeNS(namespace, localName) {
-    	for (let i=0; i<this.attributes.length; ++i) {
-    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
-    			return this.attributes[i].nodeValue;
-    		}
-    	}
-    	return null;
+        for (let i = 0; i < this.attributes.length; ++i) {
+            if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+                return this.attributes[i].nodeValue;
+            }
+        }
+        return null;
     }
 
     hasAttribute(name) {
@@ -458,14 +458,14 @@ export class XNode {
         }
         return false;
     }
-    
+
     hasAttributeNS(namespace, localName) {
-    	for (let i=0; i<this.attributes.length; ++i) {
-    		if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (let i = 0; i < this.attributes.length; ++i) {
+            if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+                return true;
+            }
+        }
+        return false;
     }
 
     removeAttribute(name) {
@@ -477,32 +477,40 @@ export class XNode {
         }
         this.attributes = a;
     }
-    
+
     removeAttributeNS(namespace, localName) {
-    	const a = [];
-    	for (let i=0; i<this.attributes.length; ++i) {
-    		if (this.attributes[i].localName != localName || this.attributes[i].namespaceURI != namespace) {
-    			a.push(this.attributes[i]);
-    		}
-    	}
-    	this.attributes = a;
+        const a = [];
+        for (let i = 0; i < this.attributes.length; ++i) {
+            if (this.attributes[i].localName != localName || this.attributes[i].namespaceURI != namespace) {
+                a.push(this.attributes[i]);
+            }
+        }
+        this.attributes = a;
     }
 
     getElementsByTagName(name) {
         const ret = [];
         const self = this;
-        if ("*" == name) {
-            domTraverseElements(this, node => {
-                if (self == node) return;
-                ret.push(node);
-            }, null);
-        } else {
-            domTraverseElements(this, node => {
-                if (self == node) return;
-                if (node.nodeName == name) {
+        if ('*' == name) {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
                     ret.push(node);
-                }
-            }, null);
+                },
+                null
+            );
+        } else {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
+                    if (node.nodeName == name) {
+                        ret.push(node);
+                    }
+                },
+                null
+            );
         }
         return ret;
     }
@@ -510,40 +518,60 @@ export class XNode {
     getElementsByTagNameNS(namespace, localName) {
         const ret = [];
         const self = this;
-        if ("*" == namespace && '*' == localName) {
-            domTraverseElements(this, node => {
-                if (self == node) return;
-                ret.push(node);
-            }, null);
-        } else if ('*' == namespace) {
-        	domTraverseElements(this, node=>{
-        		if (self == node) return;
-        		if (node.localName == localName) ret.push(node);
-        	}, null);
-        } else if ('*' == localName) {
-        	domTraverseElements(this, node=>{
-        		if (self == node) return;
-        		if (node.namespaceURI == namespace) ret.push(node);
-        	}, null);
-        } else {
-            domTraverseElements(this, node => {
-                if (self == node) return;
-                if (node.localName == localName && node.namespaceURI == namespace) {
+        if ('*' == namespace && '*' == localName) {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
                     ret.push(node);
-                }
-            }, null);
+                },
+                null
+            );
+        } else if ('*' == namespace) {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
+                    if (node.localName == localName) ret.push(node);
+                },
+                null
+            );
+        } else if ('*' == localName) {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
+                    if (node.namespaceURI == namespace) ret.push(node);
+                },
+                null
+            );
+        } else {
+            domTraverseElements(
+                this,
+                node => {
+                    if (self == node) return;
+                    if (node.localName == localName && node.namespaceURI == namespace) {
+                        ret.push(node);
+                    }
+                },
+                null
+            );
         }
         return ret;
     }
 
     getElementById(id) {
         let ret = null;
-        domTraverseElements(this, node => {
-            if (node.getAttribute('id') == id) {
-                ret = node;
-                return false;
-            }
-        }, null);
+        domTraverseElements(
+            this,
+            node => {
+                if (node.getAttribute('id') == id) {
+                    ret = node;
+                    return false;
+                }
+            },
+            null
+        );
         return ret;
     }
 }
@@ -569,14 +597,13 @@ export class XDocument extends XNode {
     createElement(name) {
         return super.create(DOM_ELEMENT_NODE, name, null, this);
     }
-    
+
     createElementNS(namespace, name) {
-    	return super.create(DOM_ELEMENT_NODE, name, null, this, namespace);
+        return super.create(DOM_ELEMENT_NODE, name, null, this, namespace);
     }
 
     createDocumentFragment() {
-        return super.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment',
-            null, this);
+        return super.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
     }
 
     createTextNode(value) {

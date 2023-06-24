@@ -6,12 +6,7 @@
 // Miscellaneous utility and placeholder functions.
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
-import {
-    FunctionCallExpr,
-    UnaryMinusExpr,
-    BinaryExpr,
-    NumberExpr
-} from "./xpath.js"
+import { FunctionCallExpr, UnaryMinusExpr, BinaryExpr, NumberExpr } from './xpath.js';
 import {
     DOM_TEXT_NODE,
     DOM_CDATA_SECTION_NODE,
@@ -20,11 +15,11 @@ import {
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_ATTRIBUTE_NODE,
     DOM_COMMENT_NODE
-} from "./dom.js"
+} from './dom.js';
 // Throws an exception if false.
 export function assert(b) {
     if (!b) {
-        throw "Assertion failed";
+        throw 'Assertion failed';
     }
 }
 
@@ -93,15 +88,15 @@ export function xmlValue(node, disallowBrowserSpecificOptimization) {
     }
 
     let ret = '';
-    if (node.nodeType == DOM_TEXT_NODE ||
-        node.nodeType == DOM_CDATA_SECTION_NODE) {
+    if (node.nodeType == DOM_TEXT_NODE || node.nodeType == DOM_CDATA_SECTION_NODE) {
         ret += node.nodeValue;
-
     } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
         ret += node.nodeValue;
-    } else if (node.nodeType == DOM_ELEMENT_NODE ||
+    } else if (
+        node.nodeType == DOM_ELEMENT_NODE ||
         node.nodeType == DOM_DOCUMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
+        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE
+    ) {
         if (!disallowBrowserSpecificOptimization) {
             // IE, Safari, Opera, and friends
             const innerText = node.innerText;
@@ -133,17 +128,14 @@ export function xmlText(node, opt_cdata) {
 function xmlTextR(node, buf, cdata) {
     if (node.nodeType == DOM_TEXT_NODE) {
         buf.push(xmlEscapeText(node.nodeValue));
-
     } else if (node.nodeType == DOM_CDATA_SECTION_NODE) {
         if (cdata) {
             buf.push(node.nodeValue);
         } else {
             buf.push(`<![CDATA[${node.nodeValue}]]>`);
         }
-
     } else if (node.nodeType == DOM_COMMENT_NODE) {
         buf.push(`<!--${node.nodeValue}-->`);
-
     } else if (node.nodeType == DOM_ELEMENT_NODE) {
         buf.push(`<${xmlFullNodeName(node)}`);
         for (let i = 0; i < node.attributes.length; ++i) {
@@ -162,9 +154,7 @@ function xmlTextR(node, buf, cdata) {
             }
             buf.push(`</${xmlFullNodeName(node)}>`);
         }
-
-    } else if (node.nodeType == DOM_DOCUMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
+    } else if (node.nodeType == DOM_DOCUMENT_NODE || node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         for (let i = 0; i < node.childNodes.length; ++i) {
             xmlTextR(node.childNodes[i], buf, cdata);
         }
@@ -183,11 +173,11 @@ function xmlFullNodeName(n) {
 // reference start delimiter &. The escaped string can be used in XML
 // text portions (i.e. between tags).
 export function xmlEscapeText(s) {
-    return (`${s}`).
-        replace(/&/g, '&amp;').
-        replace(/&amp;amp;/g, '&amp;').
-        replace(/</g, '&lt;').
-        replace(/>/g, '&gt;');
+    return `${s}`
+        .replace(/&/g, '&amp;')
+        .replace(/&amp;amp;/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 // Escape XML special markup characters: tag delimiter < > entity
@@ -253,17 +243,12 @@ export function domCreateDocumentFragment(doc) {
  *
  * Based on: http://simonwillison.net/2006/Jan/20/escape/
  */
-const regExpSpecials = [
-    '/', '.', '*', '+', '?', '|', '^', '$',
-    '(', ')', '[', ']', '{', '}', '\\'
-];
+const regExpSpecials = ['/', '.', '*', '+', '?', '|', '^', '$', '(', ')', '[', ']', '{', '}', '\\'];
 
-const sRE = new RegExp(
-    `(\\${regExpSpecials.join('|\\')})`, 'g'
-);
+const sRE = new RegExp(`(\\${regExpSpecials.join('|\\')})`, 'g');
 
 export function regExpEscape(text) {
-    return text.replace(sRE, '\\$1')
+    return text.replace(sRE, '\\$1');
 }
 
 /**
@@ -284,12 +269,12 @@ export function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
     }
     if (expr instanceof FunctionCallExpr) {
         const value = expr.name.value;
-        return (value == 'last' || value == 'position');
+        return value == 'last' || value == 'position';
     }
     if (expr instanceof BinaryExpr) {
         return (
-            predicateExprHasPositionalSelector(expr.expr1, true) ||
-            predicateExprHasPositionalSelector(expr.expr2, true));
+            predicateExprHasPositionalSelector(expr.expr1, true) || predicateExprHasPositionalSelector(expr.expr2, true)
+        );
     }
     return false;
 }
@@ -328,22 +313,22 @@ function exprReturnsNumberValue(expr) {
 // (viat) given an XNode (see dom.js), returns an object mapping prefixes to their corresponding namespaces in its scope.
 // default namespace is treated as if its prefix were the empty string.
 export function namespaceMapAt(node) {
-	const map = {
-		// reserved namespaces https://www.w3.org/TR/REC-xml-names/#xmlReserved
-		xmlns: 'http://www.w3.org/2000/xmlns/',
-		xml: 'http://www.w3.org/XML/1998/namespace'
-	}
-	let n = node;
-	while (n != null) {
-		for (let i=0;i<n.attributes.length;i++) {
-			if (n.attributes[i].nodeName.startsWith('xmlns:')) {
-				const prefix = n.attributes[i].nodeName.split(':')[1];
-				if (!(prefix in map)) map[prefix] = n.attributes[i].nodeValue;
-			} else if (n.attributes[i].nodeName == 'xmlns') {
-				if (!('' in map)) map[''] = n.attributes[i].nodeValue || null;
-			}
-		}
-		n = n.parentNode;
-	}
-	return map;
+    const map = {
+        // reserved namespaces https://www.w3.org/TR/REC-xml-names/#xmlReserved
+        xmlns: 'http://www.w3.org/2000/xmlns/',
+        xml: 'http://www.w3.org/XML/1998/namespace'
+    };
+    let n = node;
+    while (n !== null) {
+        for (let i = 0; i < n.attributes.length; i++) {
+            if (n.attributes[i].nodeName.startsWith('xmlns:')) {
+                const prefix = n.attributes[i].nodeName.split(':')[1];
+                if (!(prefix in map)) map[prefix] = n.attributes[i].nodeValue;
+            } else if (n.attributes[i].nodeName == 'xmlns') {
+                if (!('' in map)) map[''] = n.attributes[i].nodeValue || null;
+            }
+        }
+        n = n.parentNode;
+    }
+    return map;
 }

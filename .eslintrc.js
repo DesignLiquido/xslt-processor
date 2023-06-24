@@ -52,10 +52,6 @@ module.exports = {
         "consistent-this": "off",
         "curly": "off",
         "default-case": "off",
-        "dot-location": [
-            "error",
-            "object"
-        ],
         "dot-notation": "error",
         "eol-last": "error",
         "eqeqeq": "off",
@@ -188,7 +184,7 @@ module.exports = {
         "no-unmodified-loop-condition": "error",
         "no-unneeded-ternary": "error",
         "no-unused-expressions": "off",
-        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
         "no-use-before-define": "off",
         "no-useless-call": "off",
         "no-useless-computed-key": "error",
@@ -203,10 +199,6 @@ module.exports = {
         "no-with": "error",
         "nonblock-statement-body-position": "error",
         "object-curly-newline": "error",
-        "object-curly-spacing": [
-            "error",
-            "never"
-        ],
         "object-property-newline": "error",
         "object-shorthand": "error",
         "one-var": "off",
