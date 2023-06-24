@@ -613,7 +613,7 @@ function xsltMatch(match, context) {
 
 // Test if the given element is an XSLT element, optionally the one with the given name
 function isXsltElement(element, opt_wantedName) {
-	if (opt_wantedName && element.localName != opt_wantedName) return false;
-	if (element.namespaceURI) return element.namespaceURI == 'http://www.w3.org/1999/XSL/Transform';
-	else return element.prefix == 'xsl'; // backwards compatibility with earlier versions of xslt-processor
+    if (opt_wantedName && element.localName != opt_wantedName) return false;
+    if (element.namespaceURI) return element.namespaceURI == 'http://www.w3.org/1999/XSL/Transform';
+    return element.prefix == 'xsl'; // backwards compatibility with earlier versions of xslt-processor
 }
