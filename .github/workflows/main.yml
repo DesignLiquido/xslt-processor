@@ -1,0 +1,29 @@
+name: Commit and PR - Main
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2-beta
+      with:
+        node-version: '16'
+    - uses: ArtiomTr/jest-coverage-report-action@v2
+      id: coverage
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        test-script: yarn test
+        package-manager: yarn
+        output: report-markdown
+    - uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        message: ${{ steps.coverage.outputs.report }}
