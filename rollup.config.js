@@ -12,7 +12,7 @@ export default {
                 "**/*.test.ts",
                 "jest.config.ts"
             ],
-            tsconfig: './tsconfig.json'
+            tsconfig: './tsconfig.rollup.json'
         }),
         commonjs(),
         resolve(),
