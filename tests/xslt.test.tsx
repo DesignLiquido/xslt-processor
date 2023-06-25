@@ -10,10 +10,10 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import {
     xsltProcess
-} from "../src/xslt.js"
+} from "../src/xslt"
 import {
     xmlParse
-} from "../src/dom.js"
+} from "../src/dom"
 
 const xmlString = <all>
   <item pos="2">A</item>

@@ -17,13 +17,13 @@ import {
     StringValue,
     BooleanValue,
     NumberValue
-} from "../src/xpath.js"
+} from "../src/xpath"
 import {
     xmlValue,
-} from "../src/util.js"
+} from "../src/util"
 import {
     xmlParse
-} from "../src/dom.js"
+} from "../src/dom"
 
 
 const expr = [

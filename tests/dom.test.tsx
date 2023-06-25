@@ -10,10 +10,10 @@ import he from "he"
 
 import {
     xmlParse
-} from "../src/dom.js"
+} from "../src/dom"
 import {
     xmlText
-} from "../src/util.js"
+} from "../src/util"
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
