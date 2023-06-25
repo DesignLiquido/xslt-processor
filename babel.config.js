@@ -9,9 +9,5 @@ module.exports = {
         ],
         '@babel/preset-env',
         '@babel/preset-typescript'
-    ],
-    plugins: [
-        // "@babel/plugin-transform-react-jsx",
-        // "@babel/plugin-transform-typescript"
     ]
 };

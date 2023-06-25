@@ -10,17 +10,6 @@ export default async (): Promise<Config.InitialOptions> => {
 			color: 'greenBright'
 		},
 		detectOpenHandles: true,
-		/* transform: {
-			"\\.[jt]sx?$": [
-				'jest-chain-transform',
-				{
-					transformers: [
-						'babel-jest', 
-						'ts-jest'
-					]
-				}
-			]
-		}, */
 		transform: {
 			"\\.[jt]sx?$": "babel-jest"
 		}

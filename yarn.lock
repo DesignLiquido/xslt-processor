@@ -4186,11 +4186,6 @@ jackspeak@^2.0.3:
   optionalDependencies:
     "@pkgjs/parseargs" "^0.11.0"
 
-jest-chain-transform@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/jest-chain-transform/-/jest-chain-transform-0.0.5.tgz#678fd4cdee417332c09c9d94f4dd489f97949a7d"
-  integrity sha512-5lmLEPg2Ygm5m+KqXx6pFAPTHATxLoL472r0Shv1261jMWr83EwucDfsnVFWhjCBdNxCH4fM/HXWGdrTQC0NcA==
-
 jest-changed-files@^29.5.0:
   version "29.5.0"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-29.5.0.tgz#e88786dca8bf2aa899ec4af7644e16d9dcf9b23e"
