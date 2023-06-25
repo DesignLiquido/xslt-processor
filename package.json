@@ -15,7 +15,6 @@
     "build_xpath_script": "rollup test_src/xpath_script.js -c -f iife -o test_dist/xpath_script.js",
     "build_xslt_script": "rollup test_src/xslt_script.js -c -f iife -o test_dist/xslt_script.js",
     "prepare": "yarn build",
-    "prepublishOnly": "yarn lint",
     "lint": "eslint src/**/*"
   },
   "repository": {
