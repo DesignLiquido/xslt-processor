@@ -18,7 +18,7 @@ import { dom } from 'isomorphic-jsx';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('dom parsing', () => {
-    it.skip('can parse xml', () => {
+    it('can parse xml', () => {
         const xml = "<page> " +
                 "    <request> " +
                 "        <q id=\"q\">new york</q> " +
@@ -29,6 +29,13 @@ describe('dom parsing', () => {
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
+
+        assert.equal(
+            dom1.firstChild.childNodes[1].attributes.length,
+            dom2.firstChild.childNodes[1].attributes.length,
+            'location.attributes.length'
+        );
+        // assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
 
         const tag = 'q';
         const byTag = dom1.getElementsByTagName(tag);
@@ -54,6 +61,13 @@ describe('dom parsing', () => {
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
+
+        assert.equal(
+            dom1.firstChild.childNodes[1].attributes.length,
+            dom2.firstChild.childNodes[1].attributes.length,
+            'location.attributes.length'
+        );
+        assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
     });
 
     it('can parse Japanese xml', () => {
@@ -70,6 +84,13 @@ describe('dom parsing', () => {
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
+
+        assert.equal(
+            dom1.firstChild.childNodes[1].attributes.length,
+            dom2.firstChild.childNodes[1].attributes.length,
+            'location.attributes.length'
+        );
+        assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
     });
 
     it('can resolve entities', () => {
@@ -96,11 +117,4 @@ const doTestXmlParse = (dom1, dom2) => {
     assert.equal(dom1.childNodes.length, dom2.childNodes.length, 'dom.childNodes.length');
     assert.equal(dom1.firstChild.childNodes.length, dom2.firstChild.childNodes.length, 'dom.childNodes.length');
     assert.equal(dom1.firstChild.childNodes.length, dom2.firstChild.childNodes.length, 'dom.childNodes.length');
-
-    assert.equal(
-        dom1.firstChild.childNodes[1].attributes.length,
-        dom2.firstChild.childNodes[1].attributes.length,
-        'location.attributes.length'
-    );
-    assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
 };
