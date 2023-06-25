@@ -6,7 +6,7 @@
 // A very simple logging facility, used in test/xpath.html.
 import {
     xmlEscapeText
-} from "../src/util.js"
+} from "../src/dom/util.js"
 
 
 export class Log {

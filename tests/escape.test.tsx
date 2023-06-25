@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { xmlParse } from '../src/dom'
-import { xmlText } from '../src/util'
+import { xmlText } from '../src/dom/util'
 
 
 describe('escape', () => {

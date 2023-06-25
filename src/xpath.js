@@ -49,8 +49,8 @@ import {
     xmlValue,
     regExpEscape,
     predicateExprHasPositionalSelector
-} from './util';
-import { XML_NC_NAME } from './xmltoken';
+} from './dom/util';
+import { XML_NC_NAME } from './dom/xmltoken';
 import {
     XNode,
     DOM_DOCUMENT_NODE,

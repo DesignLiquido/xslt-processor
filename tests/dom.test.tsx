@@ -13,7 +13,7 @@ import {
 } from "../src/dom"
 import {
     xmlText
-} from "../src/util"
+} from "../src/dom/util"
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';

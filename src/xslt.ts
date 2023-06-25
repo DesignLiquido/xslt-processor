@@ -48,7 +48,7 @@ import {
     domCreateComment,
     domCreateDocumentFragment,
     namespaceMapAt
-} from './util';
+} from './dom/util';
 import { xpathParse, ExprContext, StringValue, NodeSetValue, xpathSort, xpathEval } from './xpath';
 import {
     XDocument,
@@ -67,7 +67,7 @@ import {
 // @param xmlDoc The input document root, as DOM node.
 // @param template The stylesheet document root, as DOM node.
 // @return the processed document, as XML text in a string.
-export function xsltProcess(xmlDoc, stylesheet, parameters) {
+export function xsltProcess(xmlDoc: any, stylesheet: any, parameters?: any) {
     const output = domCreateDocumentFragment(new XDocument());
     const expressionContext = new ExprContext(xmlDoc);
     if (parameters && typeof parameters === 'object') {

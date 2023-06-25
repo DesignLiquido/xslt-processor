@@ -20,7 +20,7 @@ import {
 } from "../src/xpath"
 import {
     xmlValue,
-} from "../src/util"
+} from "../src/dom/util"
 import {
     xmlParse
 } from "../src/dom"

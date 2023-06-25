@@ -1,225 +1,35 @@
-// Copyright 2023 Design Liquido
-// Copyright 2018 Johannes Wilm
-// Copyright 2005 Google Inc.
-// All Rights Reserved
-//
-// Original author: Steffen Meschkat <mesch@google.com>
-//
-// An XML parse and a minimal DOM implementation that just supports
-// the subset of the W3C DOM that is used in the XSLT implementation.
-import he from 'he';
-
-import {
-    domSetAttribute,
-    domAppendChild,
-    domCreateTextNode,
-    domCreateElement,
-    domCreateCDATASection,
-    domCreateComment,
-    namespaceMapAt
-} from './util';
-import {
-    XML10_VERSION_INFO,
-    XML10_NAME,
-    XML10_ATTRIBUTE,
-    XML11_VERSION_INFO,
-    XML11_NAME,
-    XML11_ATTRIBUTE
-} from './xmltoken';
-
-const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
-const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
-
-const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
-const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
-
-// Parses the given XML string with our custom, JavaScript XML parser. Written
-// by Steffen Meschkat (mesch@google.com).
-export function xmlParse(xml) {
-    const regex_empty = /\/$/;
-
-    let regex_tagname;
-    let regex_attribute;
-    if (xml.match(/^<\?xml/)) {
-        // When an XML document begins with an XML declaration
-        // VersionInfo must appear.
-        if (xml.search(new RegExp(XML10_VERSION_INFO)) == 5) {
-            regex_tagname = XML10_TAGNAME_REGEXP;
-            regex_attribute = XML10_ATTRIBUTE_REGEXP;
-        } else if (xml.search(new RegExp(XML11_VERSION_INFO)) == 5) {
-            regex_tagname = XML11_TAGNAME_REGEXP;
-            regex_attribute = XML11_ATTRIBUTE_REGEXP;
-        } else {
-            // VersionInfo is missing, or unknown version number.
-            // TODO : Fallback to XML 1.0 or XML 1.1, or just return null?
-            throw 'VersionInfo is missing, or unknown version number.';
-        }
-    } else {
-        // When an XML declaration is missing it's an XML 1.0 document.
-        regex_tagname = XML10_TAGNAME_REGEXP;
-        regex_attribute = XML10_ATTRIBUTE_REGEXP;
-    }
-
-    const xmldoc = new XDocument();
-    const root = xmldoc;
-    const stack = [];
-
-    let parent = root;
-    stack.push(parent);
-
-    let tag = false,
-        quotes = false,
-        doublequotes = false,
-        start = 0;
-    for (let i = 0; i < xml.length; ++i) {
-        let char = xml.charAt(i);
-        if (tag && !doublequotes && char === "'") {
-            quotes = !quotes;
-        } else if (tag && !quotes && char === '"') {
-            doublequotes = !doublequotes;
-        } else if (tag && char === '>' && !quotes && !doublequotes) {
-            let text = xml.slice(start, i);
-            if (text.charAt(0) == '/') {
-                stack.pop();
-                parent = stack[stack.length - 1];
-            } else if (text.charAt(0) == '?') {
-                // Ignore XML declaration and processing instructions
-            } else if (text.charAt(0) == '!') {
-                // Ignore malformed notation and comments
-            } else {
-                const empty = text.match(regex_empty);
-                const tagname = regex_tagname.exec(text)[1];
-                let node = domCreateElement(xmldoc, tagname);
-
-                let att;
-                while ((att = regex_attribute.exec(text))) {
-                    const val = he.decode(att[5] || att[7] || '');
-                    domSetAttribute(node, att[1], val);
-                }
-
-                domAppendChild(parent, node);
-                if (!empty) {
-                    parent = node;
-                    stack.push(node);
-                }
-
-                const namespaceMap = namespaceMapAt(node);
-                if (node.prefix !== null) {
-                    if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
-                    // else, prefix is undefined. do anything?
-                } else {
-                    if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
-                }
-                for (let i = 0; i < node.attributes.length; ++i) {
-                    if (node.attributes[i].prefix !== null) {
-                        if (node.attributes[i].prefix in namespaceMap) {
-                            node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
-                        }
-                        // else, prefix undefined.
-                    }
-                    // elements with no prefix always have no namespace, so do nothing here.
-                }
-            }
-            start = i + 1;
-            tag = false;
-            quotes = false;
-            doublequotes = false;
-        } else if (!tag && char === '<') {
-            let text = xml.slice(start, i);
-            if (text && parent != root) {
-                domAppendChild(parent, domCreateTextNode(xmldoc, text));
-            }
-            if (xml.slice(i + 1, i + 4) === '!--') {
-                let endTagIndex = xml.slice(i + 4).indexOf('-->');
-                if (endTagIndex) {
-                    let node = domCreateComment(xmldoc, xml.slice(i + 4, i + endTagIndex + 4));
-                    domAppendChild(parent, node);
-                    i += endTagIndex + 6;
-                }
-            } else if (xml.slice(i + 1, i + 9) === '![CDATA[') {
-                let endTagIndex = xml.slice(i + 9).indexOf(']]>');
-                if (endTagIndex) {
-                    let node = domCreateCDATASection(xmldoc, xml.slice(i + 9, i + endTagIndex + 9));
-                    domAppendChild(parent, node);
-                    i += endTagIndex + 11;
-                }
-            } else {
-                tag = true;
-            }
-            start = i + 1;
-        }
-    }
-
-    return root;
-}
-
-// Based on <http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/
-// core.html#ID-1950641247>
-export const DOM_ELEMENT_NODE = 1;
-export const DOM_ATTRIBUTE_NODE = 2;
-export const DOM_TEXT_NODE = 3;
-export const DOM_CDATA_SECTION_NODE = 4;
-// const DOM_ENTITY_REFERENCE_NODE = 5;
-// const DOM_ENTITY_NODE = 6;
-export const DOM_PROCESSING_INSTRUCTION_NODE = 7;
-export const DOM_COMMENT_NODE = 8;
-export const DOM_DOCUMENT_NODE = 9;
-// const DOM_DOCUMENT_TYPE_NODE = 10;
-export const DOM_DOCUMENT_FRAGMENT_NODE = 11;
-// const DOM_NOTATION_NODE = 12;
-
-// Traverses the element nodes in the DOM section underneath the given
-// node and invokes the given callbacks as methods on every element
-// node encountered. Function opt_pre is invoked before a node's
-// children are traversed; opt_post is invoked after they are
-// traversed. Traversal will not be continued if a callback function
-// returns boolean false. NOTE(mesch): copied from
-// <//google3/maps/webmaps/javascript/dom.js>.
-function domTraverseElements(node, opt_pre, opt_post) {
-    let ret;
-    if (opt_pre) {
-        ret = opt_pre.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
-
-    for (let c = node.firstChild; c; c = c.nextSibling) {
-        if (c.nodeType == DOM_ELEMENT_NODE) {
-            ret = domTraverseElements.call(this, c, opt_pre, opt_post);
-            if (typeof ret == 'boolean' && !ret) {
-                return false;
-            }
-        }
-    }
-
-    if (opt_post) {
-        ret = opt_post.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
-}
-
-function qualifiedNameToParts(name) {
-    if (name.includes(':')) {
-        return name.split(':');
-    } else {
-        return [null, name];
-    }
-}
-
-let _unusedXNodes = [];
-
 // Our W3C DOM Node implementation. Note we call it XNode because we
 // can't define the identifier Node. We do this mostly for Opera,
 // where we can't reuse the HTML DOM for parsing our own XML, and for
 // Safari, where it is too expensive to have the template processor
+
+import { DOM_ATTRIBUTE_NODE } from "./constants";
+import { domTraverseElements } from "./functions";
+import { XDocument } from "./xdocument";
+
 // operate on native DOM nodes.
 export class XNode {
-    constructor(type, name, opt_value, opt_owner, opt_namespace) {
+    attributes: any[];
+    childNodes: any[];
+    nodeType: any;
+    nodeName: string;
+    nodeValue: string;
+    ownerDocument: any;
+    namespaceURI: any;
+    prefix: any;
+    localName: any;
+    firstChild: any;
+    lastChild: any;
+    nextSibling: any;
+    previousSibling: any;
+    parentNode: any;
+
+    _unusedXNodes: any[];
+
+    constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.attributes = [];
         this.childNodes = [];
+        this._unusedXNodes = [];
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
@@ -230,7 +40,7 @@ export class XNode {
         this.nodeValue = `${value}`;
         this.ownerDocument = owner;
         this.namespaceURI = namespace || null;
-        [this.prefix, this.localName] = qualifiedNameToParts(`${name}`);
+        [this.prefix, this.localName] = this.qualifiedNameToParts(`${name}`);
 
         this.firstChild = null;
         this.lastChild = null;
@@ -239,13 +49,21 @@ export class XNode {
         this.parentNode = null;
     }
 
-    static recycle(node) {
+    qualifiedNameToParts(name) {
+        if (name.includes(':')) {
+            return name.split(':');
+        } else {
+            return [null, name];
+        }
+    }
+
+    recycle(node: any) {
         if (!node) {
             return;
         }
 
         if (node.constructor == XDocument) {
-            this.recycle(node.documentElement);
+            this.recycle((node as any).documentElement);
             return;
         }
 
@@ -253,7 +71,7 @@ export class XNode {
             return;
         }
 
-        _unusedXNodes.push(node);
+        this._unusedXNodes.push(node);
         for (let a = 0; a < node.attributes.length; ++a) {
             this.recycle(node.attributes[a]);
         }
@@ -265,14 +83,14 @@ export class XNode {
         node.init.call(0, '', '', null);
     }
 
-    create(type, name, value, owner, namespace) {
-        if (_unusedXNodes.length > 0) {
-            const node = _unusedXNodes.pop();
+    create(type: any, name: any, value: any, owner: any, namespace?: any) {
+        if (this._unusedXNodes.length > 0) {
+            const node = this._unusedXNodes.pop();
             node.init(type, name, value, owner, namespace);
             return node;
-        } else {
-            return new XNode(type, name, value, owner, namespace);
         }
+
+        return new XNode(type, name, value, owner, namespace);
     }
 
     appendChild(node) {
@@ -422,11 +240,11 @@ export class XNode {
         for (let i = 0; i < this.attributes.length; ++i) {
             if (
                 this.attributes[i].namespaceURI == namespace &&
-                this.attributes[i].localName == qualifiedNameToParts(`${name}`)[1]
+                this.attributes[i].localName == this.qualifiedNameToParts(`${name}`)[1]
             ) {
                 this.attributes[i].nodeValue = `${value}`;
                 this.attributes[i].nodeName = `${name}`;
-                this.attributes[i].prefix = qualifiedNameToParts(`${name}`)[0];
+                this.attributes[i].prefix = this.qualifiedNameToParts(`${name}`)[0];
                 return;
             }
         }
@@ -576,56 +394,3 @@ export class XNode {
         return ret;
     }
 }
-
-export class XDocument extends XNode {
-    constructor() {
-        // NOTE(mesch): According to the DOM Spec, ownerDocument of a
-        // document node is null.
-        super(DOM_DOCUMENT_NODE, '#document', null, null);
-        this.documentElement = null;
-    }
-
-    clear() {
-        this.recycle(this.documentElement);
-        this.documentElement = null;
-    }
-
-    appendChild(node) {
-        super.appendChild(node);
-        this.documentElement = this.childNodes[0];
-    }
-
-    createElement(name) {
-        return super.create(DOM_ELEMENT_NODE, name, null, this);
-    }
-
-    createElementNS(namespace, name) {
-        return super.create(DOM_ELEMENT_NODE, name, null, this, namespace);
-    }
-
-    createDocumentFragment() {
-        return super.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
-    }
-
-    createTextNode(value) {
-        return super.create(DOM_TEXT_NODE, '#text', value, this);
-    }
-
-    createAttribute(name) {
-        return super.create(DOM_ATTRIBUTE_NODE, name, null, this);
-    }
-
-    createAttributeNS(namespace, name) {
-        return super.create(DOM_ATTRIBUTE_NODE, name, null, this, namespace);
-    }
-
-    createComment(data) {
-        return super.create(DOM_COMMENT_NODE, '#comment', data, this);
-    }
-
-    createCDATASection(data) {
-        return super.create(DOM_CDATA_SECTION_NODE, '#cdata-section', data, this);
-    }
-}
-
-//XDocument.prototype = new XNode(DOM_DOCUMENT_NODE, '#document');

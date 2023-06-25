@@ -18,7 +18,7 @@ import {
     XML11_ENTITY_REF,
     XML11_ATT_VALUE,
     XML_NC_NAME
-} from "../src/xmltoken"
+} from "../src/dom/xmltoken"
 
 // Test if regexp matches the str and RegExp.exec returns exactly the match.
 const assertOk = (comment, regexp, str, match) => {
