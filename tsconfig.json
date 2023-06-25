@@ -16,6 +16,10 @@
     },
     "exclude": [
         "babel.config.js",
-        "dist/**/*"
+        "jest.config.ts",
+        "rollup.config.js",
+        "dist/**/*",
+        "test_src/**/*",
+        "tests/**/*"
     ]
 }

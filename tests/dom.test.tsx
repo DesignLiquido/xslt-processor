@@ -19,14 +19,12 @@ import { dom } from 'isomorphic-jsx';
 console.log(dom);
 describe('dom parsing', () => {
     it('can parse xml', () => {
-        const xml = (
-            <page>
-                <request>
-                    <q id="q">new york</q>
-                </request>
-                <location lat="100" lon="200" />
-            </page>
-        );
+        const xml = "<page> " +
+                "    <request> " +
+                "        <q id=\"q\">new york</q> " +
+                "    </request> " +
+                "    <location lat=\"100\" lon=\"200\" /> " +
+                "</page>";
 
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
@@ -35,7 +33,7 @@ describe('dom parsing', () => {
         const tag = 'q';
         const byTag = dom1.getElementsByTagName(tag);
         assert.equal(1, byTag.length);
-        assert.equal(tag, byTag[0].nodeName);
+        assert.equal(tag, (byTag[0] as any).nodeName);
 
         const id = 'q';
         const byId = dom1.getElementById(id);

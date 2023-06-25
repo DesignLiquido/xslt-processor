@@ -391,7 +391,7 @@ export class XNode {
         return ret;
     }
 
-    getElementById(id) {
+    getElementById(id): any {
         let ret = null;
         domTraverseElements(
             this,

@@ -11,7 +11,8 @@ export default {
                 "**/__tests__",
                 "**/*.test.ts",
                 "jest.config.ts"
-            ]
+            ],
+            tsconfig: './tsconfig.json'
         }),
         commonjs(),
         resolve(),
