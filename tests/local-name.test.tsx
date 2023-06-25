@@ -2,6 +2,8 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import { xsltProcess, xmlParse } from '../src'
 
+// Just touching the `dom`, otherwise Babel prunes the import.
+console.log(dom);
 describe('local-name', () => {
 
   it('local-name() without namespace test', () => {

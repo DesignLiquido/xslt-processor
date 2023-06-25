@@ -1,10 +1,8 @@
 import type { Config } from '@jest/types';
 export default async (): Promise<Config.InitialOptions> => {
 	return {
-		setupFiles: ['dotenv/config'],
         verbose: true,
         modulePathIgnorePatterns: ['<rootDir>/dist/'],
-        preset: 'ts-jest',
         testEnvironment: 'node',
         coverageReporters: ['json-summary', 'lcov', 'text', 'text-summary'],
 		displayName: {
@@ -12,6 +10,17 @@ export default async (): Promise<Config.InitialOptions> => {
 			color: 'greenBright'
 		},
 		detectOpenHandles: true,
+		/* transform: {
+			"\\.[jt]sx?$": [
+				'jest-chain-transform',
+				{
+					transformers: [
+						'babel-jest', 
+						'ts-jest'
+					]
+				}
+			]
+		}, */
 		transform: {
 			"\\.[jt]sx?$": "babel-jest"
 		}

@@ -7,6 +7,8 @@ import { xsltProcess, xmlParse } from '../src'
 // namespaces in input XML
 // using namespace prefixes in xpath
 
+// Just touching the `dom`, otherwise Babel prunes the import.
+console.log(dom);
 describe('namespaces', () => {
 
 	it('non-"xsl" prefix in stylesheet test', () => {

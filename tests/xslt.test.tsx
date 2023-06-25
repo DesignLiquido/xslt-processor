@@ -15,6 +15,8 @@ import {
     xmlParse
 } from "../src/dom"
 
+// Just touching the `dom`, otherwise Babel prunes the import.
+console.log(dom);
 const xmlString = <all>
   <item pos="2">A</item>
   <item pos="3">B</item>

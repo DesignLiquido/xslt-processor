@@ -25,7 +25,8 @@ import {
     xmlParse
 } from "../src/dom"
 
-
+// Just touching the `dom`, otherwise Babel prunes the import.
+console.log(dom);
 const expr = [
     "@*",
     "@*|node()",
