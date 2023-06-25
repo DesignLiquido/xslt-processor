@@ -8,12 +8,16 @@
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
 
-import { DOM_ATTRIBUTE_NODE, DOM_CDATA_SECTION_NODE, DOM_COMMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_DOCUMENT_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE } from "../constants";
-import { NumberExpr } from "../xpath";
-import { UnaryMinusExpr } from "../xpath";
-import { BinaryExpr } from "../xpath";
-import { FunctionCallExpr } from "../xpath";
-
+import {
+    DOM_ATTRIBUTE_NODE,
+    DOM_CDATA_SECTION_NODE,
+    DOM_COMMENT_NODE,
+    DOM_DOCUMENT_FRAGMENT_NODE,
+    DOM_DOCUMENT_NODE,
+    DOM_ELEMENT_NODE,
+    DOM_TEXT_NODE
+} from '../constants';
+import { BinaryExpr, FunctionCallExpr, NumberExpr, UnaryMinusExpr } from '../xpath';
 
 // Throws an exception if false.
 export function assert(b) {

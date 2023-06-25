@@ -19,7 +19,7 @@ import { StringValue } from "./string-value";
 
 export class TokenExpr {
     value: any;
-    
+
     constructor(m) {
         this.value = m;
     }

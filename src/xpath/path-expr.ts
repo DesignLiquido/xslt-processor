@@ -2,8 +2,9 @@ import { NodeSetValue } from "./node-set-value";
 
 export class PathExpr {
     filter: any;
+
     rel: any;
-    
+
     constructor(filter, rel) {
         this.filter = filter;
         this.rel = rel;

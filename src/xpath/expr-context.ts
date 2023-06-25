@@ -58,14 +58,23 @@ import { TOK_NUMBER } from "./tokens";
 
 export class ExprContext {
     node: any;
+
     position: any;
+
     nodelist: any;
+
     variables: any;
+
     parent: any;
+
     caseInsensitive: any;
+
     ignoreAttributesWithoutValue: any;
+
     returnOnFirstMatch: any;
+
     ignoreNonElementNodesForNTA: any;
+
     root: any;
 
     constructor(

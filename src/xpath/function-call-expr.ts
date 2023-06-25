@@ -6,6 +6,7 @@ import { StringValue } from "./string-value";
 
 export class FunctionCallExpr {
     name: any;
+
     args: any[];
 
     xpathfunctions = {
@@ -14,23 +15,23 @@ export class FunctionCallExpr {
             // NOTE(mesch): XPath position starts at 1.
             return new NumberValue(ctx.contextSize());
         },
-    
+
         position(ctx) {
             assert(this.args.length == 0);
             // NOTE(mesch): XPath position starts at 1.
             return new NumberValue(ctx.position + 1);
         },
-    
+
         count(ctx) {
             assert(this.args.length == 1);
             const v = this.args[0].evaluate(ctx);
             return new NumberValue(v.nodeSetValue().length);
         },
-    
+
         'generate-id'(_ctx) {
             throw 'not implmented yet: XPath function generate-id()';
         },
-    
+
         id(ctx) {
             assert(this.args.length == 1);
             const e = this.args[0].evaluate(ctx);
@@ -69,7 +70,7 @@ export class FunctionCallExpr {
             } else {
                 n = this.args[0].evaluate(ctx).nodeSetValue();
             }
-    
+
             if (n.length == 0) {
                 return new StringValue('');
             } else {
@@ -84,14 +85,14 @@ export class FunctionCallExpr {
             } else {
                 n = this.args[0].evaluate(ctx).nodeSetValue();
             }
-    
+
             if (n.length == 0) {
                 return new StringValue('');
             } else {
                 return new StringValue(n[0].namespaceURI || '');
             }
         },
-    
+
         name(ctx) {
             assert(this.args.length == 1 || this.args.length == 0);
             let n;
@@ -100,14 +101,14 @@ export class FunctionCallExpr {
             } else {
                 n = this.args[0].evaluate(ctx).nodeSetValue();
             }
-    
+
             if (n.length == 0) {
                 return new StringValue('');
             } else {
                 return new StringValue(n[0].nodeName);
             }
         },
-    
+
         string(ctx) {
             assert(this.args.length == 1 || this.args.length == 0);
             if (this.args.length == 0) {
@@ -116,7 +117,7 @@ export class FunctionCallExpr {
                 return new StringValue(this.args[0].evaluate(ctx).stringValue());
             }
         },
-    
+
         concat(ctx) {
             let ret = '';
             for (let i = 0; i < this.args.length; ++i) {
@@ -124,14 +125,14 @@ export class FunctionCallExpr {
             }
             return new StringValue(ret);
         },
-    
+
         'starts-with'(ctx) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
             return new BooleanValue(s0.indexOf(s1) == 0);
         },
-    
+
         'ends-with'(ctx) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
@@ -139,14 +140,14 @@ export class FunctionCallExpr {
             const re = new RegExp(`${regExpEscape(s1)}$`);
             return new BooleanValue(re.test(s0));
         },
-    
+
         contains(ctx) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
             return new BooleanValue(s0.includes(s1));
         },
-    
+
         'substring-before'(ctx) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
@@ -160,7 +161,7 @@ export class FunctionCallExpr {
             }
             return new StringValue(ret);
         },
-    
+
         'substring-after'(ctx) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
@@ -174,7 +175,7 @@ export class FunctionCallExpr {
             }
             return new StringValue(ret);
         },
-    
+
         substring(ctx) {
             // NOTE: XPath defines the position of the first character in a
             // string to be 1, in JavaScript this is 0 ([XPATH] Section 4.2).
@@ -194,7 +195,7 @@ export class FunctionCallExpr {
             }
             return new StringValue(ret);
         },
-    
+
         'string-length'(ctx) {
             let s;
             if (this.args.length > 0) {
@@ -204,7 +205,7 @@ export class FunctionCallExpr {
             }
             return new NumberValue(s.length);
         },
-    
+
         'normalize-space'(ctx) {
             let s;
             if (this.args.length > 0) {
@@ -215,19 +216,19 @@ export class FunctionCallExpr {
             s = s.replace(/^\s*/, '').replace(/\s*$/, '').replace(/\s+/g, ' ');
             return new StringValue(s);
         },
-    
+
         translate(ctx) {
             assert(this.args.length == 3);
             let s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
             const s2 = this.args[2].evaluate(ctx).stringValue();
-    
+
             for (let i = 0; i < s1.length; ++i) {
                 s0 = s0.replace(new RegExp(s1.charAt(i), 'g'), s2.charAt(i));
             }
             return new StringValue(s0);
         },
-    
+
         matches(ctx) {
             assert(this.args.length >= 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
@@ -247,28 +248,28 @@ export class FunctionCallExpr {
             }
             return new BooleanValue(re.test(s0));
         },
-    
+
         boolean(ctx) {
             assert(this.args.length == 1);
             return new BooleanValue(this.args[0].evaluate(ctx).booleanValue());
         },
-    
+
         not(ctx) {
             assert(this.args.length == 1);
             const ret = !this.args[0].evaluate(ctx).booleanValue();
             return new BooleanValue(ret);
         },
-    
+
         true() {
             assert(this.args.length == 0);
             return new BooleanValue(true);
         },
-    
+
         false() {
             assert(this.args.length == 0);
             return new BooleanValue(false);
         },
-    
+
         lang(ctx) {
             assert(this.args.length == 1);
             const lang = this.args[0].evaluate(ctx).stringValue();
@@ -288,17 +289,17 @@ export class FunctionCallExpr {
                 return new BooleanValue(xmllang.match(re) || xmllang.replace(/_.*$/, '').match(re));
             }
         },
-    
+
         number(ctx) {
             assert(this.args.length == 1 || this.args.length == 0);
-    
+
             if (this.args.length == 1) {
                 return new NumberValue(this.args[0].evaluate(ctx).numberValue());
             } else {
                 return new NumberValue(new NodeSetValue([ctx.node]).numberValue());
             }
         },
-    
+
         sum(ctx) {
             assert(this.args.length == 1);
             const n = this.args[0].evaluate(ctx).nodeSetValue();
@@ -308,29 +309,29 @@ export class FunctionCallExpr {
             }
             return new NumberValue(sum);
         },
-    
+
         floor(ctx) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.floor(num));
         },
-    
+
         ceiling(ctx) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.ceil(num));
         },
-    
+
         round(ctx) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.round(num));
         },
-    
+
         // TODO(mesch): The following functions are custom. There is a
         // standard that defines how to add functions, which should be
         // applied here.
-    
+
         'ext-join'(ctx) {
             assert(this.args.length == 2);
             const nodes = this.args[0].evaluate(ctx).nodeSetValue();
@@ -344,11 +345,11 @@ export class FunctionCallExpr {
             }
             return new StringValue(ret);
         },
-    
+
         // ext-if() evaluates and returns its second argument, if the
         // boolean value of its first argument is true, otherwise it
         // evaluates and returns its third argument.
-    
+
         'ext-if'(ctx) {
             assert(this.args.length == 3);
             if (this.args[0].evaluate(ctx).booleanValue()) {
@@ -357,11 +358,11 @@ export class FunctionCallExpr {
                 return this.args[2].evaluate(ctx);
             }
         },
-    
+
         // ext-cardinal() evaluates its single argument as a number, and
         // returns the current node that many times. It can be used in the
         // select attribute to iterate over an integer range.
-    
+
         'ext-cardinal'(ctx) {
             assert(this.args.length >= 1);
             const c = this.args[0].evaluate(ctx).numberValue();
@@ -372,7 +373,7 @@ export class FunctionCallExpr {
             return new NodeSetValue(ret);
         }
     };
-    
+
     constructor(name) {
         this.name = name;
         this.args = [];

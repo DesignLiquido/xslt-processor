@@ -33,8 +33,9 @@
 
 export class StringValue {
     value: any;
+
     type: string;
-    
+
     constructor(value) {
         this.value = value;
         this.type = 'string';

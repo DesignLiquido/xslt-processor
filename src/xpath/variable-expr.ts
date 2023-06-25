@@ -1,6 +1,6 @@
 export class VariableExpr {
     name: string;
-    
+
     constructor(name) {
         this.name = name;
     }

@@ -1,7 +1,8 @@
 export class NumberValue {
     value: any;
+
     type: string;
-    
+
     constructor(value) {
         this.value = value;
         this.type = 'number';

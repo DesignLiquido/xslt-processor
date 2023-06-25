@@ -2,7 +2,7 @@ import { StringValue } from "./string-value";
 
 export class LiteralExpr {
     value: any;
-    
+
     constructor(value) {
         this.value = value;
     }

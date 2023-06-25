@@ -2,7 +2,7 @@ import { BooleanValue } from "./boolean-value";
 
 export class PredicateExpr {
     expr: any;
-    
+
     constructor(expr) {
         this.expr = expr;
     }

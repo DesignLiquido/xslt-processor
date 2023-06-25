@@ -2,8 +2,9 @@ import { BooleanValue } from "./boolean-value";
 
 export class NodeTestName {
     name: string;
+
     re: RegExp;
-    
+
     constructor(name) {
         this.name = name;
         this.re = new RegExp(`^${name}$`, 'i');

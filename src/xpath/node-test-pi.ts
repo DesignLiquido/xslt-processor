@@ -3,7 +3,7 @@ import { BooleanValue } from "./boolean-value";
 
 export class NodeTestPI {
     target: any;
-    
+
     constructor(target) {
         this.target = target;
     }

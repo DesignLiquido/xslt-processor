@@ -660,6 +660,7 @@ function xpathGrammarPrecedence(frame) {
     let ret = 0;
 
     if (frame.rule) {
+
         /* normal reduce */
         if (frame.rule.length >= 3 && frame.rule[2] >= 0) {
             ret = frame.rule[2];
@@ -670,9 +671,11 @@ function xpathGrammarPrecedence(frame) {
             }
         }
     } else if (frame.tag) {
+
         /* TOKEN match */
         ret = xpathTokenPrecedence(frame.tag);
     } else if (frame.length) {
+
         /* Q_ match */
         for (let j = 0; j < frame.length; ++j) {
             let p = xpathGrammarPrecedence(frame[j]);

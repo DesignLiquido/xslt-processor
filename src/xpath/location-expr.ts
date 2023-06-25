@@ -5,8 +5,9 @@ import { xpathAxis } from "./tokens";
 
 export class LocationExpr {
     absolute: boolean;
+
     steps: any[];
-    
+
     constructor() {
         this.absolute = false;
         this.steps = [];

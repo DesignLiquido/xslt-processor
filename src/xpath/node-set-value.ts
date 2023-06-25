@@ -2,8 +2,9 @@ import { xmlValue } from "../dom/util";
 
 export class NodeSetValue {
     value: any;
+
     type: string;
-    
+
     constructor(value) {
         this.value = value;
         this.type = 'node-set';

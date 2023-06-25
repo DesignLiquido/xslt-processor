@@ -1,5 +1,6 @@
 export class BooleanValue {
     value: any;
+
     type: string;
 
     constructor(value) {

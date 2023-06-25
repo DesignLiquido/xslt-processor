@@ -8,8 +8,11 @@ import { xpathAxis } from "./tokens";
 
 export class StepExpr {
     axis: any;
+
     nodetest: any;
+
     predicate: any;
+
     hasPositionalPredicate: any;
 
     constructor(axis: any, nodetest: any, opt_predicate?: any) {

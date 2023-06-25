@@ -2,6 +2,7 @@ import { NodeSetValue } from "./node-set-value";
 
 export class FilterExpr {
     expr: any;
+
     predicate: any;
 
     constructor(expr, predicate) {

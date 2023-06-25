@@ -4,7 +4,9 @@ import { NumberValue } from "./number-value";
 
 export class BinaryExpr {
     expr1: any;
+
     expr2: any;
+
     op: any;
 
     constructor(expr1: any, op: any, expr2: any) {
