@@ -113,7 +113,7 @@ export class ExprContext {
         );
     }
 
-    setVariable(name, value) {
+    setVariable(name?: any, value?: any) {
         if (
             value instanceof StringValue ||
             value instanceof BooleanValue ||

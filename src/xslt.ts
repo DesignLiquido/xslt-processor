@@ -49,17 +49,11 @@ import {
     domCreateDocumentFragment,
     namespaceMapAt
 } from './dom/util';
-import { xpathParse, ExprContext, StringValue, NodeSetValue, xpathSort, xpathEval } from './xpath';
-import {
-    XDocument,
-    DOM_DOCUMENT_NODE,
-    DOM_DOCUMENT_FRAGMENT_NODE,
-    DOM_CDATA_SECTION_NODE,
-    DOM_ELEMENT_NODE,
-    DOM_TEXT_NODE,
-    DOM_COMMENT_NODE,
-    DOM_ATTRIBUTE_NODE
-} from './dom';
+import { XDocument } from './dom';
+import { ExprContext, NodeSetValue, StringValue } from './xpath';
+import { xpathEval, xpathParse, xpathSort } from './xpath/functions';
+import { DOM_ATTRIBUTE_NODE, DOM_CDATA_SECTION_NODE, DOM_COMMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_DOCUMENT_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE } from './constants';
+
 
 // The exported entry point of the XSL-T processor, as explained
 // above.

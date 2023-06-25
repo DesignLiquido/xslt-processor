@@ -165,12 +165,12 @@ function xpathMatchStack(stack, pattern) {
     const P = pattern.length;
     let p;
     let s;
-    const match: any = {};
+    const match: any = [];
     match.matchlength = 0;
     let ds = 0;
     for (p = P - 1, s = S - 1; p >= 0 && s >= 0; --p, s -= ds) {
         ds = 0;
-        const qmatch: any = {};
+        const qmatch: any = [];
         if (pattern[p] == Q_MM) {
             p -= 1;
             match.push(qmatch);
@@ -223,7 +223,7 @@ function xpathMatchStack(stack, pattern) {
 export function xpathParse(
     expr,
     xpathLog = (message: string) => {
-        console.log(message);
+        // console.log(message);
     }
 ) {
     xpathLog(`parse ${expr}`);
@@ -474,7 +474,7 @@ function xpathReduce(
     stack: any,
     ahead: any,
     xpathLog = (message: string) => {
-        console.log(message);
+        // console.log(message);
     }
 ) {
     let cand = null;

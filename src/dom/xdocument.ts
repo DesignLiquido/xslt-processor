@@ -12,7 +12,7 @@ export class XDocument extends XNode {
     }
 
     clear() {
-        this.recycle(this.documentElement);
+        XNode.recycle(this.documentElement);
         this.documentElement = null;
     }
 
@@ -22,34 +22,34 @@ export class XDocument extends XNode {
     }
 
     createElement(name) {
-        return super.create(DOM_ELEMENT_NODE, name, null, this);
+        return XNode.create(DOM_ELEMENT_NODE, name, null, this);
     }
 
     createElementNS(namespace, name) {
-        return super.create(DOM_ELEMENT_NODE, name, null, this, namespace);
+        return XNode.create(DOM_ELEMENT_NODE, name, null, this, namespace);
     }
 
     createDocumentFragment() {
-        return super.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
+        return XNode.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
     }
 
     createTextNode(value) {
-        return super.create(DOM_TEXT_NODE, '#text', value, this);
+        return XNode.create(DOM_TEXT_NODE, '#text', value, this);
     }
 
     createAttribute(name) {
-        return super.create(DOM_ATTRIBUTE_NODE, name, null, this);
+        return XNode.create(DOM_ATTRIBUTE_NODE, name, null, this);
     }
 
     createAttributeNS(namespace, name) {
-        return super.create(DOM_ATTRIBUTE_NODE, name, null, this, namespace);
+        return XNode.create(DOM_ATTRIBUTE_NODE, name, null, this, namespace);
     }
 
     createComment(data) {
-        return super.create(DOM_COMMENT_NODE, '#comment', data, this);
+        return XNode.create(DOM_COMMENT_NODE, '#comment', data, this);
     }
 
     createCDATASection(data) {
-        return super.create(DOM_CDATA_SECTION_NODE, '#cdata-section', data, this);
+        return XNode.create(DOM_CDATA_SECTION_NODE, '#cdata-section', data, this);
     }
 }
