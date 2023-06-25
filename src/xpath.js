@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -48,10 +49,10 @@ import {
     xmlValue,
     regExpEscape,
     predicateExprHasPositionalSelector
-} from "./util.js"
+} from "./util"
 import {
     XML_NC_NAME
-} from "./xmltoken.js"
+} from "./xmltoken"
 import {
     XNode,
     DOM_DOCUMENT_NODE,
@@ -60,10 +61,10 @@ import {
     DOM_TEXT_NODE,
     DOM_COMMENT_NODE,
     DOM_PROCESSING_INSTRUCTION_NODE
-} from "./dom.js"
+} from "./dom"
 import {
     toString
-} from "./xpathdebug.js"
+} from "./xpathdebug"
 
 export function xpathParse(expr, xpathLog=()=>{}) {
     xpathLog(`parse ${expr}`);

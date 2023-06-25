@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -5,7 +6,7 @@
 // Debug stuff for the XPath parser. Also used by XSLT.
 import {
     XNode
-} from "../src/dom.js"
+} from "./dom"
 import {
     ExprContext,
     StringValue,
@@ -32,7 +33,7 @@ import {
     LiteralExpr,
     NumberExpr,
     VariableExpr
-} from "../src/xpath.js"
+} from "./xpath"
 
 export let parseTree = function(expr, indent) {
     let ret

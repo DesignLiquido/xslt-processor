@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -47,7 +48,7 @@ import {
     domCreateComment,
     domCreateDocumentFragment,
     namespaceMapAt
-} from "./util.js"
+} from "./util"
 import {
     xpathParse,
     ExprContext,
@@ -55,7 +56,7 @@ import {
     NodeSetValue,
     xpathSort,
     xpathEval
-} from "./xpath.js"
+} from "./xpath"
 import {
     XDocument,
     DOM_DOCUMENT_NODE,
@@ -65,7 +66,7 @@ import {
     DOM_TEXT_NODE,
     DOM_COMMENT_NODE,
     DOM_ATTRIBUTE_NODE
-} from "./dom.js"
+} from "./dom"
 
 // The exported entry point of the XSL-T processor, as explained
 // above.

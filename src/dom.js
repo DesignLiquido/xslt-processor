@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -16,7 +17,7 @@ import {
     domCreateCDATASection,
     domCreateComment,
     namespaceMapAt
-} from './util.js';
+} from './util';
 import {
     XML10_VERSION_INFO,
     XML10_NAME,
@@ -24,7 +25,7 @@ import {
     XML11_VERSION_INFO,
     XML11_NAME,
     XML11_ATTRIBUTE
-} from './xmltoken.js';
+} from './xmltoken';
 
 const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
 const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');

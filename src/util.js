@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google
 //
@@ -6,7 +7,7 @@
 // Miscellaneous utility and placeholder functions.
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
-import { FunctionCallExpr, UnaryMinusExpr, BinaryExpr, NumberExpr } from './xpath.js';
+import { FunctionCallExpr, UnaryMinusExpr, BinaryExpr, NumberExpr } from './xpath';
 import {
     DOM_TEXT_NODE,
     DOM_CDATA_SECTION_NODE,
@@ -15,7 +16,7 @@ import {
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_ATTRIBUTE_NODE,
     DOM_COMMENT_NODE
-} from './dom.js';
+} from './dom';
 // Throws an exception if false.
 export function assert(b) {
     if (!b) {
