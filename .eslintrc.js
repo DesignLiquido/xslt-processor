@@ -2,7 +2,8 @@ module.exports = {
     env: {
         browser: true,
         es6: true,
-        node: true
+        node: true,
+        "jest/globals": true
     },
     extends: ['eslint:recommended'],
     parser: '@typescript-eslint/parser',
@@ -10,7 +11,11 @@ module.exports = {
         ecmaVersion: 2018,
         sourceType: 'module'
     },
-    plugins: ['@typescript-eslint'],
+    plugins: [
+        'jest', 
+        'jsx',
+        '@typescript-eslint'
+    ],
     root: true,
     rules: {
         'accessor-pairs': 'error',
@@ -59,7 +64,7 @@ module.exports = {
         'key-spacing': 'error',
         'keyword-spacing': 'off',
         'line-comment-position': 'off',
-        'linebreak-style': ['error', 'unix'],
+        'linebreak-style': ['warn', 'unix'],
         'lines-around-comment': 'error',
         'lines-around-directive': 'error',
         'lines-between-class-members': ['error', 'always'],
@@ -88,6 +93,7 @@ module.exports = {
         'no-caller': 'error',
         'no-catch-shadow': 'error',
         'no-confusing-arrow': 'error',
+        'no-console': 'warn',
         'no-continue': 'off',
         'no-div-regex': 'error',
         'no-duplicate-imports': 'error',

@@ -1,6 +1,7 @@
+/* eslint-disable no-undef */
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from '../src'
+import { xsltProcess, xmlParse } from '..'
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);

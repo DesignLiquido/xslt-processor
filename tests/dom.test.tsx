@@ -1,3 +1,4 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -6,14 +7,10 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Junji Takagi <jtakagi@google.com>
 //         Johannes Wilm <johannes@fiduswriter.org>
-import he from "he"
+import he from 'he';
 
-import {
-    xmlParse
-} from "../src/dom"
-import {
-    xmlText
-} from "../src/dom/util"
+import { xmlParse } from '../src/dom';
+import { xmlText } from '../src/dom/util';
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
@@ -21,14 +18,15 @@ import { dom } from 'isomorphic-jsx';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('dom parsing', () => {
-
     it('can parse xml', () => {
-        const xml = <page>
-            <request>
-                <q id="q">new york</q>
-            </request>
-            <location lat="100" lon='200'/>
-        </page>;
+        const xml = (
+            <page>
+                <request>
+                    <q id="q">new york</q>
+                </request>
+                <location lat="100" lon="200" />
+            </page>
+        );
 
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
@@ -43,8 +41,7 @@ describe('dom parsing', () => {
         const byId = dom1.getElementById(id);
         assert.notEqual(byId, null);
         assert.equal(id, byId.getAttribute('id'));
-
-    })
+    });
 
     it('can parse weird xml', () => {
         const xml = [
@@ -59,7 +56,7 @@ describe('dom parsing', () => {
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
-    })
+    });
 
     it('can parse Japanese xml', () => {
         const xml = [
@@ -75,23 +72,17 @@ describe('dom parsing', () => {
         const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
         const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
-    })
+    });
 
     it('can resolve entities', () => {
         assert.equal('";"', he.decode('&quot;;&quot;'));
-    })
-
-})
-
+    });
+});
 
 const doTestXmlParse = (dom1, dom2) => {
     assert.equal(xmlText(dom1), xmlText(dom2), 'xmlText');
 
-    assert.equal(
-        dom1.nodeName,
-        dom2.nodeName,
-        '#document'
-    );
+    assert.equal(dom1.nodeName, dom2.nodeName, '#document');
 
     assert.equal(dom1.documentElement, dom1.firstChild, 'documentElement');
     assert.equal(dom2.documentElement, dom2.firstChild, 'documentElement');
@@ -102,40 +93,16 @@ const doTestXmlParse = (dom1, dom2) => {
     assert.equal(dom1.documentElement.parentNode, dom1, 'parentNode');
     assert.equal(dom2.documentElement.parentNode, dom2, 'parentNode');
 
-    assert.equal(
-        dom1.documentElement.nodeName,
-        dom2.documentElement.nodeName,
-        'page'
-    );
-    assert.equal(
-        dom1.childNodes.length,
-        dom2.childNodes.length,
-        'dom.childNodes.length'
-    );
-    assert.equal(
-        dom1.childNodes.length,
-        dom2.childNodes.length,
-        'dom.childNodes.length'
-    );
-    assert.equal(
-        dom1.firstChild.childNodes.length,
-        dom2.firstChild.childNodes.length,
-        'dom.childNodes.length'
-    );
-    assert.equal(
-        dom1.firstChild.childNodes.length,
-        dom2.firstChild.childNodes.length,
-        'dom.childNodes.length'
-    );
+    assert.equal(dom1.documentElement.nodeName, dom2.documentElement.nodeName, 'page');
+    assert.equal(dom1.childNodes.length, dom2.childNodes.length, 'dom.childNodes.length');
+    assert.equal(dom1.childNodes.length, dom2.childNodes.length, 'dom.childNodes.length');
+    assert.equal(dom1.firstChild.childNodes.length, dom2.firstChild.childNodes.length, 'dom.childNodes.length');
+    assert.equal(dom1.firstChild.childNodes.length, dom2.firstChild.childNodes.length, 'dom.childNodes.length');
 
     assert.equal(
         dom1.firstChild.childNodes[1].attributes.length,
         dom2.firstChild.childNodes[1].attributes.length,
         'location.attributes.length'
     );
-    assert.equal(
-        dom1.firstChild.childNodes[1].attributes.length,
-        2,
-        'location.attributes.length'
-    );
-}
+    assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
+};

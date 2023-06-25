@@ -49,6 +49,8 @@
     "@typescript-eslint/parser": "^5.60.0",
     "babel-jest": "^29.5.0",
     "eslint": "^5.12.1",
+    "eslint-plugin-jest": "^27.2.2",
+    "eslint-plugin-jsx": "^0.1.0",
     "isomorphic-jsx": "^0.3.0",
     "jest": "^29.5.0",
     "npm-check-updates": "^16.10.13",

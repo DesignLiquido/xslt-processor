@@ -10,6 +10,6 @@
     },
     "hooks": {
         "before:init": ["yarn build"],
-        "after:bump": "copyfiles -V ./package.json ./dist"
+        "after:bump": "copyfiles -V ./package.json ./dist && copyfiles -V ./README.md ./dist"
     }
 }
