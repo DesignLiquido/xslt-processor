@@ -12,5 +12,8 @@ export default async (): Promise<Config.InitialOptions> => {
 			color: 'greenBright'
 		},
 		detectOpenHandles: true,
+		transform: {
+			"\\.[jt]sx?$": "babel-jest"
+		}
     };
 };
