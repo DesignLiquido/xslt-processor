@@ -12,7 +12,6 @@ module.exports = {
     },
     plugins: ['@typescript-eslint'],
     root: true,
-    ignorePatterns: ['/dist/**/*'],
     rules: {
         'accessor-pairs': 'error',
         'array-bracket-newline': 'off',
