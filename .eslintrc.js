@@ -19,10 +19,6 @@ module.exports = {
         "array-callback-return": "error",
         "array-element-newline": "off",
         "arrow-body-style": "error",
-        "arrow-parens": [
-            "error",
-            "as-needed"
-        ],
         "arrow-spacing": "off",
         "block-scoped-var": "error",
         "block-spacing": [
@@ -188,7 +184,7 @@ module.exports = {
         "no-use-before-define": "off",
         "no-useless-call": "off",
         "no-useless-computed-key": "error",
-        "no-useless-concat": "error",
+        "no-useless-concat": "warn",
         "no-useless-constructor": "error",
         "no-useless-rename": "error",
         "no-useless-return": "error",

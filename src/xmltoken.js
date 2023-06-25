@@ -54,8 +54,7 @@ const XML10_BASE_CHAR =
     '\u1fbe\u1fc2-\u1fc4\u1fc6-\u1fcc\u1fd0-\u1fd3\u1fd6-\u1fdb\u1fe0-\u1fec' +
     '\u1ff2-\u1ff4\u1ff6-\u1ffc\u2126\u212a-\u212b\u212e\u2180-\u2182' +
     '\u3041-\u3094\u30a1-\u30fa\u3105-\u312c\uac00-\ud7a3';
-const XML10_IDEOGRAPHIC =
-    '\u4e00-\u9fa5\u3007\u3021-\u3029';
+const XML10_IDEOGRAPHIC = '\u4e00-\u9fa5\u3007\u3021-\u3029';
 const XML10_COMBINING_CHAR =
     '\u0300-\u0345\u0360-\u0361\u0483-\u0486\u0591-\u05a1\u05a3-\u05b9' +
     '\u05bb-\u05bd\u05bf\u05c1-\u05c2\u05c4\u064b-\u0652\u0670\u06d6-\u06dc' +
@@ -76,9 +75,7 @@ const XML10_DIGIT =
     '\u0030-\u0039\u0660-\u0669\u06f0-\u06f9\u0966-\u096f\u09e6-\u09ef' +
     '\u0a66-\u0a6f\u0ae6-\u0aef\u0b66-\u0b6f\u0be7-\u0bef\u0c66-\u0c6f' +
     '\u0ce6-\u0cef\u0d66-\u0d6f\u0e50-\u0e59\u0ed0-\u0ed9\u0f20-\u0f29';
-const XML10_EXTENDER =
-    '\u00b7\u02d0\u02d1\u0387\u0640\u0e46\u0ec6\u3005\u3031-\u3035' +
-    '\u309d-\u309e\u30fc-\u30fe';
+const XML10_EXTENDER = '\u00b7\u02d0\u02d1\u0387\u0640\u0e46\u0ec6\u3005\u3031-\u3035' + '\u309d-\u309e\u30fc-\u30fe';
 const XML10_LETTER = XML10_BASE_CHAR + XML10_IDEOGRAPHIC;
 const XML10_NAME_CHAR = `${XML10_LETTER + XML10_DIGIT}\\._:${XML10_COMBINING_CHAR}${XML10_EXTENDER}-`;
 export const XML10_NAME = `[${XML10_LETTER}_:][${XML10_NAME_CHAR}]*`;
@@ -86,8 +83,7 @@ export const XML10_NAME = `[${XML10_LETTER}_:][${XML10_NAME_CHAR}]*`;
 export const XML10_ENTITY_REF = `&${XML10_NAME};`;
 const XML10_REFERENCE = `${XML10_ENTITY_REF}|${XML_CHAR_REF}`;
 export const XML10_ATT_VALUE = `"(([^<&"]|${XML10_REFERENCE})*)"|'(([^<&']|${XML10_REFERENCE})*)'`;
-export const XML10_ATTRIBUTE =
-    `(${XML10_NAME})${XML_EQ}(${XML10_ATT_VALUE})`;
+export const XML10_ATTRIBUTE = `(${XML10_NAME})${XML_EQ}(${XML10_ATT_VALUE})`;
 
 // XML 1.1 tokens.
 // TODO(jtakagi): NameStartChar also includes \u10000-\ueffff.
@@ -101,15 +97,13 @@ const XML11_NAME_START_CHAR =
     ':A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370-\u037d' +
     '\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff' +
     '\uf900-\ufdcf\ufdf0-\ufffd';
-const XML11_NAME_CHAR = XML11_NAME_START_CHAR +
-    '\\.0-9\u00b7\u0300-\u036f\u203f-\u2040-';
+const XML11_NAME_CHAR = XML11_NAME_START_CHAR + '\\.0-9\u00b7\u0300-\u036f\u203f-\u2040-';
 export const XML11_NAME = `[${XML11_NAME_START_CHAR}][${XML11_NAME_CHAR}]*`;
 
 export const XML11_ENTITY_REF = `&${XML11_NAME};`;
 const XML11_REFERENCE = `${XML11_ENTITY_REF}|${XML_CHAR_REF}`;
 export const XML11_ATT_VALUE = `"(([^<&"]|${XML11_REFERENCE})*)"|'(([^<&']|${XML11_REFERENCE})*)'`;
-export const XML11_ATTRIBUTE =
-    `(${XML11_NAME})${XML_EQ}(${XML11_ATT_VALUE})`;
+export const XML11_ATTRIBUTE = `(${XML11_NAME})${XML_EQ}(${XML11_ATT_VALUE})`;
 
 // XML Namespace tokens.
 // Used in XML parser and XPath parser.

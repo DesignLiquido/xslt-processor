@@ -33,7 +33,7 @@
 //
 //
 // Original author: Steffen Meschkat <mesch@google.com>
-import he from "he"
+import he from 'he';
 
 import {
     xmlValue,
@@ -48,15 +48,8 @@ import {
     domCreateComment,
     domCreateDocumentFragment,
     namespaceMapAt
-} from "./util"
-import {
-    xpathParse,
-    ExprContext,
-    StringValue,
-    NodeSetValue,
-    xpathSort,
-    xpathEval
-} from "./xpath"
+} from './util';
+import { xpathParse, ExprContext, StringValue, NodeSetValue, xpathSort, xpathEval } from './xpath';
 import {
     XDocument,
     DOM_DOCUMENT_NODE,
@@ -66,7 +59,7 @@ import {
     DOM_TEXT_NODE,
     DOM_COMMENT_NODE,
     DOM_ATTRIBUTE_NODE
-} from "./dom"
+} from './dom';
 
 // The exported entry point of the XSL-T processor, as explained
 // above.
@@ -74,16 +67,16 @@ import {
 // @param xmlDoc The input document root, as DOM node.
 // @param template The stylesheet document root, as DOM node.
 // @return the processed document, as XML text in a string.
-export function xsltProcess(xmlDoc, stylesheet,parameters) {
-    const output = domCreateDocumentFragment(new XDocument);
+export function xsltProcess(xmlDoc, stylesheet, parameters) {
+    const output = domCreateDocumentFragment(new XDocument());
     const expressionContext = new ExprContext(xmlDoc);
-    if(parameters && typeof(parameters)==='object') {
+    if (parameters && typeof parameters === 'object') {
         for (const [key, value] of Object.entries(parameters)) {
-           expressionContext.setVariable(key,new StringValue(value));
-          }
+            expressionContext.setVariable(key, new StringValue(value));
+        }
     }
-    expressionContext.setVariable()
-    xsltProcessContext(expressionContext, stylesheet, output,parameters);
+    expressionContext.setVariable();
+    xsltProcessContext(expressionContext, stylesheet, output, parameters);
     const ret = xmlText(output);
     return ret;
 }
@@ -100,10 +93,25 @@ function xsltProcessContext(input, template, output, _parameters) {
     if (!isXsltElement(template)) {
         xsltPassThrough(input, template, output, outputDocument);
     } else {
-        let name, top, nameexpr, node, select, value, nodes, sortContext, mode, templates, paramContext, commentData, commentNode, test, match, text;
+        let name,
+            top,
+            nameexpr,
+            node,
+            select,
+            value,
+            nodes,
+            sortContext,
+            mode,
+            templates,
+            paramContext,
+            commentData,
+            commentNode,
+            test,
+            match,
+            text;
         switch (template.localName) {
             case 'apply-imports':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'apply-templates':
                 select = xmlGetAttribute(template, 'select');
                 if (select) {
@@ -121,8 +129,9 @@ function xsltProcessContext(input, template, output, _parameters) {
                 templates = [];
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
-                    if (c.nodeType == DOM_ELEMENT_NODE &&
-                        isXsltElement(c,'template') &&
+                    if (
+                        c.nodeType == DOM_ELEMENT_NODE &&
+                        isXsltElement(c, 'template') &&
                         (!mode || c.getAttribute('mode') == mode)
                     ) {
                         templates.push(c);
@@ -144,7 +153,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 domSetAttribute(output, name, value);
                 break;
             case 'attribute-set':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'call-template':
                 name = xmlGetAttribute(template, 'name');
                 top = template.ownerDocument.documentElement;
@@ -154,9 +163,11 @@ function xsltProcessContext(input, template, output, _parameters) {
 
                 for (let i = 0; i < top.childNodes.length; ++i) {
                     let c = top.childNodes[i];
-                    if (c.nodeType == DOM_ELEMENT_NODE &&
-                        isXsltElement(c,'template') &&
-                        domGetAttribute(c, 'name') == name) {
+                    if (
+                        c.nodeType == DOM_ELEMENT_NODE &&
+                        isXsltElement(c, 'template') &&
+                        domGetAttribute(c, 'name') == name
+                    ) {
                         xsltChildNodes(paramContext, c, output);
                         break;
                     }
@@ -186,14 +197,13 @@ function xsltProcessContext(input, template, output, _parameters) {
                     for (let i = 0; i < nodes.length; ++i) {
                         xsltCopyOf(output, nodes[i], outputDocument);
                     }
-
                 } else {
                     let node = domCreateTextNode(outputDocument, value.stringValue());
                     domAppendChild(output, node);
                 }
                 break;
             case 'decimal-format':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'element':
                 nameexpr = xmlGetAttribute(template, 'name');
                 name = xsltAttributeValue(nameexpr, input);
@@ -202,7 +212,7 @@ function xsltProcessContext(input, template, output, _parameters) {
                 xsltChildNodes(input, template, node);
                 break;
             case 'fallback':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'for-each':
                 xsltForEach(input, template, output);
                 break;
@@ -213,19 +223,19 @@ function xsltProcessContext(input, template, output, _parameters) {
                 }
                 break;
             case 'import':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'include':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'key':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'message':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'namespace-alias':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'number':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'otherwise':
-                throw(`error if here: ${template.localName}`);
+                throw `error if here: ${template.localName}`;
             case 'output':
                 // Ignored. -- Since we operate on the DOM, and all further use
                 // of the output of the XSL transformation is determined by the
@@ -233,14 +243,14 @@ function xsltProcessContext(input, template, output, _parameters) {
                 // this implementation.
                 break;
             case 'preserve-space':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'processing-instruction':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'sort':
                 // just ignore -- was handled by xsltSort()
                 break;
             case 'strip-space':
-                throw(`not implemented: ${template.localName}`);
+                throw `not implemented: ${template.localName}`;
             case 'stylesheet':
             case 'transform':
                 xsltChildNodes(input, template, output);
@@ -269,15 +279,14 @@ function xsltProcessContext(input, template, output, _parameters) {
                 xsltVariable(input, template, true);
                 break;
             case 'when':
-                throw(`error if here: ${template.localName}`);
+                throw `error if here: ${template.localName}`;
             case 'with-param':
-                throw(`error if here: ${template.localName}`);
+                throw `error if here: ${template.localName}`;
             default:
-                throw(`error if here: ${template.localName}`);
+                throw `error if here: ${template.localName}`;
         }
     }
 }
-
 
 // Sets parameters defined by xsl:with-param child nodes of the
 // current template node, in the current input context. This happens
@@ -286,12 +295,11 @@ function xsltProcessContext(input, template, output, _parameters) {
 
 function xsltWithParam(input, template) {
     for (const c of template.childNodes) {
-        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c,'with-param')) {
+        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c, 'with-param')) {
             xsltVariable(input, c, true);
         }
     }
 }
-
 
 // Orders the current node list in the input context according to the
 // sort order specified by xsl:sort child nodes of the current
@@ -304,7 +312,7 @@ function xsltSort(input, template) {
     const sort = [];
 
     for (const c of template.childNodes) {
-        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c,'sort')) {
+        if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c, 'sort')) {
             const select = xmlGetAttribute(c, 'select');
             const expr = xpathParse(select);
             const type = xmlGetAttribute(c, 'data-type') || 'text';
@@ -319,7 +327,6 @@ function xsltSort(input, template) {
 
     xpathSort(input, sort);
 }
-
 
 // Evaluates a variable or parameter and set it in the current input
 // context. Implements xsl:variable, xsl:param, and xsl:with-param.
@@ -339,10 +346,8 @@ function xsltVariable(input, template, override) {
         const root = domCreateDocumentFragment(template.ownerDocument);
         xsltChildNodes(input, template, root);
         value = new NodeSetValue([root]);
-
     } else if (select) {
         value = xpathEval(select, input);
-
     } else {
         value = new StringValue('');
     }
@@ -352,7 +357,6 @@ function xsltVariable(input, template, override) {
     }
 }
 
-
 // Implements xsl:chose and its child nodes xsl:when and
 // xsl:otherwise.
 
@@ -360,21 +364,18 @@ function xsltChoose(input, template, output) {
     for (const childNode of template.childNodes) {
         if (childNode.nodeType != DOM_ELEMENT_NODE) {
             continue;
-
-        } else if (isXsltElement(childNode,'when')) {
+        } else if (isXsltElement(childNode, 'when')) {
             const test = xmlGetAttribute(childNode, 'test');
             if (xpathEval(test, input).booleanValue()) {
                 xsltChildNodes(input, childNode, output);
                 break;
             }
-
-        } else if (isXsltElement(childNode,'otherwise')) {
+        } else if (isXsltElement(childNode, 'otherwise')) {
             xsltChildNodes(input, childNode, output);
             break;
         }
     }
 }
-
 
 // Implements xsl:for-each.
 
@@ -389,7 +390,6 @@ function xsltForEach(input, template, output) {
     }
 }
 
-
 // Traverses the template node tree. Calls the main processing
 // function with the current input context for every child node of the
 // current template node.
@@ -403,7 +403,6 @@ function xsltChildNodes(input, template, output) {
     }
 }
 
-
 // Passes template text to the output. The current template node does
 // not specify an XSL-T operation and therefore is appended to the
 // output with all its attributes. Then continues traversing the
@@ -415,7 +414,6 @@ function xsltPassThrough(input, template, output, outputDocument) {
             let node = domCreateTextNode(outputDocument, template.nodeValue);
             domAppendChild(output, node);
         }
-
     } else if (template.nodeType == DOM_ELEMENT_NODE) {
         let node = domCreateElement(outputDocument, template.nodeName);
 
@@ -450,7 +448,7 @@ function xsltPassText(template) {
     }
 
     let element = template.parentNode;
-    if (isXsltElement(element,'text')) {
+    if (isXsltElement(element, 'text')) {
         return true;
     }
 
@@ -497,7 +495,6 @@ function xsltAttributeValue(value, context) {
     return ret;
 }
 
-
 // Wrapper function to access attribute values of template element
 // nodes. Currently this calls he.decode because in some DOM
 // implementations the return value of node.getAttributeValue()
@@ -515,7 +512,6 @@ function xmlGetAttribute(node, name) {
     }
 }
 
-
 // Implements xsl:copy-of for node-set values of the select
 // expression. Recurses down the source node tree, which is part of
 // the input document.
@@ -525,8 +521,7 @@ function xmlGetAttribute(node, name) {
 // @param {Document} dstDocument
 
 function xsltCopyOf(dst, src, dstDocument) {
-    if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE ||
-        src.nodeType == DOM_DOCUMENT_NODE) {
+    if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE || src.nodeType == DOM_DOCUMENT_NODE) {
         for (let i = 0; i < src.childNodes.length; ++i) {
             xsltCopyOf(dst, src.childNodes[i], dstDocument);
         }
@@ -546,7 +541,6 @@ function xsltCopyOf(dst, src, dstDocument) {
     }
 }
 
-
 // Implements xsl:copy for all node types.
 //
 // @param {Node} dst the node being copied to, part of output document,
@@ -565,15 +559,12 @@ function xsltCopy(dst, src, dstDocument) {
     if (src.nodeType == DOM_TEXT_NODE) {
         let node = domCreateTextNode(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
-
     } else if (src.nodeType == DOM_CDATA_SECTION_NODE) {
         let node = domCreateCDATASection(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
-
     } else if (src.nodeType == DOM_COMMENT_NODE) {
         let node = domCreateComment(dstDocument, src.nodeValue);
         domAppendChild(dst, node);
-
     } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {
         domSetAttribute(dst, src.nodeName, src.nodeValue);
     }
@@ -581,19 +572,21 @@ function xsltCopy(dst, src, dstDocument) {
     return null;
 }
 
-
 // Evaluates an XPath expression in the current input context as a
 // match (see [XSLT] section 5.2, paragraph 1).
 function xsltMatch(match, context) {
     const expr = xpathParse(match);
     let ret;
     // Shortcut for the most common case.
-    if (expr.steps && !expr.absolute && expr.steps.length == 1 &&
-        expr.steps[0].axis == 'child' && expr.steps[0].predicate.length == 0) {
+    if (
+        expr.steps &&
+        !expr.absolute &&
+        expr.steps.length == 1 &&
+        expr.steps[0].axis == 'child' &&
+        expr.steps[0].predicate.length == 0
+    ) {
         ret = expr.steps[0].nodetest.evaluate(context).booleanValue();
-
     } else {
-
         ret = false;
         let node = context.node;
 
@@ -610,7 +603,6 @@ function xsltMatch(match, context) {
     }
     return ret;
 }
-
 
 // Test if the given element is an XSLT element, optionally the one with the given name
 function isXsltElement(element, opt_wantedName) {

@@ -4,9 +4,7 @@
 // All Rights Reserved
 //
 // Debug stuff for the XPath parser. Also used by XSLT.
-import {
-    XNode
-} from "./dom"
+import { XNode } from './dom';
 import {
     ExprContext,
     StringValue,
@@ -33,11 +31,11 @@ import {
     LiteralExpr,
     NumberExpr,
     VariableExpr
-} from "./xpath"
+} from './xpath';
 
-export let parseTree = function(expr, indent) {
-    let ret
-    switch(expr.constructor) {
+export let parseTree = function (expr, indent) {
+    let ret;
+    switch (expr.constructor) {
         case TokenExpr:
             ret = `${indent}[token] ${expr.value}\n`;
             break;
@@ -75,7 +73,10 @@ export let parseTree = function(expr, indent) {
             ret = `${indent}[union]\n${parseTree(expr.expr1, indent + ' ')}${parseTree(expr.expr2, `${indent} `)}`;
             break;
         case PathExpr:
-            ret = `${indent}[path]\n${indent}- filter:\n${parseTree(expr.filter, `${indent} `)}${indent}- location path:\n${parseTree(expr.rel, `${indent} `)}`;
+            ret = `${indent}[path]\n${indent}- filter:\n${parseTree(
+                expr.filter,
+                `${indent} `
+            )}${indent}- location path:\n${parseTree(expr.rel, `${indent} `)}`;
             break;
         case FilterExpr:
             ret = `${indent}[filter]\n${indent}- expr:\n${parseTree(expr.expr, `${indent} `)}`;
@@ -88,7 +89,10 @@ export let parseTree = function(expr, indent) {
             ret = `${indent}[unary] -\n${parseTree(expr.expr, `${indent} `)}`;
             break;
         case BinaryExpr:
-            ret = `${indent}[binary] ${expr.op.value}\n${parseTree(expr.expr1, `${indent} `)}${parseTree(expr.expr2, `${indent} `)}`;
+            ret = `${indent}[binary] ${expr.op.value}\n${parseTree(expr.expr1, `${indent} `)}${parseTree(
+                expr.expr2,
+                `${indent} `
+            )}`;
             break;
         case LiteralExpr:
             ret = `${indent}[literal] ${toString(expr)}\n`;
@@ -104,17 +108,17 @@ export let parseTree = function(expr, indent) {
         case BooleanValue:
         case NodeSetValue:
             ret = `${expr.type}: ${expr.value}`;
-            break
+            break;
 
         default:
             break;
     }
     return ret;
-}
+};
 
-export let toString = function(expr) {
-    let ret
-    switch(expr.constructor) {
+export let toString = function (expr) {
+    let ret;
+    switch (expr.constructor) {
         case FunctionCallExpr:
             ret = `${expr.name.value}(`;
             for (let i = 0; i < expr.args.length; ++i) {
@@ -207,4 +211,4 @@ export let toString = function(expr) {
             break;
     }
     return ret;
-}
+};

@@ -49,10 +49,8 @@ import {
     xmlValue,
     regExpEscape,
     predicateExprHasPositionalSelector
-} from "./util"
-import {
-    XML_NC_NAME
-} from "./xmltoken"
+} from './util';
+import { XML_NC_NAME } from './xmltoken';
 import {
     XNode,
     DOM_DOCUMENT_NODE,
@@ -61,12 +59,10 @@ import {
     DOM_TEXT_NODE,
     DOM_COMMENT_NODE,
     DOM_PROCESSING_INSTRUCTION_NODE
-} from "./dom"
-import {
-    toString
-} from "./xpathdebug"
+} from './dom';
+import { toString } from './xpathdebug';
 
-export function xpathParse(expr, xpathLog=()=>{}) {
+export function xpathParse(expr, xpathLog = () => {}) {
     xpathLog(`parse ${expr}`);
     xpathParseInit(xpathLog);
 
@@ -139,17 +135,16 @@ export function xpathParse(expr, xpathLog=()=>{}) {
         // rules and possibly associativity declarations, as in bison(1),
         // and not explicitly set.
 
-        if (rule &&
-            (rule == TOK_DIV ||
-                rule == TOK_MOD ||
-                rule == TOK_AND ||
-                rule == TOK_OR) &&
+        if (
+            rule &&
+            (rule == TOK_DIV || rule == TOK_MOD || rule == TOK_AND || rule == TOK_OR) &&
             (!previous ||
                 previous.tag == TOK_AT ||
                 previous.tag == TOK_DSLASH ||
                 previous.tag == TOK_SLASH ||
                 previous.tag == TOK_AXIS ||
-                previous.tag == TOK_DOLLAR)) {
+                previous.tag == TOK_DOLLAR)
+        ) {
             rule = TOK_QNAME;
         }
 
@@ -162,7 +157,6 @@ export function xpathParse(expr, xpathLog=()=>{}) {
                 prec: rule.prec ? rule.prec : 0, // || 0 is removed by the compiler
                 expr: makeTokenExpr(match)
             };
-
         } else {
             xpathLog('DONE');
             done = true;
@@ -246,27 +240,30 @@ function xpathReduce(stack, ahead, xpathLog) {
     }
 
     let ret;
-    if (cand && (!ahead || cand.prec > ahead.prec ||
-            (ahead.tag.left && cand.prec >= ahead.prec))) {
+    if (cand && (!ahead || cand.prec > ahead.prec || (ahead.tag.left && cand.prec >= ahead.prec))) {
         for (let i = 0; i < cand.match.matchlength; ++i) {
             stack.pop();
         }
 
-        xpathLog(`reduce ${cand.tag.label} ${cand.prec} ahead ${ahead ? ahead.tag.label + ' ' + ahead.prec +
-                      (ahead.tag.left ? ' left' : '')
-                      : ' none '}`);
+        xpathLog(
+            `reduce ${cand.tag.label} ${cand.prec} ahead ${
+                ahead ? ahead.tag.label + ' ' + ahead.prec + (ahead.tag.left ? ' left' : '') : ' none '
+            }`
+        );
 
-        const matchexpr = mapExpr(cand.match, m => m.expr);
+        const matchexpr = mapExpr(cand.match, (m) => m.expr);
         xpathLog(`going to apply ${toString(cand.rule[3])}`);
         cand.expr = cand.rule[3].apply(null, matchexpr);
 
         stack.push(cand);
         ret = true;
-
     } else {
         if (ahead) {
-            xpathLog(`shift ${ahead.tag.label} ${ahead.prec}${ahead.tag.left ? ' left' : ''} over ${cand ? cand.tag.label + ' ' +
-                     cand.prec : ' none'}`);
+            xpathLog(
+                `shift ${ahead.tag.label} ${ahead.prec}${ahead.tag.left ? ' left' : ''} over ${
+                    cand ? cand.tag.label + ' ' + cand.prec : ' none'
+                }`
+            );
             stack.push(ahead);
         }
         ret = false;
@@ -300,7 +297,6 @@ function xpathMatchStack(stack, pattern) {
                 ds += 1;
                 match.matchlength += 1;
             }
-
         } else if (pattern[p] == Q_01) {
             p -= 1;
             match.push(qmatch);
@@ -309,7 +305,6 @@ function xpathMatchStack(stack, pattern) {
                 ds += 1;
                 match.matchlength += 1;
             }
-
         } else if (pattern[p] == Q_1M) {
             p -= 1;
             match.push(qmatch);
@@ -322,25 +317,22 @@ function xpathMatchStack(stack, pattern) {
             } else {
                 return [];
             }
-
         } else if (stack[s].tag == pattern[p]) {
             match.push(stack[s]);
             ds += 1;
             match.matchlength += 1;
-
         } else {
             return [];
         }
 
         reverseInplace(qmatch);
-        qmatch.expr = mapExpr(qmatch, m => m.expr);
+        qmatch.expr = mapExpr(qmatch, (m) => m.expr);
     }
 
     reverseInplace(match);
 
     if (p == -1) {
         return match;
-
     } else {
         return [];
     }
@@ -353,20 +345,24 @@ function xpathTokenPrecedence(tag) {
 function xpathGrammarPrecedence(frame) {
     let ret = 0;
 
-    if (frame.rule) { /* normal reduce */
+    if (frame.rule) {
+
+        /* normal reduce */
         if (frame.rule.length >= 3 && frame.rule[2] >= 0) {
             ret = frame.rule[2];
-
         } else {
             for (let i = 0; i < frame.rule[1].length; ++i) {
                 let p = xpathTokenPrecedence(frame.rule[1][i]);
                 ret = Math.max(ret, p);
             }
         }
-    } else if (frame.tag) { /* TOKEN match */
-        ret = xpathTokenPrecedence(frame.tag);
+    } else if (frame.tag) {
 
-    } else if (frame.length) { /* Q_ match */
+        /* TOKEN match */
+        ret = xpathTokenPrecedence(frame.tag);
+    } else if (frame.length) {
+
+        /* Q_ match */
         for (let j = 0; j < frame.length; ++j) {
             let p = xpathGrammarPrecedence(frame[j]);
             ret = Math.max(ret, p);
@@ -386,7 +382,6 @@ function stackToString(stack) {
     }
     return ret;
 }
-
 
 // XPath expression evaluation context. An XPath context consists of a
 // DOM node, a list of DOM nodes that contains this node, a number
@@ -448,7 +443,8 @@ export class ExprContext {
         opt_caseInsensitive,
         opt_ignoreAttributesWithoutValue,
         opt_returnOnFirstMatch,
-        opt_ignoreNonElementNodesForNTA) {
+        opt_ignoreNonElementNodesForNTA
+    ) {
         this.node = node;
         this.position = opt_position || 0;
         this.nodelist = opt_nodelist || [node];
@@ -475,14 +471,22 @@ export class ExprContext {
         return new ExprContext(
             opt_node || this.node,
             typeof opt_position != 'undefined' ? opt_position : this.position,
-            opt_nodelist || this.nodelist, this, this.caseInsensitive,
-            this.ignoreAttributesWithoutValue, this.returnOnFirstMatch,
-            this.ignoreNonElementNodesForNTA);
+            opt_nodelist || this.nodelist,
+            this,
+            this.caseInsensitive,
+            this.ignoreAttributesWithoutValue,
+            this.returnOnFirstMatch,
+            this.ignoreNonElementNodesForNTA
+        );
     }
 
     setVariable(name, value) {
-        if (value instanceof StringValue || value instanceof BooleanValue ||
-            value instanceof NumberValue || value instanceof NodeSetValue) {
+        if (
+            value instanceof StringValue ||
+            value instanceof BooleanValue ||
+            value instanceof NumberValue ||
+            value instanceof NodeSetValue
+        ) {
             this.variables[name] = value;
             return;
         }
@@ -501,10 +505,8 @@ export class ExprContext {
     getVariable(name) {
         if (typeof this.variables[name] != 'undefined') {
             return this.variables[name];
-
         } else if (this.parent) {
             return this.parent.getVariable(name);
-
         } else {
             return null;
         }
@@ -524,7 +526,7 @@ export class ExprContext {
     }
 
     setCaseInsensitive(caseInsensitive) {
-        return this.caseInsensitive = caseInsensitive;
+        return (this.caseInsensitive = caseInsensitive);
     }
 
     isIgnoreAttributesWithoutValue() {
@@ -532,7 +534,7 @@ export class ExprContext {
     }
 
     setIgnoreAttributesWithoutValue(ignore) {
-        return this.ignoreAttributesWithoutValue = ignore;
+        return (this.ignoreAttributesWithoutValue = ignore);
     }
 
     isReturnOnFirstMatch() {
@@ -540,7 +542,7 @@ export class ExprContext {
     }
 
     setReturnOnFirstMatch(returnOnFirstMatch) {
-        return this.returnOnFirstMatch = returnOnFirstMatch;
+        return (this.returnOnFirstMatch = returnOnFirstMatch);
     }
 
     isIgnoreNonElementNodesForNTA() {
@@ -548,7 +550,7 @@ export class ExprContext {
     }
 
     setIgnoreNonElementNodesForNTA(ignoreNonElementNodesForNTA) {
-        return this.ignoreNonElementNodesForNTA = ignoreNonElementNodesForNTA;
+        return (this.ignoreNonElementNodesForNTA = ignoreNonElementNodesForNTA);
     }
 }
 
@@ -736,7 +738,7 @@ export class LocationExpr {
     _combineSteps(prevStep, nextStep) {
         if (!prevStep) return null;
         if (!nextStep) return null;
-        const hasPredicates = (prevStep.predicates && prevStep.predicates.length > 0);
+        const hasPredicates = prevStep.predicates && prevStep.predicates.length > 0;
         if (prevStep.nodetest instanceof NodeTestAny && !hasPredicates) {
             // maybe suitable to be combined
             if (prevStep.axis == xpathAxis.DESCENDANT_OR_SELF) {
@@ -762,7 +764,6 @@ export class LocationExpr {
         let start;
         if (this.absolute) {
             start = ctx.root;
-
         } else {
             start = ctx.node;
         }
@@ -788,24 +789,23 @@ function xPathStep(nodes, steps, step, input, ctx) {
         // optimization if we encounter such selectors.
         const nLength = nodelist.length;
         const pLength = s.predicate.length;
-        nodelistLoop:
-            for (let i = 0; i < nLength; ++i) {
-                const n = nodelist[i];
-                for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
-                        continue nodelistLoop;
-                    }
-                }
-                // n survived the predicate tests!
-                if (step == steps.length - 1) {
-                    nodes.push(n);
-                } else {
-                    xPathStep(nodes, steps, step + 1, n, ctx);
-                }
-                if (nodes.length > 0) {
-                    break;
+        nodelistLoop: for (let i = 0; i < nLength; ++i) {
+            const n = nodelist[i];
+            for (let j = 0; j < pLength; ++j) {
+                if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
+                    continue nodelistLoop;
                 }
             }
+            // n survived the predicate tests!
+            if (step == steps.length - 1) {
+                nodes.push(n);
+            } else {
+                xPathStep(nodes, steps, step + 1, n, ctx);
+            }
+            if (nodes.length > 0) {
+                break;
+            }
+        }
     } else {
         // set returnOnFirstMatch to false for the cloned ExprContext, because
         // behavior in StepExpr.prototype.evaluate is driven off its value. Note
@@ -857,12 +857,10 @@ export class StepExpr {
             for (let n = input.parentNode; n; n = n.parentNode) {
                 nodelist.push(n);
             }
-
         } else if (this.axis == xpathAxis.ANCESTOR) {
             for (let n = input.parentNode; n; n = n.parentNode) {
                 nodelist.push(n);
             }
-
         } else if (this.axis == xpathAxis.ATTRIBUTE) {
             if (this.nodetest.name != undefined) {
                 // single-attribute step
@@ -873,12 +871,11 @@ export class StepExpr {
                     } else {
                         if (this.nodetest.name == 'style') {
                             const value = input.getAttribute('style');
-                            if (value && typeof(value) != 'string') {
+                            if (value && typeof value != 'string') {
                                 // this is the case where indexing into the attributes array
                                 // doesn't give us the attribute node in IE - we create our own
                                 // node instead
-                                nodelist.push(XNode.create(DOM_ATTRIBUTE_NODE, 'style',
-                                    value.cssText, document));
+                                nodelist.push(XNode.create(DOM_ATTRIBUTE_NODE, 'style', value.cssText, document));
                             } else {
                                 nodelist.push(input.attributes[this.nodetest.name]);
                             }
@@ -895,10 +892,8 @@ export class StepExpr {
                     copyArray(nodelist, input.attributes);
                 }
             }
-
         } else if (this.axis == xpathAxis.CHILD) {
             copyArray(nodelist, input.childNodes);
-
         } else if (this.axis == xpathAxis.DESCENDANT_OR_SELF) {
             if (this.nodetest.evaluate(ctx).booleanValue()) {
                 nodelist.push(input);
@@ -906,12 +901,10 @@ export class StepExpr {
             let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
             xpathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
-
         } else if (this.axis == xpathAxis.DESCENDANT) {
             let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
             xpathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
-
         } else if (this.axis == xpathAxis.FOLLOWING) {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.nextSibling; nn; nn = nn.nextSibling) {
@@ -919,20 +912,16 @@ export class StepExpr {
                     xpathCollectDescendants(nodelist, nn);
                 }
             }
-
         } else if (this.axis == xpathAxis.FOLLOWING_SIBLING) {
             for (let n = input.nextSibling; n; n = n.nextSibling) {
                 nodelist.push(n);
             }
-
         } else if (this.axis == xpathAxis.NAMESPACE) {
-            throw('not implemented: axis namespace');
-
+            throw 'not implemented: axis namespace';
         } else if (this.axis == xpathAxis.PARENT) {
             if (input.parentNode) {
                 nodelist.push(input.parentNode);
             }
-
         } else if (this.axis == xpathAxis.PRECEDING) {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.previousSibling; nn; nn = nn.previousSibling) {
@@ -940,15 +929,12 @@ export class StepExpr {
                     xpathCollectDescendantsReverse(nodelist, nn);
                 }
             }
-
         } else if (this.axis == xpathAxis.PRECEDING_SIBLING) {
             for (let n = input.previousSibling; n; n = n.previousSibling) {
                 nodelist.push(n);
             }
-
         } else if (this.axis == xpathAxis.SELF) {
             nodelist.push(input);
-
         } else {
             throw `ERROR -- NO SUCH AXIS: ${this.axis}`;
         }
@@ -995,9 +981,7 @@ export class NodeTestAny {
 
 export class NodeTestElementOrAttribute {
     evaluate(ctx) {
-        return new BooleanValue(
-            ctx.node.nodeType == DOM_ELEMENT_NODE ||
-            ctx.node.nodeType == DOM_ATTRIBUTE_NODE);
+        return new BooleanValue(ctx.node.nodeType == DOM_ELEMENT_NODE || ctx.node.nodeType == DOM_ATTRIBUTE_NODE);
     }
 }
 
@@ -1019,9 +1003,9 @@ export class NodeTestPI {
     }
 
     evaluate(ctx) {
-        return new
-        BooleanValue(ctx.node.nodeType == DOM_PROCESSING_INSTRUCTION_NODE &&
-            (!this.target || ctx.node.nodeName == this.target));
+        return new BooleanValue(
+            ctx.node.nodeType == DOM_PROCESSING_INSTRUCTION_NODE && (!this.target || ctx.node.nodeName == this.target)
+        );
     }
 }
 
@@ -1040,7 +1024,7 @@ export class NodeTestNC {
 export class NodeTestName {
     constructor(name) {
         this.name = name;
-        this.re = new RegExp(`^${name}$`, "i");
+        this.re = new RegExp(`^${name}$`, 'i');
     }
 
     evaluate(ctx) {
@@ -1073,29 +1057,29 @@ export class PredicateExpr {
 }
 
 let xpathfunctions = {
-    'last' (ctx) {
+    last(ctx) {
         assert(this.args.length == 0);
         // NOTE(mesch): XPath position starts at 1.
         return new NumberValue(ctx.contextSize());
     },
 
-    'position' (ctx) {
+    position(ctx) {
         assert(this.args.length == 0);
         // NOTE(mesch): XPath position starts at 1.
         return new NumberValue(ctx.position + 1);
     },
 
-    'count' (ctx) {
+    count(ctx) {
         assert(this.args.length == 1);
         const v = this.args[0].evaluate(ctx);
         return new NumberValue(v.nodeSetValue().length);
     },
 
-    'generate-id' (_ctx) {
-        throw('not implmented yet: XPath function generate-id()');
+    'generate-id'(_ctx) {
+        throw 'not implmented yet: XPath function generate-id()';
     },
 
-    'id' (ctx) {
+    id(ctx) {
         assert(this.args.length == 1);
         const e = this.args[0].evaluate(ctx);
         const ret = [];
@@ -1123,12 +1107,9 @@ let xpathfunctions = {
     },
     'xml-to-json'(ctx) {
         assert(this.args.length < 2);
-        return new StringValue(
-            JSON.stringify( (!this.args.length)? 'null': xmlValue(ctx.node)
-            )
-        );
+        return new StringValue(JSON.stringify(!this.args.length ? 'null' : xmlValue(ctx.node)));
     },
-    'local-name' (ctx) {
+    'local-name'(ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
         let n;
         if (this.args.length == 0) {
@@ -1143,7 +1124,7 @@ let xpathfunctions = {
             return new StringValue(n[0].localName);
         }
     },
-    'namespace-uri' (ctx) {
+    'namespace-uri'(ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
         let n;
         if (this.args.length == 0) {
@@ -1155,11 +1136,11 @@ let xpathfunctions = {
         if (n.length == 0) {
             return new StringValue('');
         } else {
-            return new StringValue(n[0].namespaceURI||'');
+            return new StringValue(n[0].namespaceURI || '');
         }
     },
 
-    'name' (ctx) {
+    name(ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
         let n;
         if (this.args.length == 0) {
@@ -1175,7 +1156,7 @@ let xpathfunctions = {
         }
     },
 
-    'string' (ctx) {
+    string(ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
         if (this.args.length == 0) {
             return new StringValue(new NodeSetValue([ctx.node]).stringValue());
@@ -1184,7 +1165,7 @@ let xpathfunctions = {
         }
     },
 
-    'concat' (ctx) {
+    concat(ctx) {
         let ret = '';
         for (let i = 0; i < this.args.length; ++i) {
             ret += this.args[i].evaluate(ctx).stringValue();
@@ -1192,14 +1173,14 @@ let xpathfunctions = {
         return new StringValue(ret);
     },
 
-    'starts-with' (ctx) {
+    'starts-with'(ctx) {
         assert(this.args.length == 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
         return new BooleanValue(s0.indexOf(s1) == 0);
     },
 
-    'ends-with' (ctx) {
+    'ends-with'(ctx) {
         assert(this.args.length == 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -1207,14 +1188,14 @@ let xpathfunctions = {
         return new BooleanValue(re.test(s0));
     },
 
-    'contains' (ctx) {
+    contains(ctx) {
         assert(this.args.length == 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
         return new BooleanValue(s0.includes(s1));
     },
 
-    'substring-before' (ctx) {
+    'substring-before'(ctx) {
         assert(this.args.length == 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -1228,7 +1209,7 @@ let xpathfunctions = {
         return new StringValue(ret);
     },
 
-    'substring-after' (ctx) {
+    'substring-after'(ctx) {
         assert(this.args.length == 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -1242,7 +1223,7 @@ let xpathfunctions = {
         return new StringValue(ret);
     },
 
-    'substring' (ctx) {
+    substring(ctx) {
         // NOTE: XPath defines the position of the first character in a
         // string to be 1, in JavaScript this is 0 ([XPATH] Section 4.2).
         assert(this.args.length == 2 || this.args.length == 3);
@@ -1252,7 +1233,6 @@ let xpathfunctions = {
         if (this.args.length == 2) {
             let i1 = Math.max(0, Math.round(s1) - 1);
             ret = s0.substr(i1);
-
         } else {
             const s2 = this.args[2].evaluate(ctx).numberValue();
             const i0 = Math.round(s1) - 1;
@@ -1263,7 +1243,7 @@ let xpathfunctions = {
         return new StringValue(ret);
     },
 
-    'string-length' (ctx) {
+    'string-length'(ctx) {
         let s;
         if (this.args.length > 0) {
             s = this.args[0].evaluate(ctx).stringValue();
@@ -1273,7 +1253,7 @@ let xpathfunctions = {
         return new NumberValue(s.length);
     },
 
-    'normalize-space' (ctx) {
+    'normalize-space'(ctx) {
         let s;
         if (this.args.length > 0) {
             s = this.args[0].evaluate(ctx).stringValue();
@@ -1284,7 +1264,7 @@ let xpathfunctions = {
         return new StringValue(s);
     },
 
-    'translate' (ctx) {
+    translate(ctx) {
         assert(this.args.length == 3);
         let s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -1296,7 +1276,7 @@ let xpathfunctions = {
         return new StringValue(s0);
     },
 
-    'matches' (ctx) {
+    matches(ctx) {
         assert(this.args.length >= 2);
         const s0 = this.args[0].evaluate(ctx).stringValue();
         const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -1316,33 +1296,33 @@ let xpathfunctions = {
         return new BooleanValue(re.test(s0));
     },
 
-    'boolean' (ctx) {
+    boolean(ctx) {
         assert(this.args.length == 1);
         return new BooleanValue(this.args[0].evaluate(ctx).booleanValue());
     },
 
-    'not' (ctx) {
+    not(ctx) {
         assert(this.args.length == 1);
         const ret = !this.args[0].evaluate(ctx).booleanValue();
         return new BooleanValue(ret);
     },
 
-    'true' () {
+    true() {
         assert(this.args.length == 0);
         return new BooleanValue(true);
     },
 
-    'false' () {
+    false() {
         assert(this.args.length == 0);
         return new BooleanValue(false);
     },
 
-    'lang' (ctx) {
+    lang(ctx) {
         assert(this.args.length == 1);
         const lang = this.args[0].evaluate(ctx).stringValue();
         let xmllang;
         let n = ctx.node;
-        while (n && n != n.parentNode /* just in case ... */ ) {
+        while (n && n != n.parentNode /* just in case ... */) {
             xmllang = n.getAttribute('xml:lang');
             if (xmllang) {
                 break;
@@ -1353,12 +1333,11 @@ let xpathfunctions = {
             return new BooleanValue(false);
         } else {
             const re = new RegExp(`^${lang}$`, 'i');
-            return new BooleanValue(xmllang.match(re) ||
-                xmllang.replace(/_.*$/, '').match(re));
+            return new BooleanValue(xmllang.match(re) || xmllang.replace(/_.*$/, '').match(re));
         }
     },
 
-    'number' (ctx) {
+    number(ctx) {
         assert(this.args.length == 1 || this.args.length == 0);
 
         if (this.args.length == 1) {
@@ -1368,7 +1347,7 @@ let xpathfunctions = {
         }
     },
 
-    'sum' (ctx) {
+    sum(ctx) {
         assert(this.args.length == 1);
         const n = this.args[0].evaluate(ctx).nodeSetValue();
         let sum = 0;
@@ -1378,19 +1357,19 @@ let xpathfunctions = {
         return new NumberValue(sum);
     },
 
-    'floor' (ctx) {
+    floor(ctx) {
         assert(this.args.length == 1);
         const num = this.args[0].evaluate(ctx).numberValue();
         return new NumberValue(Math.floor(num));
     },
 
-    'ceiling' (ctx) {
+    ceiling(ctx) {
         assert(this.args.length == 1);
         const num = this.args[0].evaluate(ctx).numberValue();
         return new NumberValue(Math.ceil(num));
     },
 
-    'round' (ctx) {
+    round(ctx) {
         assert(this.args.length == 1);
         const num = this.args[0].evaluate(ctx).numberValue();
         return new NumberValue(Math.round(num));
@@ -1400,7 +1379,7 @@ let xpathfunctions = {
     // standard that defines how to add functions, which should be
     // applied here.
 
-    'ext-join' (ctx) {
+    'ext-join'(ctx) {
         assert(this.args.length == 2);
         const nodes = this.args[0].evaluate(ctx).nodeSetValue();
         const delim = this.args[1].evaluate(ctx).stringValue();
@@ -1418,7 +1397,7 @@ let xpathfunctions = {
     // boolean value of its first argument is true, otherwise it
     // evaluates and returns its third argument.
 
-    'ext-if' (ctx) {
+    'ext-if'(ctx) {
         assert(this.args.length == 3);
         if (this.args[0].evaluate(ctx).booleanValue()) {
             return this.args[1].evaluate(ctx);
@@ -1431,7 +1410,7 @@ let xpathfunctions = {
     // returns the current node that many times. It can be used in the
     // select attribute to iterate over an integer range.
 
-    'ext-cardinal' (ctx) {
+    'ext-cardinal'(ctx) {
         assert(this.args.length >= 1);
         const c = this.args[0].evaluate(ctx).numberValue();
         const ret = [];
@@ -1572,38 +1551,35 @@ export class BinaryExpr {
         let ret;
         switch (this.op.value) {
             case 'or':
-                ret = new BooleanValue(this.expr1.evaluate(ctx).booleanValue() ||
-                    this.expr2.evaluate(ctx).booleanValue());
+                ret = new BooleanValue(
+                    this.expr1.evaluate(ctx).booleanValue() || this.expr2.evaluate(ctx).booleanValue()
+                );
                 break;
 
             case 'and':
-                ret = new BooleanValue(this.expr1.evaluate(ctx).booleanValue() &&
-                    this.expr2.evaluate(ctx).booleanValue());
+                ret = new BooleanValue(
+                    this.expr1.evaluate(ctx).booleanValue() && this.expr2.evaluate(ctx).booleanValue()
+                );
                 break;
 
             case '+':
-                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() +
-                    this.expr2.evaluate(ctx).numberValue());
+                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() + this.expr2.evaluate(ctx).numberValue());
                 break;
 
             case '-':
-                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() -
-                    this.expr2.evaluate(ctx).numberValue());
+                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() - this.expr2.evaluate(ctx).numberValue());
                 break;
 
             case '*':
-                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() *
-                    this.expr2.evaluate(ctx).numberValue());
+                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() * this.expr2.evaluate(ctx).numberValue());
                 break;
 
             case 'mod':
-                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() %
-                    this.expr2.evaluate(ctx).numberValue());
+                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() % this.expr2.evaluate(ctx).numberValue());
                 break;
 
             case 'div':
-                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() /
-                    this.expr2.evaluate(ctx).numberValue());
+                ret = new NumberValue(this.expr1.evaluate(ctx).numberValue() / this.expr2.evaluate(ctx).numberValue());
                 break;
 
             case '=':
@@ -1631,7 +1607,7 @@ export class BinaryExpr {
                 break;
 
             default:
-                throw(`BinaryExpr.evaluate: ${this.op.value}`);
+                throw `BinaryExpr.evaluate: ${this.op.value}`;
         }
         return ret;
     }
@@ -1656,9 +1632,7 @@ export class BinaryExpr {
                     }
                 }
             }
-
         } else if (v1.type == 'node-set' || v2.type == 'node-set') {
-
             if (v1.type == 'number') {
                 let s = v1.numberValue();
                 let n = v2.nodeSetValue();
@@ -1671,7 +1645,6 @@ export class BinaryExpr {
                         break;
                     }
                 }
-
             } else if (v2.type == 'number') {
                 let n = v1.nodeSetValue();
                 let s = v2.numberValue();
@@ -1684,7 +1657,6 @@ export class BinaryExpr {
                         break;
                     }
                 }
-
             } else if (v1.type == 'string') {
                 let s = v1.stringValue();
                 let n = v2.nodeSetValue();
@@ -1697,7 +1669,6 @@ export class BinaryExpr {
                         break;
                     }
                 }
-
             } else if (v2.type == 'string') {
                 let n = v1.nodeSetValue();
                 let s = v2.stringValue();
@@ -1710,17 +1681,13 @@ export class BinaryExpr {
                         break;
                     }
                 }
-
             } else {
                 ret = cmp(v1.booleanValue(), v2.booleanValue());
             }
-
         } else if (v1.type == 'boolean' || v2.type == 'boolean') {
             ret = cmp(v1.booleanValue(), v2.booleanValue());
-
         } else if (v1.type == 'number' || v2.type == 'number') {
             ret = cmp(v1.numberValue(), v2.numberValue());
-
         } else {
             ret = cmp(v1.stringValue(), v2.stringValue());
         }
@@ -1846,18 +1813,18 @@ function makeStepExpr6(step, predicate) {
 function makeAbbrevStep(abbrev) {
     switch (abbrev) {
         case '//':
-            return new StepExpr('descendant-or-self', new NodeTestAny);
+            return new StepExpr('descendant-or-self', new NodeTestAny());
 
         case '.':
-            return new StepExpr('self', new NodeTestAny);
+            return new StepExpr('self', new NodeTestAny());
 
         case '..':
-            return new StepExpr('parent', new NodeTestAny);
+            return new StepExpr('parent', new NodeTestAny());
     }
 }
 
 function makeNodeTestExpr1() {
-    return new NodeTestElementOrAttribute;
+    return new NodeTestElementOrAttribute();
 }
 
 function makeNodeTestExpr2(ncname) {
@@ -1872,13 +1839,13 @@ function makeNodeTestExpr4(typeo) {
     const type = typeo.value.replace(/\s*\($/, '');
     switch (type) {
         case 'node':
-            return new NodeTestAny;
+            return new NodeTestAny();
 
         case 'text':
-            return new NodeTestText;
+            return new NodeTestText();
 
         case 'comment':
-            return new NodeTestComment;
+            return new NodeTestComment();
 
         case 'processing-instruction':
             return new NodeTestPI('');
@@ -2012,22 +1979,22 @@ const xpathAxis = {
     SELF: 'self'
 };
 
-const xpathAxesRe = [
-    xpathAxis.ANCESTOR_OR_SELF,
-    xpathAxis.ANCESTOR,
-    xpathAxis.ATTRIBUTE,
-    xpathAxis.CHILD,
-    xpathAxis.DESCENDANT_OR_SELF,
-    xpathAxis.DESCENDANT,
-    xpathAxis.FOLLOWING_SIBLING,
-    xpathAxis.FOLLOWING,
-    xpathAxis.NAMESPACE,
-    xpathAxis.PARENT,
-    xpathAxis.PRECEDING_SIBLING,
-    xpathAxis.PRECEDING,
-    xpathAxis.SELF
-].join('(?=::)|')+'(?=::)'; //(viat) bodgy fix because namespace-uri() was getting detected as the namespace axis. maybe less bodgy fix later.
-
+const xpathAxesRe =
+    [
+        xpathAxis.ANCESTOR_OR_SELF,
+        xpathAxis.ANCESTOR,
+        xpathAxis.ATTRIBUTE,
+        xpathAxis.CHILD,
+        xpathAxis.DESCENDANT_OR_SELF,
+        xpathAxis.DESCENDANT,
+        xpathAxis.FOLLOWING_SIBLING,
+        xpathAxis.FOLLOWING,
+        xpathAxis.NAMESPACE,
+        xpathAxis.PARENT,
+        xpathAxis.PRECEDING_SIBLING,
+        xpathAxis.PRECEDING,
+        xpathAxis.SELF
+    ].join('(?=::)|') + '(?=::)'; //(viat) bodgy fix because namespace-uri() was getting detected as the namespace axis. maybe less bodgy fix later.
 
 // The tokens of the language. The label property is just used for
 // generating debug output. The prec property is the precedence used
@@ -2039,178 +2006,178 @@ const xpathAxesRe = [
 // be OK.
 
 let TOK_PIPE = {
-    label: "|",
+    label: '|',
     prec: 17,
-    re: new RegExp("^\\|")
+    re: new RegExp('^\\|')
 };
 let TOK_DSLASH = {
-    label: "//",
+    label: '//',
     prec: 19,
-    re: new RegExp("^//")
+    re: new RegExp('^//')
 };
 let TOK_SLASH = {
-    label: "/",
+    label: '/',
     prec: 30,
-    re: new RegExp("^/")
+    re: new RegExp('^/')
 };
 let TOK_AXIS = {
-    label: "::",
+    label: '::',
     prec: 20,
-    re: new RegExp("^::")
+    re: new RegExp('^::')
 };
 let TOK_COLON = {
-    label: ":",
+    label: ':',
     prec: 1000,
-    re: new RegExp("^:")
+    re: new RegExp('^:')
 };
 let TOK_AXISNAME = {
-    label: "[axis]",
+    label: '[axis]',
     re: new RegExp(`^(${xpathAxesRe})`)
 };
 let TOK_PARENO = {
-    label: "(",
+    label: '(',
     prec: 34,
-    re: new RegExp("^\\(")
+    re: new RegExp('^\\(')
 };
 let TOK_PARENC = {
-    label: ")",
-    re: new RegExp("^\\)")
+    label: ')',
+    re: new RegExp('^\\)')
 };
 let TOK_DDOT = {
-    label: "..",
+    label: '..',
     prec: 34,
-    re: new RegExp("^\\.\\.")
+    re: new RegExp('^\\.\\.')
 };
 let TOK_DOT = {
-    label: ".",
+    label: '.',
     prec: 34,
-    re: new RegExp("^\\.")
+    re: new RegExp('^\\.')
 };
 let TOK_AT = {
-    label: "@",
+    label: '@',
     prec: 34,
-    re: new RegExp("^@")
+    re: new RegExp('^@')
 };
 
 let TOK_COMMA = {
-    label: ",",
-    re: new RegExp("^,")
+    label: ',',
+    re: new RegExp('^,')
 };
 
 let TOK_OR = {
-    label: "or",
+    label: 'or',
     prec: 10,
-    re: new RegExp("^or\\b")
+    re: new RegExp('^or\\b')
 };
 let TOK_AND = {
-    label: "and",
+    label: 'and',
     prec: 11,
-    re: new RegExp("^and\\b")
+    re: new RegExp('^and\\b')
 };
 let TOK_EQ = {
-    label: "=",
+    label: '=',
     prec: 12,
-    re: new RegExp("^=")
+    re: new RegExp('^=')
 };
 let TOK_NEQ = {
-    label: "!=",
+    label: '!=',
     prec: 12,
-    re: new RegExp("^!=")
+    re: new RegExp('^!=')
 };
 let TOK_GE = {
-    label: ">=",
+    label: '>=',
     prec: 13,
-    re: new RegExp("^>=")
+    re: new RegExp('^>=')
 };
 let TOK_GT = {
-    label: ">",
+    label: '>',
     prec: 13,
-    re: new RegExp("^>")
+    re: new RegExp('^>')
 };
 let TOK_LE = {
-    label: "<=",
+    label: '<=',
     prec: 13,
-    re: new RegExp("^<=")
+    re: new RegExp('^<=')
 };
 let TOK_LT = {
-    label: "<",
+    label: '<',
     prec: 13,
-    re: new RegExp("^<")
+    re: new RegExp('^<')
 };
 let TOK_PLUS = {
-    label: "+",
+    label: '+',
     prec: 14,
-    re: new RegExp("^\\+"),
+    re: new RegExp('^\\+'),
     left: true
 };
 let TOK_MINUS = {
-    label: "-",
+    label: '-',
     prec: 14,
-    re: new RegExp("^\\-"),
+    re: new RegExp('^\\-'),
     left: true
 };
 let TOK_DIV = {
-    label: "div",
+    label: 'div',
     prec: 15,
-    re: new RegExp("^div\\b"),
+    re: new RegExp('^div\\b'),
     left: true
 };
 let TOK_MOD = {
-    label: "mod",
+    label: 'mod',
     prec: 15,
-    re: new RegExp("^mod\\b"),
+    re: new RegExp('^mod\\b'),
     left: true
 };
 
 let TOK_BRACKO = {
-    label: "[",
+    label: '[',
     prec: 32,
-    re: new RegExp("^\\[")
+    re: new RegExp('^\\[')
 };
 let TOK_BRACKC = {
-    label: "]",
-    re: new RegExp("^\\]")
+    label: ']',
+    re: new RegExp('^\\]')
 };
 let TOK_DOLLAR = {
-    label: "$",
-    re: new RegExp("^\\$")
+    label: '$',
+    re: new RegExp('^\\$')
 };
 
 let TOK_NCNAME = {
-    label: "[ncname]",
+    label: '[ncname]',
     re: new RegExp(`^${XML_NC_NAME}`)
 };
 
 let TOK_ASTERISK = {
-    label: "*",
+    label: '*',
     prec: 15,
-    re: new RegExp("^\\*"),
+    re: new RegExp('^\\*'),
     left: true
 };
 let TOK_LITERALQ = {
-    label: "[litq]",
+    label: '[litq]',
     prec: 20,
     re: new RegExp("^'[^\\']*'")
 };
 let TOK_LITERALQQ = {
-    label: "[litqq]",
+    label: '[litqq]',
     prec: 20,
     re: new RegExp('^"[^\\"]*"')
 };
 
 let TOK_NUMBER = {
-    label: "[number]",
+    label: '[number]',
     prec: 35,
     re: new RegExp('^\\d+(\\.\\d*)?')
 };
 
 let TOK_QNAME = {
-    label: "[qname]",
+    label: '[qname]',
     re: new RegExp(`^(${XML_NC_NAME}:)?${XML_NC_NAME}`)
 };
 
 let TOK_NODEO = {
-    label: "[nodetest-start]",
+    label: '[nodetest-start]',
     re: new RegExp('^(processing-instruction|comment|text|node)\\(')
 };
 
@@ -2263,55 +2230,55 @@ const xpathTokenRules = [
 // identified by object identity; the labels are used in the debug
 // output only.
 const XPathLocationPath = {
-    label: "LocationPath"
+    label: 'LocationPath'
 };
 const XPathRelativeLocationPath = {
-    label: "RelativeLocationPath"
+    label: 'RelativeLocationPath'
 };
 const XPathAbsoluteLocationPath = {
-    label: "AbsoluteLocationPath"
+    label: 'AbsoluteLocationPath'
 };
 const XPathStep = {
-    label: "Step"
+    label: 'Step'
 };
 const XPathNodeTest = {
-    label: "NodeTest"
+    label: 'NodeTest'
 };
 const XPathPredicate = {
-    label: "Predicate"
+    label: 'Predicate'
 };
 const XPathLiteral = {
-    label: "Literal"
+    label: 'Literal'
 };
 const XPathExpr = {
-    label: "Expr"
+    label: 'Expr'
 };
 const XPathPrimaryExpr = {
-    label: "PrimaryExpr"
+    label: 'PrimaryExpr'
 };
 const XPathVariableReference = {
-    label: "Variablereference"
+    label: 'Variablereference'
 };
 const XPathNumber = {
-    label: "Number"
+    label: 'Number'
 };
 const XPathFunctionCall = {
-    label: "FunctionCall"
+    label: 'FunctionCall'
 };
 const XPathArgumentRemainder = {
-    label: "ArgumentRemainder"
+    label: 'ArgumentRemainder'
 };
 const XPathPathExpr = {
-    label: "PathExpr"
+    label: 'PathExpr'
 };
 const XPathUnionExpr = {
-    label: "UnionExpr"
+    label: 'UnionExpr'
 };
 const XPathFilterExpr = {
-    label: "FilterExpr"
+    label: 'FilterExpr'
 };
 const XPathDigits = {
-    label: "Digits"
+    label: 'Digits'
 };
 
 const xpathNonTerminals = [
@@ -2336,13 +2303,13 @@ const xpathNonTerminals = [
 
 // Quantifiers that are used in the productions of the grammar.
 const Q_01 = {
-    label: "?"
+    label: '?'
 };
 const Q_MM = {
-    label: "*"
+    label: '*'
 };
 const Q_1M = {
-    label: "+"
+    label: '+'
 };
 
 // Tag for left associativity (right assoc is implied by undefined).
@@ -2369,202 +2336,92 @@ const ASSOC_LEFT = true;
 // instead. TODO: It shouldn't be necessary to explicitly assign
 // precedences to rules.
 
-
 // DGF As it stands, these precedences are purely empirical; we're
 // not sure they can be made to be consistent at all.
 
 const xpathGrammarRules = [
-    [XPathLocationPath, [XPathRelativeLocationPath], 18,
-        passExpr
-    ],
-    [XPathLocationPath, [XPathAbsoluteLocationPath], 18,
-        passExpr
-    ],
+    [XPathLocationPath, [XPathRelativeLocationPath], 18, passExpr],
+    [XPathLocationPath, [XPathAbsoluteLocationPath], 18, passExpr],
 
-    [XPathAbsoluteLocationPath, [TOK_SLASH, XPathRelativeLocationPath], 18,
-        makeLocationExpr1
-    ],
-    [XPathAbsoluteLocationPath, [TOK_DSLASH, XPathRelativeLocationPath], 18,
-        makeLocationExpr2
-    ],
+    [XPathAbsoluteLocationPath, [TOK_SLASH, XPathRelativeLocationPath], 18, makeLocationExpr1],
+    [XPathAbsoluteLocationPath, [TOK_DSLASH, XPathRelativeLocationPath], 18, makeLocationExpr2],
 
-    [XPathAbsoluteLocationPath, [TOK_SLASH], 0,
-        makeLocationExpr3
-    ],
-    [XPathAbsoluteLocationPath, [TOK_DSLASH], 0,
-        makeLocationExpr4
-    ],
+    [XPathAbsoluteLocationPath, [TOK_SLASH], 0, makeLocationExpr3],
+    [XPathAbsoluteLocationPath, [TOK_DSLASH], 0, makeLocationExpr4],
 
-    [XPathRelativeLocationPath, [XPathStep], 31,
-        makeLocationExpr5
-    ],
-    [XPathRelativeLocationPath, [XPathRelativeLocationPath, TOK_SLASH, XPathStep], 31,
-        makeLocationExpr6
-    ],
-    [XPathRelativeLocationPath, [XPathRelativeLocationPath, TOK_DSLASH, XPathStep], 31,
-        makeLocationExpr7
-    ],
+    [XPathRelativeLocationPath, [XPathStep], 31, makeLocationExpr5],
+    [XPathRelativeLocationPath, [XPathRelativeLocationPath, TOK_SLASH, XPathStep], 31, makeLocationExpr6],
+    [XPathRelativeLocationPath, [XPathRelativeLocationPath, TOK_DSLASH, XPathStep], 31, makeLocationExpr7],
 
-    [XPathStep, [TOK_DOT], 33,
-        makeStepExpr1
-    ],
-    [XPathStep, [TOK_DDOT], 33,
-        makeStepExpr2
-    ],
-    [XPathStep, [TOK_AXISNAME, TOK_AXIS, XPathNodeTest], 33,
-        makeStepExpr3
-    ],
-    [XPathStep, [TOK_AT, XPathNodeTest], 33,
-        makeStepExpr4
-    ],
-    [XPathStep, [XPathNodeTest], 33,
-        makeStepExpr5
-    ],
-    [XPathStep, [XPathStep, XPathPredicate], 33,
-        makeStepExpr6
-    ],
+    [XPathStep, [TOK_DOT], 33, makeStepExpr1],
+    [XPathStep, [TOK_DDOT], 33, makeStepExpr2],
+    [XPathStep, [TOK_AXISNAME, TOK_AXIS, XPathNodeTest], 33, makeStepExpr3],
+    [XPathStep, [TOK_AT, XPathNodeTest], 33, makeStepExpr4],
+    [XPathStep, [XPathNodeTest], 33, makeStepExpr5],
+    [XPathStep, [XPathStep, XPathPredicate], 33, makeStepExpr6],
 
-    [XPathNodeTest, [TOK_ASTERISK], 33,
-        makeNodeTestExpr1
-    ],
-    [XPathNodeTest, [TOK_NCNAME, TOK_COLON, TOK_ASTERISK], 33,
-        makeNodeTestExpr2
-    ],
-    [XPathNodeTest, [TOK_QNAME], 33,
-        makeNodeTestExpr3
-    ],
-    [XPathNodeTest, [TOK_NODEO, TOK_PARENC], 33,
-        makeNodeTestExpr4
-    ],
-    [XPathNodeTest, [TOK_NODEO, XPathLiteral, TOK_PARENC], 33,
-        makeNodeTestExpr5
-    ],
+    [XPathNodeTest, [TOK_ASTERISK], 33, makeNodeTestExpr1],
+    [XPathNodeTest, [TOK_NCNAME, TOK_COLON, TOK_ASTERISK], 33, makeNodeTestExpr2],
+    [XPathNodeTest, [TOK_QNAME], 33, makeNodeTestExpr3],
+    [XPathNodeTest, [TOK_NODEO, TOK_PARENC], 33, makeNodeTestExpr4],
+    [XPathNodeTest, [TOK_NODEO, XPathLiteral, TOK_PARENC], 33, makeNodeTestExpr5],
 
-    [XPathPredicate, [TOK_BRACKO, XPathExpr, TOK_BRACKC], 33,
-        makePredicateExpr
-    ],
+    [XPathPredicate, [TOK_BRACKO, XPathExpr, TOK_BRACKC], 33, makePredicateExpr],
 
-    [XPathPrimaryExpr, [XPathVariableReference], 33,
-        passExpr
-    ],
-    [XPathPrimaryExpr, [TOK_PARENO, XPathExpr, TOK_PARENC], 33,
-        makePrimaryExpr
-    ],
-    [XPathPrimaryExpr, [XPathLiteral], 30,
-        passExpr
-    ],
-    [XPathPrimaryExpr, [XPathNumber], 30,
-        passExpr
-    ],
-    [XPathPrimaryExpr, [XPathFunctionCall], 31,
-        passExpr
-    ],
+    [XPathPrimaryExpr, [XPathVariableReference], 33, passExpr],
+    [XPathPrimaryExpr, [TOK_PARENO, XPathExpr, TOK_PARENC], 33, makePrimaryExpr],
+    [XPathPrimaryExpr, [XPathLiteral], 30, passExpr],
+    [XPathPrimaryExpr, [XPathNumber], 30, passExpr],
+    [XPathPrimaryExpr, [XPathFunctionCall], 31, passExpr],
 
-    [XPathFunctionCall, [TOK_QNAME, TOK_PARENO, TOK_PARENC], -1,
-        makeFunctionCallExpr1
-    ],
-    [XPathFunctionCall, [TOK_QNAME, TOK_PARENO, XPathExpr, XPathArgumentRemainder, Q_MM,
-            TOK_PARENC
-        ], -1,
+    [XPathFunctionCall, [TOK_QNAME, TOK_PARENO, TOK_PARENC], -1, makeFunctionCallExpr1],
+    [
+        XPathFunctionCall,
+        [TOK_QNAME, TOK_PARENO, XPathExpr, XPathArgumentRemainder, Q_MM, TOK_PARENC],
+        -1,
         makeFunctionCallExpr2
     ],
-    [XPathArgumentRemainder, [TOK_COMMA, XPathExpr], -1,
-        makeArgumentExpr
-    ],
+    [XPathArgumentRemainder, [TOK_COMMA, XPathExpr], -1, makeArgumentExpr],
 
-    [XPathUnionExpr, [XPathPathExpr], 20,
-        passExpr
-    ],
-    [XPathUnionExpr, [XPathUnionExpr, TOK_PIPE, XPathPathExpr], 20,
-        makeUnionExpr
-    ],
+    [XPathUnionExpr, [XPathPathExpr], 20, passExpr],
+    [XPathUnionExpr, [XPathUnionExpr, TOK_PIPE, XPathPathExpr], 20, makeUnionExpr],
 
-    [XPathPathExpr, [XPathLocationPath], 20,
-        passExpr
-    ],
-    [XPathPathExpr, [XPathFilterExpr], 19,
-        passExpr
-    ],
-    [XPathPathExpr, [XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath], 19,
-        makePathExpr1
-    ],
-    [XPathPathExpr, [XPathFilterExpr, TOK_DSLASH, XPathRelativeLocationPath], 19,
-        makePathExpr2
-    ],
+    [XPathPathExpr, [XPathLocationPath], 20, passExpr],
+    [XPathPathExpr, [XPathFilterExpr], 19, passExpr],
+    [XPathPathExpr, [XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath], 19, makePathExpr1],
+    [XPathPathExpr, [XPathFilterExpr, TOK_DSLASH, XPathRelativeLocationPath], 19, makePathExpr2],
 
-    [XPathFilterExpr, [XPathPrimaryExpr, XPathPredicate, Q_MM], 31,
-        makeFilterExpr
-    ],
+    [XPathFilterExpr, [XPathPrimaryExpr, XPathPredicate, Q_MM], 31, makeFilterExpr],
 
-    [XPathExpr, [XPathPrimaryExpr], 16,
-        passExpr
-    ],
-    [XPathExpr, [XPathUnionExpr], 16,
-        passExpr
-    ],
+    [XPathExpr, [XPathPrimaryExpr], 16, passExpr],
+    [XPathExpr, [XPathUnionExpr], 16, passExpr],
 
-    [XPathExpr, [TOK_MINUS, XPathExpr], -1,
-        makeUnaryMinusExpr
-    ],
+    [XPathExpr, [TOK_MINUS, XPathExpr], -1, makeUnaryMinusExpr],
 
-    [XPathExpr, [XPathExpr, TOK_OR, XPathExpr], -1,
-        makeBinaryExpr
-    ],
-    [XPathExpr, [XPathExpr, TOK_AND, XPathExpr], -1,
-        makeBinaryExpr
-    ],
+    [XPathExpr, [XPathExpr, TOK_OR, XPathExpr], -1, makeBinaryExpr],
+    [XPathExpr, [XPathExpr, TOK_AND, XPathExpr], -1, makeBinaryExpr],
 
-    [XPathExpr, [XPathExpr, TOK_EQ, XPathExpr], -1,
-        makeBinaryExpr
-    ],
-    [XPathExpr, [XPathExpr, TOK_NEQ, XPathExpr], -1,
-        makeBinaryExpr
-    ],
+    [XPathExpr, [XPathExpr, TOK_EQ, XPathExpr], -1, makeBinaryExpr],
+    [XPathExpr, [XPathExpr, TOK_NEQ, XPathExpr], -1, makeBinaryExpr],
 
-    [XPathExpr, [XPathExpr, TOK_LT, XPathExpr], -1,
-        makeBinaryExpr
-    ],
-    [XPathExpr, [XPathExpr, TOK_LE, XPathExpr], -1,
-        makeBinaryExpr
-    ],
-    [XPathExpr, [XPathExpr, TOK_GT, XPathExpr], -1,
-        makeBinaryExpr
-    ],
-    [XPathExpr, [XPathExpr, TOK_GE, XPathExpr], -1,
-        makeBinaryExpr
-    ],
+    [XPathExpr, [XPathExpr, TOK_LT, XPathExpr], -1, makeBinaryExpr],
+    [XPathExpr, [XPathExpr, TOK_LE, XPathExpr], -1, makeBinaryExpr],
+    [XPathExpr, [XPathExpr, TOK_GT, XPathExpr], -1, makeBinaryExpr],
+    [XPathExpr, [XPathExpr, TOK_GE, XPathExpr], -1, makeBinaryExpr],
 
-    [XPathExpr, [XPathExpr, TOK_PLUS, XPathExpr], -1,
-        makeBinaryExpr, ASSOC_LEFT
-    ],
-    [XPathExpr, [XPathExpr, TOK_MINUS, XPathExpr], -1,
-        makeBinaryExpr, ASSOC_LEFT
-    ],
+    [XPathExpr, [XPathExpr, TOK_PLUS, XPathExpr], -1, makeBinaryExpr, ASSOC_LEFT],
+    [XPathExpr, [XPathExpr, TOK_MINUS, XPathExpr], -1, makeBinaryExpr, ASSOC_LEFT],
 
-    [XPathExpr, [XPathExpr, TOK_ASTERISK, XPathExpr], -1,
-        makeBinaryExpr, ASSOC_LEFT
-    ],
-    [XPathExpr, [XPathExpr, TOK_DIV, XPathExpr], -1,
-        makeBinaryExpr, ASSOC_LEFT
-    ],
-    [XPathExpr, [XPathExpr, TOK_MOD, XPathExpr], -1,
-        makeBinaryExpr, ASSOC_LEFT
-    ],
+    [XPathExpr, [XPathExpr, TOK_ASTERISK, XPathExpr], -1, makeBinaryExpr, ASSOC_LEFT],
+    [XPathExpr, [XPathExpr, TOK_DIV, XPathExpr], -1, makeBinaryExpr, ASSOC_LEFT],
+    [XPathExpr, [XPathExpr, TOK_MOD, XPathExpr], -1, makeBinaryExpr, ASSOC_LEFT],
 
-    [XPathLiteral, [TOK_LITERALQ], -1,
-        makeLiteralExpr
-    ],
-    [XPathLiteral, [TOK_LITERALQQ], -1,
-        makeLiteralExpr
-    ],
+    [XPathLiteral, [TOK_LITERALQ], -1, makeLiteralExpr],
+    [XPathLiteral, [TOK_LITERALQQ], -1, makeLiteralExpr],
 
-    [XPathNumber, [TOK_NUMBER], -1,
-        makeNumberExpr
-    ],
+    [XPathNumber, [TOK_NUMBER], -1, makeNumberExpr],
 
-    [XPathVariableReference, [TOK_DOLLAR, TOK_QNAME], 200,
-        makeVariableReference
-    ]
+    [XPathVariableReference, [TOK_DOLLAR, TOK_QNAME], 200, makeVariableReference]
 ];
 
 // That function computes some optimizations of the above data
@@ -2629,11 +2486,9 @@ function xpathParseInit(xpathLog) {
             if (pattern[j] == Q_1M) {
                 push_(xpathRules, pattern[j - 1].key, rule);
                 break;
-
             } else if (pattern[j] == Q_MM || pattern[j] == Q_01) {
                 push_(xpathRules, pattern[j - 1].key, rule);
                 --j;
-
             } else {
                 push_(xpathRules, pattern[j].key, rule);
                 break;
@@ -2644,7 +2499,7 @@ function xpathParseInit(xpathLog) {
     xpathLog(`XPath parse INIT: ${xpathRules.length} rule bins`);
 
     let sum = 0;
-    mapExec(xpathRules, i => {
+    mapExec(xpathRules, (i) => {
         if (i) {
             sum += i.length;
         }
@@ -2679,9 +2534,11 @@ function xpathExtractTagNameFromNodeTest(nodetest, ignoreNonElementNodesForNTA) 
     if (nodetest instanceof NodeTestName) {
         return nodetest.name;
     }
-    if ((ignoreNonElementNodesForNTA && nodetest instanceof NodeTestAny) ||
-        nodetest instanceof NodeTestElementOrAttribute) {
-        return "*";
+    if (
+        (ignoreNonElementNodesForNTA && nodetest instanceof NodeTestAny) ||
+        nodetest instanceof NodeTestElementOrAttribute
+    ) {
+        return '*';
     }
 }
 
@@ -2745,7 +2602,6 @@ export function xpathSort(input, sort) {
     input.setNode(0);
 }
 
-
 // Sorts by all order criteria defined. According to the JavaScript
 // spec ([ECMA] Section 11.8.5), the compare operators compare strings
 // as strings and numbers as numbers.
@@ -2768,7 +2624,6 @@ function xpathSortByKey(v1, v2) {
 
     return 0;
 }
-
 
 // Parses and then evaluates the given XPath expression in the given
 // input context. Notice that parsed xpath expressions are cached.

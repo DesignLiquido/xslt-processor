@@ -495,7 +495,7 @@ export class XNode {
         if ('*' == name) {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     ret.push(node);
                 },
@@ -504,7 +504,7 @@ export class XNode {
         } else {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     if (node.nodeName == name) {
                         ret.push(node);
@@ -522,7 +522,7 @@ export class XNode {
         if ('*' == namespace && '*' == localName) {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     ret.push(node);
                 },
@@ -531,7 +531,7 @@ export class XNode {
         } else if ('*' == namespace) {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     if (node.localName == localName) ret.push(node);
                 },
@@ -540,7 +540,7 @@ export class XNode {
         } else if ('*' == localName) {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     if (node.namespaceURI == namespace) ret.push(node);
                 },
@@ -549,7 +549,7 @@ export class XNode {
         } else {
             domTraverseElements(
                 this,
-                node => {
+                (node) => {
                     if (self == node) return;
                     if (node.localName == localName && node.namespaceURI == namespace) {
                         ret.push(node);
@@ -565,7 +565,7 @@ export class XNode {
         let ret = null;
         domTraverseElements(
             this,
-            node => {
+            (node) => {
                 if (node.getAttribute('id') == id) {
                     ret = node;
                     return false;
