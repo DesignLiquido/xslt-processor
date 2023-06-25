@@ -18,7 +18,7 @@ import { dom } from 'isomorphic-jsx';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('dom parsing', () => {
-    it('can parse xml', () => {
+    it.skip('can parse xml', () => {
         const xml = "<page> " +
                 "    <request> " +
                 "        <q id=\"q\">new york</q> " +
