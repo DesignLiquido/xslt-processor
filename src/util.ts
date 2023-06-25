@@ -83,7 +83,7 @@ export function copyArrayIgnoringAttributesWithoutValue(dst, src) {
 // is the nodeValue, for nodes with children this is the concatenation
 // of the value of all children. Browser-specific optimizations are used by
 // default; they can be disabled by passing "true" in as the second parameter.
-export function xmlValue(node, disallowBrowserSpecificOptimization) {
+export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean = false) {
     if (!node) {
         return '';
     }
@@ -120,7 +120,7 @@ export function xmlValue(node, disallowBrowserSpecificOptimization) {
 }
 
 // Returns the representation of a node as XML text.
-export function xmlText(node, opt_cdata) {
+export function xmlText(node: any, opt_cdata: boolean = false) {
     const buf = [];
     xmlTextR(node, buf, opt_cdata);
     return buf.join('');

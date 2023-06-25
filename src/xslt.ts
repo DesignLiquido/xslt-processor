@@ -87,7 +87,7 @@ export function xsltProcess(xmlDoc, stylesheet, parameters) {
 // @param template The stylesheet document root, as DOM node.
 // @param the root of the generated output, as DOM node.
 
-function xsltProcessContext(input, template, output, _parameters) {
+function xsltProcessContext(input: any, template: any, output: any, _parameters?: any) {
     const outputDocument = xmlOwnerDocument(output);
 
     if (!isXsltElement(template)) {
@@ -605,7 +605,7 @@ function xsltMatch(match, context) {
 }
 
 // Test if the given element is an XSLT element, optionally the one with the given name
-function isXsltElement(element, opt_wantedName) {
+function isXsltElement(element: any, opt_wantedName?: string) {
     if (opt_wantedName && element.localName != opt_wantedName) return false;
     if (element.namespaceURI) return element.namespaceURI == 'http://www.w3.org/1999/XSL/Transform';
     return element.prefix == 'xsl'; // backwards compatibility with earlier versions of xslt-processor
