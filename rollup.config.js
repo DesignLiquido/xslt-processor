@@ -6,7 +6,13 @@ import typescript from '@rollup/plugin-typescript';
 
 export default {
     plugins: [
-        typescript(),
+        typescript({
+            exclude: [
+                "**/__tests__",
+                "**/*.test.ts",
+                "jest.config.ts"
+            ]
+        }),
         commonjs(),
         resolve(),
         buble({

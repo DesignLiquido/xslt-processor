@@ -510,7 +510,7 @@ describe('xpath', () => {
             let ctx = new ExprContext(bodyEl);
             ctx.setCaseInsensitive(true);
             if (e[2]) {
-                for (const k in e[2]) {
+                for (const k in e[2] as any) {
                     const v = e[2][k];
                     if (typeof v == 'number') {
                         ctx.setVariable(k, new NumberValue(v));
@@ -530,11 +530,11 @@ describe('xpath', () => {
                 continue;
             }
             if (typeof e[1] == 'number') {
-                assert.equal(e[1], result.numberValue(), e[0]);
+                assert.equal(e[1], result.numberValue(), e[0] as any);
             } else if (typeof e[1] == 'string') {
-                assert.equal(e[1], result.stringValue(), e[0]);
+                assert.equal(e[1], result.stringValue(), e[0] as any);
             } else if (typeof e[1] == 'boolean') {
-                assert.equal(e[1], result.booleanValue(), e[0]);
+                assert.equal(e[1], result.booleanValue(), e[0] as any);
             }
         }
     })
@@ -583,11 +583,11 @@ describe('xpath', () => {
         for (const e of axisTests) {
             const result = xpathParse(e[0]).evaluate(ctx);
             if (typeof e[1] == 'number') {
-                assert.equal(e[1], result.numberValue(), e[0]);
+                assert.equal(e[1], result.numberValue(), e[0] as any);
             } else if (typeof e[1] == 'string') {
-                assert.equal(e[1], result.stringValue(), e[0]);
+                assert.equal(e[1], result.stringValue(), e[0] as any);
             } else if (typeof e[1] == 'boolean') {
-                assert.equal(e[1], result.booleanValue(), e[0]);
+                assert.equal(e[1], result.booleanValue(), e[0] as any);
             }
         }
 
@@ -663,7 +663,7 @@ describe('xpath', () => {
             assert.equal(
                 xpathParse(test[0]).steps[1].hasPositionalPredicate,
                 test[1],
-                test[0]
+                test[0] as any
             );
         }
     })
