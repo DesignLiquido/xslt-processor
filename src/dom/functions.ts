@@ -9,7 +9,7 @@
 // the subset of the W3C DOM that is used in the XSLT implementation.
 import he from 'he';
 
-import { DOM_ELEMENT_NODE } from "./constants";
+import { DOM_ELEMENT_NODE } from "../constants";
 
 import {
     domSetAttribute,
@@ -71,7 +71,7 @@ export function domTraverseElements(node: any, opt_pre: any, opt_post: any) {
 
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
-export function xmlParse(xml) {
+export function xmlParse(xml: any) {
     const regex_empty = /\/$/;
 
     let regex_tagname;

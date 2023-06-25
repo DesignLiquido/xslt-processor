@@ -12,7 +12,6 @@ import {
         dom
 } from 'isomorphic-jsx';
 import {
-    xpathParse,
     ExprContext,
     StringValue,
     BooleanValue,
@@ -24,6 +23,7 @@ import {
 import {
     xmlParse
 } from "../src/dom"
+import { xpathParse } from '../src/xpath/functions';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);

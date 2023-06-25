@@ -6,7 +6,7 @@ export default async (): Promise<Config.InitialOptions> => {
         testEnvironment: 'node',
         coverageReporters: ['json-summary', 'lcov', 'text', 'text-summary'],
 		displayName: {
-			name: 'liquido',
+			name: 'xslt-transform',
 			color: 'greenBright'
 		},
 		detectOpenHandles: true,

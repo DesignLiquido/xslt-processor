@@ -3,7 +3,7 @@
 // where we can't reuse the HTML DOM for parsing our own XML, and for
 // Safari, where it is too expensive to have the template processor
 
-import { DOM_ATTRIBUTE_NODE } from "./constants";
+import { DOM_ATTRIBUTE_NODE } from "../constants";
 import { domTraverseElements } from "./functions";
 import { XDocument } from "./xdocument";
 
@@ -24,12 +24,11 @@ export class XNode {
     previousSibling: any;
     parentNode: any;
 
-    _unusedXNodes: any[];
+    static _unusedXNodes: any[] = [];
 
     constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.attributes = [];
         this.childNodes = [];
-        this._unusedXNodes = [];
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
@@ -57,7 +56,7 @@ export class XNode {
         }
     }
 
-    recycle(node: any) {
+    static recycle(node: any) {
         if (!node) {
             return;
         }
@@ -83,7 +82,7 @@ export class XNode {
         node.init.call(0, '', '', null);
     }
 
-    create(type: any, name: any, value: any, owner: any, namespace?: any) {
+    static create(type: any, name: any, value: any, owner: any, namespace?: any) {
         if (this._unusedXNodes.length > 0) {
             const node = this._unusedXNodes.pop();
             node.init(type, name, value, owner, namespace);
@@ -233,7 +232,7 @@ export class XNode {
                 return;
             }
         }
-        this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this));
+        this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
     }
 
     setAttributeNS(namespace, name, value) {
@@ -248,7 +247,7 @@ export class XNode {
                 return;
             }
         }
-        this.attributes.push(this.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
+        this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
     }
 
     getAttribute(name) {

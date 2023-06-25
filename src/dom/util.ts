@@ -7,16 +7,14 @@
 // Miscellaneous utility and placeholder functions.
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
-import { FunctionCallExpr, UnaryMinusExpr, BinaryExpr, NumberExpr } from '../xpath';
-import {
-    DOM_TEXT_NODE,
-    DOM_CDATA_SECTION_NODE,
-    DOM_ELEMENT_NODE,
-    DOM_DOCUMENT_NODE,
-    DOM_DOCUMENT_FRAGMENT_NODE,
-    DOM_ATTRIBUTE_NODE,
-    DOM_COMMENT_NODE
-} from '../dom';
+
+import { DOM_ATTRIBUTE_NODE, DOM_CDATA_SECTION_NODE, DOM_COMMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_DOCUMENT_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE } from "../constants";
+import { NumberExpr } from "../xpath";
+import { UnaryMinusExpr } from "../xpath";
+import { BinaryExpr } from "../xpath";
+import { FunctionCallExpr } from "../xpath";
+
+
 // Throws an exception if false.
 export function assert(b) {
     if (!b) {
@@ -260,7 +258,7 @@ export function regExpEscape(text) {
  * selector may be based on the result of evaluating predicates that precede
  * it.
  */
-export function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
+export function predicateExprHasPositionalSelector(expr: any, isRecursiveCall?: any) {
     if (!expr) {
         return false;
     }
@@ -269,7 +267,7 @@ export function predicateExprHasPositionalSelector(expr, isRecursiveCall) {
         return true;
     }
     if (expr instanceof FunctionCallExpr) {
-        const value = expr.name.value;
+        const value = (expr as any).name.value;
         return value == 'last' || value == 'position';
     }
     if (expr instanceof BinaryExpr) {
@@ -293,7 +291,7 @@ function exprReturnsNumberValue(expr) {
             ceiling: true,
             round: true
         };
-        return isMember[expr.name.value];
+        return isMember[(expr as any).name.value];
     } else if (expr instanceof UnaryMinusExpr) {
         return true;
     } else if (expr instanceof BinaryExpr) {
