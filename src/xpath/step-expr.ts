@@ -1,6 +1,7 @@
 import { DOM_ATTRIBUTE_NODE } from "../constants";
 import { XNode } from "../dom";
 import { copyArray, copyArrayIgnoringAttributesWithoutValue, predicateExprHasPositionalSelector } from "../dom/util";
+import { ExprContext } from "./expr-context";
 import { xpathCollectDescendants, xpathCollectDescendantsReverse, xpathExtractTagNameFromNodeTest } from "./functions";
 import { NodeSetValue } from "./node-set-value";
 import { NodeTestAny } from "./node-test-any";
@@ -8,11 +9,8 @@ import { xpathAxis } from "./tokens";
 
 export class StepExpr {
     axis: any;
-
     nodetest: any;
-
     predicate: any;
-
     hasPositionalPredicate: any;
 
     constructor(axis: any, nodetest: any, opt_predicate?: any) {
@@ -35,7 +33,7 @@ export class StepExpr {
         }
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         const input = ctx.node;
         let nodelist = [];
         let skipNodeTest = false;

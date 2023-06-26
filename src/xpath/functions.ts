@@ -40,6 +40,7 @@
 // @return an expression object that can be evaluated with an
 // expression context.
 import { copyArray, mapExec, mapExpr, reverseInplace } from '../dom/util';
+import { ExprContext } from './expr-context';
 import { makeSimpleExpr, makeSimpleExpr2, makeTokenExpr } from './factory-functions';
 import { NodeTestAny } from './node-test-any';
 import { NodeTestElementOrAttribute } from './node-test-element-or-attribute';
@@ -126,8 +127,8 @@ export function xpathCollectDescendantsReverse(nodelist, node) {
 
 // Parses and then evaluates the given XPath expression in the given
 // input context. Notice that parsed xpath expressions are cached.
-export function xpathEval(select, context) {
-    const expr = xpathParse(select);
+export function xpathEval(select: string, context: ExprContext) {
+    const expr = xPathParse(select);
     const ret = expr.evaluate(context);
     return ret;
 }
@@ -220,7 +221,7 @@ function xpathMatchStack(stack, pattern) {
     }
 }
 
-export function xpathParse(
+export function xPathParse(
     expr,
     xpathLog = (message: string) => {
         // console.log(message);
@@ -493,7 +494,7 @@ function xpathReduce(
                         rule,
                         match
                     };
-                    cand.prec = xpathGrammarPrecedence(cand);
+                    cand.prec = xPathGrammarPrecedence(cand);
                     break;
                 }
             }
@@ -608,7 +609,7 @@ function xpathSortByKey(v1, v2) {
     return 0;
 }
 
-export function xPathStep(nodes, steps, step, input, ctx) {
+export function xPathStep(nodes: any[], steps: any[], step, input, ctx) {
     const s = steps[step];
     const ctx2 = ctx.clone(input);
 
@@ -656,7 +657,7 @@ export function xPathStep(nodes, steps, step, input, ctx) {
     }
 }
 
-function xpathGrammarPrecedence(frame) {
+function xPathGrammarPrecedence(frame) {
     let ret = 0;
 
     if (frame.rule) {
@@ -666,19 +667,19 @@ function xpathGrammarPrecedence(frame) {
             ret = frame.rule[2];
         } else {
             for (let i = 0; i < frame.rule[1].length; ++i) {
-                let p = xpathTokenPrecedence(frame.rule[1][i]);
+                let p = xPathTokenPrecedence(frame.rule[1][i]);
                 ret = Math.max(ret, p);
             }
         }
     } else if (frame.tag) {
 
         /* TOKEN match */
-        ret = xpathTokenPrecedence(frame.tag);
+        ret = xPathTokenPrecedence(frame.tag);
     } else if (frame.length) {
 
         /* Q_ match */
         for (let j = 0; j < frame.length; ++j) {
-            let p = xpathGrammarPrecedence(frame[j]);
+            let p = xPathGrammarPrecedence(frame[j]);
             ret = Math.max(ret, p);
         }
     }
@@ -686,6 +687,6 @@ function xpathGrammarPrecedence(frame) {
     return ret;
 }
 
-function xpathTokenPrecedence(tag) {
+function xPathTokenPrecedence(tag) {
     return tag.prec || 2;
 }

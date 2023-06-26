@@ -1,3 +1,4 @@
+import { ExprContext } from "./expr-context";
 import { xPathStep } from "./functions";
 import { NodeSetValue } from "./node-set-value";
 import { NodeTestAny } from "./node-test-any";
@@ -57,7 +58,7 @@ export class LocationExpr {
         return null;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         let start;
         if (this.absolute) {
             start = ctx.root;

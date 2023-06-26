@@ -49,19 +49,20 @@ import {
     domCreateDocumentFragment,
     namespaceMapAt
 } from './dom/util';
-import { XDocument } from './dom';
+import { XDocument, XNode } from './dom';
 import { ExprContext, NodeSetValue, StringValue } from './xpath';
-import { xpathEval, xpathParse, xpathSort } from './xpath/functions';
+import { xpathEval, xPathParse, xpathSort } from './xpath/functions';
 import { DOM_ATTRIBUTE_NODE, DOM_CDATA_SECTION_NODE, DOM_COMMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_DOCUMENT_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE } from './constants';
 
 
-// The exported entry point of the XSL-T processor, as explained
-// above.
-//
-// @param xmlDoc The input document root, as DOM node.
-// @param template The stylesheet document root, as DOM node.
-// @return the processed document, as XML text in a string.
-export function xsltProcess(xmlDoc: any, stylesheet: any, parameters?: any) {
+/**
+ * The exported entry point of the XSL-T processor.
+ * @param xmlDoc The input document root, as DOM node.
+ * @param stylesheet The stylesheet document root, as DOM node.
+ * @param parameters Additional parameters to be set as variables.
+ * @returns the processed document, as XML text in a string.
+ */
+export function xsltProcess(xmlDoc: XDocument, stylesheet: XDocument, parameters?: any) {
     const output = domCreateDocumentFragment(new XDocument());
     const expressionContext = new ExprContext(xmlDoc);
     if (parameters && typeof parameters === 'object') {
@@ -69,7 +70,7 @@ export function xsltProcess(xmlDoc: any, stylesheet: any, parameters?: any) {
             expressionContext.setVariable(key, new StringValue(value));
         }
     }
-    expressionContext.setVariable();
+    // expressionContext.setVariable();
     xsltProcessContext(expressionContext, stylesheet, output, parameters);
     const ret = xmlText(output);
     return ret;
@@ -308,7 +309,7 @@ function xsltSort(input, template) {
     for (const c of template.childNodes) {
         if (c.nodeType == DOM_ELEMENT_NODE && isXsltElement(c, 'sort')) {
             const select = xmlGetAttribute(c, 'select');
-            const expr = xpathParse(select);
+            const expr = xPathParse(select);
             const type = xmlGetAttribute(c, 'data-type') || 'text';
             const order = xmlGetAttribute(c, 'order') || 'ascending';
             sort.push({
@@ -388,7 +389,7 @@ function xsltForEach(input, template, output) {
 // function with the current input context for every child node of the
 // current template node.
 
-function xsltChildNodes(input, template, output) {
+function xsltChildNodes(input: any, template: any, output: any) {
     // Clone input context to keep variables declared here local to the
     // siblings of the children.
     const context = input.clone();
@@ -397,12 +398,17 @@ function xsltChildNodes(input, template, output) {
     }
 }
 
-// Passes template text to the output. The current template node does
-// not specify an XSL-T operation and therefore is appended to the
-// output with all its attributes. Then continues traversing the
-// template node tree.
-
-function xsltPassThrough(input, template, output, outputDocument) {
+/**
+ * Passes template text to the output. The current template node does
+ * not specify an XSL-T operation and therefore is appended to the
+ * output with all its attributes. Then continues traversing the
+ * template node tree.
+ * @param input In general the Expression Context.
+ * @param template The XSLT stylesheet or transformation.
+ * @param output The output.
+ * @param outputDocument The output document, if the case.
+ */
+function xsltPassThrough(input: any, template: any, output: any, outputDocument: any) {
     if (template.nodeType == DOM_TEXT_NODE) {
         if (xsltPassText(template)) {
             let node = domCreateTextNode(outputDocument, template.nodeValue);
@@ -436,7 +442,7 @@ function xsltPassThrough(input, template, output, outputDocument) {
 // TODO(mesch): Whitespace stripping on the input document is
 // currently not implemented.
 
-function xsltPassText(template) {
+function xsltPassText(template: XNode) {
     if (!template.nodeValue.match(/^\s*$/)) {
         return true;
     }
@@ -568,8 +574,8 @@ function xsltCopy(dst, src, dstDocument) {
 
 // Evaluates an XPath expression in the current input context as a
 // match (see [XSLT] section 5.2, paragraph 1).
-function xsltMatch(match, context) {
-    const expr = xpathParse(match);
+function xsltMatch(match: any, context: any) {
+    const expr = xPathParse(match);
     let ret;
     // Shortcut for the most common case.
     if (

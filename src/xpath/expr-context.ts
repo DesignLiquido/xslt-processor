@@ -109,7 +109,7 @@ export class ExprContext {
         }
     }
 
-    clone(opt_node, opt_position, opt_nodelist) {
+    clone(opt_node: any, opt_position: any, opt_nodelist: any[]) {
         return new ExprContext(
             opt_node || this.node,
             typeof opt_position != 'undefined' ? opt_position : this.position,
