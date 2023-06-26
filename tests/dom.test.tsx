@@ -98,7 +98,7 @@ describe('dom parsing', () => {
     });
 });
 
-const doTestXmlParse = (dom1, dom2) => {
+const doTestXmlParse = (dom1: any, dom2: any) => {
     assert.equal(xmlText(dom1), xmlText(dom2), 'xmlText');
 
     assert.equal(dom1.nodeName, dom2.nodeName, '#document');

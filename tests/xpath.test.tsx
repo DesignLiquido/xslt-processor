@@ -12,14 +12,17 @@
 //         Junji Takagi <jtakagi@google.com>
 //         Johannes Wilm <johannes@fiduswriter.org>
 import assert from 'assert';
+
 import { dom } from 'isomorphic-jsx';
+import React from 'react';
+
 import { ExprContext, StringValue, BooleanValue, NumberValue } from '../src/xpath';
 import { xmlValue } from '../src/dom/util';
 import { xmlParse } from '../src/dom';
-import { xpathParse } from '../src/xpath/functions';
+import { xPathParse } from '../src/xpath/functions';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom);
+console.log(dom, React);
 const expr = [
     '@*',
     '@*|node()',
@@ -452,7 +455,7 @@ const numExpr = [
 
 // eval an xpath expression to a single node
 const evalNodeSet = (expr, ctx) => {
-    const expr1 = xpathParse(expr);
+    const expr1 = xPathParse(expr);
     const e = expr1.evaluate(ctx);
     return e.nodeSetValue();
 };
@@ -512,7 +515,7 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
 describe('xpath', () => {
     it('can parse the xpaths', () => {
         for (let i = 0; i < expr.length; ++i) {
-            assert.ok(xpathParse(expr[i]), expr[i]);
+            assert.ok(xPathParse(expr[i]), expr[i]);
         }
     });
 
@@ -549,7 +552,7 @@ describe('xpath', () => {
             // allow exceptions to be caught and asserted upon
             let result;
             try {
-                result = xpathParse(e[0]).evaluate(ctx);
+                result = xPathParse(e[0]).evaluate(ctx);
             } catch (ex) {
                 assert.equal(ex, e[1], ex);
                 continue;
@@ -606,7 +609,7 @@ describe('xpath', () => {
         const ctx = new ExprContext(xmlParse(xml));
 
         for (const e of axisTests) {
-            const result = xpathParse(e[0]).evaluate(ctx);
+            const result = xPathParse(e[0]).evaluate(ctx);
             if (typeof e[1] == 'number') {
                 assert.equal(e[1], result.numberValue(), e[0] as any);
             } else if (typeof e[1] == 'string') {
@@ -619,7 +622,7 @@ describe('xpath', () => {
 
     it('can handle attribute asterisk', () => {
         const ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
-        const expr = xpathParse('count(/x/@*)');
+        const expr = xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
 
@@ -690,7 +693,7 @@ describe('xpath', () => {
         ];
 
         for (const test of tests) {
-            assert.equal(xpathParse(test[0]).steps[1].hasPositionalPredicate, test[1], test[0] as any);
+            assert.equal(xPathParse(test[0]).steps[1].hasPositionalPredicate, test[1], test[0] as any);
         }
     });
 
@@ -718,7 +721,7 @@ describe('xpath', () => {
         const ctx = new ExprContext(parsedXML);
 
         for (const test of tests) {
-            const expr = xpathParse(test[0]);
+            const expr = xPathParse(test[0]);
 
             ctx.setReturnOnFirstMatch(false);
             const normalResults = expr.evaluate(ctx);
