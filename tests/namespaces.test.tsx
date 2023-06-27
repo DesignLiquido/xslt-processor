@@ -104,8 +104,8 @@ describe('namespaces', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
-            xmlParse(xmlString),
-            xmlParse(xsltString)
+            xml,
+            xslt
         );
 
         assert.equal(outXmlString, expectedOutString);

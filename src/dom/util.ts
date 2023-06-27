@@ -17,7 +17,7 @@ import {
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
-import { BinaryExpr, FunctionCallExpr, NumberExpr, UnaryMinusExpr } from '../xpath';
+import { FunctionCallExpr, BinaryExpr, UnaryMinusExpr, NumberExpr } from '../xpath/expressions';
 import { XDocument } from './xdocument';
 
 // Throws an exception if false.

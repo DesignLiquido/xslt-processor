@@ -1,18 +1,20 @@
 import { ExprContext } from "../expr-context";
-import { xPathStep } from "../functions";
 import { NodeSetValue } from "../values/node-set-value";
 import { NodeTestAny } from "../node-test-any";
 import { xpathAxis } from "../tokens";
 import { Expression } from "./expression";
+import { XPath } from "../xpath";
 
 export class LocationExpr extends Expression {
     absolute: boolean;
     steps: any[];
+    xPath: XPath;
 
-    constructor() {
+    constructor(xPath: XPath) {
         super();
         this.absolute = false;
         this.steps = [];
+        this.xPath = xPath;
     }
 
     appendStep(s) {
@@ -68,7 +70,7 @@ export class LocationExpr extends Expression {
         }
 
         const nodes = [];
-        xPathStep(nodes, this.steps, 0, start, ctx);
+        this.xPath.xPathStep(nodes, this.steps, 0, start, ctx);
         return new NodeSetValue(nodes);
     }
 }

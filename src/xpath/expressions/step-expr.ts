@@ -2,24 +2,27 @@ import { DOM_ATTRIBUTE_NODE } from "../../constants";
 import { XNode } from "../../dom";
 import { copyArray, copyArrayIgnoringAttributesWithoutValue, predicateExprHasPositionalSelector } from "../../dom/util";
 import { ExprContext } from "../expr-context";
-import { xpathCollectDescendants, xpathCollectDescendantsReverse, xpathExtractTagNameFromNodeTest } from "../functions";
 import { NodeSetValue } from "../values/node-set-value";
 import { NodeTestAny } from "../node-test-any";
 import { xpathAxis } from "../tokens";
 import { Expression } from "./expression";
+import { XPath } from "../xpath";
 
 export class StepExpr extends Expression {
     axis: any;
     nodetest: any;
     predicate: any;
     hasPositionalPredicate: any;
+    xPath: XPath;
 
-    constructor(axis: any, nodetest: any, opt_predicate?: any) {
+    constructor(axis: any, nodetest: any, xPath: XPath, opt_predicate?: any) {
         super();
         this.axis = axis;
         this.nodetest = nodetest;
         this.predicate = opt_predicate || [];
         this.hasPositionalPredicate = false;
+        this.xPath = xPath;
+
         for (let i = 0; i < this.predicate.length; ++i) {
             if (predicateExprHasPositionalSelector(this.predicate[i].expr)) {
                 this.hasPositionalPredicate = true;
@@ -90,18 +93,18 @@ export class StepExpr extends Expression {
             if (this.nodetest.evaluate(ctx).booleanValue()) {
                 nodelist.push(input);
             }
-            let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
-            xpathCollectDescendants(nodelist, input, tagName);
+            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            this.xPath.xPathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
         } else if (this.axis == xpathAxis.DESCENDANT) {
-            let tagName = xpathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
-            xpathCollectDescendants(nodelist, input, tagName);
+            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            this.xPath.xPathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
         } else if (this.axis == xpathAxis.FOLLOWING) {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.nextSibling; nn; nn = nn.nextSibling) {
                     nodelist.push(nn);
-                    xpathCollectDescendants(nodelist, nn);
+                    this.xPath.xPathCollectDescendants(nodelist, nn);
                 }
             }
         } else if (this.axis == xpathAxis.FOLLOWING_SIBLING) {
@@ -118,7 +121,7 @@ export class StepExpr extends Expression {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.previousSibling; nn; nn = nn.previousSibling) {
                     nodelist.push(nn);
-                    xpathCollectDescendantsReverse(nodelist, nn);
+                    this.xPath.xPathCollectDescendantsReverse(nodelist, nn);
                 }
             }
         } else if (this.axis == xpathAxis.PRECEDING_SIBLING) {

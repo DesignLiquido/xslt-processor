@@ -50,8 +50,8 @@ import {
     namespaceMapAt
 } from './dom/util';
 import { XDocument, XNode } from './dom';
-import { ExprContext, NodeSetValue, StringValue } from './xpath';
-import { xPathEval, xPathParse, xpathSort } from './xpath/functions';
+import { ExprContext, XPath } from './xpath';
+
 import {
     DOM_ATTRIBUTE_NODE,
     DOM_CDATA_SECTION_NODE,
@@ -62,8 +62,15 @@ import {
     DOM_TEXT_NODE
 } from './constants';
 import { Expression } from './xpath/expressions/expression';
+import { StringValue, NodeSetValue } from './xpath/values';
 
 export class Xslt {
+    xPath: XPath;
+
+    constructor() {
+        this.xPath = new XPath();
+    }
+
     /**
      * The exported entry point of the XSL-T processor.
      * @param xmlDoc The input document root, as DOM node.
@@ -119,7 +126,7 @@ export class Xslt {
                 case 'apply-templates':
                     select = this.xmlGetAttribute(template, 'select');
                     if (select) {
-                        nodes = xPathEval(select, input).nodeSetValue();
+                        nodes = this.xPath.xPathEval(select, input).nodeSetValue();
                     } else {
                         nodes = input.node.childNodes;
                     }
@@ -195,7 +202,7 @@ export class Xslt {
                     break;
                 case 'copy-of':
                     select = this.xmlGetAttribute(template, 'select');
-                    value = xPathEval(select, input);
+                    value = this.xPath.xPathEval(select, input);
                     if (value.type == 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
@@ -222,7 +229,7 @@ export class Xslt {
                     break;
                 case 'if':
                     test = this.xmlGetAttribute(template, 'test');
-                    if (xPathEval(test, input).booleanValue()) {
+                    if (this.xPath.xPathEval(test, input).booleanValue()) {
                         this.xsltChildNodes(input, template, output);
                     }
                     break;
@@ -272,7 +279,7 @@ export class Xslt {
                     break;
                 case 'value-of':
                     select = this.xmlGetAttribute(template, 'select');
-                    value = xPathEval(select, input).stringValue();
+                    value = this.xPath.xPathEval(select, input).stringValue();
                     node = domCreateTextNode(outputDocument, value);
                     output.appendChild(node);
                     break;
@@ -318,7 +325,7 @@ export class Xslt {
         for (const c of template.childNodes) {
             if (c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'sort')) {
                 const select = this.xmlGetAttribute(c, 'select');
-                const expr = xPathParse(select);
+                const expr = this.xPath.xPathParse(select);
                 const type = this.xmlGetAttribute(c, 'data-type') || 'text';
                 const order = this.xmlGetAttribute(c, 'order') || 'ascending';
                 sort.push({
@@ -329,7 +336,7 @@ export class Xslt {
             }
         }
 
-        xpathSort(input, sort);
+        this.xPath.xPathSort(input, sort);
     }
 
     // Evaluates a variable or parameter and set it in the current input
@@ -351,7 +358,7 @@ export class Xslt {
             this.xsltChildNodes(input, template, root);
             value = new NodeSetValue([root]);
         } else if (select) {
-            value = xPathEval(select, input);
+            value = this.xPath.xPathEval(select, input);
         } else {
             value = new StringValue('');
         }
@@ -370,7 +377,7 @@ export class Xslt {
                 continue;
             } else if (this.isXsltElement(childNode, 'when')) {
                 const test = this.xmlGetAttribute(childNode, 'test');
-                if (xPathEval(test, input).booleanValue()) {
+                if (this.xPath.xPathEval(test, input).booleanValue()) {
                     this.xsltChildNodes(input, childNode, output);
                     break;
                 }
@@ -385,7 +392,7 @@ export class Xslt {
 
     xsltForEach(input, template, output) {
         const select = this.xmlGetAttribute(template, 'select');
-        const nodes = xPathEval(select, input).nodeSetValue();
+        const nodes = this.xPath.xPathEval(select, input).nodeSetValue();
         const sortContext = input.clone(nodes[0], 0, nodes);
         this.xsltSort(sortContext, template);
         for (let i = 0; i < sortContext.contextSize(); ++i) {
@@ -501,7 +508,7 @@ export class Xslt {
                 continue;
             }
 
-            const val = xPathEval(rp[0], context).stringValue();
+            const val = this.xPath.xPathEval(rp[0], context).stringValue();
             ret += val + rp[1];
         }
 
@@ -588,28 +595,39 @@ export class Xslt {
     // Evaluates an XPath expression in the current input context as a
     // match (see [XSLT] section 5.2, paragraph 1).
     xsltMatch(match: string, context: ExprContext) {
-        const expr = xPathParse(match);
+        const expr = this.xPath.xPathParse(match);
+
+        if (expr.steps.length <= 0) {
+            throw new Error("Error resolving XSLT match: Location Expression should have steps.");
+        }
+
+        const firstStep = expr.steps[0];
 
         // Shortcut for the most common case.
         if (
             expr.steps &&
             !expr.absolute &&
             expr.steps.length == 1 &&
-            expr.steps[0].axis == 'child' &&
-            expr.steps[0].predicate.length == 0
+            firstStep.axis == 'child' &&
+            firstStep.predicate.length === 0
         ) {
-            return expr.steps[0].nodetest.evaluate(context).booleanValue();
+            return firstStep.nodetest.evaluate(context).booleanValue();
         }
 
-        if (expr.absolute) {
-            return this.absoluteXsltMatch(match.split('/'), expr, context);
+        if (expr.absolute && firstStep.axis !== 'self') {
+            // TODO: `xPathCollectDescendants()`?
+            const levels = match.split('/');
+            if (levels.length > 1) {
+                return this.absoluteXsltMatch(levels, expr, context);
+            }
         }
 
         return this.relativeXsltMatch(expr, context);
     }
 
     absoluteXsltMatch(levels: string[], expr: Expression, context: ExprContext) {
-        const filteredChildren = context.node.childNodes.filter((c) => c.nodeName === levels[1]);
+        levels.shift();
+        const filteredChildren = this.selectChildNodes(levels, [context.node]);
         if (filteredChildren.length <= 0) {
             return false;
         }
@@ -624,6 +642,21 @@ export class Xslt {
         }
 
         return false;
+    }
+
+    private selectChildNodes(levels: string[], nodes: XNode[]) {
+        const currentLevel = levels.shift();
+        let currentNodes = [];
+        for (let node of nodes) {
+            let filteredChildren = node.childNodes.filter((c) => c.nodeName === currentLevel);
+            currentNodes = currentNodes.concat(filteredChildren);
+        }
+
+        if (levels.length === 0) {
+            return currentNodes;
+        }
+
+        return this.selectChildNodes(levels, currentNodes);
     }
 
     relativeXsltMatch(expr: Expression, context: ExprContext) {

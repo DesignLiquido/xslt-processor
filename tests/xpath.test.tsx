@@ -16,10 +16,12 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { ExprContext, StringValue, BooleanValue, NumberValue } from '../src/xpath';
+import { ExprContext, XPath } from '../src/xpath';
 import { xmlValue } from '../src/dom/util';
 import { xmlParse } from '../src/dom';
-import { xPathParse } from '../src/xpath/functions';
+import { BooleanValue } from '../src/xpath/values/boolean-value';
+import { NumberValue } from '../src/xpath/values/number-value';
+import { StringValue } from '../src/xpath/values/string-value';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -455,7 +457,8 @@ const numExpr = [
 
 // eval an xpath expression to a single node
 const evalNodeSet = (expr, ctx) => {
-    const expr1 = xPathParse(expr);
+    const xPath = new XPath();
+    const expr1 = xPath.xPathParse(expr);
     const e = expr1.evaluate(ctx);
     return e.nodeSetValue();
 };
@@ -514,12 +517,14 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
 
 describe('xpath', () => {
     it('can parse the xpaths', () => {
+        const xPath = new XPath();
         for (let i = 0; i < expr.length; ++i) {
-            assert.ok(xPathParse(expr[i]), expr[i]);
+            assert.ok(xPath.xPathParse(expr[i]), expr[i]);
         }
     });
 
     it('can evaluate variables on a HTML context', () => {
+        const xPath = new XPath();
         const bodyEl = xmlParse(
             <body>
                 <div id="test1"></div>
@@ -552,7 +557,7 @@ describe('xpath', () => {
             // allow exceptions to be caught and asserted upon
             let result;
             try {
-                result = xPathParse(e[0]).evaluate(ctx);
+                result = xPath.xPathParse(e[0]).evaluate(ctx);
             } catch (ex) {
                 assert.equal(ex, e[1], ex);
                 continue;
@@ -575,6 +580,8 @@ describe('xpath', () => {
         // right node using the id. For axes that contain elements, we only
         // count the elements, so we don't have to worry about whitespace
         // normalization for the text nodes.
+        const xPath = new XPath();
+
         const axisTests = [
             ["count(//*[@id='self']/ancestor-or-self::*)", 3],
             ["count(//*[@id='self']/ancestor::*)", 2],
@@ -609,7 +616,7 @@ describe('xpath', () => {
         const ctx = new ExprContext(xmlParse(xml));
 
         for (const e of axisTests) {
-            const result = xPathParse(e[0]).evaluate(ctx);
+            const result = xPath.xPathParse(e[0]).evaluate(ctx);
             if (typeof e[1] == 'number') {
                 assert.equal(e[1], result.numberValue(), e[0] as any);
             } else if (typeof e[1] == 'string') {
@@ -621,8 +628,9 @@ describe('xpath', () => {
     });
 
     it('can handle attribute asterisk', () => {
+        const xPath = new XPath();
         const ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
-        const expr = xPathParse('count(/x/@*)');
+        const expr = xPath.xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
 
@@ -673,6 +681,8 @@ describe('xpath', () => {
         // These XPaths all start with "//", which is equivalent to
         // "/descendant-or-self::node()/", a step unto itself. So we check the second
         // step for the positional predicate, not the first.
+        const xPath = new XPath();
+
         const tests = [
             ['//a', false],
             ['//a[1]', true],
@@ -693,11 +703,13 @@ describe('xpath', () => {
         ];
 
         for (const test of tests) {
-            assert.equal(xPathParse(test[0]).steps[1].hasPositionalPredicate, test[1], test[0] as any);
+            assert.equal(xPath.xPathParse(test[0]).steps[1].hasPositionalPredicate, test[1], test[0] as any);
         }
     });
 
     it('returns on first match', () => {
+        const xPath = new XPath();
+
         const xml = (
             <body>
                 <a href="#">top</a>
@@ -721,7 +733,7 @@ describe('xpath', () => {
         const ctx = new ExprContext(parsedXML);
 
         for (const test of tests) {
-            const expr = xPathParse(test[0]);
+            const expr = xPath.xPathParse(test[0]);
 
             ctx.setReturnOnFirstMatch(false);
             const normalResults = expr.evaluate(ctx);
