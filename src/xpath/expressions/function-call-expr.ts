@@ -1,9 +1,9 @@
-import { assert, regExpEscape, xmlValue } from "../dom/util";
-import { ExprContext } from "../xpath";
-import { BooleanValue } from "../xpath/boolean-value";
-import { NodeSetValue } from "../xpath/node-set-value";
-import { NumberValue } from "../xpath/number-value";
-import { StringValue } from "../xpath/string-value";
+import { assert, regExpEscape, xmlValue } from "../../dom/util";
+import { ExprContext } from "..";
+import { BooleanValue } from "../values/boolean-value";
+import { NodeSetValue } from "../values/node-set-value";
+import { NumberValue } from "../values/number-value";
+import { StringValue } from "../values/string-value";
 import { Expression } from "./expression";
 
 export class FunctionCallExpr extends Expression {

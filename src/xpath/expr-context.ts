@@ -50,10 +50,10 @@
 //   and b) use "//" when you mean "/descendant::*/".
 
 import { DOM_DOCUMENT_NODE } from "../constants";
-import { BooleanValue } from "./boolean-value";
-import { NodeSetValue } from "./node-set-value";
-import { NumberValue } from "./number-value";
-import { StringValue } from "./string-value";
+import { BooleanValue } from "./values/boolean-value";
+import { NodeSetValue } from "./values/node-set-value";
+import { NumberValue } from "./values/number-value";
+import { StringValue } from "./values/string-value";
 import { TOK_NUMBER } from "./tokens";
 
 export class ExprContext {

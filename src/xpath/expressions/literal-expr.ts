@@ -1,7 +1,7 @@
-import { NumberValue } from "../xpath/number-value";
+import { StringValue } from "../values/string-value";
 import { Expression } from "./expression";
 
-export class NumberExpr extends Expression {
+export class LiteralExpr extends Expression {
     value: any;
 
     constructor(value: any) {
@@ -10,6 +10,6 @@ export class NumberExpr extends Expression {
     }
 
     evaluate() {
-        return new NumberValue(this.value);
+        return new StringValue(this.value);
     }
 }

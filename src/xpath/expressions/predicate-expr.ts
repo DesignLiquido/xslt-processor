@@ -1,5 +1,5 @@
-import { ExprContext } from "../xpath";
-import { BooleanValue } from "../xpath/boolean-value";
+import { ExprContext } from "..";
+import { BooleanValue } from "../values/boolean-value";
 import { Expression } from "./expression";
 
 export class PredicateExpr extends Expression {

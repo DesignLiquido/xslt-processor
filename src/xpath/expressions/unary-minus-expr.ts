@@ -1,5 +1,5 @@
-import { ExprContext } from "../xpath";
-import { NumberValue } from "../xpath/number-value";
+import { ExprContext } from "..";
+import { NumberValue } from "../values/number-value";
 import { Expression } from "./expression";
 
 export class UnaryMinusExpr extends Expression {

@@ -1,8 +1,8 @@
-import { ExprContext } from "../xpath/expr-context";
-import { xPathStep } from "../xpath/functions";
-import { NodeSetValue } from "../xpath/node-set-value";
-import { NodeTestAny } from "../xpath/node-test-any";
-import { xpathAxis } from "../xpath/tokens";
+import { ExprContext } from "../expr-context";
+import { xPathStep } from "../functions";
+import { NodeSetValue } from "../values/node-set-value";
+import { NodeTestAny } from "../node-test-any";
+import { xpathAxis } from "../tokens";
 import { Expression } from "./expression";
 
 export class LocationExpr extends Expression {

@@ -1,5 +1,5 @@
 import { DOM_ATTRIBUTE_NODE, DOM_ELEMENT_NODE } from "../constants";
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestElementOrAttribute {
     evaluate(ctx) {

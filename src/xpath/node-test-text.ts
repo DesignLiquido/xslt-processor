@@ -1,5 +1,5 @@
 import { DOM_TEXT_NODE } from "../constants";
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestText {
     evaluate(ctx) {

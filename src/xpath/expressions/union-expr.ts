@@ -1,5 +1,5 @@
-import { ExprContext } from "../xpath";
-import { NodeSetValue } from "../xpath/node-set-value";
+import { ExprContext } from "..";
+import { NodeSetValue } from "../values/node-set-value";
 import { Expression } from "./expression";
 
 export class UnionExpr extends Expression {

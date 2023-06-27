@@ -1,5 +1,5 @@
 import { DOM_COMMENT_NODE } from "../constants";
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestComment {
     evaluate(ctx) {

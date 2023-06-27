@@ -7,11 +7,11 @@
 // expression in an actual context. These factory functions are used
 // in the specification of the grammar rules, below.
 
-import { BinaryExpr } from "../expressions/binary-expr";
-import { FilterExpr } from "../expressions/filter-expr";
-import { FunctionCallExpr } from "../expressions/function-call-expr";
-import { LiteralExpr } from "../expressions/literal-expr";
-import { LocationExpr } from "../expressions/location-expr";
+import { BinaryExpr } from "./expressions/binary-expr";
+import { FilterExpr } from "./expressions/filter-expr";
+import { FunctionCallExpr } from "./expressions/function-call-expr";
+import { LiteralExpr } from "./expressions/literal-expr";
+import { LocationExpr } from "./expressions/location-expr";
 import { NodeTestAny } from "./node-test-any";
 import { NodeTestComment } from "./node-test-comment";
 import { NodeTestElementOrAttribute } from "./node-test-element-or-attribute";
@@ -19,14 +19,14 @@ import { NodeTestName } from "./node-test-name";
 import { NodeTestNC } from "./node-test-nc";
 import { NodeTestPI } from "./node-test-pi";
 import { NodeTestText } from "./node-test-text";
-import { NumberExpr } from "../expressions/number-expr";
-import { PathExpr } from "../expressions/path-expr";
-import { PredicateExpr } from "../expressions/predicate-expr";
-import { StepExpr } from "../expressions/step-expr";
-import { TokenExpr } from "../expressions/token-expr";
-import { UnaryMinusExpr } from "../expressions/unary-minus-expr";
-import { UnionExpr } from "../expressions/union-expr";
-import { VariableExpr } from "../expressions/variable-expr";
+import { NumberExpr } from "./expressions/number-expr";
+import { PathExpr } from "./expressions/path-expr";
+import { PredicateExpr } from "./expressions/predicate-expr";
+import { StepExpr } from "./expressions/step-expr";
+import { TokenExpr } from "./expressions/token-expr";
+import { UnaryMinusExpr } from "./expressions/unary-minus-expr";
+import { UnionExpr } from "./expressions/union-expr";
+import { VariableExpr } from "./expressions/variable-expr";
 
 export function makeTokenExpr(m) {
     return new TokenExpr(m);

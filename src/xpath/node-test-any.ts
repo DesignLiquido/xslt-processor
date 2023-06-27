@@ -1,4 +1,4 @@
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestAny {
     value: any;

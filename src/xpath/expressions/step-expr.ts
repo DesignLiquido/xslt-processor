@@ -1,11 +1,11 @@
-import { DOM_ATTRIBUTE_NODE } from "../constants";
-import { XNode } from "../dom";
-import { copyArray, copyArrayIgnoringAttributesWithoutValue, predicateExprHasPositionalSelector } from "../dom/util";
-import { ExprContext } from "../xpath/expr-context";
-import { xpathCollectDescendants, xpathCollectDescendantsReverse, xpathExtractTagNameFromNodeTest } from "../xpath/functions";
-import { NodeSetValue } from "../xpath/node-set-value";
-import { NodeTestAny } from "../xpath/node-test-any";
-import { xpathAxis } from "../xpath/tokens";
+import { DOM_ATTRIBUTE_NODE } from "../../constants";
+import { XNode } from "../../dom";
+import { copyArray, copyArrayIgnoringAttributesWithoutValue, predicateExprHasPositionalSelector } from "../../dom/util";
+import { ExprContext } from "../expr-context";
+import { xpathCollectDescendants, xpathCollectDescendantsReverse, xpathExtractTagNameFromNodeTest } from "../functions";
+import { NodeSetValue } from "../values/node-set-value";
+import { NodeTestAny } from "../node-test-any";
+import { xpathAxis } from "../tokens";
 import { Expression } from "./expression";
 
 export class StepExpr extends Expression {

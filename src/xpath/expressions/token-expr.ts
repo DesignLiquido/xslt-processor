@@ -1,4 +1,4 @@
-import { StringValue } from "../xpath/string-value";
+import { StringValue } from "../values/string-value";
 import { Expression } from "./expression";
 
 export class TokenExpr extends Expression {

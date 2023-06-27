@@ -1,6 +1,6 @@
-import { xmlValue } from "../dom/util";
-import { BooleanValue } from "../xpath/boolean-value";
-import { NumberValue } from "../xpath/number-value";
+import { xmlValue } from "../../dom/util";
+import { BooleanValue } from "../values/boolean-value";
+import { NumberValue } from "../values/number-value";
 import { Expression } from "./expression";
 
 export class BinaryExpr extends Expression {

@@ -1,4 +1,4 @@
-import { ExprContext } from "../xpath";
+import { ExprContext } from "..";
 import { Expression } from "./expression";
 
 export class VariableExpr extends Expression {

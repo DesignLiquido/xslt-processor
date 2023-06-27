@@ -1,5 +1,5 @@
 import { DOM_PROCESSING_INSTRUCTION_NODE } from "../constants";
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestPI {
     target: any;
