@@ -1,13 +1,14 @@
 /* eslint-disable no-undef */
-import React from 'react';
 import assert from 'assert';
+
+import React from 'react';
 import { dom } from 'isomorphic-jsx';
 
 import { xmlParse } from '../src/dom/functions';
-import { xsltProcess } from '../src/xslt';
+import { Xslt } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom, React);
+console.log(dom);
 describe('root-element', () => {
     it('select root element test', () => {
         // TODO: Fix issue and re-enable test.
@@ -80,7 +81,10 @@ describe('root-element', () => {
             </div>
         );
 
-        const outXmlString = xsltProcess(xmlParse(xmlString), xmlParse(xsltString));
+        const xsltClass = new Xslt();
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);
     });

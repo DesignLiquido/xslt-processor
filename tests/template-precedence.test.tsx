@@ -1,7 +1,11 @@
 /* eslint-disable no-undef */
 import assert from 'assert';
+
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from '..'
+import React from 'react';
+
+import { xmlParse } from '..'
+import { Xslt } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -37,15 +41,19 @@ describe('template-precedence', () => {
       <span>test4</span>
     </div>;
 
-    const outXmlString = xsltProcess(
-      xmlParse(xmlString),
-      xmlParse(xsltString)
+    const xsltClass = new Xslt();
+    const xml = xmlParse(xmlString);
+    const xslt = xmlParse(xsltString);
+
+    const outXmlString = xsltClass.xsltProcess(
+      xml,
+      xslt
     );
 
     assert.equal(
       outXmlString,
       expectedOutString
     );
-  })
+  });
 
-})
+});

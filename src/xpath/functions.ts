@@ -127,7 +127,7 @@ export function xpathCollectDescendantsReverse(nodelist, node) {
 
 // Parses and then evaluates the given XPath expression in the given
 // input context. Notice that parsed xpath expressions are cached.
-export function xpathEval(select: string, context: ExprContext) {
+export function xPathEval(select: string, context: ExprContext) {
     const expr = xPathParse(select);
     const ret = expr.evaluate(context);
     return ret;

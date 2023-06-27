@@ -1,7 +1,11 @@
 /* eslint-disable no-undef */
 import assert from 'assert';
+
+import React from 'react';
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from '..';
+
+import { xmlParse } from '..';
+import { Xslt } from '../src/xslt';
 
 // TODO:
 // "xsl" prefix for non-XSL namespace
@@ -48,7 +52,13 @@ describe('namespaces', () => {
             </div>
         );
 
-        const outXmlString = xsltProcess(xmlParse(xmlString), xmlParse(xsltString));
+        const xsltClass = new Xslt();
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(
+            xml,
+            xslt
+        );
 
         assert.equal(outXmlString, expectedOutString);
     });
@@ -90,7 +100,13 @@ describe('namespaces', () => {
             </div>
         );
 
-        const outXmlString = xsltProcess(xmlParse(xmlString), xmlParse(xsltString));
+        const xsltClass = new Xslt();
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(
+            xmlParse(xmlString),
+            xmlParse(xsltString)
+        );
 
         assert.equal(outXmlString, expectedOutString);
     });

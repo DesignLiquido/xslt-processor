@@ -10,31 +10,18 @@ import { XDocument } from "./xdocument";
 // operate on native DOM nodes.
 export class XNode {
     attributes: any[];
-
-    childNodes: any[];
-
+    childNodes: XNode[];
     nodeType: any;
-
     nodeName: string;
-
     nodeValue: string;
-
     ownerDocument: any;
-
     namespaceURI: any;
-
     prefix: any;
-
     localName: any;
-
     firstChild: any;
-
     lastChild: any;
-
     nextSibling: any;
-
     previousSibling: any;
-
     parentNode: any;
 
     static _unusedXNodes: any[] = [];

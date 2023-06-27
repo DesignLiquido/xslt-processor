@@ -14,8 +14,8 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { xsltProcess } from '../src/xslt';
 import { xmlParse } from '../src/dom';
+import { Xslt } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -40,9 +40,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSort);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('CAB', html);
     });
 
@@ -58,9 +59,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSortAscending);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('ABC', html);
     });
 
@@ -76,9 +78,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSortDescending);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('CBA', html);
     });
 
@@ -105,9 +108,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlApplyTemplates);
         const xslt = xmlParse(xsltApplyTemplates);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('ABC', html);
     });
 
@@ -129,9 +133,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltGlobalVariables);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('xzyyy', html);
     });
 
@@ -149,9 +154,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltTopLevelOutput);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('<x y="z">k</x>', html);
     });
 
@@ -170,9 +176,10 @@ describe('xslt', () => {
             </xsl:stylesheet>
         );
 
+        const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltCopy);
-        const html = xsltProcess(xml, xslt);
+        const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal('<item pos="2">A</item>' + '<item pos="3">B</item>' + '<item pos="1">C</item>', html);
     });
 });

@@ -22,7 +22,7 @@ import { xmlParse } from '../src/dom';
 import { xPathParse } from '../src/xpath/functions';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom, React);
+console.log(dom);
 const expr = [
     '@*',
     '@*|node()',

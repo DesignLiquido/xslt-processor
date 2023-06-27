@@ -1,5 +1,6 @@
 import assert from 'assert';
-import { xsltProcess, xmlParse } from '..';
+import { xmlParse } from '..';
+import { Xslt } from '../src/xslt';
 
 describe('variables-as-parameters', () => {
     it('variables-as-parameters 1', () => {
@@ -24,7 +25,10 @@ describe('variables-as-parameters', () => {
 
         const expectedOutString = `<root><span>hugo</span></root>`;
 
-        const outXmlString = xsltProcess(xmlParse(xmlString), xmlParse(xsltString), { test: 'hugo' });
+        const xsltClass = new Xslt();
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(xml, xslt, { test: 'hugo' });
 
         assert.equal(outXmlString, expectedOutString);
     });

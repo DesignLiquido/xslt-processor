@@ -55,9 +55,10 @@ import { NodeSetValue } from "./values/node-set-value";
 import { NumberValue } from "./values/number-value";
 import { StringValue } from "./values/string-value";
 import { TOK_NUMBER } from "./tokens";
+import { XNode } from "../dom";
 
 export class ExprContext {
-    node: any;
+    node: XNode;
     position: any;
     nodelist: any;
     variables: any;

@@ -1,7 +1,11 @@
 /* eslint-disable no-undef */
 import assert from 'assert';
+
+import React from 'react';
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from '..'
+
+import { xmlParse } from '..'
+import { Xslt } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -37,9 +41,13 @@ describe('local-name', () => {
       <span>test4</span>
     </root>;
 
-    const outXmlString = xsltProcess(
-      xmlParse(xmlString),
-      xmlParse(xsltString)
+    const xsltClass = new Xslt();
+    const xml = xmlParse(xmlString);
+    const xslt = xmlParse(xsltString);
+
+    const outXmlString = xsltClass.xsltProcess(
+      xml,
+      xslt
     );
 
     assert.equal(
@@ -78,9 +86,13 @@ describe('local-name', () => {
       <span>test4</span>
     </root>;
 
-    const outXmlString = xsltProcess(
-      xmlParse(xmlString),
-      xmlParse(xsltString)
+    const xsltClass = new Xslt();
+    const xml = xmlParse(xmlString);
+    const xslt = xmlParse(xsltString);
+
+    const outXmlString = xsltClass.xsltProcess(
+      xml,
+      xslt
     );
 
     assert.equal(

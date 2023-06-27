@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 import assert from 'assert';
-import { xsltProcess, xmlParse } from '..';
+import { xmlParse } from '..';
+import { Xslt } from '../src/xslt';
 
 describe('xml-to-json', () => {
     it('xml-to-json() without namespace test', () => {
@@ -29,7 +30,13 @@ describe('xml-to-json', () => {
 
         const expectedOutString = `<root><span>"test"</span><span>"123"</span><span>"{hugo}"</span><span>""</span></root>`;
 
-        const outXmlString = xsltProcess(xmlParse(xmlString), xmlParse(xsltString));
+        const xsltClass = new Xslt();
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(
+          xml,
+          xslt
+        );
 
         assert.equal(outXmlString, expectedOutString);
     });
