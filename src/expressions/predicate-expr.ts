@@ -1,13 +1,16 @@
+import { ExprContext } from "../xpath";
 import { BooleanValue } from "../xpath/boolean-value";
+import { Expression } from "./expression";
 
-export class PredicateExpr {
+export class PredicateExpr extends Expression {
     expr: any;
 
-    constructor(expr) {
+    constructor(expr: any) {
+        super();
         this.expr = expr;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         const v = this.expr.evaluate(ctx);
         if (v.type == 'number') {
             // NOTE(mesch): Internally, position is represented starting with

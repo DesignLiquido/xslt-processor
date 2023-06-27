@@ -6,14 +6,16 @@ import { xpathCollectDescendants, xpathCollectDescendantsReverse, xpathExtractTa
 import { NodeSetValue } from "../xpath/node-set-value";
 import { NodeTestAny } from "../xpath/node-test-any";
 import { xpathAxis } from "../xpath/tokens";
+import { Expression } from "./expression";
 
-export class StepExpr {
+export class StepExpr extends Expression {
     axis: any;
     nodetest: any;
     predicate: any;
     hasPositionalPredicate: any;
 
     constructor(axis: any, nodetest: any, opt_predicate?: any) {
+        super();
         this.axis = axis;
         this.nodetest = nodetest;
         this.predicate = opt_predicate || [];

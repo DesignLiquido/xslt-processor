@@ -1,16 +1,18 @@
+import { ExprContext } from "../xpath";
 import { NodeSetValue } from "../xpath/node-set-value";
+import { Expression } from "./expression";
 
-export class PathExpr {
+export class PathExpr extends Expression {
     filter: any;
-
     rel: any;
 
     constructor(filter, rel) {
+        super();
         this.filter = filter;
         this.rel = rel;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         const nodes = this.filter.evaluate(ctx).nodeSetValue();
         let nodes1 = [];
         if (ctx.returnOnFirstMatch) {

@@ -3,13 +3,14 @@ import { xPathStep } from "../xpath/functions";
 import { NodeSetValue } from "../xpath/node-set-value";
 import { NodeTestAny } from "../xpath/node-test-any";
 import { xpathAxis } from "../xpath/tokens";
+import { Expression } from "./expression";
 
-export class LocationExpr {
+export class LocationExpr extends Expression {
     absolute: boolean;
-
     steps: any[];
 
     constructor() {
+        super();
         this.absolute = false;
         this.steps = [];
     }

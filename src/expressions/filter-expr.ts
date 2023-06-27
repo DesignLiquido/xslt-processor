@@ -1,16 +1,18 @@
+import { ExprContext } from "../xpath";
 import { NodeSetValue } from "../xpath/node-set-value";
+import { Expression } from "./expression";
 
-export class FilterExpr {
+export class FilterExpr extends Expression {
     expr: any;
-
     predicate: any;
 
-    constructor(expr, predicate) {
+    constructor(expr: any, predicate: any) {
+        super();
         this.expr = expr;
         this.predicate = predicate;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         // the filter expression should be evaluated in its entirety with no
         // optimization, as we can't backtrack to it after having moved on to
         // evaluating the relative location path. See the testReturnOnFirstMatch

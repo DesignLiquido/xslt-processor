@@ -1,15 +1,15 @@
 import { xmlValue } from "../dom/util";
 import { BooleanValue } from "../xpath/boolean-value";
 import { NumberValue } from "../xpath/number-value";
+import { Expression } from "./expression";
 
-export class BinaryExpr {
+export class BinaryExpr extends Expression {
     expr1: any;
-
     expr2: any;
-
     op: any;
 
     constructor(expr1: any, op: any, expr2: any) {
+        super();
         this.expr1 = expr1;
         this.expr2 = expr2;
         this.op = op;

@@ -1,12 +1,13 @@
 import { assert, regExpEscape, xmlValue } from "../dom/util";
+import { ExprContext } from "../xpath";
 import { BooleanValue } from "../xpath/boolean-value";
 import { NodeSetValue } from "../xpath/node-set-value";
 import { NumberValue } from "../xpath/number-value";
 import { StringValue } from "../xpath/string-value";
+import { Expression } from "./expression";
 
-export class FunctionCallExpr {
+export class FunctionCallExpr extends Expression {
     name: any;
-
     args: any[];
 
     xpathfunctions = {
@@ -374,7 +375,8 @@ export class FunctionCallExpr {
         }
     };
 
-    constructor(name) {
+    constructor(name: any) {
+        super();
         this.name = name;
         this.args = [];
     }
@@ -383,7 +385,7 @@ export class FunctionCallExpr {
         this.args.push(arg);
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         const fn = `${this.name.value}`;
         const f = this.xpathfunctions[fn];
         if (f) {

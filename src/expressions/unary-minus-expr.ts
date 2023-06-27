@@ -1,13 +1,16 @@
+import { ExprContext } from "../xpath";
 import { NumberValue } from "../xpath/number-value";
+import { Expression } from "./expression";
 
-export class UnaryMinusExpr {
+export class UnaryMinusExpr extends Expression {
     expr: any;
 
-    constructor(expr) {
+    constructor(expr: any) {
+        super();
         this.expr = expr;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         return new NumberValue(-this.expr.evaluate(ctx).numberValue());
     }
 }

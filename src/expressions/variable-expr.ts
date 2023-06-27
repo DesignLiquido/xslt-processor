@@ -1,11 +1,15 @@
-export class VariableExpr {
+import { ExprContext } from "../xpath";
+import { Expression } from "./expression";
+
+export class VariableExpr extends Expression {
     name: string;
 
-    constructor(name) {
+    constructor(name: string) {
+        super();
         this.name = name;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
         return ctx.getVariable(this.name);
     }
 }

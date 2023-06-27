@@ -1,9 +1,11 @@
 import { StringValue } from "../xpath/string-value";
+import { Expression } from "./expression";
 
-export class LiteralExpr {
+export class LiteralExpr extends Expression {
     value: any;
 
-    constructor(value) {
+    constructor(value: any) {
+        super();
         this.value = value;
     }
 

@@ -1,9 +1,11 @@
 import { NumberValue } from "../xpath/number-value";
+import { Expression } from "./expression";
 
-export class NumberExpr {
+export class NumberExpr extends Expression {
     value: any;
 
-    constructor(value) {
+    constructor(value: any) {
+        super();
         this.value = value;
     }
 
