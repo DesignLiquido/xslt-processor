@@ -1,4 +1,4 @@
-import { StringValue } from "./string-value";
+import { StringValue } from "../xpath/string-value";
 
 export class LiteralExpr {
     value: any;

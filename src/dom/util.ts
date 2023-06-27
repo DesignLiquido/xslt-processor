@@ -18,6 +18,7 @@ import {
     DOM_TEXT_NODE
 } from '../constants';
 import { BinaryExpr, FunctionCallExpr, NumberExpr, UnaryMinusExpr } from '../xpath';
+import { XDocument } from './xdocument';
 
 // Throws an exception if false.
 export function assert(b) {
@@ -236,7 +237,7 @@ export function domCreateComment(doc, text) {
     return doc.createComment(text);
 }
 
-export function domCreateDocumentFragment(doc) {
+export function domCreateDocumentFragment(doc: XDocument) {
     return doc.createDocumentFragment();
 }
 

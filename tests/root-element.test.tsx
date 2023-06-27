@@ -1,12 +1,15 @@
 /* eslint-disable no-undef */
+import React from 'react';
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
-import { xsltProcess, xmlParse } from '..';
+
+import { xmlParse } from '../src/dom/functions';
+import { xsltProcess } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom);
+console.log(dom, React);
 describe('root-element', () => {
-    it.skip('select root element test', () => {
+    it('select root element test', () => {
         // TODO: Fix issue and re-enable test.
         const xmlString = (
             <root>
@@ -17,7 +20,7 @@ describe('root-element', () => {
             </root>
         );
 
-        const xsltString =
+        /* const xsltString =
             '<?xml version="1.0"?>' +
             (
                 <xsl:stylesheet version="1.0">
@@ -33,7 +36,40 @@ describe('root-element', () => {
                         </div>
                     </xsl:template>
                 </xsl:stylesheet>
+            ); */
+
+        const xsltString =
+            '<?xml version="1.0"?>' +
+            (
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                    <xsl:template match="test">
+                        <span>
+                            {' '}
+                            <xsl:value-of select="@name" />{' '}
+                        </span>
+                    </xsl:template>
+                    <xsl:template match="/root">
+                        <div>
+                            <xsl:apply-templates select="test" />
+                        </div>
+                    </xsl:template>
+                </xsl:stylesheet>
             );
+
+        /* const xsltString =
+            '<?xml version="1.0"?>' +
+            '<xsl:stylesheet version="1.0">' +
+            '    <xsl:template match="test">' +
+            '        <span>' +
+            '           <xsl:value-of select="@name" />' +
+            '       </span>' +
+            '   </xsl:template>' +
+            '   <xsl:template match="/">' +
+            '       <div>' +
+            '           <xsl:apply-templates select="//test" />' +
+            '       </div>' +
+            '    </xsl:template>' +
+            '</xsl:stylesheet>'; */
 
         const expectedOutString = (
             <div>

@@ -1,4 +1,4 @@
-import { NodeSetValue } from "./node-set-value";
+import { NodeSetValue } from "../xpath/node-set-value";
 
 export class FilterExpr {
     expr: any;

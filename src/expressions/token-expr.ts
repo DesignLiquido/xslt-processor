@@ -15,7 +15,7 @@
 // parseTree(expr, indent) -- returns a parse tree representation of the
 // expression (defined in xsltdebug.js).
 
-import { StringValue } from "./string-value";
+import { StringValue } from "../xpath/string-value";
 
 export class TokenExpr {
     value: any;

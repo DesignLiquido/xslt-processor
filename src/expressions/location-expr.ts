@@ -1,8 +1,8 @@
-import { ExprContext } from "./expr-context";
-import { xPathStep } from "./functions";
-import { NodeSetValue } from "./node-set-value";
-import { NodeTestAny } from "./node-test-any";
-import { xpathAxis } from "./tokens";
+import { ExprContext } from "../xpath/expr-context";
+import { xPathStep } from "../xpath/functions";
+import { NodeSetValue } from "../xpath/node-set-value";
+import { NodeTestAny } from "../xpath/node-test-any";
+import { xpathAxis } from "../xpath/tokens";
 
 export class LocationExpr {
     absolute: boolean;

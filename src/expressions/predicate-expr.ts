@@ -1,4 +1,4 @@
-import { BooleanValue } from "./boolean-value";
+import { BooleanValue } from "../xpath/boolean-value";
 
 export class PredicateExpr {
     expr: any;

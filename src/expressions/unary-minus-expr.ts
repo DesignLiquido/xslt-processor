@@ -1,4 +1,4 @@
-import { NumberValue } from "./number-value";
+import { NumberValue } from "../xpath/number-value";
 
 export class UnaryMinusExpr {
     expr: any;

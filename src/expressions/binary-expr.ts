@@ -1,6 +1,6 @@
 import { xmlValue } from "../dom/util";
-import { BooleanValue } from "./boolean-value";
-import { NumberValue } from "./number-value";
+import { BooleanValue } from "../xpath/boolean-value";
+import { NumberValue } from "../xpath/number-value";
 
 export class BinaryExpr {
     expr1: any;

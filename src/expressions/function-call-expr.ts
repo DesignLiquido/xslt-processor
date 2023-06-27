@@ -1,8 +1,8 @@
 import { assert, regExpEscape, xmlValue } from "../dom/util";
-import { BooleanValue } from "./boolean-value";
-import { NodeSetValue } from "./node-set-value";
-import { NumberValue } from "./number-value";
-import { StringValue } from "./string-value";
+import { BooleanValue } from "../xpath/boolean-value";
+import { NodeSetValue } from "../xpath/node-set-value";
+import { NumberValue } from "../xpath/number-value";
+import { StringValue } from "../xpath/string-value";
 
 export class FunctionCallExpr {
     name: any;

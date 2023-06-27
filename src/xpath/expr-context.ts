@@ -58,23 +58,14 @@ import { TOK_NUMBER } from "./tokens";
 
 export class ExprContext {
     node: any;
-
     position: any;
-
     nodelist: any;
-
     variables: any;
-
     parent: any;
-
     caseInsensitive: any;
-
     ignoreAttributesWithoutValue: any;
-
     returnOnFirstMatch: any;
-
     ignoreNonElementNodesForNTA: any;
-
     root: any;
 
     constructor(
@@ -109,7 +100,7 @@ export class ExprContext {
         }
     }
 
-    clone(opt_node: any, opt_position: any, opt_nodelist: any[]) {
+    clone(opt_node?: any, opt_position?: any, opt_nodelist?: any[]) {
         return new ExprContext(
             opt_node || this.node,
             typeof opt_position != 'undefined' ? opt_position : this.position,

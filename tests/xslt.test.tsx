@@ -10,7 +10,10 @@
 // Author: Steffen Meschkat <mesch@google.com>
 //         Johannes Wilm <johannes@fiduswriter.org>
 import assert from 'assert';
+
 import { dom } from 'isomorphic-jsx';
+import React from 'react';
+
 import { xsltProcess } from '../src/xslt';
 import { xmlParse } from '../src/dom';
 

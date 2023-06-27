@@ -385,11 +385,15 @@ function xsltForEach(input, template, output) {
     }
 }
 
-// Traverses the template node tree. Calls the main processing
-// function with the current input context for every child node of the
-// current template node.
-
-function xsltChildNodes(input: any, template: any, output: any) {
+/**
+ * Traverses the template node tree. Calls the main processing
+ * function with the current input context for every child node of the
+ * current template node.
+ * @param input Normally the Expression Context.
+ * @param template The XSL-T definition.
+ * @param output The XML output.
+ */
+function xsltChildNodes(input: ExprContext, template: any, output: any) {
     // Clone input context to keep variables declared here local to the
     // siblings of the children.
     const context = input.clone();
@@ -574,7 +578,7 @@ function xsltCopy(dst, src, dstDocument) {
 
 // Evaluates an XPath expression in the current input context as a
 // match (see [XSLT] section 5.2, paragraph 1).
-function xsltMatch(match: any, context: any) {
+function xsltMatch(match: string, context: ExprContext) {
     const expr = xPathParse(match);
     let ret;
     // Shortcut for the most common case.
@@ -598,6 +602,7 @@ function xsltMatch(match: any, context: any) {
                     break;
                 }
             }
+
             node = node.parentNode;
         }
     }
