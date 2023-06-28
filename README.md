@@ -1,10 +1,8 @@
 # XSLT-processor
 
-[![Build Status](https://travis-ci.com/fiduswriter/xslt-processor.svg?branch=master)](https://travis-ci.com/fiduswriter/xslt-processor)
-
 _A JavaScript XSLT processor without native library dependencies._
 
-## Howto
+## How to
 
 Install xslt-processor using npm:
 
@@ -12,7 +10,41 @@ Install xslt-processor using npm:
 npm install xslt-processor
 ```
 
-Within your ES2015+ code, import the two main functions and apply them:
+Within your ES2015+ code, import the `Xslt` class, the `xmlParse` function and use this way:
+
+```js
+import { Xslt, xmlParse } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const xslt = new Xslt();
+const outXmlString = xslt.xsltProcess(
+	xmlParse(xmlString),
+	xmlParse(xsltString)
+);
+```
+
+To access the XPath parser, you can use the instance present at `Xslt` class:
+
+```js
+const xslt = new Xslt();
+const xPath = xslt.xPath;
+```
+
+Or ou can import it like this:
+
+```js
+import { XPath } from 'xslt-processor'
+
+const xPath = new XPath();
+```
+
+If you write pre-2015 JS code, make adjustments as needed.
+
+### Breaking Changes
+
+Until version 0.17, use like the example below:
 
 ```js
 import { xsltProcess, xmlParse } from 'xslt-processor'
@@ -26,14 +58,13 @@ const outXmlString = xsltProcess(
 );
 ```
 
-To access the Xpath-parser, import it like this:
+and to access the XPath parser:
 
 ```js
 import { xpathParse } from 'xslt-processor'
 ```
 
-If you write pre-2015 JS code, make adjustments as needed.
-
+These functions are part of `Xslt` and `XPath` classes, respectively, at version 1.x onward.
 
 ## Introduction
 
@@ -75,8 +106,7 @@ Issues are also marked in the source code using throw-statements.
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
 
 The implementation is all agnostic about namespaces. It just expects
-XSLT elements to have tags that carry the xsl: prefix, but we
-disregard all namespace declaration for them.
+XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declaration for them.
 
 There are a few nonstandard XPath functions. Grep `xpath.js` for `ext-` to see their definitions.
 

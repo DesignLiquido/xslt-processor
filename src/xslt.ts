@@ -98,7 +98,7 @@ export class Xslt {
     // @param template The stylesheet document root, as DOM node.
     // @param the root of the generated output, as DOM node.
 
-    xsltProcessContext(input: any, template: any, output: any, _parameters?: any) {
+    xsltProcessContext(input: any, template: XNode, output: any, _parameters?: any) {
         const outputDocument = xmlOwnerDocument(output);
 
         if (!this.isXsltElement(template)) {
@@ -137,9 +137,17 @@ export class Xslt {
 
                     mode = this.xmlGetAttribute(template, 'mode');
                     top = template.ownerDocument.documentElement;
+
                     templates = [];
                     for (let i = 0; i < top.childNodes.length; ++i) {
                         let c = top.childNodes[i];
+                        let matchAttribute = c.getAttribute('match');
+
+                        // Avoiding infinite loops.
+                        if (matchAttribute && matchAttribute.startsWith('/')) {
+                            continue;
+                        }
+
                         if (
                             c.nodeType == DOM_ELEMENT_NODE &&
                             this.isXsltElement(c, 'template') &&
@@ -299,12 +307,15 @@ export class Xslt {
         }
     }
 
-    // Sets parameters defined by xsl:with-param child nodes of the
-    // current template node, in the current input context. This happens
-    // before the operation specified by the current template node is
-    // executed.
-
-    xsltWithParam(input, template) {
+    /**
+     * Sets parameters defined by xsl:with-param child nodes of the
+     * current template node, in the current input context. This happens
+     * before the operation specified by the current template node is
+     * executed.
+     * @param input TODO
+     * @param template TODO
+     */
+    xsltWithParam(input: any, template: any) {
         for (const c of template.childNodes) {
             if (c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
                 this.xsltVariable(input, c, true);
@@ -312,14 +323,16 @@ export class Xslt {
         }
     }
 
-    // Orders the current node list in the input context according to the
-    // sort order specified by xsl:sort child nodes of the current
-    // template node. This happens before the operation specified by the
-    // current template node is executed.
-    //
-    // TODO(mesch): case-order is not implemented.
-
-    xsltSort(input, template) {
+    /**
+     * Orders the current node list in the input context according to the
+     * sort order specified by xsl:sort child nodes of the current
+     * template node. This happens before the operation specified by the
+     * current template node is executed.
+     * @param input TODO
+     * @param template TODO
+     * @todo case-order is not implemented.
+     */
+    xsltSort(input: any, template: any) {
         const sort = [];
 
         for (const c of template.childNodes) {
@@ -690,7 +703,7 @@ export class Xslt {
     // Test if the given element is an XSLT element, optionally the one with the given name
     isXsltElement(element: any, opt_wantedName?: string) {
         if (opt_wantedName && element.localName != opt_wantedName) return false;
-        if (element.namespaceURI) return element.namespaceURI == 'http://www.w3.org/1999/XSL/Transform';
-        return element.prefix == 'xsl'; // backwards compatibility with earlier versions of xslt-processor
+        if (element.namespaceURI) return element.namespaceURI === 'http://www.w3.org/1999/XSL/Transform';
+        return element.prefix === 'xsl'; // backwards compatibility with earlier versions of xslt-processor
     }
 }

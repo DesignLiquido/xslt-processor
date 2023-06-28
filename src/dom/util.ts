@@ -23,7 +23,7 @@ import { XDocument } from './xdocument';
 // Throws an exception if false.
 export function assert(b) {
     if (!b) {
-        throw 'Assertion failed';
+        throw new Error('Assertion failed');
     }
 }
 
@@ -209,31 +209,31 @@ export function xmlOwnerDocument(node) {
 }
 
 // Wrapper around DOM methods so we can condense their invocations.
-export function domGetAttribute(node, name) {
+export function domGetAttribute(node: any, name: any) {
     return node.getAttribute(name);
 }
 
-export function domSetAttribute(node, name, value) {
+export function domSetAttribute(node: any, name: any, value: any) {
     return node.setAttribute(name, value);
 }
 
-export function domAppendChild(node, child) {
+export function domAppendChild(node: any, child: any) {
     return node.appendChild(child);
 }
 
-export function domCreateTextNode(doc, text) {
+export function domCreateTextNode(doc: any, text: any) {
     return doc.createTextNode(text);
 }
 
-export function domCreateElement(doc, name) {
+export function domCreateElement(doc: any, name: any) {
     return doc.createElement(name);
 }
 
-export function domCreateCDATASection(doc, data) {
+export function domCreateCDATASection(doc: any, data: any) {
     return doc.createCDATASection(data);
 }
 
-export function domCreateComment(doc, text) {
+export function domCreateComment(doc: any, text: any) {
     return doc.createComment(text);
 }
 
@@ -251,7 +251,7 @@ const regExpSpecials = ['/', '.', '*', '+', '?', '|', '^', '$', '(', ')', '[', '
 
 const sRE = new RegExp(`(\\${regExpSpecials.join('|\\')})`, 'g');
 
-export function regExpEscape(text) {
+export function regExpEscape(text: string) {
     return text.replace(sRE, '\\$1');
 }
 
