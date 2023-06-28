@@ -246,15 +246,15 @@ export class XPath {
     // expression in an actual context. These factory functions are used
     // in the specification of the grammar rules, below.
 
-    makeTokenExpr(m) {
+    makeTokenExpr(m: any) {
         return new TokenExpr(m);
     }
 
-    passExpr(e) {
+    passExpr(e: any) {
         return e;
     }
 
-    makeLocationExpr1(slash, rel) {
+    makeLocationExpr1(slash: any, rel: any) {
         rel.absolute = true;
         return rel;
     }
@@ -285,7 +285,7 @@ export class XPath {
         return ret;
     }
 
-    makeLocationExpr6(rel, slash, step) {
+    makeLocationExpr6(rel: any, slash: any, step: any) {
         rel.appendStep(step);
         return rel;
     }
@@ -316,7 +316,7 @@ export class XPath {
         return new StepExpr('child', nodetest, this);
     }
 
-    makeStepExpr6(step, predicate) {
+    makeStepExpr6(step: any, predicate: any) {
         step.appendPredicate(predicate);
         return step;
     }
@@ -338,11 +338,11 @@ export class XPath {
         return new NodeTestElementOrAttribute();
     }
 
-    makeNodeTestExpr2(ncname) {
+    makeNodeTestExpr2(ncname: any) {
         return new NodeTestNC(ncname.value);
     }
 
-    makeNodeTestExpr3(qname) {
+    makeNodeTestExpr3(qname: any) {
         return new NodeTestName(qname.value);
     }
 
@@ -363,7 +363,7 @@ export class XPath {
         }
     }
 
-    makeNodeTestExpr5(typeo, target) {
+    makeNodeTestExpr5(typeo: any, target: any) {
         const type = typeo.replace(/\s*\($/, '');
         if (type != 'processing-instruction') {
             throw type;
@@ -371,19 +371,19 @@ export class XPath {
         return new NodeTestPI(target.value);
     }
 
-    makePredicateExpr(pareno, expr) {
+    makePredicateExpr(pareno: any, expr: any) {
         return new PredicateExpr(expr);
     }
 
-    makePrimaryExpr(pareno, expr) {
+    makePrimaryExpr(pareno: any, expr: any) {
         return expr;
     }
 
-    makeFunctionCallExpr1(name) {
+    makeFunctionCallExpr1(name: any) {
         return new FunctionCallExpr(name);
     }
 
-    makeFunctionCallExpr2(name, pareno, arg1, args) {
+    makeFunctionCallExpr2(name: any, pareno: any, arg1: any, args: any) {
         const ret = new FunctionCallExpr(name);
         ret.appendArg(arg1);
         for (let i = 0; i < args.length; ++i) {
@@ -392,15 +392,15 @@ export class XPath {
         return ret;
     }
 
-    makeArgumentExpr(comma, expr) {
+    makeArgumentExpr(comma: any, expr: any) {
         return expr;
     }
 
-    makeUnionExpr(expr1, pipe, expr2) {
+    makeUnionExpr(expr1: any, pipe: any, expr2: any) {
         return new UnionExpr(expr1, expr2);
     }
 
-    makePathExpr1(filter, slash, rel) {
+    makePathExpr1(filter: any, slash: any, rel: any) {
         return new PathExpr(filter, rel);
     }
 
@@ -409,33 +409,33 @@ export class XPath {
         return new PathExpr(filter, rel);
     }
 
-    makeFilterExpr(expr, predicates) {
+    makeFilterExpr(expr: any, predicates: any) {
         if (predicates.length > 0) {
             return new FilterExpr(expr, predicates);
-        } else {
-            return expr;
         }
+
+        return expr;
     }
 
-    makeUnaryMinusExpr(minus, expr) {
+    makeUnaryMinusExpr(minus: any, expr: any) {
         return new UnaryMinusExpr(expr);
     }
 
-    makeBinaryExpr(expr1, op, expr2) {
+    makeBinaryExpr(expr1: any, op: any, expr2: any) {
         return new BinaryExpr(expr1, op, expr2);
     }
 
-    makeLiteralExpr(token) {
+    makeLiteralExpr(token: any) {
         // remove quotes from the parsed value:
         const value = token.value.substring(1, token.value.length - 1);
         return new LiteralExpr(value);
     }
 
-    makeNumberExpr(token) {
+    makeNumberExpr(token: any) {
         return new NumberExpr(token.value);
     }
 
-    makeVariableReference(dollar, name) {
+    makeVariableReference(dollar: any, name: any) {
         return new VariableExpr(name.value);
     }
 
@@ -444,21 +444,25 @@ export class XPath {
     makeSimpleExpr(expr: any) {
         if (expr.charAt(0) == '$') {
             return new VariableExpr(expr.substr(1));
-        } else if (expr.charAt(0) == '@') {
+        }
+
+        if (expr.charAt(0) == '@') {
             let a = new NodeTestName(expr.substr(1));
             let b = new StepExpr('attribute', a, this);
             let c = new LocationExpr(this);
             c.appendStep(b);
             return c;
-        } else if (expr.match(/^[0-9]+$/)) {
-            return new NumberExpr(expr);
-        } else {
-            let a = new NodeTestName(expr);
-            let b = new StepExpr('child', a, this);
-            let c = new LocationExpr(this);
-            c.appendStep(b);
-            return c;
         }
+
+        if (expr.match(/^[0-9]+$/)) {
+            return new NumberExpr(expr);
+        }
+
+        let a = new NodeTestName(expr);
+        let b = new StepExpr('child', a, this);
+        let c = new LocationExpr(this);
+        c.appendStep(b);
+        return c;
     }
 
     makeSimpleExpr2(expr: any) {
@@ -472,7 +476,7 @@ export class XPath {
         return c;
     }
 
-    stackToString(stack) {
+    stackToString(stack: any[]) {
         let ret = '';
         for (let i = 0; i < stack.length; ++i) {
             if (ret) {
@@ -483,7 +487,7 @@ export class XPath {
         return ret;
     }
 
-    xPathCacheLookup(expr) {
+    xPathCacheLookup(expr: any) {
         return this.xPathParseCache[expr];
     }
 
@@ -498,7 +502,7 @@ export class XPath {
         }
     }
 
-    xPathCollectDescendantsReverse(nodelist, node) {
+    xPathCollectDescendantsReverse(nodelist: any, node: any) {
         for (let n = node.lastChild; n; n = n.previousSibling) {
             nodelist.push(n);
             this.xPathCollectDescendantsReverse(nodelist, n);
@@ -522,10 +526,11 @@ export class XPath {
      *                                     non-element nodes. This can boost
      *                                     performance. This is false by default.
      */
-    xPathExtractTagNameFromNodeTest(nodetest, ignoreNonElementNodesForNTA) {
+    xPathExtractTagNameFromNodeTest(nodetest: any, ignoreNonElementNodesForNTA: any) {
         if (nodetest instanceof NodeTestName) {
             return nodetest.name;
         }
+
         if (
             (ignoreNonElementNodesForNTA && nodetest instanceof NodeTestAny) ||
             nodetest instanceof NodeTestElementOrAttribute
@@ -534,7 +539,7 @@ export class XPath {
         }
     }
 
-    xPathMatchStack(stack, pattern) {
+    xPathMatchStack(stack: any, pattern: any) {
         // NOTE(mesch): The stack matches for variable cardinality are
         // greedy but don't do backtracking. This would be an issue only
         // with rules of the form A* A, i.e. with an element with variable
@@ -601,11 +606,13 @@ export class XPath {
         }
     }
 
-    // The entry point for the parser.
-    //
-    // @param expr a string that contains an XPath expression.
-    // @return an expression object that can be evaluated with an
-    // expression context.
+    /**
+     * The entry point for the parser.
+     * @param expr a string that contains an XPath expression.
+     * @param xpathLog TODO
+     * @returns an expression object that can be evaluated with an
+     * expression context.
+     */
     xPathParse(
         expr,
         xpathLog = (message: string) => {
@@ -732,7 +739,7 @@ export class XPath {
         return result;
     }
 
-    xPathParseInit(xpathLog) {
+    xPathParseInit(xPathLog: Function) {
         if (this.xPathRules.length) {
             return;
         }
@@ -782,7 +789,7 @@ export class XPath {
             xpathTokenRules[i].key = k++;
         }
 
-        xpathLog(`XPath parse INIT: ${k} rules`);
+        xPathLog(`XPath parse INIT: ${k} rules`);
 
         // Another slight optimization: sort the rules into bins according
         // to the last element (observing quantifiers), so we can restrict
@@ -793,7 +800,7 @@ export class XPath {
         // bison, so that we don't have to do any explicit and iterated
         // match against the stack.
 
-        function push_(array, position, element) {
+        function push_(array: any, position: any, element: any) {
             if (!array[position]) {
                 array[position] = [];
             }
@@ -818,16 +825,16 @@ export class XPath {
             }
         }
 
-        xpathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
+        xPathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
 
         let sum = 0;
-        mapExec(this.xPathRules, (i) => {
+        mapExec(this.xPathRules, (i: any) => {
             if (i) {
                 sum += i.length;
             }
         });
 
-        xpathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
+        xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
     }
 
     /*DGF xpathReduce is where the magic happens in this parser.
@@ -919,7 +926,7 @@ export class XPath {
 
     // Utility function to sort a list of nodes. Used by xsltSort() and
     // nxslSelect().
-    xPathSort(input, sort) {
+    xPathSort(input: any, sort: any) {
         if (sort.length == 0) {
             return;
         }
@@ -977,7 +984,7 @@ export class XPath {
     // NOTE: In browsers which do not follow the spec, this breaks only in
     // the case that numbers should be sorted as strings, which is very
     // uncommon.
-    xPathSortByKey(v1, v2) {
+    xPathSortByKey(v1: any, v2: any) {
         // NOTE: Sort key vectors of different length never occur in
         // xsltSort.
 
@@ -993,7 +1000,7 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step, input, ctx) {
+    xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: any) {
         const s = steps[step];
         const ctx2 = ctx.clone(input);
 
@@ -1041,7 +1048,7 @@ export class XPath {
         }
     }
 
-    xPathGrammarPrecedence(frame) {
+    xPathGrammarPrecedence(frame: any) {
         let ret = 0;
 
         if (frame.rule) {
@@ -1068,7 +1075,7 @@ export class XPath {
         return ret;
     }
 
-    xPathTokenPrecedence(tag) {
+    xPathTokenPrecedence(tag: any) {
         return tag.prec || 2;
     }
 }
