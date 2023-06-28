@@ -2,20 +2,19 @@ import { xmlValue } from "../../dom/util";
 
 export class NodeSetValue {
     value: any;
-
     type: string;
 
-    constructor(value) {
+    constructor(value: any) {
         this.value = value;
         this.type = 'node-set';
     }
 
     stringValue() {
-        if (this.value.length == 0) {
+        if (this.value.length === 0) {
             return '';
-        } else {
-            return xmlValue(this.value[0]);
         }
+
+        return xmlValue(this.value[0]);
     }
 
     booleanValue() {

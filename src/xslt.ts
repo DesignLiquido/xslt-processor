@@ -520,16 +520,16 @@ export class Xslt {
     // implementations the return value of node.getAttributeValue()
     // contains unresolved XML entities, although the DOM spec requires
     // that entity references are resolved by te DOM.
-    xmlGetAttribute(node, name) {
+    xmlGetAttribute(node: XNode, name: string) {
         // TODO(mesch): This should not be necessary if the DOM is working
         // correctly. The DOM is responsible for resolving entities, not the
         // application.
         const value = domGetAttribute(node, name);
         if (value) {
             return he.decode(value);
-        } else {
-            return value;
         }
+
+        return value;
     }
 
     // Implements xsl:copy-of for node-set values of the select
@@ -626,24 +626,35 @@ export class Xslt {
     }
 
     absoluteXsltMatch(levels: string[], expr: Expression, context: ExprContext) {
-        levels.shift();
+        // TODO: Not sure if this logic will be needed.
+        /* levels.shift();
         const filteredChildren = this.selectChildNodes(levels, [context.node]);
         if (filteredChildren.length <= 0) {
             return false;
-        }
+        } */
 
         const result = expr.evaluate(context.clone(context.node, 0, [context.node])).nodeSetValue();
-        for (let i = 0; i < filteredChildren.length; ++i) {
+        if (result.length > 0) {
+            if (result.length === 1) {
+                context.node = result[0];
+            }
+
+            context.nodelist = result;
+            return true;
+        }
+        // TODO: Not sure if this logic will be needed.
+        /* for (let i = 0; i < filteredChildren.length; ++i) {
             for (let j = 0; j < result.length; ++j) {
                 if (filteredChildren[i] == result[j]) {
                     return true;
                 }
             }
-        }
+        } */
 
         return false;
     }
 
+    // TODO: Not sure if this logic will be needed.
     private selectChildNodes(levels: string[], nodes: XNode[]) {
         const currentLevel = levels.shift();
         let currentNodes = [];
