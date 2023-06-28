@@ -7,31 +7,30 @@
 import { XNode } from './dom';
 import {
     ExprContext,
-    StringValue,
-    BooleanValue,
-    NumberValue,
-    NodeSetValue,
-    TokenExpr,
-    LocationExpr,
-    StepExpr,
     NodeTestName,
     NodeTestNC,
     NodeTestComment,
     NodeTestPI,
     NodeTestText,
     NodeTestElementOrAttribute,
-    NodeTestAny,
-    PredicateExpr,
-    FunctionCallExpr,
-    UnionExpr,
-    PathExpr,
-    FilterExpr,
-    UnaryMinusExpr,
-    BinaryExpr,
-    LiteralExpr,
-    NumberExpr,
-    VariableExpr
+    NodeTestAny
 } from './xpath';
+import {
+    BinaryExpr,
+    FilterExpr,
+    FunctionCallExpr,
+    LiteralExpr,
+    LocationExpr,
+    NumberExpr,
+    PathExpr,
+    PredicateExpr,
+    StepExpr,
+    TokenExpr,
+    UnaryMinusExpr,
+    UnionExpr,
+    VariableExpr
+} from './xpath/expressions';
+import { StringValue, NumberValue, BooleanValue, NodeSetValue } from './xpath/values';
 
 export let parseTree = function (expr, indent) {
     let ret;

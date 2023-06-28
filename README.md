@@ -44,7 +44,7 @@ If you write pre-2015 JS code, make adjustments as needed.
 
 ### Breaking Changes
 
-Until version 0.17, use like the example below:
+Until version 0.11.7, use like the example below:
 
 ```js
 import { xsltProcess, xmlParse } from 'xslt-processor'
