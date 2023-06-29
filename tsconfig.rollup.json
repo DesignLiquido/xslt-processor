@@ -2,8 +2,7 @@
     "compilerOptions": {
         "jsx": "preserve",
         "outDir": "dist",
-        "module": "esnext",
-        "target": "ES2017",
+        "target": "ES5",
         "rootDir": ".",
         "allowJs": true,
         "sourceMap": true,
@@ -11,8 +10,7 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "moduleResolution": "NodeNext"
+        "emitDecoratorMetadata": true
     },
     "exclude": [
         "babel.config.js",

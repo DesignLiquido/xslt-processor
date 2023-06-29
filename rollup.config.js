@@ -22,7 +22,8 @@ export default {
         terser()
     ],
     output: {
-        format: 'cjs',
+        format: 'umd',
+        name: 'XsltProcessor',
         sourcemap: true
     }
 }
