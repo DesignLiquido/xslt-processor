@@ -1,7 +1,7 @@
 import commonjs from 'rollup-plugin-commonjs'
 import resolve from 'rollup-plugin-node-resolve'
 import buble from 'rollup-plugin-buble'
-import terser from '@rollup/plugin-terser';
+// import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 
 export default {
@@ -18,8 +18,8 @@ export default {
         resolve(),
         buble({
           transforms: {dangerousForOf: true}
-        }),
-        terser()
+        })
+        // terser()
     ],
     output: {
         format: 'umd',

@@ -2,7 +2,35 @@
 <html>
   <head>
     <title>Simple XSLT test</title>
-    <script src="../test_dist/xslt_script.js"></script>
+    <!-- script src="../test_dist/xslt_script.js"></script -->
+    <script type="application/javascript" src="js/xslt-processor.js"></script>
+    <script>
+      window.logging = true;
+      window.xsltdebug = true;
+
+      window.el = function(id) {
+          return document.getElementById(id);
+      }
+
+      window.test_xslt = function() {
+          const xml = globalThis.XsltProcessor.xmlParse(el('xml').value);
+          const xslt = globalThis.XsltProcessor.xmlParse(el('xslt').value);
+          const xsltClass = new globalThis.XsltProcessor.Xslt();
+          const html = xsltClass.xsltProcess(xml, xslt);
+          el('html').value = html;
+          el('htmldisplay').innerHTML = html;
+      }
+
+      window.cleanxml = function() {
+          cleanvalue('xml');
+          cleanvalue('xslt');
+      }
+
+      window.cleanvalue = function(id) {
+          const x = el(id);
+          x.value = x.value.replace(/^\s*/, '').replace(/\n\s*/g, '\n');
+      }
+    </script>
   </head>
   <body onload="cleanxml()">
     <form onsubmit="test_xslt();return false">

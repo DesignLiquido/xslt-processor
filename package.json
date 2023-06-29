@@ -11,10 +11,7 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "rollup-build": "rollup index.ts -c -f umd -o dist/xslt-processor.js",
-    "build_test": "yarn build_tests && yarn build_xpath_script && yarn build_xslt_script",
-    "build_xpath_script": "rollup test_src/xpath_script.js -c -f iife -o test_dist/xpath_script.js",
-    "build_xslt_script": "rollup test_src/xslt_script.js -c -f iife -o test_dist/xslt_script.js",
+    "rollup-build": "rollup src/index.ts -c -f umd -o dist/umd/xslt-processor.js",
     "lint": "eslint src/**/*"
   },
   "repository": {

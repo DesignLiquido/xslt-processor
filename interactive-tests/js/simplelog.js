@@ -1,13 +1,10 @@
+// Copyright 2023 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005-2006 Google
 //
 // Author: Steffen Meschkat <mesch@google.com>
 //
 // A very simple logging facility, used in test/xpath.html.
-import {
-    xmlEscapeText
-} from "../../src/dom/util.js"
-
 
 export class Log {
 
@@ -16,14 +13,14 @@ export class Log {
     }
 
     static write(s) {
-        this.lines.push(xmlEscapeText(s));
+        this.lines.push(window.xmlEscapeText(s));
         this.show();
     }
 
     // Writes the given XML with every tag on a new line.
     static writeXML(xml) {
         const s0 = xml.replace(/</g, '\n<');
-        const s1 = xmlEscapeText(s0);
+        const s1 = window.xmlEscapeText(s0);
         const s2 = s1.replace(/\s*\n(\s|\n)*/g, '<br/>');
         this.lines.push(s2);
         this.show();
