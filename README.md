@@ -42,6 +42,14 @@ const xPath = new XPath();
 
 If you write pre-2015 JS code, make adjustments as needed.
 
+### Direct use in browsers
+
+You can simply add a tag like this:
+
+```html
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.0.0/xslt-processor.js"></script>
+```
+
 ### Breaking Changes
 
 Until version 0.11.7, use like the example below:
