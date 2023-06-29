@@ -37,7 +37,7 @@ export class XDocument extends XNode {
         return XNode.create(DOM_ELEMENT_NODE, name, null, this, namespace);
     }
 
-    createDocumentFragment() {
+    createDocumentFragment(): XNode {
         return XNode.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
     }
 

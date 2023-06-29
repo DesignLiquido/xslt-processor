@@ -60,7 +60,7 @@ export function domCreateComment(doc: any, text: any) {
     return doc.createComment(text);
 }
 
-export function domCreateDocumentFragment(doc: XDocument) {
+export function domCreateDocumentFragment(doc: XDocument): XNode {
     return doc.createDocumentFragment();
 }
 
