@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "yarn cjs-build && yarn rollup-build && yarn copy-files-from-to",
+    "pre-build-setup": "rimraf ./demo && rimraf ./dist",
+    "build": "yarn pre-build-setup && yarn cjs-build && yarn rollup-build && yarn copy-files-from-to",
     "cjs-build": "tsc",
     "rollup-build": "rollup src/index.ts -c -f umd -o dist/umd/xslt-processor.js",
     "lint": "eslint src/**/*"
@@ -57,6 +58,7 @@
     "npm-check-updates": "^16.10.13",
     "react": "^18.2.0",
     "release-it": "^15.11.0",
+    "rimraf": "^5.0.1",
     "rollup": "^1.1.2",
     "rollup-plugin-buble": "^0.19.6",
     "rollup-plugin-commonjs": "^9.2.0",
@@ -73,10 +75,6 @@
     {
       "from": "LICENSE",
       "to": "dist/LICENSE"
-    },
-    {
-      "from": "package.json",
-      "to": "dist/package.json"
     },
     {
       "from": "README.md",
