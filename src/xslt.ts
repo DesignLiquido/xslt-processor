@@ -33,7 +33,6 @@
 //
 //
 // Original author: Steffen Meschkat <mesch@google.com>
-import he from 'he';
 
 import {
     XDocument,
@@ -46,6 +45,7 @@ import {
     domCreateTextNode,
     domGetAttribute,
     domSetAttribute,
+    xmlGetAttribute,
     xmlOwnerDocument,
     xmlText,
     xmlValue
@@ -99,7 +99,7 @@ export class Xslt {
      * @param output the root of the generated output, as DOM node.
      * @param _parameters Extra parameters.
      */
-    protected xsltProcessContext(input: ExprContext, template: XNode, output: XNode, _parameters?: any) {
+    protected xsltProcessContext(input: ExprContext, template: XNode, output: XNode, _parameters?: { [key: string]: any }) {
         const outputDocument = xmlOwnerDocument(output);
 
         if (!this.isXsltElement(template)) {
@@ -125,7 +125,7 @@ export class Xslt {
                 case 'apply-imports':
                     throw `not implemented: ${template.localName}`;
                 case 'apply-templates':
-                    select = this.xmlGetAttribute(template, 'select');
+                    select = xmlGetAttribute(template, 'select');
                     if (select) {
                         nodes = this.xPath.xPathEval(select, input).nodeSetValue();
                     } else {
@@ -136,7 +136,7 @@ export class Xslt {
                     this.xsltWithParam(sortContext, template);
                     this.xsltSort(sortContext, template);
 
-                    mode = this.xmlGetAttribute(template, 'mode');
+                    mode = xmlGetAttribute(template, 'mode');
                     top = template.ownerDocument.documentElement;
 
                     templates = [];
@@ -165,7 +165,7 @@ export class Xslt {
                     }
                     break;
                 case 'attribute':
-                    nameexpr = this.xmlGetAttribute(template, 'name');
+                    nameexpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameexpr, input);
                     node = domCreateDocumentFragment(outputDocument);
                     this.xsltChildNodes(input, template, node);
@@ -175,7 +175,7 @@ export class Xslt {
                 case 'attribute-set':
                     throw `not implemented: ${template.localName}`;
                 case 'call-template':
-                    name = this.xmlGetAttribute(template, 'name');
+                    name = xmlGetAttribute(template, 'name');
                     top = template.ownerDocument.documentElement;
 
                     paramContext = input.clone();
@@ -210,7 +210,7 @@ export class Xslt {
                     }
                     break;
                 case 'copy-of':
-                    select = this.xmlGetAttribute(template, 'select');
+                    select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, input);
                     if (value.type == 'node-set') {
                         nodes = value.nodeSetValue();
@@ -225,7 +225,7 @@ export class Xslt {
                 case 'decimal-format':
                     throw `not implemented: ${template.localName}`;
                 case 'element':
-                    nameexpr = this.xmlGetAttribute(template, 'name');
+                    nameexpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameexpr, input);
                     node = domCreateElement(outputDocument, name);
                     domAppendChild(output, node);
@@ -237,7 +237,7 @@ export class Xslt {
                     this.xsltForEach(input, template, output);
                     break;
                 case 'if':
-                    test = this.xmlGetAttribute(template, 'test');
+                    test = xmlGetAttribute(template, 'test');
                     if (this.xPath.xPathEval(test, input).booleanValue()) {
                         this.xsltChildNodes(input, template, output);
                     }
@@ -276,7 +276,7 @@ export class Xslt {
                     this.xsltChildNodes(input, template, output);
                     break;
                 case 'template':
-                    match = this.xmlGetAttribute(template, 'match');
+                    match = xmlGetAttribute(template, 'match');
                     if (match && this.xsltMatch(match, input)) {
                         this.xsltChildNodes(input, template, output);
                     }
@@ -287,7 +287,7 @@ export class Xslt {
                     output.appendChild(node);
                     break;
                 case 'value-of':
-                    select = this.xmlGetAttribute(template, 'select');
+                    select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, input).stringValue();
                     node = domCreateTextNode(outputDocument, value);
                     output.appendChild(node);
@@ -318,7 +318,7 @@ export class Xslt {
      */
     protected xsltWithParam(input: any, template: any) {
         for (const c of template.childNodes) {
-            if (c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
+            if (c.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
                 this.xsltVariable(input, c, true);
             }
         }
@@ -338,10 +338,10 @@ export class Xslt {
 
         for (const c of template.childNodes) {
             if (c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'sort')) {
-                const select = this.xmlGetAttribute(c, 'select');
+                const select = xmlGetAttribute(c, 'select');
                 const expr = this.xPath.xPathParse(select);
-                const type = this.xmlGetAttribute(c, 'data-type') || 'text';
-                const order = this.xmlGetAttribute(c, 'order') || 'ascending';
+                const type = xmlGetAttribute(c, 'data-type') || 'text';
+                const order = xmlGetAttribute(c, 'order') || 'ascending';
                 sort.push({
                     expr,
                     type,
@@ -361,9 +361,9 @@ export class Xslt {
     // case. I.e. decides if this is a default value or a local
     // value. xsl:variable and xsl:with-param override; xsl:param doesn't.
 
-    protected xsltVariable(input, template, override) {
-        const name = this.xmlGetAttribute(template, 'name');
-        const select = this.xmlGetAttribute(template, 'select');
+    protected xsltVariable(input: any, template: any, override: any) {
+        const name = xmlGetAttribute(template, 'name');
+        const select = xmlGetAttribute(template, 'select');
 
         let value;
 
@@ -385,12 +385,14 @@ export class Xslt {
     // Implements xsl:chose and its child nodes xsl:when and
     // xsl:otherwise.
 
-    protected xsltChoose(input, template, output) {
+    protected xsltChoose(input: any, template: any, output: any) {
         for (const childNode of template.childNodes) {
-            if (childNode.nodeType != DOM_ELEMENT_NODE) {
+            if (childNode.nodeType !== DOM_ELEMENT_NODE) {
                 continue;
-            } else if (this.isXsltElement(childNode, 'when')) {
-                const test = this.xmlGetAttribute(childNode, 'test');
+            }
+
+            if (this.isXsltElement(childNode, 'when')) {
+                const test = xmlGetAttribute(childNode, 'test');
                 if (this.xPath.xPathEval(test, input).booleanValue()) {
                     this.xsltChildNodes(input, childNode, output);
                     break;
@@ -408,8 +410,8 @@ export class Xslt {
      * @param template TODO
      * @param output TODO
      */
-    protected xsltForEach(input, template, output) {
-        const select = this.xmlGetAttribute(template, 'select');
+    protected xsltForEach(input: any, template: any, output: any) {
+        const select = xmlGetAttribute(template, 'select');
         const nodes = this.xPath.xPathEval(select, input).nodeSetValue();
         const sortContext = input.clone(nodes[0], 0, nodes);
         this.xsltSort(sortContext, template);
@@ -536,28 +538,6 @@ export class Xslt {
         }
 
         return ret;
-    }
-
-    /**
-     * Wrapper function to access attribute values of template element
-    // nodes. Currently this calls he.decode because in some DOM
-    // implementations the return value of node.getAttributeValue()
-    // contains unresolved XML entities, although the DOM spec requires
-    // that entity references are resolved by the DOM.
-     * @param node TODO
-     * @param name TODO
-     * @returns TODO
-     */
-    protected xmlGetAttribute(node: XNode, name: string) {
-        // TODO(mesch): This should not be necessary if the DOM is working
-        // correctly. The DOM is responsible for resolving entities, not the
-        // application.
-        const value = domGetAttribute(node, name);
-        if (value) {
-            return he.decode(value);
-        }
-
-        return value;
     }
 
     /**

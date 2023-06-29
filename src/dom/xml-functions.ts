@@ -1,3 +1,5 @@
+import he from 'he';
+
 import {
     DOM_ATTRIBUTE_NODE,
     DOM_CDATA_SECTION_NODE,
@@ -7,6 +9,8 @@ import {
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
+import { domGetAttribute } from './functions';
+import { XNode } from './xnode';
 
 // Returns the text value of a node; for nodes without children this
 // is the nodeValue, for nodes with children this is the concatenation
@@ -124,6 +128,28 @@ export function xmlEscapeText(s: string) {
  */
 function xmlEscapeAttr(s: string) {
     return xmlEscapeText(s).replace(/"/g, '&quot;');
+}
+
+/**
+ * Wrapper function to access attribute values of template element
+ * nodes. Currently this calls he.decode because in some DOM
+ * implementations the return value of node.getAttributeValue()
+ * contains unresolved XML entities, although the DOM spec requires
+ * that entity references are resolved by the DOM.
+ * @param node TODO
+ * @param name TODO
+ * @returns TODO
+ */
+export function xmlGetAttribute(node: XNode, name: string) {
+    // TODO(mesch): This should not be necessary if the DOM is working
+    // correctly. The DOM is responsible for resolving entities, not the
+    // application.
+    const value = domGetAttribute(node, name);
+    if (value) {
+        return he.decode(value);
+    }
+
+    return value;
 }
 
 /**
