@@ -4,10 +4,14 @@ _A JavaScript XSLT processor without native library dependencies._
 
 ## How to
 
-Install xslt-processor using npm:
+Install xslt-processor using npm or yarn:
 
-```
+```sh
 npm install xslt-processor
+```
+
+```sh
+yarn add xslt-processor
 ```
 
 Within your ES2015+ code, import the `Xslt` class, the `xmlParse` function and use this way:
@@ -47,8 +51,10 @@ If you write pre-2015 JS code, make adjustments as needed.
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.0.0/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.0.1/umd/xslt-processor.js"></script>
 ```
+
+All the exports will live under `globalThis.XsltProcessor`.
 
 ### Breaking Changes
 

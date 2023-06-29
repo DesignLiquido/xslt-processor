@@ -1,7 +1,7 @@
-localtests/
-node_modules/
-dist/
 .git/
-test_dist/
-tests_dist/
+
+demo/
+dist/
+node_modules/
+
 package-lock.json

@@ -2,15 +2,16 @@
   "name": "xslt-processor",
   "version": "1.0.0",
   "description": "A JavaScript XSLT Processor",
-  "main": "dist/index.js",
-  "module": "src/index.js",
+  "main": "index.js",
+  "module": "index.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "yarn cjs-build && yarn rollup-build && yarn copy-files-from-to",
+    "cjs-build": "tsc",
     "rollup-build": "rollup src/index.ts -c -f umd -o dist/umd/xslt-processor.js",
     "lint": "eslint src/**/*"
   },
@@ -47,6 +48,7 @@
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
     "babel-jest": "^29.5.0",
+    "copy-files-from-to": "^3.9.0",
     "eslint": "^5.12.1",
     "eslint-plugin-jest": "^27.2.2",
     "eslint-plugin-jsx": "^0.1.0",
@@ -66,5 +68,27 @@
   },
   "dependencies": {
     "he": "^1.2.0"
-  }
+  },
+  "copyFiles": [
+    {
+      "from": "LICENSE",
+      "to": "dist/LICENSE"
+    },
+    {
+      "from": "package.json",
+      "to": "dist/package.json"
+    },
+    {
+      "from": "README.md",
+      "to": "dist/README.md"
+    },
+    {
+      "from": "interactive-tests/xslt.html",
+      "to": "demo/xslt.html"
+    },
+    {
+      "from": "dist/umd/xslt-processor.js",
+      "to": "demo/js/xslt-processor.js"
+    }
+  ]
 }
