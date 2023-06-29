@@ -43,7 +43,7 @@ import {
     domCreateDocumentFragment,
     domCreateElement,
     domCreateTextNode,
-    domGetAttribute,
+    domGetAttributeValue,
     domSetAttribute,
     xmlGetAttribute,
     xmlOwnerDocument,
@@ -79,8 +79,13 @@ export class Xslt {
      * @returns the processed document, as XML text in a string.
      */
     xsltProcess(xmlDoc: XDocument, stylesheet: XDocument, parameters?: any) {
+        // const output = domCreateDocumentFragment(new XDocument());
+        // const output = new XDocument();
+        // output.appendChild(XNode.clone(xmlDoc.childNodes[0], output));
+        // const expressionContext = new ExprContext([output]);
+
         const output = domCreateDocumentFragment(new XDocument());
-        const expressionContext = new ExprContext(xmlDoc);
+        const expressionContext = new ExprContext([xmlDoc]);
         if (parameters && typeof parameters === 'object') {
             for (const [key, value] of Object.entries(parameters)) {
                 expressionContext.setVariable(key, new StringValue(value));
@@ -129,10 +134,10 @@ export class Xslt {
                     if (select) {
                         nodes = this.xPath.xPathEval(select, input).nodeSetValue();
                     } else {
-                        nodes = input.node.childNodes;
+                        nodes = input.nodelist[input.position].childNodes;
                     }
 
-                    sortContext = input.clone(nodes[0], 0, nodes);
+                    sortContext = input.clone(nodes, 0);
                     this.xsltWithParam(sortContext, template);
                     this.xsltSort(sortContext, template);
 
@@ -142,7 +147,7 @@ export class Xslt {
                     templates = [];
                     for (let i = 0; i < top.childNodes.length; ++i) {
                         let c = top.childNodes[i];
-                        let matchAttribute = c.getAttribute('match');
+                        let matchAttribute = c.getAttributeValue('match');
 
                         // Avoiding infinite loops.
                         if (matchAttribute && matchAttribute.startsWith('/')) {
@@ -152,15 +157,15 @@ export class Xslt {
                         if (
                             c.nodeType == DOM_ELEMENT_NODE &&
                             this.isXsltElement(c, 'template') &&
-                            (!mode || c.getAttribute('mode') == mode)
+                            (!mode || c.getAttributeValue('mode') == mode)
                         ) {
                             templates.push(c);
                         }
                     }
+
                     for (let j = 0; j < sortContext.contextSize(); ++j) {
-                        const nodeAtJ = sortContext.nodelist[j];
                         for (let i = 0; i < templates.length; ++i) {
-                            this.xsltProcessContext(sortContext.clone(nodeAtJ, j), templates[i], output);
+                            this.xsltProcessContext(sortContext.clone(sortContext.nodelist, j), templates[i], output);
                         }
                     }
                     break;
@@ -186,7 +191,7 @@ export class Xslt {
                         if (
                             c.nodeType == DOM_ELEMENT_NODE &&
                             this.isXsltElement(c, 'template') &&
-                            domGetAttribute(c, 'name') == name
+                            domGetAttributeValue(c, 'name') == name
                         ) {
                             this.xsltChildNodes(paramContext, c, output);
                             break;
@@ -204,7 +209,7 @@ export class Xslt {
                     output.appendChild(commentNode);
                     break;
                 case 'copy':
-                    node = this.xsltCopy(output, input.node, outputDocument);
+                    node = this.xsltCopy(output, input.nodelist[input.position], outputDocument);
                     if (node) {
                         this.xsltChildNodes(input, template, node);
                     }
@@ -410,14 +415,14 @@ export class Xslt {
      * @param template TODO
      * @param output TODO
      */
-    protected xsltForEach(input: any, template: any, output: any) {
+    protected xsltForEach(input: ExprContext, template: any, output: any) {
         const select = xmlGetAttribute(template, 'select');
         const nodes = this.xPath.xPathEval(select, input).nodeSetValue();
-        const sortContext = input.clone(nodes[0], 0, nodes);
+        const sortContext = input.clone(nodes, 0);
         this.xsltSort(sortContext, template);
+
         for (let i = 0; i < sortContext.contextSize(); ++i) {
-            const ni = sortContext.nodelist[i];
-            this.xsltChildNodes(sortContext.clone(ni, i), template, output);
+            this.xsltChildNodes(sortContext.clone(sortContext.nodelist, i), template, output);
         }
     }
 
@@ -492,7 +497,7 @@ export class Xslt {
         }
 
         while (element && element.nodeType == DOM_ELEMENT_NODE) {
-            const xmlspace = domGetAttribute(element, 'xml:space');
+            const xmlspace = domGetAttributeValue(element, 'xml:space');
             if (xmlspace) {
                 if (xmlspace == 'default') {
                     return false;
@@ -639,12 +644,8 @@ export class Xslt {
     }
 
     private absoluteXsltMatch(levels: string[], expr: Expression, context: ExprContext) {
-        const result = expr.evaluate(context.clone(context.node, 0, [context.node])).nodeSetValue();
+        const result = expr.evaluate(context.clone([context.nodelist[context.position]], 0)).nodeSetValue();
         if (result.length > 0) {
-            if (result.length === 1) {
-                context.node = result[0];
-            }
-
             context.nodelist = result;
             return true;
         }
@@ -653,12 +654,15 @@ export class Xslt {
     }
 
     private relativeXsltMatch(expr: Expression, context: ExprContext) {
-        let node = context.node;
+        let node = context.nodelist[context.position];
 
         while (node) {
-            const result = expr.evaluate(context.clone(node, 0, [node])).nodeSetValue();
+            const result = expr.evaluate(context.clone([node], 0)).nodeSetValue();
             for (let i = 0; i < result.length; ++i) {
-                if (result[i] == context.node) {
+                if (result[i] == context.nodelist[context.position]) {
+                    /* if (context.node.nodeName === "#document") {
+                        context.node = con
+                    } */
                     return true;
                 }
             }

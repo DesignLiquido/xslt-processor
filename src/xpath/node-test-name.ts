@@ -10,13 +10,13 @@ export class NodeTestName {
         this.re = new RegExp(`^${name}$`, 'i');
     }
 
-    evaluate(ctx: ExprContext) {
-        const n = ctx.node;
-        if (ctx.caseInsensitive) {
+    evaluate(context: ExprContext) {
+        const n = context.nodelist[context.position];
+        if (context.caseInsensitive) {
             if (n.nodeName.length != this.name.length) return new BooleanValue(false);
             return new BooleanValue(this.re.test(n.nodeName));
-        } else {
-            return new BooleanValue(n.nodeName == this.name);
         }
+
+        return new BooleanValue(n.nodeName == this.name);
     }
 }

@@ -9,7 +9,7 @@ import {
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
-import { domGetAttribute } from './functions';
+import { domGetAttributeValue } from './functions';
 import { XNode } from './xnode';
 
 // Returns the text value of a node; for nodes without children this
@@ -144,7 +144,7 @@ export function xmlGetAttribute(node: XNode, name: string) {
     // TODO(mesch): This should not be necessary if the DOM is working
     // correctly. The DOM is responsible for resolving entities, not the
     // application.
-    const value = domGetAttribute(node, name);
+    const value = domGetAttributeValue(node, name);
     if (value) {
         return he.decode(value);
     }

@@ -112,7 +112,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlApplyTemplates);
         const xslt = xmlParse(xsltApplyTemplates);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('ABC', html);
+        assert.equal(html, 'ABC');
     });
 
     it('handles global variables', () => {

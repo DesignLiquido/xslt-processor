@@ -32,8 +32,8 @@ const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
 // Wrapper around DOM methods so we can condense their invocations.
-export function domGetAttribute(node: any, name: any) {
-    return node.getAttribute(name);
+export function domGetAttributeValue(node: any, name: any) {
+    return node.getAttributeValue(name);
 }
 
 export function domSetAttribute(node: any, name: any, value: any) {

@@ -467,11 +467,11 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
     const slashPageLocationAtLat = `/${page}/${location}/@${lat}`;
     const slashPageLocationAtLon = `/${page}/${location}/@${lon}`;
 
-    const ctx = new ExprContext(xmlParse(xml));
+    const ctx = new ExprContext([xmlParse(xml)]);
     // DGF if we have access to an official DOMParser, compare output with that also
     let ctx1;
     if (typeof DOMParser != 'undefined') {
-        ctx1 = new ExprContext(new DOMParser().parseFromString(xml, 'text/xml'));
+        ctx1 = new ExprContext([new DOMParser().parseFromString(xml, 'text/xml')]);
     } else {
         ctx1 = ctx;
     }
@@ -539,7 +539,7 @@ describe('xpath', () => {
         );
 
         for (const e of numExpr) {
-            let ctx = new ExprContext(bodyEl);
+            let ctx = new ExprContext([bodyEl]);
             ctx.setCaseInsensitive(true);
             if (e[2]) {
                 for (const k in e[2] as any) {
@@ -612,7 +612,7 @@ describe('xpath', () => {
             ' <f></f>',
             '</page>'
         ].join('');
-        const ctx = new ExprContext(xmlParse(xml));
+        const ctx = new ExprContext([xmlParse(xml)]);
 
         for (const e of axisTests) {
             const result = xPath.xPathParse(e[0]).evaluate(ctx);
@@ -628,7 +628,7 @@ describe('xpath', () => {
 
     it('can handle attribute asterisk', () => {
         const xPath = new XPath();
-        const ctx = new ExprContext(xmlParse('<x a="1" b="1"><y><z></z></y></x>'));
+        const ctx = new ExprContext([xmlParse('<x a="1" b="1"><y><z></z></y></x>')]);
         const expr = xPath.xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
@@ -729,7 +729,7 @@ describe('xpath', () => {
         ];
 
         const parsedXML = xmlParse(xml);
-        const ctx = new ExprContext(parsedXML);
+        const ctx = new ExprContext([parsedXML]);
 
         for (const test of tests) {
             const expr = xPath.xPathParse(test[0]);

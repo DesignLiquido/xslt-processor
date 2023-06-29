@@ -58,9 +58,8 @@ import { TOK_NUMBER } from "./tokens";
 import { XNode } from "../dom";
 
 export class ExprContext {
-    node: XNode;
-    position: any;
-    nodelist: any;
+    position: number;
+    nodelist: XNode[];
     variables: any;
     parent: any;
     caseInsensitive: any;
@@ -70,18 +69,16 @@ export class ExprContext {
     root: any;
 
     constructor(
-        node: any,
-        opt_position?: any,
-        opt_nodelist?: any,
+        nodelist: any[],
+        opt_position?: number,
         opt_parent?: any,
         opt_caseInsensitive?: any,
         opt_ignoreAttributesWithoutValue?: any,
         opt_returnOnFirstMatch?: any,
         opt_ignoreNonElementNodesForNTA?: any
     ) {
-        this.node = node;
+        this.nodelist = nodelist;
         this.position = opt_position || 0;
-        this.nodelist = opt_nodelist || [node];
         this.variables = {};
         this.parent = opt_parent || null;
         this.caseInsensitive = opt_caseInsensitive || false;
@@ -90,22 +87,21 @@ export class ExprContext {
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
         if (opt_parent) {
             this.root = opt_parent.root;
-        } else if (this.node.nodeType == DOM_DOCUMENT_NODE) {
+        } else if (this.nodelist[this.position].nodeType == DOM_DOCUMENT_NODE) {
             // NOTE(mesch): DOM Spec stipulates that the ownerDocument of a
             // document is null. Our root, however is the document that we are
             // processing, so the initial context is created from its document
             // node, which case we must handle here explcitly.
-            this.root = node;
+            this.root = this.nodelist[this.position];
         } else {
-            this.root = node.ownerDocument;
+            this.root = this.nodelist[this.position].ownerDocument;
         }
     }
 
-    clone(opt_node?: any, opt_position?: any, opt_nodelist?: any[]) {
+    clone(opt_nodelist?: any[], opt_position?: any) {
         return new ExprContext(
-            opt_node || this.node,
-            typeof opt_position != 'undefined' ? opt_position : this.position,
             opt_nodelist || this.nodelist,
+            typeof opt_position != 'undefined' ? opt_position : this.position,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,
@@ -146,8 +142,7 @@ export class ExprContext {
         }
     }
 
-    setNode(position) {
-        this.node = this.nodelist[position];
+    setNode(position: number) {
         this.position = position;
     }
 

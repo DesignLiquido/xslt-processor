@@ -44,7 +44,7 @@ describe('dom parsing', () => {
         const id = 'q';
         const byId = dom1.getElementById(id);
         assert.notEqual(byId, null);
-        assert.equal(id, byId.getAttribute('id'));
+        assert.equal(id, byId.getAttributeValue('id'));
     });
 
     it('can parse weird xml', () => {

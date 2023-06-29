@@ -1,11 +1,11 @@
-import { xmlValue } from "../../dom";
-import { assert, regExpEscape } from "../../dom/util";
-import { ExprContext } from "../expr-context";
-import { BooleanValue } from "../values/boolean-value";
-import { NodeSetValue } from "../values/node-set-value";
-import { NumberValue } from "../values/number-value";
-import { StringValue } from "../values/string-value";
-import { Expression } from "./expression";
+import { xmlValue } from '../../dom';
+import { assert, regExpEscape } from '../../dom/util';
+import { ExprContext } from '../expr-context';
+import { BooleanValue } from '../values/boolean-value';
+import { NodeSetValue } from '../values/node-set-value';
+import { NumberValue } from '../values/number-value';
+import { StringValue } from '../values/string-value';
+import { Expression } from './expression';
 
 export class FunctionCallExpr extends Expression {
     name: any;
@@ -34,7 +34,7 @@ export class FunctionCallExpr extends Expression {
             throw 'not implmented yet: XPath function generate-id()';
         },
 
-        id(ctx) {
+        id(ctx: ExprContext) {
             assert(this.args.length == 1);
             const e = this.args[0].evaluate(ctx);
             const ret = [];
@@ -60,30 +60,30 @@ export class FunctionCallExpr extends Expression {
             }
             return new NodeSetValue(ret);
         },
-        'xml-to-json'(ctx) {
+        'xml-to-json'(ctx: ExprContext) {
             assert(this.args.length < 2);
-            return new StringValue(JSON.stringify(!this.args.length ? 'null' : xmlValue(ctx.node)));
+            return new StringValue(JSON.stringify(!this.args.length ? 'null' : xmlValue(ctx.nodelist[ctx.position])));
         },
-        'local-name'(ctx) {
+        'local-name'(context: ExprContext) {
             assert(this.args.length == 1 || this.args.length == 0);
             let n;
             if (this.args.length == 0) {
-                n = [ctx.node];
+                n = [context.nodelist[context.position]];
             } else {
-                n = this.args[0].evaluate(ctx).nodeSetValue();
+                n = this.args[0].evaluate(context).nodeSetValue();
             }
 
             if (n.length == 0) {
                 return new StringValue('');
-            } else {
-                return new StringValue(n[0].localName);
             }
+
+            return new StringValue(n[0].localName);
         },
-        'namespace-uri'(ctx) {
+        'namespace-uri'(ctx: ExprContext) {
             assert(this.args.length == 1 || this.args.length == 0);
             let n;
             if (this.args.length == 0) {
-                n = [ctx.node];
+                n = [ctx.nodelist[ctx.position]];
             } else {
                 n = this.args[0].evaluate(ctx).nodeSetValue();
             }
@@ -95,32 +95,32 @@ export class FunctionCallExpr extends Expression {
             }
         },
 
-        name(ctx) {
+        name(ctx: ExprContext) {
             assert(this.args.length == 1 || this.args.length == 0);
             let n;
             if (this.args.length == 0) {
-                n = [ctx.node];
+                n = [ctx.nodelist[ctx.position]];
             } else {
                 n = this.args[0].evaluate(ctx).nodeSetValue();
             }
 
             if (n.length == 0) {
                 return new StringValue('');
-            } else {
-                return new StringValue(n[0].nodeName);
             }
+
+            return new StringValue(n[0].nodeName);
         },
 
-        string(ctx) {
+        string(ctx: ExprContext) {
             assert(this.args.length == 1 || this.args.length == 0);
             if (this.args.length == 0) {
-                return new StringValue(new NodeSetValue([ctx.node]).stringValue());
-            } else {
-                return new StringValue(this.args[0].evaluate(ctx).stringValue());
+                return new StringValue(new NodeSetValue([ctx.nodelist[ctx.position]]).stringValue());
             }
+
+            return new StringValue(this.args[0].evaluate(ctx).stringValue());
         },
 
-        concat(ctx) {
+        concat(ctx: ExprContext) {
             let ret = '';
             for (let i = 0; i < this.args.length; ++i) {
                 ret += this.args[i].evaluate(ctx).stringValue();
@@ -128,14 +128,14 @@ export class FunctionCallExpr extends Expression {
             return new StringValue(ret);
         },
 
-        'starts-with'(ctx) {
+        'starts-with'(ctx: ExprContext) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
             return new BooleanValue(s0.indexOf(s1) == 0);
         },
 
-        'ends-with'(ctx) {
+        'ends-with'(ctx: ExprContext) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -143,14 +143,14 @@ export class FunctionCallExpr extends Expression {
             return new BooleanValue(re.test(s0));
         },
 
-        contains(ctx) {
+        contains(ctx: ExprContext) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
             return new BooleanValue(s0.includes(s1));
         },
 
-        'substring-before'(ctx) {
+        'substring-before'(ctx: ExprContext) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -164,7 +164,7 @@ export class FunctionCallExpr extends Expression {
             return new StringValue(ret);
         },
 
-        'substring-after'(ctx) {
+        'substring-after'(ctx: ExprContext) {
             assert(this.args.length == 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -178,7 +178,7 @@ export class FunctionCallExpr extends Expression {
             return new StringValue(ret);
         },
 
-        substring(ctx) {
+        substring(ctx: ExprContext) {
             // NOTE: XPath defines the position of the first character in a
             // string to be 1, in JavaScript this is 0 ([XPATH] Section 4.2).
             assert(this.args.length == 2 || this.args.length == 3);
@@ -198,28 +198,28 @@ export class FunctionCallExpr extends Expression {
             return new StringValue(ret);
         },
 
-        'string-length'(ctx) {
+        'string-length'(ctx: ExprContext) {
             let s;
             if (this.args.length > 0) {
                 s = this.args[0].evaluate(ctx).stringValue();
             } else {
-                s = new NodeSetValue([ctx.node]).stringValue();
+                s = new NodeSetValue([ctx.nodelist[ctx.position]]).stringValue();
             }
             return new NumberValue(s.length);
         },
 
-        'normalize-space'(ctx) {
+        'normalize-space'(ctx: ExprContext) {
             let s;
             if (this.args.length > 0) {
                 s = this.args[0].evaluate(ctx).stringValue();
             } else {
-                s = new NodeSetValue([ctx.node]).stringValue();
+                s = new NodeSetValue([ctx.nodelist[ctx.position]]).stringValue();
             }
             s = s.replace(/^\s*/, '').replace(/\s*$/, '').replace(/\s+/g, ' ');
             return new StringValue(s);
         },
 
-        translate(ctx) {
+        translate(ctx: ExprContext) {
             assert(this.args.length == 3);
             let s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -231,7 +231,7 @@ export class FunctionCallExpr extends Expression {
             return new StringValue(s0);
         },
 
-        matches(ctx) {
+        matches(ctx: ExprContext) {
             assert(this.args.length >= 2);
             const s0 = this.args[0].evaluate(ctx).stringValue();
             const s1 = this.args[1].evaluate(ctx).stringValue();
@@ -251,12 +251,12 @@ export class FunctionCallExpr extends Expression {
             return new BooleanValue(re.test(s0));
         },
 
-        boolean(ctx) {
+        boolean(ctx: ExprContext) {
             assert(this.args.length == 1);
             return new BooleanValue(this.args[0].evaluate(ctx).booleanValue());
         },
 
-        not(ctx) {
+        not(ctx: ExprContext) {
             assert(this.args.length == 1);
             const ret = !this.args[0].evaluate(ctx).booleanValue();
             return new BooleanValue(ret);
@@ -272,13 +272,13 @@ export class FunctionCallExpr extends Expression {
             return new BooleanValue(false);
         },
 
-        lang(ctx) {
+        lang(ctx: ExprContext) {
             assert(this.args.length == 1);
             const lang = this.args[0].evaluate(ctx).stringValue();
             let xmllang;
-            let n = ctx.node;
+            let n = ctx.nodelist[ctx.position];
             while (n && n != n.parentNode /* just in case ... */) {
-                xmllang = n.getAttribute('xml:lang');
+                xmllang = n.getAttributeValue('xml:lang');
                 if (xmllang) {
                     break;
                 }
@@ -286,23 +286,23 @@ export class FunctionCallExpr extends Expression {
             }
             if (!xmllang) {
                 return new BooleanValue(false);
-            } else {
-                const re = new RegExp(`^${lang}$`, 'i');
-                return new BooleanValue(xmllang.match(re) || xmllang.replace(/_.*$/, '').match(re));
             }
+
+            const re = new RegExp(`^${lang}$`, 'i');
+            return new BooleanValue(xmllang.match(re) || xmllang.replace(/_.*$/, '').match(re));
         },
 
-        number(ctx) {
+        number(ctx: ExprContext) {
             assert(this.args.length == 1 || this.args.length == 0);
 
             if (this.args.length == 1) {
                 return new NumberValue(this.args[0].evaluate(ctx).numberValue());
-            } else {
-                return new NumberValue(new NodeSetValue([ctx.node]).numberValue());
             }
+
+            return new NumberValue(new NodeSetValue([ctx.nodelist[ctx.position]]).numberValue());
         },
 
-        sum(ctx) {
+        sum(ctx: ExprContext) {
             assert(this.args.length == 1);
             const n = this.args[0].evaluate(ctx).nodeSetValue();
             let sum = 0;
@@ -312,19 +312,19 @@ export class FunctionCallExpr extends Expression {
             return new NumberValue(sum);
         },
 
-        floor(ctx) {
+        floor(ctx: ExprContext) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.floor(num));
         },
 
-        ceiling(ctx) {
+        ceiling(ctx: ExprContext) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.ceil(num));
         },
 
-        round(ctx) {
+        round(ctx: ExprContext) {
             assert(this.args.length == 1);
             const num = this.args[0].evaluate(ctx).numberValue();
             return new NumberValue(Math.round(num));
@@ -334,7 +334,7 @@ export class FunctionCallExpr extends Expression {
         // standard that defines how to add functions, which should be
         // applied here.
 
-        'ext-join'(ctx) {
+        'ext-join'(ctx: ExprContext) {
             assert(this.args.length == 2);
             const nodes = this.args[0].evaluate(ctx).nodeSetValue();
             const delim = this.args[1].evaluate(ctx).stringValue();
@@ -352,25 +352,25 @@ export class FunctionCallExpr extends Expression {
         // boolean value of its first argument is true, otherwise it
         // evaluates and returns its third argument.
 
-        'ext-if'(ctx) {
+        'ext-if'(ctx: ExprContext) {
             assert(this.args.length == 3);
             if (this.args[0].evaluate(ctx).booleanValue()) {
                 return this.args[1].evaluate(ctx);
-            } else {
-                return this.args[2].evaluate(ctx);
             }
+
+            return this.args[2].evaluate(ctx);
         },
 
         // ext-cardinal() evaluates its single argument as a number, and
         // returns the current node that many times. It can be used in the
         // select attribute to iterate over an integer range.
 
-        'ext-cardinal'(ctx) {
+        'ext-cardinal'(ctx: ExprContext) {
             assert(this.args.length >= 1);
             const c = this.args[0].evaluate(ctx).numberValue();
             const ret = [];
             for (let i = 0; i < c; ++i) {
-                ret.push(ctx.node);
+                ret.push(ctx.nodelist[ctx.position]);
             }
             return new NodeSetValue(ret);
         }
@@ -391,8 +391,8 @@ export class FunctionCallExpr extends Expression {
         const f = this.xpathfunctions[fn];
         if (f) {
             return f.call(this, ctx);
-        } else {
-            return new BooleanValue(false);
         }
+
+        return new BooleanValue(false);
     }
 }

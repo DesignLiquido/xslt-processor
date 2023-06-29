@@ -4,6 +4,7 @@ import { NodeTestAny } from "../node-test-any";
 import { xpathAxis } from "../tokens";
 import { Expression } from "./expression";
 import { XPath } from "../xpath";
+import { XNode } from "../../dom";
 
 export class LocationExpr extends Expression {
     absolute: boolean;
@@ -61,16 +62,16 @@ export class LocationExpr extends Expression {
         return null;
     }
 
-    evaluate(ctx: ExprContext) {
-        let start;
+    evaluate(context: ExprContext) {
+        let start: XNode;
         if (this.absolute) {
-            start = ctx.root;
+            start = context.root;
         } else {
-            start = ctx.node;
+            start = context.nodelist[context.position];
         }
 
         const nodes = [];
-        this.xPath.xPathStep(nodes, this.steps, 0, start, ctx);
+        this.xPath.xPathStep(nodes, this.steps, 0, start, context);
         return new NodeSetValue(nodes);
     }
 }

@@ -13,10 +13,10 @@ export class XNode {
     childNodes: XNode[];
     nodeType: any;
     nodeName: string;
-    nodeValue: string;
+    nodeValue: any;
     transformedNodeType: any;
     transformedNodeName: string;
-    transformedNodeValue: string;
+    transformedNodeValue: any;
     ownerDocument: any;
     namespaceURI: any;
     prefix: any;
@@ -278,7 +278,7 @@ export class XNode {
         this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
     }
 
-    getAttribute(name: any) {
+    getAttributeValue(name: any): any {
         for (let i = 0; i < this.attributes.length; ++i) {
             if (this.attributes[i].nodeName == name) {
                 return this.attributes[i].nodeValue;
@@ -414,7 +414,7 @@ export class XNode {
         domTraverseElements(
             this,
             (node: any) => {
-                if (node.getAttribute('id') == id) {
+                if (node.getAttributeValue('id') == id) {
                     ret = node;
                     return false;
                 }

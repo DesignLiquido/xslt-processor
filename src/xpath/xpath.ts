@@ -926,7 +926,7 @@ export class XPath {
 
     // Utility function to sort a list of nodes. Used by xsltSort() and
     // nxslSelect().
-    xPathSort(input: any, sort: any) {
+    xPathSort(input: ExprContext, sort: any) {
         if (sort.length == 0) {
             return;
         }
@@ -939,7 +939,7 @@ export class XPath {
                 node,
                 key: []
             };
-            const context = input.clone(node, 0, [node]);
+            const context = input.clone([node], 0);
 
             for (const s of sort) {
                 const value = s.expr.evaluate(context);
@@ -1000,9 +1000,9 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: any) {
+    xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: ExprContext) {
         const s = steps[step];
-        const ctx2 = ctx.clone(input);
+        const ctx2 = ctx.clone([input], 0);
 
         if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
             let nodelist = s.evaluate(ctx2).nodeSetValue();
@@ -1016,17 +1016,16 @@ export class XPath {
             const nLength = nodelist.length;
             const pLength = s.predicate.length;
             nodelistLoop: for (let i = 0; i < nLength; ++i) {
-                const n = nodelist[i];
                 for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(n, i, nodelist)).booleanValue()) {
+                    if (!s.predicate[j].evaluate(ctx.clone(nodelist, i)).booleanValue()) {
                         continue nodelistLoop;
                     }
                 }
                 // n survived the predicate tests!
                 if (step == steps.length - 1) {
-                    nodes.push(n);
+                    nodes.push(nodelist[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, n, ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
                 }
                 if (nodes.length > 0) {
                     break;

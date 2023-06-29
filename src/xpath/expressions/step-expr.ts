@@ -38,8 +38,8 @@ export class StepExpr extends Expression {
         }
     }
 
-    evaluate(ctx: ExprContext) {
-        const input = ctx.node;
+    evaluate(context: ExprContext) {
+        const input = context.nodelist[context.position];
         let nodelist = [];
         let skipNodeTest = false;
 
@@ -65,7 +65,7 @@ export class StepExpr extends Expression {
                         copyArray(nodelist, input.attributes);
                     } else {
                         if (this.nodetest.name == 'style') {
-                            const value = input.getAttribute('style');
+                            const value = input.getAttributeValue('style');
                             if (value && typeof value != 'string') {
                                 // this is the case where indexing into the attributes array
                                 // doesn't give us the attribute node in IE - we create our own
@@ -81,7 +81,7 @@ export class StepExpr extends Expression {
                 }
             } else {
                 // all-attributes step
-                if (ctx.ignoreAttributesWithoutValue) {
+                if (context.ignoreAttributesWithoutValue) {
                     copyArrayIgnoringAttributesWithoutValue(nodelist, input.attributes);
                 } else {
                     copyArray(nodelist, input.attributes);
@@ -90,14 +90,14 @@ export class StepExpr extends Expression {
         } else if (this.axis == xpathAxis.CHILD) {
             copyArray(nodelist, input.childNodes);
         } else if (this.axis == xpathAxis.DESCENDANT_OR_SELF) {
-            if (this.nodetest.evaluate(ctx).booleanValue()) {
+            if (this.nodetest.evaluate(context).booleanValue()) {
                 nodelist.push(input);
             }
-            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, context.ignoreNonElementNodesForNTA);
             this.xPath.xPathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
         } else if (this.axis == xpathAxis.DESCENDANT) {
-            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, ctx.ignoreNonElementNodesForNTA);
+            let tagName = this.xPath.xPathExtractTagNameFromNodeTest(this.nodetest, context.ignoreNonElementNodesForNTA);
             this.xPath.xPathCollectDescendants(nodelist, input, tagName);
             if (tagName) skipNodeTest = true;
         } else if (this.axis == xpathAxis.FOLLOWING) {
@@ -139,21 +139,20 @@ export class StepExpr extends Expression {
             let nodelist0 = nodelist;
             nodelist = [];
             for (let i = 0; i < nodelist0.length; ++i) {
-                let n = nodelist0[i];
-                if (this.nodetest.evaluate(ctx.clone(n, i, nodelist0)).booleanValue()) {
-                    nodelist.push(n);
+                if (this.nodetest.evaluate(context.clone(nodelist0, i)).booleanValue()) {
+                    nodelist.push(nodelist0[i]);
                 }
             }
         }
 
         // process predicates
-        if (!ctx.returnOnFirstMatch) {
+        if (!context.returnOnFirstMatch) {
             for (let i = 0; i < this.predicate.length; ++i) {
                 let nodelist0 = nodelist;
                 nodelist = [];
                 for (let ii = 0; ii < nodelist0.length; ++ii) {
                     let n = nodelist0[ii];
-                    if (this.predicate[i].evaluate(ctx.clone(n, ii, nodelist0)).booleanValue()) {
+                    if (this.predicate[i].evaluate(context.clone(nodelist0, ii)).booleanValue()) {
                         nodelist.push(n);
                     }
                 }
