@@ -1,75 +1,120 @@
 <html>
-  <head>
-    <script src="../test_dist/xpath_script.js" language="JavaScript"></script>
-  </head>
-  <body onload="load_expr()">
-    <form onsubmit="xpath_test(this);return false" action="javascript:void(0)">
-      <select id="s" multiple="1" size="30" name="cases"></select>
-      <input type="submit" value="parse" align="top"/>
-    </form>
-    <script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.0.0/xslt-processor.js"></script>
-    <script>
-      // Copyright 2023 Design Liquido
-      // Copyright 2018 Johannes Wilm
-      // Copyright 2005 Google Inc.
-      // All Rights Reserved
-      //
-      // Tests for the XPath parser. To run the test, open the file from the
-      // file system. No server support is required.
-      //
-      //
-      // Author: Steffen Meschkat <mesch@google.com>
-      import {
-          Log
-      } from "./simplelog.js"
-      import {
-          xpathParse
-      } from "../src/xpath.js"
-      import {
-          expr
-      } from "../tests_src/xpath_unittest.js"
-      import {
-          parseTree
-      } from "../src/xpathdebug.js"
+    <head>
+        <script type="application/javascript" src="js/xslt-processor.js"></script>
+        <script>
+            // Copyright 2023 Design Liquido
+            // Copyright 2018 Johannes Wilm
+            // Copyright 2005 Google Inc.
+            // All Rights Reserved
+            //
+            // Tests for the XPath parser. To run the test, open the file from the
+            // file system. No server support is required.
+            //
+            //
+            // Author: Steffen Meschkat <mesch@google.com>
+            window.logging = true;
+            window.xpathdebug = true;
 
-      window.logging = true;
-      window.xpathdebug = true;
+            class Log {
+                constructor() {
+                    this.lines = [];
+                }
 
-      window.load_expr = () => {
-          const s = document.getElementById('s');
-          for (let i = 0; i < expr.length; ++i) {
-              const o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
-              s.options[s.options.length] = o;
-          }
-          s.selectedIndex = 0;
-      }
+                static write(s) {
+                    this.lines.push(globalThis.XsltProcessor.xmlEscapeText(s));
+                    this.show();
+                }
 
-      let log = new Log()
+                // Writes the given XML with every tag on a new line.
+                static writeXML(xml) {
+                    const s0 = xml.replace(/</g, '\n<');
+                    const s1 = global.XsltProcessor.xmlEscapeText(s0);
+                    const s2 = s1.replace(/\s*\n(\s|\n)*/g, '<br/>');
+                    this.lines.push(s2);
+                    this.show();
+                }
 
-      window.xpath_test = form => {
-          log.clear();
-          try {
-              const i = form.cases.selectedIndex;
-              const options = form.cases.options;
+                // Writes without any escaping
+                static writeRaw(s) {
+                    this.lines.push(s);
+                    this.show();
+                }
 
-              const text = options[i].value;
-              log.writeRaw(`<tt><b>${text}</b></tt>`);
+                static clear() {
+                    const l = this.div();
+                    l.innerHTML = '';
+                    this.lines = [];
+                }
 
-              const expr = xpathParse(text, message => log.write(message));
-              log.writeRaw(`<tt><b>${text}</b></tt>`);
-              log.writeRaw(`<pre>${parseTree(expr, '')}</pre>`);
+                static show() {
+                    const l = this.div();
+                    l.innerHTML += `${this.lines.join('<br/>')}<br/>`;
+                    this.lines = [];
+                    l.scrollTop = l.scrollHeight;
+                }
 
-              options[i].selected = false;
-              if (i < options.length - 1) {
-                  options[i + 1].selected = true;
-              } else {
-                  options[0].selected = true;
-              }
+                static div() {
+                    let l = document.getElementById('log');
+                    if (!l) {
+                        l = document.createElement('div');
+                        l.id = 'log';
+                        l.style.position = 'absolute';
+                        l.style.right = '5px';
+                        l.style.top = '5px';
+                        l.style.width = '250px';
+                        l.style.height = '150px';
+                        l.style.overflow = 'auto';
+                        l.style.backgroundColor = '#f0f0f0';
+                        l.style.border = '1px solid gray';
+                        l.style.fontSize = '10px';
+                        l.style.padding = '5px';
+                        document.body.appendChild(l);
+                    }
+                    return l;
+                }
+            }
 
-          } catch (e) {
-              log.write(`EXCEPTION ${e}`);
-          }
-      }
-    </script>
-  </body>
+            window.load_expr = () => {
+                const s = document.getElementById('s');
+                const expr = ['<xsl:stylesheet>'];
+                for (let i = 0; i < expr.length; ++i) {
+                    const o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
+                    s.options[s.options.length] = o;
+                }
+                s.selectedIndex = 0;
+            };
+
+            let log = new Log();
+
+            window.xpath_test = (form) => {
+                log.clear();
+                try {
+                    const i = form.cases.selectedIndex;
+                    const options = form.cases.options;
+
+                    const text = options[i].value;
+                    log.writeRaw(`<tt><b>${text}</b></tt>`);
+
+                    const expr = xpathParse(text, (message) => log.write(message));
+                    log.writeRaw(`<tt><b>${text}</b></tt>`);
+                    log.writeRaw(`<pre>${parseTree(expr, '')}</pre>`);
+
+                    options[i].selected = false;
+                    if (i < options.length - 1) {
+                        options[i + 1].selected = true;
+                    } else {
+                        options[0].selected = true;
+                    }
+                } catch (e) {
+                    log.write(`EXCEPTION ${e}`);
+                }
+            };
+        </script>
+    </head>
+    <body onload="window.load_expr()">
+        <form onsubmit="window.xpath_test(this);return false" action="javascript:void(0)">
+            <select id="s" multiple="1" size="30" name="cases"></select>
+            <input type="submit" value="parse" align="top" />
+        </form>
+    </body>
 </html>
