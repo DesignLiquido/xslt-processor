@@ -22,14 +22,14 @@ import {
 } from '../src/dom/xmltoken';
 
 // Test if regexp matches the str and RegExp.exec returns exactly the match.
-const assertOk = (comment, regexp, str, match) => {
+const assertOk = (comment: any, regexp: any, str: any, match: any) => {
     assert.notEqual(regexp.exec(str), null, comment);
     assert.equal(regexp.exec(str)[0], match, comment);
     assert.ok(regexp.test(str), comment);
 };
 
 // Test if regexp doesn't match the str.
-const assertNg = (comment, regexp, str) => {
+const assertNg = (comment: any, regexp: any, str: any) => {
     assert.equal(regexp.exec(str), null, comment);
     assert.ok(!regexp.test(str), comment);
 };

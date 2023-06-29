@@ -3,7 +3,7 @@ export class BooleanValue {
 
     type: string;
 
-    constructor(value) {
+    constructor(value: any) {
         this.value = value;
         this.type = 'boolean';
     }

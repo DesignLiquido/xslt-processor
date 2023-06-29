@@ -4,8 +4,8 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { xmlParse } from '..';
 import { Xslt } from '../src/xslt';
+import { xmlParse } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);

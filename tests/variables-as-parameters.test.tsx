@@ -1,6 +1,7 @@
 import assert from 'assert';
-import { xmlParse } from '..';
+
 import { Xslt } from '../src/xslt';
+import { xmlParse } from '../src/dom';
 
 describe('variables-as-parameters', () => {
     it('variables-as-parameters 1', () => {

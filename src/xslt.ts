@@ -35,7 +35,6 @@
 // Original author: Steffen Meschkat <mesch@google.com>
 import he from 'he';
 
-import { xmlValue, xmlText, xmlOwnerDocument } from './dom/util';
 import {
     XDocument,
     XNode,
@@ -46,7 +45,10 @@ import {
     domCreateElement,
     domCreateTextNode,
     domGetAttribute,
-    domSetAttribute
+    domSetAttribute,
+    xmlOwnerDocument,
+    xmlText,
+    xmlValue
 } from './dom';
 import { ExprContext, XPath } from './xpath';
 
@@ -76,7 +78,7 @@ export class Xslt {
      * @param parameters Additional parameters to be set as variables.
      * @returns the processed document, as XML text in a string.
      */
-    xsltProcess(xmlDoc: XDocument, stylesheet: XDocument, parameters?: any[]) {
+    xsltProcess(xmlDoc: XDocument, stylesheet: XDocument, parameters?: any) {
         const output = domCreateDocumentFragment(new XDocument());
         const expressionContext = new ExprContext(xmlDoc);
         if (parameters && typeof parameters === 'object') {

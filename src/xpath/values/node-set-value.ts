@@ -1,4 +1,4 @@
-import { xmlValue } from "../../dom/util";
+import { xmlValue } from "../../dom";
 
 export class NodeSetValue {
     value: any;

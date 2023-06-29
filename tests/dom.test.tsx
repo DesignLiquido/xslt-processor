@@ -9,8 +9,7 @@
 //         Johannes Wilm <johannes@fiduswriter.org>
 import he from 'he';
 
-import { xmlParse } from '../src/dom';
-import { xmlText } from '../src/dom/util';
+import { xmlParse, xmlText } from '../src/dom';
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';

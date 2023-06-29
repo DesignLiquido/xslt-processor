@@ -17,8 +17,7 @@ import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
 import { ExprContext, XPath } from '../src/xpath';
-import { xmlValue } from '../src/dom/util';
-import { xmlParse } from '../src/dom';
+import { xmlParse, xmlValue } from '../src/dom';
 import { BooleanValue } from '../src/xpath/values/boolean-value';
 import { NumberValue } from '../src/xpath/values/number-value';
 import { StringValue } from '../src/xpath/values/string-value';

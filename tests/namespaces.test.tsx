@@ -4,8 +4,8 @@ import assert from 'assert';
 import React from 'react';
 import { dom } from 'isomorphic-jsx';
 
-import { xmlParse } from '..';
 import { Xslt } from '../src/xslt';
+import { xmlParse } from '../src/dom';
 
 // TODO:
 // "xsl" prefix for non-XSL namespace

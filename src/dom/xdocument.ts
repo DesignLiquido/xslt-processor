@@ -1,5 +1,13 @@
-import { DOM_ATTRIBUTE_NODE, DOM_CDATA_SECTION_NODE, DOM_COMMENT_NODE, DOM_DOCUMENT_FRAGMENT_NODE, DOM_DOCUMENT_NODE, DOM_ELEMENT_NODE, DOM_TEXT_NODE } from "../constants";
-import { XNode } from "./xnode";
+import {
+    DOM_ATTRIBUTE_NODE,
+    DOM_CDATA_SECTION_NODE,
+    DOM_COMMENT_NODE,
+    DOM_DOCUMENT_FRAGMENT_NODE,
+    DOM_DOCUMENT_NODE,
+    DOM_ELEMENT_NODE,
+    DOM_TEXT_NODE
+} from '../constants';
+import { XNode } from './xnode';
 
 export class XDocument extends XNode {
     documentElement: any;
@@ -16,16 +24,16 @@ export class XDocument extends XNode {
         this.documentElement = null;
     }
 
-    appendChild(node) {
+    appendChild(node: any) {
         super.appendChild(node);
         this.documentElement = this.childNodes[0];
     }
 
-    createElement(name) {
+    createElement(name: any) {
         return XNode.create(DOM_ELEMENT_NODE, name, null, this);
     }
 
-    createElementNS(namespace, name) {
+    createElementNS(namespace: any, name: any) {
         return XNode.create(DOM_ELEMENT_NODE, name, null, this, namespace);
     }
 
@@ -33,23 +41,23 @@ export class XDocument extends XNode {
         return XNode.create(DOM_DOCUMENT_FRAGMENT_NODE, '#document-fragment', null, this);
     }
 
-    createTextNode(value) {
+    createTextNode(value: any) {
         return XNode.create(DOM_TEXT_NODE, '#text', value, this);
     }
 
-    createAttribute(name) {
+    createAttribute(name: any) {
         return XNode.create(DOM_ATTRIBUTE_NODE, name, null, this);
     }
 
-    createAttributeNS(namespace, name) {
+    createAttributeNS(namespace: any, name: any) {
         return XNode.create(DOM_ATTRIBUTE_NODE, name, null, this, namespace);
     }
 
-    createComment(data) {
+    createComment(data: any) {
         return XNode.create(DOM_COMMENT_NODE, '#comment', data, this);
     }
 
-    createCDATASection(data) {
+    createCDATASection(data: any) {
         return XNode.create(DOM_CDATA_SECTION_NODE, '#cdata-section', data, this);
     }
 }

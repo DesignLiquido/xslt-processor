@@ -1,6 +1,6 @@
 import assert from 'assert';
-import { xmlParse } from '../src/dom';
-import { xmlText } from '../src/dom/util';
+
+import { xmlParse, xmlText } from '../src/dom';
 
 describe('escape', () => {
     it('accepts already escaped ampersand', () => {

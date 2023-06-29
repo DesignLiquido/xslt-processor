@@ -3,9 +3,9 @@
 // where we can't reuse the HTML DOM for parsing our own XML, and for
 // Safari, where it is too expensive to have the template processor
 
-import { DOM_ATTRIBUTE_NODE } from "../constants";
-import { domTraverseElements } from "./functions";
-import { XDocument } from "./xdocument";
+import { DOM_ATTRIBUTE_NODE } from '../constants';
+import { domTraverseElements } from './functions';
+import { XDocument } from './xdocument';
 
 // operate on native DOM nodes.
 export class XNode {
@@ -14,6 +14,9 @@ export class XNode {
     nodeType: any;
     nodeName: string;
     nodeValue: string;
+    transformedNodeType: any;
+    transformedNodeName: string;
+    transformedNodeValue: string;
     ownerDocument: any;
     namespaceURI: any;
     prefix: any;
@@ -33,7 +36,7 @@ export class XNode {
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
 
-    init(type, name, value, owner, namespace) {
+    init(type: any, name: string, value: string, owner: any, namespace: any) {
         this.nodeType = type - 0;
         this.nodeName = `${name}`;
         this.nodeValue = `${value}`;
@@ -51,9 +54,9 @@ export class XNode {
     qualifiedNameToParts(name) {
         if (name.includes(':')) {
             return name.split(':');
-        } else {
-            return [null, name];
         }
+
+        return [null, name];
     }
 
     static recycle(node: any) {

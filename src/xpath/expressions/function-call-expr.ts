@@ -1,5 +1,6 @@
-import { assert, regExpEscape, xmlValue } from "../../dom/util";
-import { ExprContext } from "..";
+import { xmlValue } from "../../dom";
+import { assert, regExpEscape } from "../../dom/util";
+import { ExprContext } from "../expr-context";
 import { BooleanValue } from "../values/boolean-value";
 import { NodeSetValue } from "../values/node-set-value";
 import { NumberValue } from "../values/number-value";

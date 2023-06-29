@@ -1,4 +1,4 @@
-import { xmlValue } from "../../dom/util";
+import { xmlValue } from "../../dom";
 import { BooleanValue } from "../values/boolean-value";
 import { NumberValue } from "../values/number-value";
 import { Expression } from "./expression";
@@ -15,7 +15,7 @@ export class BinaryExpr extends Expression {
         this.op = op;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: any) {
         let ret;
         switch (this.op.value) {
             case 'or':

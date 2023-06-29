@@ -1,7 +1,8 @@
 /* eslint-disable no-useless-escape */
 import assert from 'assert';
-import { xmlParse } from '..';
+
 import { Xslt } from '../src/xslt';
+import { xmlParse } from '../src/dom';
 
 describe('xml-to-json', () => {
     it('xml-to-json() without namespace test', () => {
