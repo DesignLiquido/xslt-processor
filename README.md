@@ -12,7 +12,7 @@ _A JavaScript XSLT processor without native library dependencies._
       <img src="https://img.shields.io/npm/v/xslt-processor" />
     </a>
     <img src="https://img.shields.io/npm/dw/xslt-processor" />
-    <img src="https://img.shields.io/github/license/xslt-processor" />
+    <img src="https://img.shields.io/github/license/DesignLiquido/xslt-processor" />
   </p>
 
 ## How to
