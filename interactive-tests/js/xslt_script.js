@@ -9,10 +9,10 @@
 // Author: Steffen Meschkat <mesch@google.com>
 import {
     xmlParse
-} from "../src/dom"
+} from "../../src/dom"
 import {
     xsltProcess
-} from "../src/xslt"
+} from "../../src/xslt"
 
 window.logging = true;
 window.xsltdebug = true;

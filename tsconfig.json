@@ -18,7 +18,7 @@
         "jest.config.ts",
         "rollup.config.js",
         "dist/**/*",
-        "test_src/**/*",
+        "interactive-tests/js/**/*",
         "tests/**/*"
     ]
 }

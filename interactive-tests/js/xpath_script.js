@@ -18,7 +18,7 @@ import {
 } from "../tests_src/xpath_unittest.js"
 import {
     parseTree
-} from "../src/xpathdebug.js"
+} from "../../src/xpathdebug.js"
 
 window.logging = true;
 window.xpathdebug = true;
