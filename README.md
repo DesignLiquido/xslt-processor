@@ -2,6 +2,19 @@
 
 _A JavaScript XSLT processor without native library dependencies._
 
+  <p align="center">
+    <a href="https://github.com/DesignLiquido/xslt-processor/issues" target="_blank">
+      <img src="https://img.shields.io/github/issues/Designliquido/xslt-processor" />
+    </a>
+    <img src="https://img.shields.io/github/stars/Designliquido/xslt-processor" />
+    <img src="https://img.shields.io/github/forks/Designliquido/xslt-processor" />
+    <a href="https://www.npmjs.com/package/xslt-processor" target="_blank">
+      <img src="https://img.shields.io/npm/v/xslt-processor" />
+    </a>
+    <img src="https://img.shields.io/npm/dw/xslt-processor" />
+    <img src="https://img.shields.io/github/license/xslt-processor" />
+  </p>
+
 ## How to
 
 Install xslt-processor using npm or yarn:
