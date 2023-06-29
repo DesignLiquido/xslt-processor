@@ -21,7 +21,9 @@
     "url": "git+https://github.com/DesignLiquido/xslt-processor.git"
   },
   "keywords": [
-    "xslt"
+    "xslt",
+    "xpath",
+    "xml"
   ],
   "author": "Johannes Wilm",
   "contributors": [

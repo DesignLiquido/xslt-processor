@@ -12,12 +12,6 @@ import he from 'he';
 import { DOM_ELEMENT_NODE } from "../constants";
 
 import {
-    domSetAttribute,
-    domAppendChild,
-    domCreateTextNode,
-    domCreateElement,
-    domCreateCDATASection,
-    domCreateComment,
     namespaceMapAt
 } from './util';
 import { XDocument } from "./xdocument";
@@ -29,12 +23,46 @@ import {
     XML11_NAME,
     XML11_ATTRIBUTE
 } from './xmltoken';
+import { XNode } from './xnode';
 
 const XML10_TAGNAME_REGEXP = new RegExp(`^(${XML10_NAME})`);
 const XML10_ATTRIBUTE_REGEXP = new RegExp(XML10_ATTRIBUTE, 'g');
 
 const XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
 const XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
+
+// Wrapper around DOM methods so we can condense their invocations.
+export function domGetAttribute(node: any, name: any) {
+    return node.getAttribute(name);
+}
+
+export function domSetAttribute(node: any, name: any, value: any) {
+    return node.setAttribute(name, value);
+}
+
+export function domAppendChild(node: XNode, child: any) {
+    return node.appendChild(child);
+}
+
+export function domCreateTextNode(doc: any, text: any) {
+    return doc.createTextNode(text);
+}
+
+export function domCreateElement(doc: any, name: any) {
+    return doc.createElement(name);
+}
+
+export function domCreateCDATASection(doc: any, data: any) {
+    return doc.createCDATASection(data);
+}
+
+export function domCreateComment(doc: any, text: any) {
+    return doc.createComment(text);
+}
+
+export function domCreateDocumentFragment(doc: XDocument) {
+    return doc.createDocumentFragment();
+}
 
 // Traverses the element nodes in the DOM section underneath the given
 // node and invokes the given callbacks as methods on every element

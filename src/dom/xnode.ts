@@ -92,7 +92,7 @@ export class XNode {
         return new XNode(type, name, value, owner, namespace);
     }
 
-    appendChild(node) {
+    appendChild(node: any) {
         // firstChild
         if (this.childNodes.length == 0) {
             this.firstChild = node;

@@ -19,6 +19,7 @@ import {
 } from '../constants';
 import { FunctionCallExpr, BinaryExpr, UnaryMinusExpr, NumberExpr } from '../xpath/expressions';
 import { XDocument } from './xdocument';
+import { XNode } from './xnode';
 
 // Throws an exception if false.
 export function assert(b) {
@@ -200,45 +201,12 @@ function xmlEscapeAttr(s) {
  * @param {Node} node
  * @return {Document}
  */
-export function xmlOwnerDocument(node) {
+export function xmlOwnerDocument(node: any) {
     if (node.nodeType == DOM_DOCUMENT_NODE) {
         return node;
-    } else {
-        return node.ownerDocument;
     }
-}
 
-// Wrapper around DOM methods so we can condense their invocations.
-export function domGetAttribute(node: any, name: any) {
-    return node.getAttribute(name);
-}
-
-export function domSetAttribute(node: any, name: any, value: any) {
-    return node.setAttribute(name, value);
-}
-
-export function domAppendChild(node: any, child: any) {
-    return node.appendChild(child);
-}
-
-export function domCreateTextNode(doc: any, text: any) {
-    return doc.createTextNode(text);
-}
-
-export function domCreateElement(doc: any, name: any) {
-    return doc.createElement(name);
-}
-
-export function domCreateCDATASection(doc: any, data: any) {
-    return doc.createCDATASection(data);
-}
-
-export function domCreateComment(doc: any, text: any) {
-    return doc.createComment(text);
-}
-
-export function domCreateDocumentFragment(doc: XDocument) {
-    return doc.createDocumentFragment();
+    return node.ownerDocument;
 }
 
 /**
