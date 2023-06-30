@@ -14,24 +14,38 @@ export class XNode {
     nodeType: any;
     nodeName: string;
     nodeValue: any;
-    transformedNodeType: any;
-    transformedNodeName: string;
-    transformedNodeValue: any;
+    firstChild: XNode;
+    lastChild: XNode;
+    nextSibling: XNode;
+    previousSibling: XNode;
+
     ownerDocument: any;
     namespaceURI: any;
     prefix: any;
-    localName: any;
-    firstChild: any;
-    lastChild: any;
-    nextSibling: any;
-    previousSibling: any;
-    parentNode: any;
+    localName: string;
+
+    parentNode: XNode;
+
+    transformedAttributes: XNode[];
+    transformedChildNodes: XNode[];
+    transformedNodeType: any;
+    transformedNodeName: string;
+    transformedNodeValue: any;
+    transformedFirstChild: XNode;
+    transformedLastChild: XNode;
+    transformedNextSibling: XNode;
+    transformedPreviousSibling: XNode;
+    transformedLocalName: string;
+
+    transformedParentNode: XNode;
 
     static _unusedXNodes: any[] = [];
 
     constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.attributes = [];
         this.childNodes = [];
+        this.transformedAttributes = [];
+        this.transformedChildNodes = [];
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
@@ -118,7 +132,7 @@ export class XNode {
         return newNode;
     }
 
-    appendChild(node: any) {
+    appendChild(node: XNode) {
         // firstChild
         if (this.childNodes.length == 0) {
             this.firstChild = node;
@@ -141,6 +155,31 @@ export class XNode {
 
         // childNodes
         this.childNodes.push(node);
+    }
+
+    appendTransformedChild(node: XNode) {
+        // firstChild
+        if (this.transformedChildNodes.length == 0) {
+            this.transformedFirstChild = node;
+        }
+
+        // previousSibling
+        node.transformedPreviousSibling = this.lastChild;
+
+        // nextSibling
+        node.transformedNextSibling = null;
+        if (this.transformedLastChild) {
+            this.transformedLastChild.transformedNextSibling = node;
+        }
+
+        // parentNode
+        node.transformedParentNode = this;
+
+        // lastChild
+        this.transformedLastChild = node;
+
+        // childNodes
+        this.transformedChildNodes.push(node);
     }
 
     replaceChild(newNode: any, oldNode: any) {
@@ -260,6 +299,17 @@ export class XNode {
         }
 
         this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
+    }
+
+    setTransformedAttribute(name: any, value: any) {
+        for (let i = 0; i < this.transformedAttributes.length; ++i) {
+            if (this.transformedAttributes[i].nodeName == name) {
+                this.transformedAttributes[i].nodeValue = `${value}`;
+                return;
+            }
+        }
+
+        this.transformedAttributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {

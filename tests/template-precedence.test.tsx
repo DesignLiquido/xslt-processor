@@ -10,7 +10,7 @@ import { xmlParse } from '../src/dom/functions';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('template-precedence', () => {
-  it.skip('XSLT template precedence test', () => {
+  it('XSLT template precedence test', () => {
     const xmlString = <root>
       <test name="test1" />
       <test name="test2" />

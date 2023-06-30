@@ -52,6 +52,7 @@ import {
     UnionExpr,
     VariableExpr
 } from './expressions';
+
 import { NodeTestAny } from './node-test-any';
 import { NodeTestComment } from './node-test-comment';
 import { NodeTestElementOrAttribute } from './node-test-element-or-attribute';
@@ -609,22 +610,22 @@ export class XPath {
     /**
      * The entry point for the parser.
      * @param expr a string that contains an XPath expression.
-     * @param xpathLog TODO
+     * @param xPathLog TODO
      * @returns an expression object that can be evaluated with an
      * expression context.
      */
     xPathParse(
         expr,
-        xpathLog = (message: string) => {
+        xPathLog = (message: string) => {
             // console.log(message);
         }
     ) {
-        xpathLog(`parse ${expr}`);
-        this.xPathParseInit(xpathLog);
+        xPathLog(`parse ${expr}`);
+        this.xPathParseInit(xPathLog);
 
         const cached = this.xPathCacheLookup(expr);
         if (cached) {
-            xpathLog(' ... cached');
+            xPathLog(' ... cached');
             return cached;
         }
 
@@ -637,14 +638,14 @@ export class XPath {
         if (expr.match(/^(\$|@)?\w+$/i)) {
             let ret = this.makeSimpleExpr(expr);
             this.xPathParseCache[expr] = ret;
-            xpathLog(' ... simple');
+            xPathLog(' ... simple');
             return ret;
         }
 
         if (expr.match(/^\w+(\/\w+)*$/i)) {
             let ret = this.makeSimpleExpr2(expr);
             this.xPathParseCache[expr] = ret;
-            xpathLog(' ... simple 2');
+            xPathLog(' ... simple 2');
             return ret;
         }
 
@@ -706,7 +707,7 @@ export class XPath {
 
             if (rule) {
                 expr = expr.substr(match.length);
-                xpathLog(`token: ${match} -- ${rule.label}`);
+                xPathLog(`token: ${match} -- ${rule.label}`);
                 ahead = {
                     tag: rule,
                     match,
@@ -714,17 +715,17 @@ export class XPath {
                     expr: this.makeTokenExpr(match)
                 };
             } else {
-                xpathLog('DONE');
+                xPathLog('DONE');
                 done = true;
             }
 
-            while (this.xPathReduce(stack, ahead, xpathLog)) {
+            while (this.xPathReduce(stack, ahead, xPathLog)) {
                 reduce_count++;
-                xpathLog(`stack: ${this.stackToString(stack)}`);
+                xPathLog(`stack: ${this.stackToString(stack)}`);
             }
         }
 
-        xpathLog(`stack: ${this.stackToString(stack)}`);
+        xPathLog(`stack: ${this.stackToString(stack)}`);
 
         // DGF any valid XPath should "reduce" to a single Expr token
         if (stack.length != 1) {
@@ -734,7 +735,7 @@ export class XPath {
         let result = stack[0].expr;
         this.xPathParseCache[cachekey] = result;
 
-        xpathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
+        xPathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
 
         return result;
     }

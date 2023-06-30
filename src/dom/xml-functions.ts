@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import { domGetAttributeValue } from './functions';
 import { XNode } from './xnode';
+import { XDocument } from './xdocument';
 
 // Returns the text value of a node; for nodes without children this
 // is the nodeValue, for nodes with children this is the concatenation
@@ -52,14 +53,19 @@ export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean
     return ret;
 }
 
-// Returns the representation of a node as XML text.
-export function xmlText(node: any, opt_cdata: boolean = false) {
+/**
+ * Returns the representation of a node as XML text.
+ * @param node The starting node.
+ * @param opt_cdata If using CDATA configuration.
+ * @returns The XML string.
+ */
+export function xmlText(node: XNode, opt_cdata: boolean = false) {
     const buf = [];
     xmlTextRecursive(node, buf, opt_cdata);
     return buf.join('');
 }
 
-function xmlTextRecursive(node: any, buf: any[], cdata: any) {
+function xmlTextRecursive(node: XNode, buf: any[], cdata: any) {
     if (node.nodeType == DOM_TEXT_NODE) {
         buf.push(xmlEscapeText(node.nodeValue));
     } else if (node.nodeType == DOM_CDATA_SECTION_NODE) {
@@ -95,12 +101,73 @@ function xmlTextRecursive(node: any, buf: any[], cdata: any) {
     }
 }
 
-function xmlFullNodeName(n: any) {
-    if (n.prefix && n.nodeName.indexOf(`${n.prefix}:`) != 0) {
-        return `${n.prefix}:${n.nodeName}`;
+/**
+ * Returns the representation of a node as XML text.
+ * @param node The starting node.
+ * @param opt_cdata If using CDATA configuration.
+ * @returns The XML string.
+ */
+export function xmlTransformedText(node: XNode, opt_cdata: boolean = false) {
+    const buffer = [];
+    xmlTransformedTextRecursive(node, buffer, opt_cdata);
+    return buffer.join('');
+}
+
+function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean) {
+    const nodeType = node.transformedNodeType || node.nodeType;
+    const nodeValue = node.transformedNodeValue || node.nodeValue;
+    if (nodeType == DOM_TEXT_NODE) {
+        buffer.push(xmlEscapeText(nodeValue));
+    } else if (nodeType == DOM_CDATA_SECTION_NODE) {
+        if (cdata) {
+            buffer.push(nodeValue);
+        } else {
+            buffer.push(`<![CDATA[${nodeValue}]]>`);
+        }
+    } else if (nodeType == DOM_COMMENT_NODE) {
+        buffer.push(`<!--${nodeValue}-->`);
+    } else if (nodeType == DOM_ELEMENT_NODE) {
+        buffer.push(`<${xmlFullNodeName(node)}`);
+
+        const attributes = node.transformedAttributes || node.attributes;
+        for (let i = 0; i < attributes.length; ++i) {
+            const attribute = attributes[i];
+            if (!attribute) {
+                continue;
+            }
+
+            const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
+            const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
+            if (attributeNodeName && attributeNodeValue) {
+                buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
+            }
+        }
+
+        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+        if (childNodes.length == 0) {
+            buffer.push('/>');
+        } else {
+            buffer.push('>');
+            for (let i = 0; i < childNodes.length; ++i) {
+                xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+            }
+            buffer.push(`</${xmlFullNodeName(node)}>`);
+        }
+    } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
+        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+        for (let i = 0; i < childNodes.length; ++i) {
+            xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+        }
+    }
+}
+
+function xmlFullNodeName(node: XNode) {
+    const nodeName = node.transformedNodeName || node.nodeName;
+    if (node.prefix && nodeName.indexOf(`${node.prefix}:`) != 0) {
+        return `${node.prefix}:${nodeName}`;
     }
 
-    return n.nodeName;
+    return nodeName;
 }
 
 /**
@@ -157,13 +224,17 @@ export function xmlGetAttribute(node: XNode, name: string) {
  * and other nodes: for the document node, the owner document is the
  * node itself, for all others it's the ownerDocument property.
  *
- * @param {Node} node
- * @return {Document}
+ * @param {XNode} node
+ * @return {XDocument}
  */
-export function xmlOwnerDocument(node: any) {
-    if (node.nodeType == DOM_DOCUMENT_NODE) {
-        return node;
+export function xmlOwnerDocument(node: XNode): XDocument {
+    if (node === null || node === undefined) {
+        throw new Error('Node has no valid owner document.');
     }
 
-    return node.ownerDocument;
+    if (node.nodeType === DOM_DOCUMENT_NODE) {
+        return node as XDocument;
+    }
+
+    return xmlOwnerDocument(node.ownerDocument);
 }
