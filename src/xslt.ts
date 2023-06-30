@@ -38,6 +38,7 @@ import {
     XDocument,
     XNode,
     domAppendChild,
+    domAppendTransformedChild,
     domCreateCDATASection,
     domCreateComment,
     domCreateDocumentFragment,
@@ -80,13 +81,10 @@ export class Xslt {
      * @returns the processed document, as XML text in a string.
      */
     xsltProcess(xmlDoc: XDocument, stylesheet: XDocument, parameters?: any) {
-        // const output = domCreateDocumentFragment(new XDocument());
         const output = new XDocument();
         output.appendChild(XNode.clone(xmlDoc.childNodes[0], output));
         const expressionContext = new ExprContext([output]);
 
-        // const output = domCreateDocumentFragment(new XDocument());
-        // const expressionContext = new ExprContext([xmlDoc]);
         if (parameters && typeof parameters === 'object') {
             for (const [key, value] of Object.entries(parameters)) {
                 expressionContext.setVariable(key, new StringValue(value));
@@ -458,8 +456,14 @@ export class Xslt {
     protected xsltPassThrough(context: ExprContext, template: any, output: XNode, outputDocument: XDocument) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
-                let node = domCreateTextNode(outputDocument, template.nodeValue);
-                domAppendChild(output, node);
+                const textNodeList = context.nodelist[context.position].transformedChildNodes.filter(n => n.nodeType === DOM_TEXT_NODE);
+                if (textNodeList.length > 0) {
+                    let node = textNodeList[0];
+                    node.transformedNodeValue = template.nodeValue;
+                } else {
+                    let node = domCreateTextNode(outputDocument, template.nodeValue);
+                    domAppendTransformedChild(context.nodelist[context.position], node);
+                }
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
