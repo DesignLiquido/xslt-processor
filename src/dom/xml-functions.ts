@@ -129,37 +129,69 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
     } else if (nodeType == DOM_COMMENT_NODE) {
         buffer.push(`<!--${nodeValue}-->`);
     } else if (nodeType == DOM_ELEMENT_NODE) {
-        buffer.push(`<${xmlFullNodeName(node)}`);
-
-        const attributes = node.transformedAttributes || node.attributes;
-        for (let i = 0; i < attributes.length; ++i) {
-            const attribute = attributes[i];
-            if (!attribute) {
-                continue;
-            }
-
-            const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
-            const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
-            if (attributeNodeName && attributeNodeValue) {
-                buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
-            }
-        }
-
-        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
-        if (childNodes.length == 0) {
-            buffer.push('/>');
+        // If node didn't have a transformed name, but its children
+        // had transformations, children should be present at output.
+        // This is called here "muted logic".
+        if (node.transformedNodeName !== null && node.transformedNodeName !== undefined) {
+            xmlElementLogicTrivial(node, buffer, cdata);
         } else {
-            buffer.push('>');
-            for (let i = 0; i < childNodes.length; ++i) {
-                xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
-            }
-            buffer.push(`</${xmlFullNodeName(node)}>`);
+            xmlElementLogicMuted(node, buffer, cdata);
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
         }
+    }
+}
+
+/**
+ * XML element output, trivial logic.
+ * @param node The XML node.
+ * @param buffer The XML buffer.
+ * @param cdata If using CDATA configuration.
+ */
+function xmlElementLogicTrivial(node: XNode, buffer: any[], cdata: boolean) {
+    buffer.push(`<${xmlFullNodeName(node)}`);
+
+    const attributes = node.transformedAttributes || node.attributes;
+    for (let i = 0; i < attributes.length; ++i) {
+        const attribute = attributes[i];
+        if (!attribute) {
+            continue;
+        }
+
+        const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
+        const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
+        if (attributeNodeName && attributeNodeValue) {
+            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
+        }
+    }
+
+    const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    if (childNodes.length == 0) {
+        buffer.push('/>');
+    } else {
+        buffer.push('>');
+        for (let i = 0; i < childNodes.length; ++i) {
+            xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+        }
+        buffer.push(`</${xmlFullNodeName(node)}>`);
+    }
+}
+
+/**
+ * XML element output, muted logic.
+ * In other words, this element should not be printed, but its
+ * children can be printed if they have transformed values.
+ * @param node The XML node.
+ * @param buffer The XML buffer.
+ * @param cdata If using CDATA configuration.
+ */
+function xmlElementLogicMuted(node: XNode, buffer: any[], cdata: boolean) {
+    const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    for (let i = 0; i < childNodes.length; ++i) {
+        xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
     }
 }
 

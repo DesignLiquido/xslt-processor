@@ -237,6 +237,7 @@ export class Xslt {
                     // by this new node.
                     const contextNode = context.nodelist[context.position];
                     node.childNodes = contextNode.childNodes;
+                    node.transformedNodeName = name;
                     domAppendTransformedChild(output, node);
                     this.xsltChildNodes(context, template, node);
                     break;
