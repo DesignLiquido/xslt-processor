@@ -111,7 +111,7 @@ export class Xslt {
         } else {
             let name,
                 top,
-                nameexpr,
+                nameExpr,
                 node,
                 select,
                 value,
@@ -169,8 +169,8 @@ export class Xslt {
                     }
                     break;
                 case 'attribute':
-                    nameexpr = xmlGetAttribute(template, 'name');
-                    name = this.xsltAttributeValue(nameexpr, context);
+                    nameExpr = xmlGetAttribute(template, 'name');
+                    name = this.xsltAttributeValue(nameExpr, context);
                     node = domCreateDocumentFragment(outputDocument);
                     this.xsltChildNodes(context, template, node);
                     value = xmlValue(node);
@@ -229,10 +229,15 @@ export class Xslt {
                 case 'decimal-format':
                     throw `not implemented: ${template.localName}`;
                 case 'element':
-                    nameexpr = xmlGetAttribute(template, 'name');
-                    name = this.xsltAttributeValue(nameexpr, context);
+                    nameExpr = xmlGetAttribute(template, 'name');
+                    name = this.xsltAttributeValue(nameExpr, context);
                     node = domCreateElement(outputDocument, name);
-                    domAppendChild(output, node);
+                    // Adds context children reference to this new node,
+                    // so then further transformations are also observed
+                    // by this new node.
+                    const contextNode = context.nodelist[context.position];
+                    node.childNodes = contextNode.childNodes;
+                    domAppendTransformedChild(output, node);
                     this.xsltChildNodes(context, template, node);
                     break;
                 case 'fallback':

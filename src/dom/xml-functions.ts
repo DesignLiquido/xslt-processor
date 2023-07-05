@@ -117,7 +117,9 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
-        buffer.push(xmlEscapeText(nodeValue));
+        if (nodeValue.trim() !== '') {
+            buffer.push(xmlEscapeText(nodeValue));
+        }
     } else if (nodeType == DOM_CDATA_SECTION_NODE) {
         if (cdata) {
             buffer.push(nodeValue);
