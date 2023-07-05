@@ -927,25 +927,25 @@ export class XPath {
 
     // Utility function to sort a list of nodes. Used by xsltSort() and
     // nxslSelect().
-    xPathSort(input: ExprContext, sort: any) {
+    xPathSort(context: ExprContext, sort: any[]) {
         if (sort.length == 0) {
             return;
         }
 
         const sortlist = [];
 
-        for (let i = 0; i < input.contextSize(); ++i) {
-            const node = input.nodelist[i];
+        for (let i = 0; i < context.contextSize(); ++i) {
+            const node = context.nodelist[i];
             const sortitem = {
                 node,
                 key: []
             };
-            const context = input.clone([node], 0);
+            const clonedContext = context.clone([node], 0);
 
             for (const s of sort) {
-                const value = s.expr.evaluate(context);
+                const value = s.expr.evaluate(clonedContext);
 
-                let evalue;
+                let evalue: any;
                 if (s.type == 'text') {
                     evalue = value.stringValue();
                 } else if (s.type == 'number') {
@@ -974,8 +974,8 @@ export class XPath {
         for (let i = 0; i < sortlist.length; ++i) {
             nodes.push(sortlist[i].node);
         }
-        input.nodelist = nodes;
-        input.setNode(0);
+        context.nodelist = nodes;
+        context.setNode(0);
     }
 
     // Sorts by all order criteria defined. According to the JavaScript
@@ -993,7 +993,9 @@ export class XPath {
             const o = v1.key[i].order == 'descending' ? -1 : 1;
             if (v1.key[i].value > v2.key[i].value) {
                 return +1 * o;
-            } else if (v1.key[i].value < v2.key[i].value) {
+            }
+
+            if (v1.key[i].value < v2.key[i].value) {
                 return -1 * o;
             }
         }

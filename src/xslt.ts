@@ -340,12 +340,12 @@ export class Xslt {
      * sort order specified by xsl:sort child nodes of the current
      * template node. This happens before the operation specified by the
      * current template node is executed.
-     * @param input TODO
+     * @param context TODO
      * @param template TODO
      * @todo case-order is not implemented.
      */
-    protected xsltSort(input: any, template: any) {
-        const sort = [];
+    protected xsltSort(context: ExprContext, template: XNode) {
+        const sort: any[] = [];
 
         for (const c of template.childNodes) {
             if (c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'sort')) {
@@ -361,7 +361,7 @@ export class Xslt {
             }
         }
 
-        this.xPath.xPathSort(input, sort);
+        this.xPath.xPathSort(context, sort);
     }
 
     // Evaluates a variable or parameter and set it in the current input
@@ -417,19 +417,40 @@ export class Xslt {
 
     /**
      * Implements `xsl:for-each`.
-     * @param input TODO
+     * @param context TODO
      * @param template TODO
      * @param output TODO
      */
-    protected xsltForEach(input: ExprContext, template: any, output: any) {
+    protected xsltForEach(context: ExprContext, template: XNode, output: XNode) {
         const select = xmlGetAttribute(template, 'select');
-        const nodes = this.xPath.xPathEval(select, input).nodeSetValue();
-        const sortContext = input.clone(nodes, 0);
+        const nodes = this.xPath.xPathEval(select, context).nodeSetValue();
+        const sortContext = context.clone(nodes, 0);
         this.xsltSort(sortContext, template);
+
+        const parent = sortContext.nodelist[sortContext.position].parentNode;
+        parent.childNodes = sortContext.nodelist;
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             this.xsltChildNodes(sortContext.clone(sortContext.nodelist, i), template, output);
         }
+        // TODO: group nodes by parent node.
+        // const nodeGroups = this.groupBy(nodes, 'parentNode');
+
+        /* for (let [group, _nodes] of Object.entries(nodeGroups)) {
+            const sortContext = context.clone(_nodes, 0);
+            this.xsltSort(sortContext, template);
+
+            for (let i = 0; i < sortContext.contextSize(); ++i) {
+                this.xsltChildNodes(sortContext.clone(sortContext.nodelist, i), template, output);
+            }
+        } */
+    }
+
+    protected groupBy(xs: any, key: any) {
+        return xs.reduce((rv, x) => {
+          (rv[x[key]] = rv[x[key]] || []).push(x);
+          return rv;
+        }, {});
     }
 
     /**
