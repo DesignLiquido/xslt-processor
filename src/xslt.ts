@@ -238,6 +238,7 @@ export class Xslt {
                     const contextNode = context.nodelist[context.position];
                     node.childNodes = contextNode.childNodes;
                     node.transformedNodeName = name;
+
                     domAppendTransformedChild(output, node);
                     this.xsltChildNodes(context, template, node);
                     break;
@@ -364,15 +365,18 @@ export class Xslt {
         this.xPath.xPathSort(context, sort);
     }
 
-    // Evaluates a variable or parameter and set it in the current input
-    // context. Implements xsl:variable, xsl:param, and xsl:with-param.
-    //
-    // @param override flag that defines if the value computed here
-    // overrides the one already in the input context if that is the
-    // case. I.e. decides if this is a default value or a local
-    // value. xsl:variable and xsl:with-param override; xsl:param doesn't.
-
-    protected xsltVariable(input: any, template: any, override: any) {
+    /**
+     * Evaluates a variable or parameter and set it in the current input
+     * context. Implements `xsl:variable`, `xsl:param`, and `xsl:with-param`.
+     *
+     * @param input TODO
+     * @param template TODO
+     * @param override flag that defines if the value computed here
+     * overrides the one already in the input context if that is the
+     * case. I.e. decides if this is a default value or a local
+     * value. xsl:variable and xsl:with-param override; xsl:param doesn't.
+     */
+    protected xsltVariable(input: ExprContext, template: any, override: boolean) {
         const name = xmlGetAttribute(template, 'name');
         const select = xmlGetAttribute(template, 'select');
 

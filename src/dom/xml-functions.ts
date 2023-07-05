@@ -114,6 +114,7 @@ export function xmlTransformedText(node: XNode, opt_cdata: boolean = false) {
 }
 
 function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean) {
+    if (node.printed) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
@@ -138,11 +139,13 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
             xmlElementLogicMuted(node, buffer, cdata);
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+        const childNodes = node.transformedChildNodes.concat(node.childNodes);
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
         }
     }
+
+    node.printed = true;
 }
 
 /**

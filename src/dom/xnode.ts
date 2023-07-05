@@ -40,6 +40,8 @@ export class XNode {
 
     transformedParentNode: XNode;
 
+    printed: boolean;
+
     static _unusedXNodes: any[] = [];
 
     constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
@@ -47,6 +49,7 @@ export class XNode {
         this.childNodes = [];
         this.transformedAttributes = [];
         this.transformedChildNodes = [];
+        this.printed = false;
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }
