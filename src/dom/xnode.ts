@@ -35,6 +35,7 @@ export class XNode {
     transformedLastChild: XNode;
     transformedNextSibling: XNode;
     transformedPreviousSibling: XNode;
+    transformedPrefix: any;
     transformedLocalName: string;
 
     transformedParentNode: XNode;

@@ -197,8 +197,8 @@ function xmlElementLogicMuted(node: XNode, buffer: any[], cdata: boolean) {
 
 function xmlFullNodeName(node: XNode) {
     const nodeName = node.transformedNodeName || node.nodeName;
-    if (node.prefix && nodeName.indexOf(`${node.prefix}:`) != 0) {
-        return `${node.prefix}:${nodeName}`;
+    if (node.transformedPrefix && nodeName.indexOf(`${node.transformedPrefix}:`) != 0) {
+        return `${node.transformedPrefix}:${nodeName}`;
     }
 
     return nodeName;
