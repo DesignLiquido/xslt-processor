@@ -50,7 +50,8 @@ import {
     xmlGetAttribute,
     xmlOwnerDocument,
     xmlTransformedText,
-    xmlValue
+    xmlValue,
+    xmlValue2
 } from './dom';
 import { ExprContext, XPath } from './xpath';
 
@@ -103,7 +104,12 @@ export class Xslt {
      * @param output the root of the generated output, as DOM node.
      * @param _parameters Extra parameters.
      */
-    protected xsltProcessContext(context: ExprContext, template: XNode, output: XNode, _parameters?: { [key: string]: any }) {
+    protected xsltProcessContext(
+        context: ExprContext,
+        template: XNode,
+        output: XNode,
+        _parameters?: { [key: string]: any }
+    ) {
         const outputDocument = xmlOwnerDocument(output);
 
         if (!this.isXsltElement(template)) {
@@ -173,8 +179,8 @@ export class Xslt {
                     name = this.xsltAttributeValue(nameExpr, context);
                     node = domCreateDocumentFragment(outputDocument);
                     this.xsltChildNodes(context, template, node);
-                    value = xmlValue(node);
-                    domSetAttribute(output, name, value);
+                    value = xmlValue2(node);
+                    domSetTransformedAttribute(output, name, value);
                     break;
                 case 'attribute-set':
                     throw `not implemented: ${template.localName}`;
@@ -295,7 +301,7 @@ export class Xslt {
                 case 'text':
                     text = xmlValue(template);
                     node = domCreateTextNode(outputDocument, text);
-                    output.appendChild(node);
+                    output.appendTransformedChild(node);
                     break;
                 case 'value-of':
                     select = xmlGetAttribute(template, 'select');
@@ -321,19 +327,34 @@ export class Xslt {
     }
 
     /**
-     * Sets parameters defined by xsl:with-param child nodes of the
-     * current template node, in the current input context. This happens
-     * before the operation specified by the current template node is
-     * executed.
-     * @param input TODO
-     * @param template TODO
+     * Implements `xsl:copy` for all node types.
+     * @param {XNode} destination the node being copied to, part of output document
+     * @param {XNode} source the node being copied, part in input document
+     * @param {XDocument} destinationDocument dstDocument
+     * @returns {XNode|null} If an element node was created, the element node. Otherwise null.
      */
-    protected xsltWithParam(input: any, template: any) {
-        for (const c of template.childNodes) {
-            if (c.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
-                this.xsltVariable(input, c, true);
-            }
+    protected xsltCopy(destination: any, source: any, destinationDocument: any): XNode {
+        if (source.nodeType == DOM_ELEMENT_NODE) {
+            let node = domCreateElement(destinationDocument, source.nodeName);
+            node.transformedNodeName = source.nodeName;
+            domAppendTransformedChild(destination, node);
+            return node;
         }
+
+        if (source.nodeType == DOM_TEXT_NODE) {
+            let node = domCreateTextNode(destinationDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
+            let node = domCreateCDATASection(destinationDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_COMMENT_NODE) {
+            let node = domCreateComment(destinationDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
+            domSetTransformedAttribute(destination, source.nodeName, source.nodeValue);
+        }
+
+        return null;
     }
 
     /**
@@ -431,7 +452,12 @@ export class Xslt {
         const sortContext = context.clone(nodes, 0);
         this.xsltSort(sortContext, template);
 
-        const parent = sortContext.nodelist[sortContext.position].parentNode;
+        const nodesWithParent = sortContext.nodelist.filter((n) => n.parentNode !== null && n.parentNode !== undefined);
+        if (nodesWithParent.length <= 0) {
+            throw new Error('Nodes with no parents defined.');
+        }
+
+        const parent = nodesWithParent[0].parentNode;
         parent.childNodes = sortContext.nodelist;
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
@@ -452,8 +478,8 @@ export class Xslt {
 
     protected groupBy(xs: any, key: any) {
         return xs.reduce((rv, x) => {
-          (rv[x[key]] = rv[x[key]] || []).push(x);
-          return rv;
+            (rv[x[key]] = rv[x[key]] || []).push(x);
+            return rv;
         }, {});
     }
 
@@ -487,7 +513,9 @@ export class Xslt {
     protected xsltPassThrough(context: ExprContext, template: any, output: XNode, outputDocument: XDocument) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
-                const textNodeList = context.nodelist[context.position].transformedChildNodes.filter(n => n.nodeType === DOM_TEXT_NODE);
+                const textNodeList = context.nodelist[context.position].transformedChildNodes.filter(
+                    (n) => n.nodeType === DOM_TEXT_NODE
+                );
                 if (textNodeList.length > 0) {
                     let node = textNodeList[0];
                     node.transformedNodeValue = template.nodeValue;
@@ -498,7 +526,7 @@ export class Xslt {
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
-            if (context.nodelist[context.position].nodeName === "#document") {
+            if (context.nodelist[context.position].nodeName === '#document') {
                 node = context.nodelist[context.position].firstChild;
             } else {
                 node = context.nodelist[context.position];
@@ -523,7 +551,7 @@ export class Xslt {
 
     /**
      * Determines if a text node in the XSLT template document is to be
-     * stripped according to XSLT whitespace stipping rules.
+     * stripped according to XSLT whitespace stripping rules.
      * @see [XSLT], section 3.4.
      * @param template The XSLT template.
      * @returns TODO
@@ -591,8 +619,8 @@ export class Xslt {
 
     /**
      * Implements xsl:copy-of for node-set values of the select
-    // expression. Recurses down the source node tree, which is part of
-    // the input document.
+     * expression. Recurses down the source node tree, which is part of
+     * the input document.
      * @param {XNode} dst the node being copied to, part of output document
      * @param {XNode} src the node being copied, part in input document
      * @param {XDocument} dstDocument dstDocument
@@ -616,36 +644,6 @@ export class Xslt {
                 }
             }
         }
-    }
-
-    /**
-     * Implements xsl:copy for all node types.
-     * @param {XNode} dst the node being copied to, part of output document
-     * @param {XNode} src the node being copied, part in input document
-     * @param {XDocument} dstDocument dstDocument
-     * @returns {XNode|Null} If an element node was created, the element node. Otherwise null.
-     */
-    protected xsltCopy(dst: any, src: any, dstDocument: any) {
-        if (src.nodeType == DOM_ELEMENT_NODE) {
-            let node = domCreateElement(dstDocument, src.nodeName);
-            domAppendChild(dst, node);
-            return node;
-        }
-
-        if (src.nodeType == DOM_TEXT_NODE) {
-            let node = domCreateTextNode(dstDocument, src.nodeValue);
-            domAppendChild(dst, node);
-        } else if (src.nodeType == DOM_CDATA_SECTION_NODE) {
-            let node = domCreateCDATASection(dstDocument, src.nodeValue);
-            domAppendChild(dst, node);
-        } else if (src.nodeType == DOM_COMMENT_NODE) {
-            let node = domCreateComment(dstDocument, src.nodeValue);
-            domAppendChild(dst, node);
-        } else if (src.nodeType == DOM_ATTRIBUTE_NODE) {
-            domSetAttribute(dst, src.nodeName, src.nodeValue);
-        }
-
-        return null;
     }
 
     /**
@@ -685,6 +683,22 @@ export class Xslt {
         }
 
         return this.relativeXsltMatch(expr, context);
+    }
+
+    /**
+     * Sets parameters defined by xsl:with-param child nodes of the
+     * current template node, in the current input context. This happens
+     * before the operation specified by the current template node is
+     * executed.
+     * @param input TODO
+     * @param template TODO
+     */
+    protected xsltWithParam(input: any, template: any) {
+        for (const c of template.childNodes) {
+            if (c.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
+                this.xsltVariable(input, c, true);
+            }
+        }
     }
 
     private absoluteXsltMatch(levels: string[], expr: Expression, context: ExprContext) {

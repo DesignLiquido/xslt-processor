@@ -53,6 +53,43 @@ export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean
     return ret;
 }
 
+// TODO: Give a better name to this.
+export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolean = false) {
+    if (!node) {
+        return '';
+    }
+
+    let ret = '';
+    if (node.nodeType == DOM_TEXT_NODE || node.nodeType == DOM_CDATA_SECTION_NODE) {
+        ret += node.nodeValue;
+    } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
+        ret += node.nodeValue;
+    } else if (
+        node.nodeType == DOM_ELEMENT_NODE ||
+        node.nodeType == DOM_DOCUMENT_NODE ||
+        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE
+    ) {
+        if (!disallowBrowserSpecificOptimization) {
+            // IE, Safari, Opera, and friends
+            const innerText = node.innerText;
+            if (innerText != undefined) {
+                return innerText;
+            }
+            // Firefox
+            const textContent = node.textContent;
+            if (textContent != undefined) {
+                return textContent;
+            }
+        }
+        // pobrecito!
+        const len = node.transformedChildNodes.length;
+        for (let i = 0; i < len; ++i) {
+            ret += xmlValue(node.transformedChildNodes[i]);
+        }
+    }
+    return ret;
+}
+
 /**
  * Returns the representation of a node as XML text.
  * @param node The starting node.
@@ -139,7 +176,8 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
             xmlElementLogicMuted(node, buffer, cdata);
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-        const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        // const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
         }
@@ -167,7 +205,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], cdata: boolean) {
         const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
         const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
         if (attributeNodeName && attributeNodeValue) {
-            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
+            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attributeNodeValue)}"`);
         }
     }
 
