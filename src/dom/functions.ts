@@ -56,6 +56,10 @@ export function domCreateTextNode(node: XDocument, text: string) {
     return node.createTextNode(text);
 }
 
+export function domCreateTransformedTextNode(node: XDocument, text: string) {
+    return node.createTransformedTextNode(text);
+}
+
 export function domCreateElement(doc: any, name: any) {
     return doc.createElement(name);
 }

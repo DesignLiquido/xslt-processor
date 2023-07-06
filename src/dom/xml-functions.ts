@@ -44,10 +44,15 @@ export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean
                 return textContent;
             }
         }
-        // pobrecito!
-        const len = node.childNodes.length;
-        for (let i = 0; i < len; ++i) {
-            ret += xmlValue(node.childNodes[i]);
+
+        if (node.transformedChildNodes.length > 0) {
+            for (let i = 0; i < node.transformedChildNodes.length; ++i) {
+                ret += xmlValue(node.transformedChildNodes[i]);
+            }
+        } else {
+            for (let i = 0; i < node.childNodes.length; ++i) {
+                ret += xmlValue(node.childNodes[i]);
+            }
         }
     }
     return ret;
@@ -155,8 +160,8 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
-        if (nodeValue.trim() !== '') {
-            buffer.push(xmlEscapeText(nodeValue));
+        if (node.transformedNodeValue && node.transformedNodeValue.trim() !== '') {
+            buffer.push(xmlEscapeText(node.transformedNodeValue));
         }
     } else if (nodeType == DOM_CDATA_SECTION_NODE) {
         if (cdata) {
@@ -176,8 +181,8 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
             xmlElementLogicMuted(node, buffer, cdata);
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
-        // const childNodes = node.transformedChildNodes.concat(node.childNodes);
-        const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+        const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        // const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
         }

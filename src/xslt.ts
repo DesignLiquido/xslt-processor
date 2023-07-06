@@ -44,8 +44,8 @@ import {
     domCreateDocumentFragment,
     domCreateElement,
     domCreateTextNode,
+    domCreateTransformedTextNode,
     domGetAttributeValue,
-    domSetAttribute,
     domSetTransformedAttribute,
     xmlGetAttribute,
     xmlOwnerDocument,
@@ -300,14 +300,14 @@ export class Xslt {
                     break;
                 case 'text':
                     text = xmlValue(template);
-                    node = domCreateTextNode(outputDocument, text);
+                    node = domCreateTransformedTextNode(outputDocument, text);
                     output.appendTransformedChild(node);
                     break;
                 case 'value-of':
                     select = xmlGetAttribute(template, 'select');
                     const attribute = this.xPath.xPathEval(select, context);
                     value = attribute.stringValue();
-                    node = domCreateTextNode(outputDocument, value);
+                    node = domCreateTransformedTextNode(outputDocument, value);
                     context.nodelist[context.position].appendTransformedChild(node);
                     break;
                 case 'param':
@@ -342,7 +342,7 @@ export class Xslt {
         }
 
         if (source.nodeType == DOM_TEXT_NODE) {
-            let node = domCreateTextNode(destinationDocument, source.nodeValue);
+            let node = domCreateTransformedTextNode(destinationDocument, source.nodeValue);
             domAppendTransformedChild(destination, node);
         } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
             let node = domCreateCDATASection(destinationDocument, source.nodeValue);
