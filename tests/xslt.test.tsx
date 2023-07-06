@@ -44,7 +44,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSort);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('CAB', html);
+        assert.equal(html, 'CAB');
     });
 
     it('handles for-each sort ascending', () => {
@@ -63,7 +63,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSortAscending);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('ABC', html);
+        assert.equal(html, 'ABC');
     });
 
     it('handles for-each sort descending', () => {
@@ -82,7 +82,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltForEachSortDescending);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('CBA', html);
+        assert.equal(html, 'CBA');
     });
 
     it('applies templates', () => {
@@ -137,7 +137,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltGlobalVariables);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('xzyyy', html);
+        assert.equal(html, 'xzyyy');
     });
 
     it('handles top level output', () => {
@@ -158,7 +158,7 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltTopLevelOutput);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('<x y="z">k</x>', html);
+        assert.equal(html, '<x y="z">k</x>');
     });
 
     it('handles copy', () => {
@@ -180,6 +180,6 @@ describe('xslt', () => {
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltCopy);
         const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal('<item pos="2">A</item>' + '<item pos="3">B</item>' + '<item pos="1">C</item>', html);
+        assert.equal(html, '<item pos="2">A</item><item pos="3">B</item><item pos="1">C</item>');
     });
 });

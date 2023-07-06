@@ -36,16 +36,28 @@ export function domGetAttributeValue(node: any, name: any) {
     return node.getAttributeValue(name);
 }
 
-export function domSetAttribute(node: any, name: any, value: any) {
+export function domSetAttribute(node: XNode, name: any, value: any) {
     return node.setAttribute(name, value);
+}
+
+export function domSetTransformedAttribute(node: XNode, name: any, value: any) {
+    return node.setTransformedAttribute(name, value);
 }
 
 export function domAppendChild(node: XNode, child: any) {
     return node.appendChild(child);
 }
 
-export function domCreateTextNode(doc: any, text: any) {
-    return doc.createTextNode(text);
+export function domAppendTransformedChild(node: XNode, child: any) {
+    return node.appendTransformedChild(child);
+}
+
+export function domCreateTextNode(node: XDocument, text: string) {
+    return node.createTextNode(text);
+}
+
+export function domCreateTransformedTextNode(node: XDocument, text: string) {
+    return node.createTransformedTextNode(text);
 }
 
 export function domCreateElement(doc: any, name: any) {
