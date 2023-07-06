@@ -1,5 +1,4 @@
 export { XPath } from './xpath';
 export { Xslt } from './xslt';
-export { xmlParse } from './dom';
-export { xmlEscapeText } from './dom/util';
+export { xmlParse, xmlEscapeText } from './dom';
 export { ExprContext } from './xpath';
