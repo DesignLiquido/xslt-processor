@@ -128,7 +128,7 @@ export function xmlParse(xml: any) {
         } else {
             // VersionInfo is missing, or unknown version number.
             // TODO : Fallback to XML 1.0 or XML 1.1, or just return null?
-            throw 'VersionInfo is missing, or unknown version number.';
+            throw new Error('VersionInfo is missing, or unknown version number.');
         }
     } else {
         // When an XML declaration is missing it's an XML 1.0 document.
