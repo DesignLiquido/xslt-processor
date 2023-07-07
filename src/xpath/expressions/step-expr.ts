@@ -112,7 +112,7 @@ export class StepExpr extends Expression {
                 nodelist.push(n);
             }
         } else if (this.axis == xpathAxis.NAMESPACE) {
-            throw 'not implemented: axis namespace';
+            throw new Error('not implemented: axis namespace');
         } else if (this.axis == xpathAxis.PARENT) {
             if (input.parentNode) {
                 nodelist.push(input.parentNode);

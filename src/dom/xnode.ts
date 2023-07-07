@@ -9,6 +9,7 @@ import { XDocument } from './xdocument';
 
 // operate on native DOM nodes.
 export class XNode {
+    id: number;
     attributes: XNode[];
     childNodes: XNode[];
     nodeType: any;
@@ -45,6 +46,7 @@ export class XNode {
     static _unusedXNodes: any[] = [];
 
     constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
+        this.id = Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1;
         this.attributes = [];
         this.childNodes = [];
         this.transformedAttributes = [];
