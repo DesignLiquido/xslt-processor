@@ -3,31 +3,6 @@
 // Copyright 2005 Google Inc.
 // All Rights Reserved
 //
-//
-// An XSL-T processor written in JavaScript. The implementation is NOT
-// complete; some xsl element are left out.
-//
-// References:
-//
-// [XSLT] XSL-T Specification
-// <http://www.w3.org/TR/1999/REC-xslt-19991116>.
-//
-// [ECMA] ECMAScript Language Specification
-// <http://www.ecma-international.org/publications/standards/Ecma-262.htm>.
-//
-// The XSL processor API has one entry point, the function
-// xsltProcessContext(). It receives as arguments the starting point in the
-// input document as an XPath expression context, the DOM root node of
-// the XSL-T stylesheet, and a DOM node that receives the output.
-//
-// NOTE: Actually, XSL-T processing according to the specification is
-// defined as operation on text documents, not as operation on DOM
-// trees. So, strictly speaking, this implementation is not an XSL-T
-// processor, but the processing engine that needs to be complemented
-// by an XML parser and serializer in order to be complete. Those two
-// are found in the file xml.js.
-//
-//
 // TODO(mesch): add jsdoc comments. Use more coherent naming. Finish
 // remaining XSLT features.
 //
@@ -67,6 +42,30 @@ import {
 import { Expression } from './xpath/expressions/expression';
 import { StringValue, NodeSetValue } from './xpath/values';
 
+/**
+ * The main class for XSL-T processing. The implementation is NOT
+ * complete; some xsl element are left out.
+ *
+ * References:
+ *
+ * [XSLT] XSL-T Specification
+ * <http://www.w3.org/TR/1999/REC-xslt-19991116>.
+ *
+ * [ECMA] ECMAScript Language Specification
+ * <http://www.ecma-international.org/publications/standards/Ecma-262.htm>.
+ *
+ * The XSL processor API has one entry point, the function
+ * xsltProcessContext(). It receives as arguments the starting point in the
+ * input document as an XPath expression context, the DOM root node of
+ * the XSL-T stylesheet, and a DOM node that receives the output.
+ *
+ * NOTE: Actually, XSL-T processing according to the specification is
+ * defined as operation on text documents, not as operation on DOM
+ * trees. So, strictly speaking, this implementation is not an XSL-T
+ * processor, but the processing engine that needs to be complemented
+ * by an XML parser and serializer in order to be complete. Those two
+ * are found in the `dom` folder.
+ */
 export class Xslt {
     xPath: XPath;
 
