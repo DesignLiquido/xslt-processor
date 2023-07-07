@@ -41,6 +41,7 @@ import {
 } from './constants';
 import { Expression } from './xpath/expressions/expression';
 import { StringValue, NodeSetValue } from './xpath/values';
+import { LocationExpr } from './xpath/expressions';
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
@@ -68,9 +69,13 @@ import { StringValue, NodeSetValue } from './xpath/values';
  */
 export class Xslt {
     xPath: XPath;
+    outputMethod: string;
+    outputOmitXmlDeclaration: string;
 
     constructor() {
         this.xPath = new XPath();
+        this.outputMethod = "xml";
+        this.outputOmitXmlDeclaration = "no";
     }
 
     /**
@@ -273,10 +278,8 @@ export class Xslt {
                 case 'otherwise':
                     throw `error if here: ${template.localName}`;
                 case 'output':
-                    // Ignored. -- Since we operate on the DOM, and all further use
-                    // of the output of the XSL transformation is determined by the
-                    // browser that we run in, this parameter is not applicable to
-                    // this implementation.
+                    this.outputMethod = xmlGetAttribute(template, 'method');
+                    this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     break;
                 case 'preserve-space':
                     throw `not implemented: ${template.localName}`;
@@ -656,32 +659,41 @@ export class Xslt {
     protected xsltMatch(match: string, context: ExprContext) {
         const expr = this.xPath.xPathParse(match);
 
-        if (expr.steps.length <= 0) {
+        if (expr instanceof LocationExpr) {
+            return this.xsltLocationExpressionMatch(match, expr, context);
+        }
+
+        // TODO: Other expressions
+        return true;
+    }
+
+    private xsltLocationExpressionMatch(match: string, expression: LocationExpr, context: ExprContext) {
+        if (expression === undefined || expression.steps === undefined || expression.steps.length <= 0) {
             throw new Error('Error resolving XSLT match: Location Expression should have steps.');
         }
 
-        const firstStep = expr.steps[0];
+        const firstStep = expression.steps[0];
 
         // Shortcut for the most common case.
         if (
-            expr.steps &&
-            !expr.absolute &&
-            expr.steps.length == 1 &&
+            expression.steps &&
+            !expression.absolute &&
+            expression.steps.length == 1 &&
             firstStep.axis == 'child' &&
             firstStep.predicate.length === 0
         ) {
             return firstStep.nodetest.evaluate(context).booleanValue();
         }
 
-        if (expr.absolute && firstStep.axis !== 'self') {
+        if (expression.absolute && firstStep.axis !== 'self') {
             // TODO: `xPathCollectDescendants()`?
             const levels = match.split('/');
             if (levels.length > 1) {
-                return this.absoluteXsltMatch(levels, expr, context);
+                return this.absoluteXsltMatch(levels, expression, context);
             }
         }
 
-        return this.relativeXsltMatch(expr, context);
+        return this.relativeXsltMatch(expression, context);
     }
 
     /**

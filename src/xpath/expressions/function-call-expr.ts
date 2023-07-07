@@ -12,25 +12,25 @@ export class FunctionCallExpr extends Expression {
     args: any[];
 
     xpathfunctions = {
-        last(ctx) {
+        last(ctx: ExprContext) {
             assert(this.args.length == 0);
             // NOTE(mesch): XPath position starts at 1.
             return new NumberValue(ctx.contextSize());
         },
 
-        position(ctx) {
+        position(ctx: ExprContext) {
             assert(this.args.length == 0);
             // NOTE(mesch): XPath position starts at 1.
             return new NumberValue(ctx.position + 1);
         },
 
-        count(ctx) {
+        count(ctx: ExprContext) {
             assert(this.args.length == 1);
             const v = this.args[0].evaluate(ctx);
             return new NumberValue(v.nodeSetValue().length);
         },
 
-        'generate-id'(_ctx) {
+        'generate-id'(_ctx: ExprContext) {
             throw 'not implmented yet: XPath function generate-id()';
         },
 
@@ -382,7 +382,7 @@ export class FunctionCallExpr extends Expression {
         this.args = [];
     }
 
-    appendArg(arg) {
+    appendArg(arg: any) {
         this.args.push(arg);
     }
 
