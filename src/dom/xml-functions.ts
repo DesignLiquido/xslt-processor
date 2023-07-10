@@ -161,7 +161,10 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
         if (node.transformedNodeValue && node.transformedNodeValue.trim() !== '') {
-            buffer.push(xmlEscapeText(node.transformedNodeValue));
+            const finalText = node.escape ?
+                xmlEscapeText(node.transformedNodeValue) :
+                node.transformedNodeValue;
+            buffer.push(finalText);
         }
     } else if (nodeType == DOM_CDATA_SECTION_NODE) {
         if (cdata) {

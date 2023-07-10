@@ -42,6 +42,7 @@ export class XNode {
     transformedParentNode: XNode;
 
     printed: boolean;
+    escape: boolean;
 
     static _unusedXNodes: any[] = [];
 
@@ -52,6 +53,7 @@ export class XNode {
         this.transformedAttributes = [];
         this.transformedChildNodes = [];
         this.printed = false;
+        this.escape = true;
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }

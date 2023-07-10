@@ -303,6 +303,10 @@ export class Xslt {
                 case 'text':
                     text = xmlValue(template);
                     node = domCreateTransformedTextNode(outputDocument, text);
+                    const disableOutputEscaping = template.attributes.filter(a => a.nodeName === 'disable-output-escaping');
+                    if (disableOutputEscaping.length > 0 && disableOutputEscaping[0].nodeValue === 'yes') {
+                        node.escape = false;
+                    }
                     output.appendTransformedChild(node);
                     break;
                 case 'value-of':

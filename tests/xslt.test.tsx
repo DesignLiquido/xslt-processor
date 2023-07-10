@@ -28,61 +28,81 @@ const xmlString = (
 );
 
 describe('xslt', () => {
-    it('handles for-each sort', () => {
-        const xsltForEachSort = (
-            <xsl:stylesheet>
-                <xsl:template match="/">
-                    <xsl:for-each select="//item">
-                        <xsl:sort select="@pos" />
-                        <xsl:value-of select="." />
-                    </xsl:for-each>
-                </xsl:template>
-            </xsl:stylesheet>
-        );
+    describe('xsl:for-each', () => {
+        it('handles for-each sort', () => {
+            const xsltForEachSort = (
+                <xsl:stylesheet>
+                    <xsl:template match="/">
+                        <xsl:for-each select="//item">
+                            <xsl:sort select="@pos" />
+                            <xsl:value-of select="." />
+                        </xsl:for-each>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
 
-        const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltForEachSort);
-        const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, 'CAB');
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltForEachSort);
+            const html = xsltClass.xsltProcess(xml, xslt);
+            assert.equal(html, 'CAB');
+        });
+
+        it('handles for-each sort ascending', () => {
+            const xsltForEachSortAscending = (
+                <xsl:stylesheet>
+                    <xsl:template match="/">
+                        <xsl:for-each select="//item">
+                            <xsl:sort select="." order="ascending" />
+                            <xsl:value-of select="." />
+                        </xsl:for-each>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltForEachSortAscending);
+            const html = xsltClass.xsltProcess(xml, xslt);
+            assert.equal(html, 'ABC');
+        });
+
+        it('handles for-each sort descending', () => {
+            const xsltForEachSortDescending = (
+                <xsl:stylesheet>
+                    <xsl:template match="/">
+                        <xsl:for-each select="//item">
+                            <xsl:sort select="." order="descending" />
+                            <xsl:value-of select="." />
+                        </xsl:for-each>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltForEachSortDescending);
+            const html = xsltClass.xsltProcess(xml, xslt);
+            assert.equal(html, 'CBA');
+        });
     });
 
-    it('handles for-each sort ascending', () => {
-        const xsltForEachSortAscending = (
-            <xsl:stylesheet>
+    describe('xsl:text', () => {
+        it('disable-output-escaping', () => {
+            const xml = <anything></anything>;
+            const xslt = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="html" indent="yes" />
                 <xsl:template match="/">
-                    <xsl:for-each select="//item">
-                        <xsl:sort select="." order="ascending" />
-                        <xsl:value-of select="." />
-                    </xsl:for-each>
+                    <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;</xsl:text>
                 </xsl:template>
-            </xsl:stylesheet>
-        );
+            </xsl:stylesheet>;
 
-        const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltForEachSortAscending);
-        const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, 'ABC');
-    });
-
-    it('handles for-each sort descending', () => {
-        const xsltForEachSortDescending = (
-            <xsl:stylesheet>
-                <xsl:template match="/">
-                    <xsl:for-each select="//item">
-                        <xsl:sort select="." order="descending" />
-                        <xsl:value-of select="." />
-                    </xsl:for-each>
-                </xsl:template>
-            </xsl:stylesheet>
-        );
-
-        const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltForEachSortDescending);
-        const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, 'CBA');
+            const xsltClass = new Xslt();
+            const parsedXml = xmlParse(xml);
+            const parsedXslt = xmlParse(xslt);
+            const html = xsltClass.xsltProcess(parsedXml, parsedXslt);
+            assert.equal(html, '<!DOCTYPE html>');
+        });
     });
 
     it('applies templates', () => {

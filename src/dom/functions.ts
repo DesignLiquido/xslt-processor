@@ -64,7 +64,7 @@ export function domCreateElement(doc: any, name: any) {
     return doc.createElement(name);
 }
 
-export function domCreateCDATASection(doc: any, data: any) {
+export function domCreateCDATASection(doc: XDocument, data: any) {
     return doc.createCDATASection(data);
 }
 
@@ -74,6 +74,10 @@ export function domCreateComment(doc: any, text: any) {
 
 export function domCreateDocumentFragment(doc: XDocument): XNode {
     return doc.createDocumentFragment();
+}
+
+export function domCreateDTDSection(doc: XDocument, data: any) {
+    return doc.createDTDSection(data);
 }
 
 // Traverses the element nodes in the DOM section underneath the given
@@ -111,7 +115,7 @@ export function domTraverseElements(node: any, opt_pre: any, opt_post: any) {
 
 // Parses the given XML string with our custom, JavaScript XML parser. Written
 // by Steffen Meschkat (mesch@google.com).
-export function xmlParse(xml: any) {
+export function xmlParse(xml: string) {
     const regex_empty = /\/$/;
 
     let regex_tagname;
@@ -158,10 +162,11 @@ export function xmlParse(xml: any) {
             if (text.charAt(0) == '/') {
                 stack.pop();
                 parent = stack[stack.length - 1];
-            } else if (text.charAt(0) == '?') {
+            } else if (text.charAt(0) === '?') {
                 // Ignore XML declaration and processing instructions
-            } else if (text.charAt(0) == '!') {
-                // Ignore malformed notation and comments
+            } else if (text.charAt(0) === '!') {
+                // Ignore comments
+                // console.log(`Ignored ${text}`);
             } else {
                 const empty = text.match(regex_empty);
                 const tagname = regex_tagname.exec(text)[1];
@@ -218,6 +223,22 @@ export function xmlParse(xml: any) {
                     let node = domCreateCDATASection(xmldoc, xml.slice(i + 9, i + endTagIndex + 9));
                     domAppendChild(parent, node);
                     i += endTagIndex + 11;
+                }
+            } else if (xml.slice(i + 1, i + 9) === '!DOCTYPE') {
+                let endTagIndex = xml.slice(i + 9).indexOf('>');
+                if (endTagIndex) {
+                    const dtdValue = xml.slice(i + 9, i + endTagIndex + 9).trimStart();
+                    // TODO: Not sure if this is a good solution.
+                    // Trying to implement this: https://github.com/DesignLiquido/xslt-processor/issues/30
+                    let node;
+                    if (parent.nodeName === 'xsl:text') {
+                        node = domCreateTextNode(xmldoc, `<!DOCTYPE ${dtdValue}>`);
+                    } else {
+                        node = domCreateDTDSection(xmldoc, dtdValue);
+                    }
+
+                    domAppendChild(parent, node);
+                    i += endTagIndex + dtdValue.length + 5;
                 }
             } else {
                 tag = true;
