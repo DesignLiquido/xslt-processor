@@ -4,6 +4,7 @@ import {
     DOM_COMMENT_NODE,
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_DOCUMENT_NODE,
+    DOM_DOCUMENT_TYPE_NODE,
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
@@ -65,5 +66,9 @@ export class XDocument extends XNode {
 
     createCDATASection(data: any) {
         return XNode.create(DOM_CDATA_SECTION_NODE, '#cdata-section', data, this);
+    }
+
+    createDTDSection(data: any) {
+        return XNode.create(DOM_DOCUMENT_TYPE_NODE, '#dtd-section', data, this);
     }
 }
