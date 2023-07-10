@@ -87,7 +87,7 @@ describe('xslt', () => {
         });
     });
 
-    describe.only('xsl:text', () => {
+    describe('xsl:text', () => {
         it('disable-output-escaping', () => {
             const xml = <anything></anything>;
             const xslt = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -101,8 +101,7 @@ describe('xslt', () => {
             const parsedXml = xmlParse(xml);
             const parsedXslt = xmlParse(xslt);
             const html = xsltClass.xsltProcess(parsedXml, parsedXslt);
-            console.log(html);
-            assert.ok(true);
+            assert.equal(html, '<!DOCTYPE html>');
         });
     });
 
