@@ -64,10 +64,10 @@ If you write pre-2015 JS code, make adjustments as needed.
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.1.0/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.1.2/umd/xslt-processor.js"></script>
 ```
 
-All the exports will live under `globalThis.XsltProcessor`.
+All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
 
 ### Breaking Changes
 
