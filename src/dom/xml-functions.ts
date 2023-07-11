@@ -12,6 +12,7 @@ import {
 import { domGetAttributeValue } from './functions';
 import { XNode } from './xnode';
 import { XDocument } from './xdocument';
+import { XmlOutputOptions } from './xml-output-options';
 
 // Returns the text value of a node; for nodes without children this
 // is the nodeValue, for nodes with children this is the concatenation
@@ -145,29 +146,35 @@ function xmlTextRecursive(node: XNode, buf: any[], cdata: any) {
 
 /**
  * Returns the representation of a node as XML text.
- * @param node The starting node.
- * @param opt_cdata If using CDATA configuration.
+ * @param {XNode} node The starting node.
+ * @param {XmlOutputOptions} options XML output options.
  * @returns The XML string.
  */
-export function xmlTransformedText(node: XNode, opt_cdata: boolean = false) {
+export function xmlTransformedText(
+    node: XNode,
+    options: XmlOutputOptions = {
+        cData: false,
+        escape: true
+    }
+) {
     const buffer = [];
-    xmlTransformedTextRecursive(node, buffer, opt_cdata);
+    xmlTransformedTextRecursive(node, buffer, options);
     return buffer.join('');
 }
 
-function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean) {
+function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOutputOptions) {
     if (node.printed) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
         if (node.transformedNodeValue && node.transformedNodeValue.trim() !== '') {
-            const finalText = node.escape ?
+            const finalText = node.escape && options.escape?
                 xmlEscapeText(node.transformedNodeValue) :
                 node.transformedNodeValue;
             buffer.push(finalText);
         }
     } else if (nodeType == DOM_CDATA_SECTION_NODE) {
-        if (cdata) {
+        if (options.cData) {
             buffer.push(nodeValue);
         } else {
             buffer.push(`<![CDATA[${nodeValue}]]>`);
@@ -179,15 +186,15 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
         // had transformations, children should be present at output.
         // This is called here "muted logic".
         if (node.transformedNodeName !== null && node.transformedNodeName !== undefined) {
-            xmlElementLogicTrivial(node, buffer, cdata);
+            xmlElementLogicTrivial(node, buffer, options);
         } else {
-            xmlElementLogicMuted(node, buffer, cdata);
+            xmlElementLogicMuted(node, buffer, options);
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         const childNodes = node.transformedChildNodes.concat(node.childNodes);
-        // const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+
         for (let i = 0; i < childNodes.length; ++i) {
-            xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+            xmlTransformedTextRecursive(childNodes[i], buffer, options);
         }
     }
 
@@ -200,7 +207,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], cdata: boolean)
  * @param buffer The XML buffer.
  * @param cdata If using CDATA configuration.
  */
-function xmlElementLogicTrivial(node: XNode, buffer: any[], cdata: boolean) {
+function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
     const attributes = node.transformedAttributes || node.attributes;
@@ -223,7 +230,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], cdata: boolean) {
     } else {
         buffer.push('>');
         for (let i = 0; i < childNodes.length; ++i) {
-            xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+            xmlTransformedTextRecursive(childNodes[i], buffer, options);
         }
         buffer.push(`</${xmlFullNodeName(node)}>`);
     }
@@ -237,10 +244,10 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], cdata: boolean) {
  * @param buffer The XML buffer.
  * @param cdata If using CDATA configuration.
  */
-function xmlElementLogicMuted(node: XNode, buffer: any[], cdata: boolean) {
+function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions) {
     const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
     for (let i = 0; i < childNodes.length; ++i) {
-        xmlTransformedTextRecursive(childNodes[i], buffer, cdata);
+        xmlTransformedTextRecursive(childNodes[i], buffer, options);
     }
 }
 
