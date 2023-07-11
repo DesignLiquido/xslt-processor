@@ -27,8 +27,8 @@ import {
     xmlTransformedText,
     xmlValue,
     xmlValue2
-} from './dom';
-import { ExprContext, XPath } from './xpath';
+} from '../dom';
+import { ExprContext, XPath } from '../xpath';
 
 import {
     DOM_ATTRIBUTE_NODE,
@@ -38,10 +38,11 @@ import {
     DOM_DOCUMENT_NODE,
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
-} from './constants';
-import { Expression } from './xpath/expressions/expression';
-import { StringValue, NodeSetValue } from './xpath/values';
-import { LocationExpr } from './xpath/expressions';
+} from '../constants';
+import { Expression } from '../xpath/expressions/expression';
+import { StringValue, NodeSetValue } from '../xpath/values';
+import { LocationExpr } from '../xpath/expressions';
+import { XsltOptions } from './xslt-options';
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
@@ -69,11 +70,13 @@ import { LocationExpr } from './xpath/expressions';
  */
 export class Xslt {
     xPath: XPath;
+    options: XsltOptions;
     outputMethod: string;
     outputOmitXmlDeclaration: string;
 
-    constructor() {
+    constructor(options: XsltOptions = { escape: true }) {
         this.xPath = new XPath();
+        this.options = options
         this.outputMethod = "xml";
         this.outputOmitXmlDeclaration = "no";
     }
@@ -97,7 +100,13 @@ export class Xslt {
         }
 
         this.xsltProcessContext(expressionContext, stylesheet, output, parameters);
-        const ret = xmlTransformedText(output);
+        const ret = xmlTransformedText(
+            output,
+            {
+                cData: false,
+                escape: this.options.escape
+            }
+        );
         return ret;
     }
 

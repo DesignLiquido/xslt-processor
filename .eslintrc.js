@@ -175,7 +175,6 @@ module.exports = {
         'no-whitespace-before-property': 'error',
         'no-with': 'error',
         'nonblock-statement-body-position': 'error',
-        'object-curly-newline': 'error',
         'object-property-newline': 'error',
         'object-shorthand': 'error',
         'one-var': 'off',
