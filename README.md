@@ -59,6 +59,19 @@ const xPath = new XPath();
 
 If you write pre-2015 JS code, make adjustments as needed.
 
+### `Xslt` class options
+
+You can pass an `options` object to `Xslt` class:
+
+```js
+const options = {
+  escape: false
+};
+const xslt = new Xslt(options);
+```
+
+- `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). 
+
 ### Direct use in browsers
 
 You can simply add a tag like this:
