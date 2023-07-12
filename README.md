@@ -65,19 +65,24 @@ You can pass an `options` object to `Xslt` class:
 
 ```js
 const options = {
-  escape: false
+  escape: false,
+  properties: [{ name: 'myparam', value: '123' }]
 };
 const xslt = new Xslt(options);
 ```
 
-- `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). 
+- `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm).
+- `parameters` (`array`, default `[]`): external parameters that you want to use.
+    - `name`: the parameter name;
+    - `namespaceUri` (optional): the namespace;
+    - `value`: the value.
 
 ### Direct use in browsers
 
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.1.2/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.1.4/umd/xslt-processor.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
