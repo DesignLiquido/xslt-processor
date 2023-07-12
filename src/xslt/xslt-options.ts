@@ -1,3 +1,6 @@
+import { XsltParameter } from "./xslt-parameter"
+
 export type XsltOptions = {
-    escape: boolean
+    escape: boolean,
+    parameters?: XsltParameter[]
 }

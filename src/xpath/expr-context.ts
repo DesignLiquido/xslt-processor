@@ -49,13 +49,13 @@
 //   significantly, and makes sense if you a) use "node()" when you mean "*",
 //   and b) use "//" when you mean "/descendant::*/".
 
-import { DOM_DOCUMENT_NODE } from "../constants";
-import { BooleanValue } from "./values/boolean-value";
-import { NodeSetValue } from "./values/node-set-value";
-import { NumberValue } from "./values/number-value";
-import { StringValue } from "./values/string-value";
-import { TOK_NUMBER } from "./tokens";
-import { XNode } from "../dom";
+import { DOM_DOCUMENT_NODE } from '../constants';
+import { BooleanValue } from './values/boolean-value';
+import { NodeSetValue } from './values/node-set-value';
+import { NumberValue } from './values/number-value';
+import { StringValue } from './values/string-value';
+import { TOK_NUMBER } from './tokens';
+import { XNode } from '../dom';
 
 export class ExprContext {
     position: number;
@@ -132,14 +132,16 @@ export class ExprContext {
         }
     }
 
-    getVariable(name) {
+    getVariable(name: string) {
         if (typeof this.variables[name] != 'undefined') {
             return this.variables[name];
-        } else if (this.parent) {
-            return this.parent.getVariable(name);
-        } else {
-            return null;
         }
+
+        if (this.parent) {
+            return this.parent.getVariable(name);
+        }
+
+        return null;
     }
 
     setNode(position: number) {
