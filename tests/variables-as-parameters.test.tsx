@@ -29,7 +29,13 @@ describe('variables-as-parameters', () => {
         const xsltClass = new Xslt();
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(xml, xslt, { test: 'hugo' });
+        const outXmlString = xsltClass.xsltProcess(
+          xml,
+          xslt,
+          [
+            { name: 'test', value: 'hugo' }
+          ]
+        );
 
         assert.equal(outXmlString, expectedOutString);
     });
