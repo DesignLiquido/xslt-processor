@@ -87,6 +87,48 @@ describe('xslt', () => {
         });
     });
 
+    describe('xsl:template', () => {
+        it('Trivial', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
+                <xsl:template match="*|/*">
+                    <outputUnknown original-name="{name(.)}">
+                        <xsl:apply-templates select="*" />
+                    </outputUnknown>
+                </xsl:template>
+                <xsl:template match="typeA">
+                    <outputA />
+                </xsl:template>
+                <xsl:template match="/*/typeB">
+                    <outputB>I have text!</outputB>
+                </xsl:template>
+            </xsl:stylesheet>
+
+            // Needs to be this way. `isomorphic-jsx rewrites `<outputA />` as `<outputA></outputA>`.
+            const expectedOutString = `<outputUnknown original-name="root">`+
+                `<outputA/>`+
+                `<outputB>I have text!</outputB>`+
+            `</outputUnknown>`;
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltString);
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xslt
+            );
+
+            assert.equal(outXmlString, expectedOutString);
+        });
+    });
+
     describe('xsl:text', () => {
         it('disable-output-escaping', () => {
             const xml = <anything></anything>;

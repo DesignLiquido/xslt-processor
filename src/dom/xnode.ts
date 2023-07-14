@@ -309,15 +309,19 @@ export class XNode {
         this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
     }
 
-    setTransformedAttribute(name: any, value: any) {
+    setTransformedAttribute(name: string, value: any) {
         for (let i = 0; i < this.transformedAttributes.length; ++i) {
-            if (this.transformedAttributes[i].nodeName == name) {
-                this.transformedAttributes[i].nodeValue = `${value}`;
+            if (this.transformedAttributes[i].nodeName === name) {
+                this.transformedAttributes[i].transformedNodeName = name;
+                this.transformedAttributes[i].transformedNodeValue = `${value}`;
                 return;
             }
         }
 
-        this.transformedAttributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
+        const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
+        newAttribute.transformedNodeName = name;
+        newAttribute.transformedNodeValue = value;
+        this.transformedAttributes.push(newAttribute);
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {

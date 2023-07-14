@@ -180,7 +180,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
             buffer.push(`<![CDATA[${nodeValue}]]>`);
         }
     } else if (nodeType == DOM_COMMENT_NODE) {
-        buffer.push(`<!--${nodeValue}-->`);
+        buffer.push(`<!-- ${nodeValue} -->`);
     } else if (nodeType == DOM_ELEMENT_NODE) {
         // If node didn't have a transformed name, but its children
         // had transformations, children should be present at output.
@@ -207,7 +207,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
  * @param buffer The XML buffer.
  * @param cdata If using CDATA configuration.
  */
-function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOptions) {
+function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
     const attributes = node.transformedAttributes || node.attributes;
@@ -217,15 +217,13 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOp
             continue;
         }
 
-        const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
-        const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
-        if (attributeNodeName && attributeNodeValue) {
-            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attributeNodeValue)}"`);
+        if (attribute.transformedNodeName && attribute.transformedNodeValue) {
+            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
         }
     }
 
     const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
-    if (childNodes.length == 0) {
+    if (childNodes.length === 0) {
         buffer.push('/>');
     } else {
         buffer.push('>');
