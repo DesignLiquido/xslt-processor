@@ -550,14 +550,16 @@ export class Xslt {
                     let node = textNodeList[0];
                     node.transformedNodeValue = template.nodeValue;
                 } else {
-                    let node = domCreateTextNode(outputDocument, template.nodeValue);
+                    let node = domCreateTransformedTextNode(outputDocument, template.nodeValue);
                     domAppendTransformedChild(context.nodelist[context.position], node);
                 }
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
+            let elementContext = context;
             if (context.nodelist[context.position].nodeName === '#document') {
                 node = context.nodelist[context.position].firstChild;
+                elementContext = context.clone([node], 0);
             } else {
                 node = context.nodelist[context.position];
             }
@@ -567,7 +569,7 @@ export class Xslt {
 
             for (const attribute of template.attributes.filter((a: any) => a)) {
                 const name = attribute.nodeName;
-                const value = this.xsltAttributeValue(attribute.nodeValue, context);
+                const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
                 domSetTransformedAttribute(node, name, value);
             }
 
