@@ -75,7 +75,7 @@ export class Xslt {
     outputMethod: string;
     outputOmitXmlDeclaration: string;
 
-    constructor(options: XsltOptions = { escape: true }) {
+    constructor(options: XsltOptions = { escape: true, selfClosingTags: true }) {
         this.xPath = new XPath();
         this.options = options;
         this.outputMethod = 'xml';
@@ -103,7 +103,8 @@ export class Xslt {
         this.xsltProcessContext(expressionContext, stylesheet, output, parameters || []);
         const ret = xmlTransformedText(output, {
             cData: false,
-            escape: this.options.escape
+            escape: this.options.escape,
+            selfClosingTags: this.options.selfClosingTags
         });
         return ret;
     }
