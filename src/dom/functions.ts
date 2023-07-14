@@ -113,9 +113,13 @@ export function domTraverseElements(node: any, opt_pre: any, opt_post: any) {
     }
 }
 
-// Parses the given XML string with our custom, JavaScript XML parser. Written
-// by Steffen Meschkat (mesch@google.com).
-export function xmlParse(xml: string) {
+/**
+ * Parses the given XML string with our custom, JavaScript XML parser
+ * @param xml The XML String.
+ * @returns A XDocument.
+ * @author Steffen Meschkat <mesch@google.com>
+ */
+export function xmlParse(xml: string): XDocument {
     const regex_empty = /\/$/;
 
     let regex_tagname;
@@ -207,7 +211,7 @@ export function xmlParse(xml: string) {
             doublequotes = false;
         } else if (!tag && char === '<') {
             let text = xml.slice(start, i);
-            if (text && parent != root) {
+            if (text && parent !== root) {
                 domAppendChild(parent, domCreateTextNode(xmldoc, text));
             }
             if (xml.slice(i + 1, i + 4) === '!--') {
