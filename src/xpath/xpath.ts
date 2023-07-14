@@ -1004,11 +1004,11 @@ export class XPath {
     }
 
     xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: ExprContext) {
-        const s = steps[step];
+        const resolvedStep = steps[step];
         const ctx2 = ctx.clone([input], 0);
 
-        if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
-            let nodelist = s.evaluate(ctx2).nodeSetValue();
+        if (ctx.returnOnFirstMatch && !resolvedStep.hasPositionalPredicate) {
+            let nodelist = resolvedStep.evaluate(ctx2).nodeSetValue();
             // the predicates were not processed in the last evaluate(), so that we can
             // process them here with the returnOnFirstMatch optimization. We do a
             // depth-first grab at any nodes that pass the predicate tests. There is no
@@ -1016,11 +1016,11 @@ export class XPath {
             // indexes or uses of the last() or position() functions, because they
             // typically require the entire nodelist for context. Process without
             // optimization if we encounter such selectors.
-            const nLength = nodelist.length;
-            const pLength = s.predicate.length;
-            nodelistLoop: for (let i = 0; i < nLength; ++i) {
-                for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(nodelist, i)).booleanValue()) {
+            const nodeListLength = nodelist.length;
+            const predicatesLength = resolvedStep.predicate.length;
+            nodelistLoop: for (let i = 0; i < nodeListLength; ++i) {
+                for (let j = 0; j < predicatesLength; ++j) {
+                    if (!resolvedStep.predicate[j].evaluate(ctx.clone(nodelist, i)).booleanValue()) {
                         continue nodelistLoop;
                     }
                 }
@@ -1039,7 +1039,7 @@ export class XPath {
             // behavior in StepExpr.prototype.evaluate is driven off its value. Note
             // that the original context may still have true for this value.
             ctx2.returnOnFirstMatch = false;
-            let nodelist = s.evaluate(ctx2).nodeSetValue();
+            let nodelist = resolvedStep.evaluate(ctx2).nodeSetValue();
             for (let i = 0; i < nodelist.length; ++i) {
                 if (step == steps.length - 1) {
                     nodes.push(nodelist[i]);

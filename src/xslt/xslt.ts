@@ -233,7 +233,7 @@ export class Xslt {
                 case 'copy-of':
                     select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, context);
-                    if (value.type == 'node-set') {
+                    if (value.type === 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
                             this.xsltCopyOf(output, nodes[i], outputDocument);
