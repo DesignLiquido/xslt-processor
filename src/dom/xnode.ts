@@ -318,7 +318,10 @@ export class XNode {
             }
         }
 
-        this.transformedAttributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
+        const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
+        newAttribute.transformedNodeName = name;
+        newAttribute.transformedNodeValue = value;
+        this.transformedAttributes.push(newAttribute);
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {

@@ -567,10 +567,15 @@ export class Xslt {
             node.transformedNodeName = template.nodeName;
             node.transformedLocalName = template.localName;
 
-            for (const attribute of template.attributes.filter((a: any) => a)) {
-                const name = attribute.nodeName;
-                const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
-                domSetTransformedAttribute(node, name, value);
+            const templateAttributes = template.attributes.filter((a: any) => a);
+            if (templateAttributes.length === 0) {
+                node.transformedAttributes = [];
+            } else {
+                for (const attribute of templateAttributes) {
+                    const name = attribute.nodeName;
+                    const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
+                    domSetTransformedAttribute(node, name, value);
+                }
             }
 
             this.xsltChildNodes(context, template, node, _parameters);

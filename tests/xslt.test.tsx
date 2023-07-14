@@ -111,12 +111,11 @@ describe('xslt', () => {
                 </xsl:template>
             </xsl:stylesheet>
 
-            const expectedOutString = (
-                <outputUnknown original-name="root">
-                    <outputA />
-                    <outputB>I have text!</outputB>
-                </outputUnknown>
-            );
+            // Needs to be this way. `isomorphic-jsx rewrites `<outputA />` as `<outputA></outputA>`.
+            const expectedOutString = `<outputUnknown original-name="root">`+
+                `<outputA/>`+
+                `<outputB>I have text!</outputB>`+
+            `</outputUnknown>`;
 
             const xsltClass = new Xslt();
             const xml = xmlParse(xmlString);

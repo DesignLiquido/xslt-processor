@@ -207,7 +207,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
  * @param buffer The XML buffer.
  * @param cdata If using CDATA configuration.
  */
-function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOptions) {
+function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
     const attributes = node.transformedAttributes || node.attributes;
@@ -223,7 +223,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOp
     }
 
     const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
-    if (childNodes.length == 0) {
+    if (childNodes.length === 0) {
         buffer.push('/>');
     } else {
         buffer.push('>');
