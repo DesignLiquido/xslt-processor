@@ -5,7 +5,6 @@
 
 import { DOM_ATTRIBUTE_NODE } from '../constants';
 import { domTraverseElements } from './functions';
-import { XDocument } from './xdocument';
 
 // operate on native DOM nodes.
 export class XNode {
@@ -94,7 +93,7 @@ export class XNode {
             return;
         }
 
-        if (node.constructor == XDocument) {
+        if (node.constructor.name === 'XDocument') {
             this.recycle((node as any).documentElement);
             return;
         }
@@ -117,7 +116,7 @@ export class XNode {
         node.init.call(0, '', '', null);
     }
 
-    static create(type: any, name: any, value: any, owner: any, namespace?: any) {
+    static create(type: any, name: any, value: any, owner: any, namespace?: any): XNode {
         if (this._unusedXNodes.length > 0) {
             const node = this._unusedXNodes.pop();
             node.init(type, name, value, owner, namespace);

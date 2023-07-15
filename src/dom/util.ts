@@ -8,8 +8,6 @@
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
 
-import { FunctionCallExpr, BinaryExpr, UnaryMinusExpr, NumberExpr } from '../xpath/expressions';
-
 // Applies the given function to each element of the array, preserving
 // this, and passing the index.
 export function mapExec(array, func) {
@@ -36,99 +34,6 @@ export function reverseInplace(array) {
         array[i] = array[ii];
         array[ii] = h;
     }
-}
-
-// Shallow-copies an array to the end of another array
-// Basically Array.concat, but works with other non-array collections
-export function copyArray(dst, src) {
-    if (!src) return;
-    const dstLength = dst.length;
-    for (let i = src.length - 1; i >= 0; --i) {
-        dst[i + dstLength] = src[i];
-    }
-}
-
-/**
- * This is an optimization for copying attribute lists in IE. IE includes many
- * extraneous properties in its DOM attribute lists, which take require
- * significant extra processing when evaluating attribute steps. With this
- * function, we ignore any such attributes that has an empty string value.
- */
-export function copyArrayIgnoringAttributesWithoutValue(dst, src) {
-    if (!src) return;
-    for (let i = src.length - 1; i >= 0; --i) {
-        // this test will pass so long as the attribute has a non-empty string
-        // value, even if that value is "false", "0", "undefined", etc.
-        if (src[i].nodeValue) {
-            dst.push(src[i]);
-        }
-    }
-}
-
-/**
- * Determines whether a predicate expression contains a "positional selector".
- * A positional selector filters nodes from the nodeList input based on their
- * position within that list. When such selectors are encountered, the
- * evaluation of the predicate cannot be depth-first, because the positional
- * selector may be based on the result of evaluating predicates that precede
- * it.
- */
-export function predicateExprHasPositionalSelector(expr: any, isRecursiveCall?: any) {
-    if (!expr) {
-        return false;
-    }
-    if (!isRecursiveCall && exprReturnsNumberValue(expr)) {
-        // this is a "proximity position"-based predicate
-        return true;
-    }
-    if (expr instanceof FunctionCallExpr) {
-        const value = (expr as any).name.value;
-        return value == 'last' || value == 'position';
-    }
-    if (expr instanceof BinaryExpr) {
-        return (
-            predicateExprHasPositionalSelector(expr.expr1, true) || predicateExprHasPositionalSelector(expr.expr2, true)
-        );
-    }
-    return false;
-}
-
-function exprReturnsNumberValue(expr) {
-    if (expr instanceof FunctionCallExpr) {
-        let isMember = {
-            last: true,
-            position: true,
-            count: true,
-            'string-length': true,
-            number: true,
-            sum: true,
-            floor: true,
-            ceiling: true,
-            round: true
-        };
-        return isMember[(expr as any).name.value];
-    }
-
-    if (expr instanceof UnaryMinusExpr) {
-        return true;
-    }
-
-    if (expr instanceof BinaryExpr) {
-        let isMember = {
-            '+': true,
-            '-': true,
-            '*': true,
-            mod: true,
-            div: true
-        };
-        return isMember[expr.op.value];
-    }
-
-    if (expr instanceof NumberExpr) {
-        return true;
-    }
-
-    return false;
 }
 
 // (viat) given an XNode (see dom.js), returns an object mapping prefixes to their corresponding namespaces in its scope.

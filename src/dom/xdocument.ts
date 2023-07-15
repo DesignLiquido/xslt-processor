@@ -30,7 +30,7 @@ export class XDocument extends XNode {
         this.documentElement = this.childNodes[0];
     }
 
-    createElement(name: any) {
+    createElement(name: any): XNode {
         return XNode.create(DOM_ELEMENT_NODE, name, null, this);
     }
 

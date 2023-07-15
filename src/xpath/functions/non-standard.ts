@@ -1,7 +1,7 @@
-import { assert } from ".";
 import { xmlValue } from "../../dom";
 import { ExprContext } from "../expr-context";
 import { NodeSetValue, StringValue } from "../values";
+import { assert } from "./internal-functions";
 
 export function extCardinal(context: ExprContext) {
     assert(this.args.length >= 1);

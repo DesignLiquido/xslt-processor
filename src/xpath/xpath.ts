@@ -35,7 +35,8 @@
 //
 // Original author: Steffen Meschkat <mesch@google.com>
 
-import { copyArray, mapExec, mapExpr, reverseInplace } from '../dom/util';
+import { mapExec, mapExpr, reverseInplace } from '../dom/util';
+import { copyArray } from './common-function';
 import { ExprContext } from './expr-context';
 import {
     BinaryExpr,

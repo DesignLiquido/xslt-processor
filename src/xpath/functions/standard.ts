@@ -1,7 +1,7 @@
-import { assert, regExpEscape } from ".";
 import { xmlValue } from "../../dom";
 import { ExprContext } from "../expr-context";
 import { BooleanValue, NodeSetValue, NumberValue, StringValue } from "../values";
+import { assert, regExpEscape } from "./internal-functions";
 
 function cyrb53(str: string, seed = 0) {
     let h1 = 0xdeadbeef ^ seed;
