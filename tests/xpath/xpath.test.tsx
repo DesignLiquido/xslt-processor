@@ -558,7 +558,7 @@ describe('xpath', () => {
             try {
                 result = xPath.xPathParse(e[0]).evaluate(ctx);
             } catch (ex) {
-                assert.equal(ex, e[1], ex);
+                assert.equal(ex.message, e[1], ex.message);
                 continue;
             }
             if (typeof e[1] == 'number') {

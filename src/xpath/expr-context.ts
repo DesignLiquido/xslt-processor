@@ -59,7 +59,7 @@ import { XNode } from '../dom';
 
 export class ExprContext {
     position: number;
-    nodelist: XNode[];
+    nodeList: XNode[];
     variables: any;
     parent: any;
     caseInsensitive: any;
@@ -69,7 +69,7 @@ export class ExprContext {
     root: any;
 
     constructor(
-        nodelist: any[],
+        nodeList: any[],
         opt_position?: number,
         opt_parent?: any,
         opt_caseInsensitive?: any,
@@ -77,7 +77,7 @@ export class ExprContext {
         opt_returnOnFirstMatch?: any,
         opt_ignoreNonElementNodesForNTA?: any
     ) {
-        this.nodelist = nodelist;
+        this.nodeList = nodeList;
         this.position = opt_position || 0;
         this.variables = {};
         this.parent = opt_parent || null;
@@ -87,20 +87,20 @@ export class ExprContext {
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
         if (opt_parent) {
             this.root = opt_parent.root;
-        } else if (this.nodelist[this.position].nodeType == DOM_DOCUMENT_NODE) {
+        } else if (this.nodeList[this.position].nodeType == DOM_DOCUMENT_NODE) {
             // NOTE(mesch): DOM Spec stipulates that the ownerDocument of a
             // document is null. Our root, however is the document that we are
             // processing, so the initial context is created from its document
             // node, which case we must handle here explcitly.
-            this.root = this.nodelist[this.position];
+            this.root = this.nodeList[this.position];
         } else {
-            this.root = this.nodelist[this.position].ownerDocument;
+            this.root = this.nodeList[this.position].ownerDocument;
         }
     }
 
-    clone(opt_nodelist?: any[], opt_position?: any) {
+    clone(opt_nodeList?: any[], opt_position?: any) {
         return new ExprContext(
-            opt_nodelist || this.nodelist,
+            opt_nodeList || this.nodeList,
             typeof opt_position != 'undefined' ? opt_position : this.position,
             this,
             this.caseInsensitive,
@@ -149,7 +149,7 @@ export class ExprContext {
     }
 
     contextSize() {
-        return this.nodelist.length;
+        return this.nodeList.length;
     }
 
     isCaseInsensitive() {

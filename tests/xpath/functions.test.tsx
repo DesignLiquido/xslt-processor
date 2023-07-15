@@ -7,6 +7,7 @@ import assert from 'assert';
 
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
+
 import { xmlParse } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
@@ -95,4 +96,32 @@ describe('XPath Functions', () => {
         console.log(outXmlString)
         assert.ok(!outXmlString);
     });
+
+    it.skip('translate', () => {
+        const xmlString = (
+            <root>
+                <typeA />
+                <typeB />
+            </root>
+        );
+
+        const xsltString = <xsl:template match="/">
+            <xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz'" />
+            <xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
+            <xsl:value-of select="translate(DELETED, $smallcase, $uppercase)" />
+        </xsl:template>
+
+        const xsltClass = new Xslt();
+
+        const xml = xmlParse(xmlString);
+        const xslt = xmlParse(xsltString);
+
+        const outXmlString = xsltClass.xsltProcess(
+            xml,
+            xslt
+        );
+
+        console.log(outXmlString)
+        assert.ok(!outXmlString);
+    })
 });

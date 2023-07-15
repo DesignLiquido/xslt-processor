@@ -4,7 +4,7 @@ import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestElementOrAttribute {
     evaluate(context: ExprContext) {
-        const node = context.nodelist[context.position];
+        const node = context.nodeList[context.position];
         return new BooleanValue(node.nodeType == DOM_ELEMENT_NODE || node.nodeType == DOM_ATTRIBUTE_NODE);
     }
 }

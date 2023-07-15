@@ -67,7 +67,7 @@ export class LocationExpr extends Expression {
         if (this.absolute) {
             start = context.root;
         } else {
-            start = context.nodelist[context.position];
+            start = context.nodeList[context.position];
         }
 
         const nodes = [];

@@ -146,7 +146,7 @@ export class Xslt {
                     if (select) {
                         nodes = this.xPath.xPathEval(select, context).nodeSetValue();
                     } else {
-                        nodes = context.nodelist[context.position].childNodes;
+                        nodes = context.nodeList[context.position].childNodes;
                     }
 
                     sortContext = context.clone(nodes, 0);
@@ -178,7 +178,7 @@ export class Xslt {
                     for (let j = 0; j < sortContext.contextSize(); ++j) {
                         for (let i = 0; i < templates.length; ++i) {
                             this.xsltProcessContext(
-                                sortContext.clone(sortContext.nodelist, j),
+                                sortContext.clone(sortContext.nodeList, j),
                                 templates[i],
                                 output,
                                 _parameters
@@ -226,7 +226,7 @@ export class Xslt {
                     output.appendChild(commentNode);
                     break;
                 case 'copy':
-                    node = this.xsltCopy(output, context.nodelist[context.position], outputDocument);
+                    node = this.xsltCopy(output, context.nodeList[context.position], outputDocument);
                     if (node) {
                         this.xsltChildNodes(context, template, node, _parameters);
                     }
@@ -253,7 +253,7 @@ export class Xslt {
                     // Adds context children reference to this new node,
                     // so then further transformations are also observed
                     // by this new node.
-                    const contextNode = context.nodelist[context.position];
+                    const contextNode = context.nodeList[context.position];
                     node.childNodes = contextNode.childNodes;
                     node.transformedNodeName = name;
 
@@ -324,7 +324,7 @@ export class Xslt {
                     const attribute = this.xPath.xPathEval(select, context);
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(outputDocument, value);
-                    context.nodelist[context.position].appendTransformedChild(node);
+                    context.nodeList[context.position].appendTransformedChild(node);
                     break;
                 case 'param':
                     this.xsltVariable(context, template, false, _parameters);
@@ -477,16 +477,16 @@ export class Xslt {
         const sortContext = context.clone(nodes, 0);
         this.xsltSort(sortContext, template);
 
-        const nodesWithParent = sortContext.nodelist.filter((n) => n.parentNode !== null && n.parentNode !== undefined);
+        const nodesWithParent = sortContext.nodeList.filter((n) => n.parentNode !== null && n.parentNode !== undefined);
         if (nodesWithParent.length <= 0) {
             throw new Error('Nodes with no parents defined.');
         }
 
         const parent = nodesWithParent[0].parentNode;
-        parent.childNodes = sortContext.nodelist;
+        parent.childNodes = sortContext.nodeList;
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
-            this.xsltChildNodes(sortContext.clone(sortContext.nodelist, i), template, output, _parameters);
+            this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output, _parameters);
         }
         // TODO: group nodes by parent node.
         // const nodeGroups = this.groupBy(nodes, 'parentNode');
@@ -496,7 +496,7 @@ export class Xslt {
             this.xsltSort(sortContext, template);
 
             for (let i = 0; i < sortContext.contextSize(); ++i) {
-                this.xsltChildNodes(sortContext.clone(sortContext.nodelist, i), template, output);
+                this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output);
             }
         } */
     }
@@ -544,7 +544,7 @@ export class Xslt {
     ) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
-                const textNodeList = context.nodelist[context.position].transformedChildNodes.filter(
+                const textNodeList = context.nodeList[context.position].transformedChildNodes.filter(
                     (n) => n.nodeType === DOM_TEXT_NODE
                 );
                 if (textNodeList.length > 0) {
@@ -552,17 +552,17 @@ export class Xslt {
                     node.transformedNodeValue = template.nodeValue;
                 } else {
                     let node = domCreateTransformedTextNode(outputDocument, template.nodeValue);
-                    domAppendTransformedChild(context.nodelist[context.position], node);
+                    domAppendTransformedChild(context.nodeList[context.position], node);
                 }
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
             let elementContext = context;
-            if (context.nodelist[context.position].nodeName === '#document') {
-                node = context.nodelist[context.position].firstChild;
+            if (context.nodeList[context.position].nodeName === '#document') {
+                node = context.nodeList[context.position].firstChild;
                 elementContext = context.clone([node], 0);
             } else {
-                node = context.nodelist[context.position];
+                node = context.nodeList[context.position];
             }
 
             node.transformedNodeName = template.nodeName;
@@ -749,9 +749,9 @@ export class Xslt {
     }
 
     private absoluteXsltMatch(levels: string[], expr: Expression, context: ExprContext) {
-        const result = expr.evaluate(context.clone([context.nodelist[context.position]], 0)).nodeSetValue();
+        const result = expr.evaluate(context.clone([context.nodeList[context.position]], 0)).nodeSetValue();
         if (result.length > 0) {
-            context.nodelist = result;
+            context.nodeList = result;
             return true;
         }
 
@@ -759,12 +759,12 @@ export class Xslt {
     }
 
     private relativeXsltMatch(expr: Expression, context: ExprContext) {
-        let node = context.nodelist[context.position];
+        let node = context.nodeList[context.position];
 
         while (node) {
             const result = expr.evaluate(context.clone([node], 0)).nodeSetValue();
             for (let i = 0; i < result.length; ++i) {
-                if (result[i] == context.nodelist[context.position]) {
+                if (result[i] == context.nodeList[context.position]) {
                     /* if (context.node.nodeName === "#document") {
                         context.node = con
                     } */

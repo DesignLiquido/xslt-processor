@@ -492,21 +492,21 @@ export class XPath {
         return this.xPathParseCache[expr];
     }
 
-    xPathCollectDescendants(nodelist: any, node: any, opt_tagName?: any) {
+    xPathCollectDescendants(nodeList: any, node: any, opt_tagName?: any) {
         if (opt_tagName && node.getElementsByTagName) {
-            copyArray(nodelist, node.getElementsByTagName(opt_tagName));
+            copyArray(nodeList, node.getElementsByTagName(opt_tagName));
             return;
         }
         for (let n = node.firstChild; n; n = n.nextSibling) {
-            nodelist.push(n);
-            this.xPathCollectDescendants(nodelist, n);
+            nodeList.push(n);
+            this.xPathCollectDescendants(nodeList, n);
         }
     }
 
-    xPathCollectDescendantsReverse(nodelist: any, node: any) {
+    xPathCollectDescendantsReverse(nodeList: any, node: any) {
         for (let n = node.lastChild; n; n = n.previousSibling) {
-            nodelist.push(n);
-            this.xPathCollectDescendantsReverse(nodelist, n);
+            nodeList.push(n);
+            this.xPathCollectDescendantsReverse(nodeList, n);
         }
     }
 
@@ -935,7 +935,7 @@ export class XPath {
         const sortlist = [];
 
         for (let i = 0; i < context.contextSize(); ++i) {
-            const node = context.nodelist[i];
+            const node = context.nodeList[i];
             const sortitem = {
                 node,
                 key: []
@@ -974,7 +974,7 @@ export class XPath {
         for (let i = 0; i < sortlist.length; ++i) {
             nodes.push(sortlist[i].node);
         }
-        context.nodelist = nodes;
+        context.nodeList = nodes;
         context.setNode(0);
     }
 
@@ -1008,27 +1008,27 @@ export class XPath {
         const ctx2 = ctx.clone([input], 0);
 
         if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
-            let nodelist = s.evaluate(ctx2).nodeSetValue();
+            let nodeList = s.evaluate(ctx2).nodeSetValue();
             // the predicates were not processed in the last evaluate(), so that we can
             // process them here with the returnOnFirstMatch optimization. We do a
             // depth-first grab at any nodes that pass the predicate tests. There is no
             // way to optimize when predicates contain positional selectors, including
             // indexes or uses of the last() or position() functions, because they
-            // typically require the entire nodelist for context. Process without
+            // typically require the entire nodeList for context. Process without
             // optimization if we encounter such selectors.
-            const nLength = nodelist.length;
+            const nLength = nodeList.length;
             const pLength = s.predicate.length;
-            nodelistLoop: for (let i = 0; i < nLength; ++i) {
+            nodeListLoop: for (let i = 0; i < nLength; ++i) {
                 for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(nodelist, i)).booleanValue()) {
-                        continue nodelistLoop;
+                    if (!s.predicate[j].evaluate(ctx.clone(nodeList, i)).booleanValue()) {
+                        continue nodeListLoop;
                     }
                 }
                 // n survived the predicate tests!
                 if (step == steps.length - 1) {
-                    nodes.push(nodelist[i]);
+                    nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], ctx);
                 }
                 if (nodes.length > 0) {
                     break;
@@ -1039,12 +1039,12 @@ export class XPath {
             // behavior in StepExpr.prototype.evaluate is driven off its value. Note
             // that the original context may still have true for this value.
             ctx2.returnOnFirstMatch = false;
-            let nodelist = s.evaluate(ctx2).nodeSetValue();
-            for (let i = 0; i < nodelist.length; ++i) {
+            let nodeList = s.evaluate(ctx2).nodeSetValue();
+            for (let i = 0; i < nodeList.length; ++i) {
                 if (step == steps.length - 1) {
-                    nodes.push(nodelist[i]);
+                    nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], ctx);
                 }
             }
         }

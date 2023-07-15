@@ -8,15 +8,7 @@
 // Dummy implmentation for the logging functions. Replace by something
 // useful when you want to debug.
 
-
 import { FunctionCallExpr, BinaryExpr, UnaryMinusExpr, NumberExpr } from '../xpath/expressions';
-
-// Throws an exception if false.
-export function assert(b) {
-    if (!b) {
-        throw new Error('Assertion failed');
-    }
-}
 
 // Applies the given function to each element of the array, preserving
 // this, and passing the index.
@@ -74,22 +66,8 @@ export function copyArrayIgnoringAttributesWithoutValue(dst, src) {
 }
 
 /**
- * Escape the special regular expression characters when the regular expression
- * is specified as a string.
- *
- * Based on: http://simonwillison.net/2006/Jan/20/escape/
- */
-const regExpSpecials = ['/', '.', '*', '+', '?', '|', '^', '$', '(', ')', '[', ']', '{', '}', '\\'];
-
-const sRE = new RegExp(`(\\${regExpSpecials.join('|\\')})`, 'g');
-
-export function regExpEscape(text: string) {
-    return text.replace(sRE, '\\$1');
-}
-
-/**
  * Determines whether a predicate expression contains a "positional selector".
- * A positional selector filters nodes from the nodelist input based on their
+ * A positional selector filters nodes from the nodeList input based on their
  * position within that list. When such selectors are encountered, the
  * evaluation of the predicate cannot be depth-first, because the positional
  * selector may be based on the result of evaluating predicates that precede

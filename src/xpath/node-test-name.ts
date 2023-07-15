@@ -11,7 +11,7 @@ export class NodeTestName {
     }
 
     evaluate(context: ExprContext) {
-        const n = context.nodelist[context.position];
+        const n = context.nodeList[context.position];
         if (context.caseInsensitive) {
             if (n.nodeName.length != this.name.length) return new BooleanValue(false);
             return new BooleanValue(this.re.test(n.nodeName));

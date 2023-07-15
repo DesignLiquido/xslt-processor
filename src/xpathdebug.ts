@@ -159,7 +159,7 @@ export let toString = function (expr) {
             ret = expr.nodeName;
             break;
         case ExprContext:
-            ret = `[${expr.position}/${expr.nodelist.length}] ${expr.node.nodeName}`;
+            ret = `[${expr.position}/${expr.nodeList.length}] ${expr.node.nodeName}`;
             break;
         case TokenExpr:
             ret = expr.value;
