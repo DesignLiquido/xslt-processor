@@ -132,6 +132,7 @@ describe('xslt', () => {
         // a behavior that should not be happening: template matches
         // should match _only once_, following a best match heuristic.
         // The base match algorithm should consider them.
+        // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
 
         it.skip('Example 1 from Marco', () => {
             const xmlString = (
