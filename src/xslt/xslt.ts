@@ -140,7 +140,7 @@ export class Xslt {
                 text;
             switch (template.localName) {
                 case 'apply-imports':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'apply-templates':
                     select = xmlGetAttribute(template, 'select');
                     if (select) {
@@ -195,7 +195,7 @@ export class Xslt {
                     domSetTransformedAttribute(output, name, value);
                     break;
                 case 'attribute-set':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'call-template':
                     name = xmlGetAttribute(template, 'name');
                     top = template.ownerDocument.documentElement;
@@ -245,7 +245,7 @@ export class Xslt {
                     }
                     break;
                 case 'decimal-format':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'element':
                     nameExpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameExpr, context);
@@ -261,7 +261,7 @@ export class Xslt {
                     this.xsltChildNodes(context, template, node, _parameters);
                     break;
                 case 'fallback':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'for-each':
                     this.xsltForEach(context, template, output, _parameters);
                     break;
@@ -272,17 +272,17 @@ export class Xslt {
                     }
                     break;
                 case 'import':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'include':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'key':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'message':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'namespace-alias':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'number':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'otherwise':
                     throw `error if here: ${template.localName}`;
                 case 'output':
@@ -290,14 +290,14 @@ export class Xslt {
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     break;
                 case 'preserve-space':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'processing-instruction':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'sort':
                     // just ignore -- was handled by xsltSort()
                     break;
                 case 'strip-space':
-                    throw `not implemented: ${template.localName}`;
+                    throw new Error(`not implemented: ${template.localName}`);
                 case 'stylesheet':
                 case 'transform':
                     this.xsltChildNodes(context, template, output, _parameters);
@@ -333,11 +333,11 @@ export class Xslt {
                     this.xsltVariable(context, template, true, _parameters);
                     break;
                 case 'when':
-                    throw `error if here: ${template.localName}`;
+                    throw new Error(`error if here: ${template.localName}`);
                 case 'with-param':
-                    throw `error if here: ${template.localName}`;
+                    throw new Error(`error if here: ${template.localName}`);
                 default:
-                    throw `error if here: ${template.localName}`;
+                    throw new Error(`error if here: ${template.localName}`);
             }
         }
     }
