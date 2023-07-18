@@ -304,6 +304,7 @@ export class Xslt {
                     this.xsltChildNodes(context, template, output);
                     break;
                 case 'template':
+                    if (template.visited) return;
                     template.visited = true;
                     match = xmlGetAttribute(template, 'match');
                     if (match && this.xsltMatch(match, context)) {
