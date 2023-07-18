@@ -172,7 +172,7 @@ export function xmlTransformedText(
 }
 
 function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOutputOptions) {
-    if (node.printed) return;
+    if (node.visited) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
@@ -207,7 +207,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
         }
     }
 
-    node.printed = true;
+    node.visited = true;
 }
 
 /**

@@ -60,7 +60,7 @@ export function domCreateTransformedTextNode(node: XDocument, text: string) {
     return node.createTransformedTextNode(text);
 }
 
-export function domCreateElement(doc: any, name: any) {
+export function domCreateElement(doc: XDocument, name: string) {
     return doc.createElement(name);
 }
 
@@ -148,7 +148,7 @@ export function xmlParse(xml: string): XDocument {
     const root = xmldoc;
     const stack = [];
 
-    let parent = root;
+    let parent: XNode = root;
     stack.push(parent);
 
     let tag = false,

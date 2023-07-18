@@ -306,16 +306,16 @@ export class XPath {
         return this.makeAbbrevStep(ddot.value);
     }
 
-    makeStepExpr3(axisname: any, axis: any, nodetest: any) {
-        return new StepExpr(axisname.value, nodetest, this);
+    makeStepExpr3(axisname: any, axis: any, nodeTest: any) {
+        return new StepExpr(axisname.value, nodeTest, this);
     }
 
-    makeStepExpr4(at: any, nodetest: any) {
-        return new StepExpr('attribute', nodetest, this);
+    makeStepExpr4(at: any, nodeTest: any) {
+        return new StepExpr('attribute', nodeTest, this);
     }
 
-    makeStepExpr5(nodetest: any) {
-        return new StepExpr('child', nodetest, this);
+    makeStepExpr5(nodeTest: any) {
+        return new StepExpr('child', nodeTest, this);
     }
 
     makeStepExpr6(step: any, predicate: any) {
@@ -522,20 +522,20 @@ export class XPath {
     /**
      * DGF - extract a tag name suitable for getElementsByTagName
      *
-     * @param nodetest                     the node test
+     * @param nodeTest                     the node test
      * @param ignoreNonElementNodesForNTA  if true, the node list returned when
      *                                     evaluating "node()" will not contain
      *                                     non-element nodes. This can boost
      *                                     performance. This is false by default.
      */
-    xPathExtractTagNameFromNodeTest(nodetest: any, ignoreNonElementNodesForNTA: any) {
-        if (nodetest instanceof NodeTestName) {
-            return nodetest.name;
+    xPathExtractTagNameFromNodeTest(nodeTest: any, ignoreNonElementNodesForNTA: any) {
+        if (nodeTest instanceof NodeTestName) {
+            return nodeTest.name;
         }
 
         if (
-            (ignoreNonElementNodesForNTA && nodetest instanceof NodeTestAny) ||
-            nodetest instanceof NodeTestElementOrAttribute
+            (ignoreNonElementNodesForNTA && nodeTest instanceof NodeTestAny) ||
+            nodeTest instanceof NodeTestElementOrAttribute
         ) {
             return '*';
         }
@@ -941,15 +941,15 @@ export class XPath {
                 node,
                 key: []
             };
-            const clonedContext = context.clone([node], 0);
+            const clonedContext = context.clone([node], undefined, 0, undefined);
 
             for (const s of sort) {
                 const value = s.expr.evaluate(clonedContext);
 
                 let evalue: any;
-                if (s.type == 'text') {
+                if (s.type === 'text') {
                     evalue = value.stringValue();
-                } else if (s.type == 'number') {
+                } else if (s.type === 'number') {
                     evalue = value.numberValue();
                 }
                 sortitem.key.push({
@@ -1006,7 +1006,7 @@ export class XPath {
 
     xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: ExprContext) {
         const s = steps[step];
-        const ctx2 = ctx.clone([input], 0);
+        const ctx2 = ctx.clone([input], undefined, 0, undefined);
 
         if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
             let nodeList = s.evaluate(ctx2).nodeSetValue();
@@ -1021,7 +1021,7 @@ export class XPath {
             const pLength = s.predicate.length;
             nodeListLoop: for (let i = 0; i < nLength; ++i) {
                 for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(nodeList, i)).booleanValue()) {
+                    if (!s.predicate[j].evaluate(ctx.clone(nodeList, undefined, i, undefined)).booleanValue()) {
                         continue nodeListLoop;
                     }
                 }

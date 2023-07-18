@@ -250,7 +250,7 @@ export const TOK_QNAME = {
 };
 
 export const TOK_NODEO = {
-    label: '[nodetest-start]',
+    label: '[nodeTest-start]',
     re: new RegExp('^(processing-instruction|comment|text|node)\\('),
     key: undefined
 };

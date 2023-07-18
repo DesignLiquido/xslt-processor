@@ -41,7 +41,7 @@ export class LocationExpr extends Expression {
         if (!prevStep) return null;
         if (!nextStep) return null;
         const hasPredicates = prevStep.predicates && prevStep.predicates.length > 0;
-        if (prevStep.nodetest instanceof NodeTestAny && !hasPredicates) {
+        if (prevStep.nodeTest instanceof NodeTestAny && !hasPredicates) {
             // maybe suitable to be combined
             if (prevStep.axis == xpathAxis.DESCENDANT_OR_SELF) {
                 if (nextStep.axis == xpathAxis.CHILD) {

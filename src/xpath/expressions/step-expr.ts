@@ -14,15 +14,15 @@ import { copyArray, copyArrayIgnoringAttributesWithoutValue } from '../common-fu
 
 export class StepExpr extends Expression {
     axis: any;
-    nodetest: any;
+    nodeTest: any;
     predicate: any;
     hasPositionalPredicate: any;
     xPath: XPath;
 
-    constructor(axis: any, nodetest: any, xPath: XPath, opt_predicate?: any) {
+    constructor(axis: any, nodeTest: any, xPath: XPath, opt_predicate?: any) {
         super();
         this.axis = axis;
-        this.nodetest = nodetest;
+        this.nodeTest = nodeTest;
         this.predicate = opt_predicate || [];
         this.hasPositionalPredicate = false;
         this.xPath = xPath;
@@ -114,7 +114,7 @@ export class StepExpr extends Expression {
         let nodeList = [];
         let skipNodeTest = false;
 
-        if (this.nodetest instanceof NodeTestAny) {
+        if (this.nodeTest instanceof NodeTestAny) {
             skipNodeTest = true;
         }
 
@@ -128,14 +128,14 @@ export class StepExpr extends Expression {
                 nodeList.push(n);
             }
         } else if (this.axis == xpathAxis.ATTRIBUTE) {
-            if (this.nodetest.name != undefined) {
+            if (this.nodeTest.name != undefined) {
                 // single-attribute step
                 if (input.attributes) {
                     if (input.attributes instanceof Array) {
                         // probably evaluating on document created by xmlParse()
                         copyArray(nodeList, input.attributes);
                     } else {
-                        if (this.nodetest.name == 'style') {
+                        if (this.nodeTest.name == 'style') {
                             const value = input.getAttributeValue('style');
                             if (value && typeof value != 'string') {
                                 // this is the case where indexing into the attributes array
@@ -143,10 +143,10 @@ export class StepExpr extends Expression {
                                 // node instead
                                 nodeList.push(XNode.create(DOM_ATTRIBUTE_NODE, 'style', value.cssText, document));
                             } else {
-                                nodeList.push(input.attributes[this.nodetest.name]);
+                                nodeList.push(input.attributes[this.nodeTest.name]);
                             }
                         } else {
-                            nodeList.push(input.attributes[this.nodetest.name]);
+                            nodeList.push(input.attributes[this.nodeTest.name]);
                         }
                     }
                 }
@@ -161,18 +161,18 @@ export class StepExpr extends Expression {
         } else if (this.axis == xpathAxis.CHILD) {
             copyArray(nodeList, input.childNodes);
         } else if (this.axis == xpathAxis.DESCENDANT_OR_SELF) {
-            if (this.nodetest.evaluate(context).booleanValue()) {
+            if (this.nodeTest.evaluate(context).booleanValue()) {
                 nodeList.push(input);
             }
             let tagName = this.xPath.xPathExtractTagNameFromNodeTest(
-                this.nodetest,
+                this.nodeTest,
                 context.ignoreNonElementNodesForNTA
             );
             this.xPath.xPathCollectDescendants(nodeList, input, tagName);
             if (tagName) skipNodeTest = true;
         } else if (this.axis == xpathAxis.DESCENDANT) {
             let tagName = this.xPath.xPathExtractTagNameFromNodeTest(
-                this.nodetest,
+                this.nodeTest,
                 context.ignoreNonElementNodesForNTA
             );
             this.xPath.xPathCollectDescendants(nodeList, input, tagName);
@@ -216,7 +216,7 @@ export class StepExpr extends Expression {
             let nodeList0 = nodeList;
             nodeList = [];
             for (let i = 0; i < nodeList0.length; ++i) {
-                if (this.nodetest.evaluate(context.clone(nodeList0, i)).booleanValue()) {
+                if (this.nodeTest.evaluate(context.clone(nodeList0, undefined, i)).booleanValue()) {
                     nodeList.push(nodeList0[i]);
                 }
             }
@@ -229,7 +229,7 @@ export class StepExpr extends Expression {
                 nodeList = [];
                 for (let ii = 0; ii < nodeList0.length; ++ii) {
                     let n = nodeList0[ii];
-                    if (this.predicate[i].evaluate(context.clone(nodeList0, ii)).booleanValue()) {
+                    if (this.predicate[i].evaluate(context.clone(nodeList0, undefined, ii)).booleanValue()) {
                         nodeList.push(n);
                     }
                 }
