@@ -134,7 +134,7 @@ describe('xslt', () => {
         // The base match algorithm should consider them.
         // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
 
-        it.only('Example 1 from Marco', () => {
+        it('Example 1 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -179,7 +179,7 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it.skip('Example 2 from Marco', () => {
+        it('Example 2 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -222,7 +222,7 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it.skip('Example 3 from Marco', () => {
+        it('Example 3 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
