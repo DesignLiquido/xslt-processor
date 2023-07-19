@@ -168,8 +168,15 @@ export class Xslt {
                             !c.visited
                         )
                     ) {
-                        // Actual template should be excluded.
-                        if (template.parentNode && template.parentNode.id === element.id) {
+                        // Actual template should be executed.
+                        // `<xsl:apply-templates>` should have an ancestor `<xsl:template>`
+                        // for comparison.
+                        const templateAncestor = template.getAncestorByLocalName("template");
+                        if (templateAncestor === undefined) {
+                            continue;
+                        }
+
+                        if (templateAncestor.id === element.id) {
                             continue;
                         }
 

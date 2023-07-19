@@ -190,15 +190,15 @@ export function xmlParse(xml: string): XDocument {
 
                 const namespaceMap = namespaceMapAt(node);
                 if (node.prefix !== null) {
-                    if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
+                    if (node.prefix in namespaceMap) node.namespaceUri = namespaceMap[node.prefix];
                     // else, prefix is undefined. do anything?
                 } else {
-                    if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
+                    if ('' in namespaceMap) node.namespaceUri = namespaceMap[''];
                 }
                 for (let i = 0; i < node.attributes.length; ++i) {
                     if (node.attributes[i].prefix !== null) {
                         if (node.attributes[i].prefix in namespaceMap) {
-                            node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
+                            node.attributes[i].namespaceUri = namespaceMap[node.attributes[i].prefix];
                         }
                         // else, prefix undefined.
                     }

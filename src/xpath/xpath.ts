@@ -35,7 +35,7 @@
 //
 // Original author: Steffen Meschkat <mesch@google.com>
 
-import { mapExec, mapExpr, reverseInplace } from '../dom/util';
+import { mapExec, mapExpr, reverseInPlace } from '../dom/util';
 import { copyArray } from './common-function';
 import { ExprContext } from './expr-context';
 import {
@@ -595,11 +595,11 @@ export class XPath {
                 return [];
             }
 
-            reverseInplace(qmatch);
+            reverseInPlace(qmatch);
             qmatch.expr = mapExpr(qmatch, (m) => m.expr);
         }
 
-        reverseInplace(match);
+        reverseInPlace(match);
 
         if (p == -1) {
             return match;

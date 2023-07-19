@@ -21,24 +21,6 @@ describe('root-element', () => {
             </root>
         );
 
-        /* const xsltString =
-            '<?xml version="1.0"?>' +
-            (
-                <xsl:stylesheet version="1.0">
-                    <xsl:template match="test">
-                        <span>
-                            {' '}
-                            <xsl:value-of select="@name" />{' '}
-                        </span>
-                    </xsl:template>
-                    <xsl:template match="/root">
-                        <div>
-                            <xsl:apply-templates select="test" />
-                        </div>
-                    </xsl:template>
-                </xsl:stylesheet>
-            ); */
-
         const xsltString =
             '<?xml version="1.0"?>' +
             (

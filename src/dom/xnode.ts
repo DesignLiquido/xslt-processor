@@ -20,7 +20,7 @@ export class XNode {
     previousSibling: XNode;
 
     ownerDocument: any;
-    namespaceURI: any;
+    namespaceUri: any;
     prefix: any;
     localName: string;
 
@@ -70,7 +70,7 @@ export class XNode {
         this.nodeName = `${name}`;
         this.nodeValue = `${value}`;
         this.ownerDocument = owner;
-        this.namespaceURI = namespaceUri || null;
+        this.namespaceUri = namespaceUri || null;
         [this.prefix, this.localName] = this.qualifiedNameToParts(`${name}`);
 
         this.firstChild = null;
@@ -127,7 +127,7 @@ export class XNode {
     }
 
     static clone(node: XNode, newOwner: XNode): XNode {
-        const newNode = new XNode(node.nodeType, node.nodeName, node.nodeValue, newOwner, node.namespaceURI);
+        const newNode = new XNode(node.nodeType, node.nodeName, node.nodeValue, newOwner, node.namespaceUri);
         for (let child of node.childNodes) {
             newNode.appendChild(XNode.clone(child, newNode));
         }
@@ -326,7 +326,7 @@ export class XNode {
     setAttributeNS(namespace: any, name: any, value: any) {
         for (let i = 0; i < this.attributes.length; ++i) {
             if (
-                this.attributes[i].namespaceURI == namespace &&
+                this.attributes[i].namespaceUri == namespace &&
                 this.attributes[i].localName == this.qualifiedNameToParts(`${name}`)[1]
             ) {
                 this.attributes[i].nodeValue = `${value}`;
@@ -351,7 +351,7 @@ export class XNode {
 
     getAttributeNS(namespace: any, localName: any) {
         for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+            if (this.attributes[i].namespaceUri == namespace && this.attributes[i].localName == localName) {
                 return this.attributes[i].nodeValue;
             }
         }
@@ -371,7 +371,7 @@ export class XNode {
 
     hasAttributeNS(namespace: any, localName: any) {
         for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].namespaceURI == namespace && this.attributes[i].localName == localName) {
+            if (this.attributes[i].namespaceUri == namespace && this.attributes[i].localName == localName) {
                 return true;
             }
         }
@@ -391,7 +391,7 @@ export class XNode {
     removeAttributeNS(namespace: any, localName: any) {
         const a = [];
         for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].localName != localName || this.attributes[i].namespaceURI != namespace) {
+            if (this.attributes[i].localName != localName || this.attributes[i].namespaceUri != namespace) {
                 a.push(this.attributes[i]);
             }
         }
@@ -483,5 +483,17 @@ export class XNode {
             null
         );
         return ret;
+    }
+
+    getAncestorByLocalName(localName: string): XNode | undefined {
+        if (this.parentNode === null || this.parentNode === undefined) {
+            return undefined;
+        }
+
+        if (this.parentNode.localName === localName) {
+            return this.parentNode;
+        }
+
+        return this.parentNode.getAncestorByLocalName(localName);
     }
 }
