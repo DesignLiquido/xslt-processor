@@ -75,13 +75,17 @@ export class Xslt {
     outputMethod: string;
     outputOmitXmlDeclaration: string;
 
-    constructor(options: XsltOptions = {
+    constructor(options: Partial<XsltOptions> = {
         escape: true,
         selfClosingTags: true,
         parameters: []
     }) {
         this.xPath = new XPath();
-        this.options = options;
+        this.options = {
+            escape: options.escape || true,
+            selfClosingTags: options.selfClosingTags || true,
+            parameters: options.parameters || []
+        };
         this.outputMethod = 'xml';
         this.outputOmitXmlDeclaration = 'no';
     }
@@ -164,27 +168,26 @@ export class Xslt {
                             !c.visited
                         )
                     ) {
-                        // let matchAttribute = element.getAttributeValue('match');
-
-                        // Avoiding infinite loops and undesired templates.
-                        /* if (matchAttribute && (matchAttribute.startsWith('/') || matchAttribute.startsWith('*'))) {
+                        // Actual template should be excluded.
+                        if (template.parentNode && template.parentNode.id === element.id) {
                             continue;
-                        } */
+                        }
 
-                        if (!mode || element.getAttributeValue('mode') == mode) {
+                        if (!mode || element.getAttributeValue('mode') === mode) {
                             templates.push(element);
                         }
                     }
 
-                    for (let j = 0; j < sortContext.contextSize(); ++j) {
-                        for (let i = 0; i < templates.length; ++i) {
+                    for (let i = 0; i < templates.length; ++i) {
+                        for (let j = 0; j < sortContext.contextSize(); ++j) {
                             this.xsltProcessContext(
-                                // sortContext.clone(sortContext.nodeList, undefined, j, undefined),
-                                sortContext.clone([sortContext.nodeList[j]], undefined, 0, undefined),
+                                sortContext.clone(sortContext.nodeList, undefined, j, undefined),
                                 templates[i],
                                 output
                             );
                         }
+
+                        // templates[i].visited = true;
                     }
                     break;
                 case 'attribute':
@@ -254,12 +257,13 @@ export class Xslt {
                     // Adds context children reference to this new node,
                     // so then further transformations are also observed
                     // by this new node.
-                    const contextNode = context.nodeList[context.position];
-                    node.childNodes = contextNode.childNodes;
+                    // const contextNode = context.nodeList[context.position];
+                    // node.childNodes = contextNode.childNodes;
                     node.transformedNodeName = name;
 
-                    domAppendTransformedChild(output, node);
-                    this.xsltChildNodes(context, template, node);
+                    domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+                    const clonedContext = context.clone(undefined, [node], undefined, 0);
+                    this.xsltChildNodes(clonedContext, template, node);
                     break;
                 case 'fallback':
                     throw new Error(`not implemented: ${template.localName}`);
@@ -305,7 +309,6 @@ export class Xslt {
                     break;
                 case 'template':
                     if (template.visited) return;
-                    template.visited = true;
                     match = xmlGetAttribute(template, 'match');
                     if (match && this.xsltMatch(match, context)) {
                         this.xsltChildNodes(context, template, output);
@@ -327,7 +330,7 @@ export class Xslt {
                     const attribute = this.xPath.xPathEval(select, context);
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(this.outputDocument, value);
-                    context.nodeList[context.position].appendTransformedChild(node);
+                    context.outputNodeList[context.outputPosition].appendTransformedChild(node);
                     break;
                 case 'param':
                     this.xsltVariable(context, template, false);
@@ -582,13 +585,13 @@ export class Xslt {
                 }
             }
 
-            const outputNodeList = context.outputNodeList[context.outputPosition];
-            domAppendTransformedChild(outputNodeList, newNode);
+            const outputNode = context.outputNodeList[context.outputPosition];
+            domAppendTransformedChild(outputNode, newNode);
             const clonedContext = context.clone(
                 undefined,
-                outputNodeList.transformedChildNodes,
+                outputNode.transformedChildNodes,
                 undefined,
-                outputNodeList.transformedChildNodes.length - 1
+                outputNode.transformedChildNodes.length - 1
             );
             this.xsltChildNodes(clonedContext, template, node);
         } else {

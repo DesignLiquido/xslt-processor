@@ -929,7 +929,7 @@ export class XPath {
     // Utility function to sort a list of nodes. Used by xsltSort() and
     // nxslSelect().
     xPathSort(context: ExprContext, sort: any[]) {
-        if (sort.length == 0) {
+        if (sort.length === 0) {
             return;
         }
 
@@ -1004,11 +1004,11 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: ExprContext) {
+    xPathStep(nodes: any[], steps: any[], step: any, input: any, context: ExprContext) {
         const s = steps[step];
-        const ctx2 = ctx.clone([input], undefined, 0, undefined);
+        const ctx2 = context.clone([input], undefined, 0, undefined);
 
-        if (ctx.returnOnFirstMatch && !s.hasPositionalPredicate) {
+        if (context.returnOnFirstMatch && !s.hasPositionalPredicate) {
             let nodeList = s.evaluate(ctx2).nodeSetValue();
             // the predicates were not processed in the last evaluate(), so that we can
             // process them here with the returnOnFirstMatch optimization. We do a
@@ -1021,7 +1021,7 @@ export class XPath {
             const pLength = s.predicate.length;
             nodeListLoop: for (let i = 0; i < nLength; ++i) {
                 for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(ctx.clone(nodeList, undefined, i, undefined)).booleanValue()) {
+                    if (!s.predicate[j].evaluate(context.clone(nodeList, undefined, i, undefined)).booleanValue()) {
                         continue nodeListLoop;
                     }
                 }
@@ -1029,7 +1029,7 @@ export class XPath {
                 if (step == steps.length - 1) {
                     nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodeList[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], context);
                 }
                 if (nodes.length > 0) {
                     break;
@@ -1045,7 +1045,7 @@ export class XPath {
                 if (step == steps.length - 1) {
                     nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodeList[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], context);
                 }
             }
         }
