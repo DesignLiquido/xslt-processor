@@ -26,6 +26,7 @@ export class XNode {
 
     parentNode: XNode;
 
+    outputNode: XNode;
     transformedAttributes: XNode[];
     transformedChildNodes: XNode[];
     transformedNodeType: any;

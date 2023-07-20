@@ -24,7 +24,9 @@ export const xPathAxis = {
     PARENT: 'parent',
     PRECEDING_SIBLING: 'preceding-sibling',
     PRECEDING: 'preceding',
-    SELF: 'self'
+    SELF: 'self',
+    SELF_AND_SIBLINGS: 'self-and-siblings' // Doesn't exist officially.
+                                           // It is here for a special case of `<xsl:apply-templates>`.
 };
 
 const xpathAxesRe =

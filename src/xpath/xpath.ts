@@ -53,6 +53,7 @@ import {
     UnionExpr,
     VariableExpr
 } from './expressions';
+import { Expression } from './expressions/expression';
 
 import { NodeTestAny } from './node-test-any';
 import { NodeTestComment } from './node-test-comment';
@@ -442,9 +443,14 @@ export class XPath {
         return new VariableExpr(name.value);
     }
 
-    // Used before parsing for optimization of common simple cases. See
-    // the begin of xpathParse() for which they are.
-    makeSimpleExpr(expression: string) {
+    /**
+     * Used before parsing for optimization of common simple cases. See
+     * the begin of xPathParse() for which they are.
+     * @param expression The XPath expression.
+     * @param axis The axis, if required. Default is 'child'.
+     * @returns An `Expression` object.
+     */
+    makeSimpleExpr(expression: string, axis?: string): Expression {
         if (expression.charAt(0) == '$') {
             return new VariableExpr(expression.substr(1));
         }
@@ -462,7 +468,7 @@ export class XPath {
         }
 
         let a = new NodeTestName(expression);
-        let b = new StepExpr(xPathAxis.CHILD, a, this);
+        let b = new StepExpr(axis || xPathAxis.CHILD, a, this);
         let c = new LocationExpr(this);
         c.appendStep(b);
         return c;
@@ -473,7 +479,7 @@ export class XPath {
         const c = new LocationExpr(this);
         for (let i = 0; i < steps.length; ++i) {
             const a = new NodeTestName(steps[i]);
-            const b = new StepExpr('child', a, this);
+            const b = new StepExpr(xPathAxis.CHILD, a, this);
             c.appendStep(b);
         }
         return c;
@@ -611,22 +617,24 @@ export class XPath {
 
     /**
      * The entry point for the parser.
-     * @param expr a string that contains an XPath expression.
+     * @param expression a string that contains an XPath expression.
+     * @param axis The XPath axis. Used when the match does not start with the parent.
      * @param xPathLog TODO
      * @returns an expression object that can be evaluated with an
      * expression context.
      */
     xPathParse(
-        expr,
+        expression: string,
+        axis?: string,
         xPathLog = (message: string) => {
             // console.log(message);
         }
     ) {
-        xPathLog(`parse ${expr}`);
+        xPathLog(`parse ${expression}`);
         this.xPathParseInit(xPathLog);
 
-        const cached = this.xPathCacheLookup(expr);
-        if (cached) {
+        const cached = this.xPathCacheLookup(expression);
+        if (cached && axis === undefined) {
             xPathLog(' ... cached');
             return cached;
         }
@@ -637,21 +645,21 @@ export class XPath {
         // step is a plain element node test
         // (page/overlay/locations/location).
 
-        if (expr.match(/^(\$|@)?\w+$/i)) {
-            let ret = this.makeSimpleExpr(expr);
-            this.xPathParseCache[expr] = ret;
+        if (expression.match(/^(\$|@)?\w+$/i)) {
+            let ret = this.makeSimpleExpr(expression, axis);
+            this.xPathParseCache[expression] = ret;
             xPathLog(' ... simple');
             return ret;
         }
 
-        if (expr.match(/^\w+(\/\w+)*$/i)) {
-            let ret = this.makeSimpleExpr2(expr);
-            this.xPathParseCache[expr] = ret;
+        if (expression.match(/^\w+(\/\w+)*$/i)) {
+            let ret = this.makeSimpleExpr2(expression);
+            this.xPathParseCache[expression] = ret;
             xPathLog(' ... simple 2');
             return ret;
         }
 
-        const cachekey = expr; // expr is modified during parse
+        const cachekey = expression; // expr is modified during parse
 
         const stack = [];
         let ahead = null;
@@ -664,14 +672,14 @@ export class XPath {
 
         while (!done) {
             parse_count++;
-            expr = expr.replace(/^\s*/, '');
+            expression = expression.replace(/^\s*/, '');
             previous = ahead;
             ahead = null;
 
             let rule = null;
             let match = '';
             for (let i = 0; i < xpathTokenRules.length; ++i) {
-                let result = xpathTokenRules[i].re.exec(expr);
+                let result = xpathTokenRules[i].re.exec(expression);
                 lexer_count++;
                 if (result && result.length > 0 && result[0].length > match.length) {
                     rule = xpathTokenRules[i];
@@ -708,7 +716,7 @@ export class XPath {
             }
 
             if (rule) {
-                expr = expr.substr(match.length);
+                expression = expression.substr(match.length);
                 xPathLog(`token: ${match} -- ${rule.label}`);
                 ahead = {
                     tag: rule,
