@@ -186,8 +186,9 @@ export class Xslt {
 
                     for (let i = 0; i < templates.length; ++i) {
                         for (let j = 0; j < sortContext.contextSize(); ++j) {
-                            const clonedContext = sortContext.clone(sortContext.nodeList, undefined, j, undefined);
-                            // const clonedContext = sortContext.clone([sortContext.nodeList[j]], undefined, 0, undefined);
+                            // const clonedContext = sortContext.clone(sortContext.nodeList, undefined, j, undefined);
+
+                            const clonedContext = sortContext.clone([sortContext.nodeList[j]], undefined, 0, undefined);
                             clonedContext.inApplyTemplates = true;
                             this.xsltProcessContext(
                                 clonedContext,
@@ -319,7 +320,19 @@ export class Xslt {
 
                     match = xmlGetAttribute(template, 'match');
                     if (!match) break;
-                    nodes = this.xsltMatch(match, context);
+                    // Uses the parent node of each selected node.
+                    // XPath doesn't have an axis to select "self and siblings", and
+                    // the default axis is "child", so to select the correct children
+                    // we assign the parent here.
+                    let parentNode: XNode;
+                    if (context.nodeList[context.position].nodeName === "#document") {
+                        parentNode = context.nodeList[context.position];
+                    } else {
+                        parentNode = context.nodeList[context.position].parentNode;
+                    }
+
+                    const matchContext = context.clone([parentNode], undefined, 0, undefined);
+                    nodes = this.xsltMatch(match, matchContext);
                     if (nodes.length > 0) {
                         if (!context.inApplyTemplates) {
                             context.baseTemplateMatched = true;
@@ -792,24 +805,19 @@ export class Xslt {
      */
     private relativeXsltMatch(expression: Expression, context: ExprContext): XNode[] {
         // For some reason, XPath understands a default as 'child axis'.
-        // There's no "self + siblings" axis, so this method works with 2 heuristics.
+        // There's no "self + siblings" axis, so what is expected at this point
+        // is to have in the expression context the parent that should
+        // have the nodes we are interested in.
 
-        // Heuristic 1: Traditional XPath.
         const clonedContext = context.clone();
         let nodes = expression.evaluate(clonedContext).nodeSetValue();
         if (nodes.length === 1 && nodes[0].nodeName === "#document") {
+            // As we don't work with the #document node directly, this part
+            // returns its first sibling.
+            // By the way, it should be *always* one sibling here.
             return [nodes[0].childNodes[0]];
         }
 
-        // Heuristic 2: For 'child' axis, get the first parent and re-run the
-        // XPath query.
-        if (nodes.length === 0) {
-            const parentOfPosition = context.nodeList[context.position].parentNode;
-            if (parentOfPosition !== null && parentOfPosition !== undefined) {
-                const parentContext = context.clone([parentOfPosition], undefined, 0);
-                nodes = expression.evaluate(parentContext).nodeSetValue();
-            }
-        }
         return nodes;
     }
 
