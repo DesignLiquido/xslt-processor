@@ -128,6 +128,7 @@ export class XNode {
 
     static clone(node: XNode, newOwner: XNode): XNode {
         const newNode = new XNode(node.nodeType, node.nodeName, node.nodeValue, newOwner, node.namespaceUri);
+        newNode.id = node.id;
         for (let child of node.childNodes) {
             newNode.appendChild(XNode.clone(child, newNode));
         }
@@ -495,5 +496,17 @@ export class XNode {
         }
 
         return this.parentNode.getAncestorByLocalName(localName);
+    }
+
+    getAncestorById(id: number): XNode | undefined {
+        if (this.parentNode === null || this.parentNode === undefined) {
+            return undefined;
+        }
+
+        if (this.parentNode.id === id) {
+            return this.parentNode;
+        }
+
+        return this.parentNode.getAncestorById(id);
     }
 }

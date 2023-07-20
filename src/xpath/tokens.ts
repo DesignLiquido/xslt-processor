@@ -11,7 +11,7 @@ import { XML_NC_NAME } from "../dom/xmltoken";
 
 // The axes of XPath expressions.
 
-export const xpathAxis = {
+export const xPathAxis = {
     ANCESTOR_OR_SELF: 'ancestor-or-self',
     ANCESTOR: 'ancestor',
     ATTRIBUTE: 'attribute',
@@ -29,19 +29,19 @@ export const xpathAxis = {
 
 const xpathAxesRe =
     [
-        xpathAxis.ANCESTOR_OR_SELF,
-        xpathAxis.ANCESTOR,
-        xpathAxis.ATTRIBUTE,
-        xpathAxis.CHILD,
-        xpathAxis.DESCENDANT_OR_SELF,
-        xpathAxis.DESCENDANT,
-        xpathAxis.FOLLOWING_SIBLING,
-        xpathAxis.FOLLOWING,
-        xpathAxis.NAMESPACE,
-        xpathAxis.PARENT,
-        xpathAxis.PRECEDING_SIBLING,
-        xpathAxis.PRECEDING,
-        xpathAxis.SELF
+        xPathAxis.ANCESTOR_OR_SELF,
+        xPathAxis.ANCESTOR,
+        xPathAxis.ATTRIBUTE,
+        xPathAxis.CHILD,
+        xPathAxis.DESCENDANT_OR_SELF,
+        xPathAxis.DESCENDANT,
+        xPathAxis.FOLLOWING_SIBLING,
+        xPathAxis.FOLLOWING,
+        xPathAxis.NAMESPACE,
+        xPathAxis.PARENT,
+        xPathAxis.PRECEDING_SIBLING,
+        xPathAxis.PRECEDING,
+        xPathAxis.SELF
     ].join('(?=::)|') + '(?=::)'; //(viat) bodgy fix because namespace-uri() was getting detected as the namespace axis. maybe less bodgy fix later.
 
 

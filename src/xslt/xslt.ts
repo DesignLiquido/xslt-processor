@@ -164,8 +164,7 @@ export class Xslt {
                     templates = [];
                     for (let element of top.childNodes
                         .filter(c => c.nodeType == DOM_ELEMENT_NODE &&
-                            this.isXsltElement(c, 'template') &&
-                            !c.visited
+                            this.isXsltElement(c, 'template')
                         )
                     ) {
                         // Actual template should be executed.
@@ -187,14 +186,15 @@ export class Xslt {
 
                     for (let i = 0; i < templates.length; ++i) {
                         for (let j = 0; j < sortContext.contextSize(); ++j) {
+                            const clonedContext = sortContext.clone(sortContext.nodeList, undefined, j, undefined);
+                            // const clonedContext = sortContext.clone([sortContext.nodeList[j]], undefined, 0, undefined);
+                            clonedContext.inApplyTemplates = true;
                             this.xsltProcessContext(
-                                sortContext.clone(sortContext.nodeList, undefined, j, undefined),
+                                clonedContext,
                                 templates[i],
                                 output
                             );
                         }
-
-                        // templates[i].visited = true;
                     }
                     break;
                 case 'attribute':
@@ -261,11 +261,7 @@ export class Xslt {
                     nameExpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameExpr, context);
                     node = domCreateElement(this.outputDocument, name);
-                    // Adds context children reference to this new node,
-                    // so then further transformations are also observed
-                    // by this new node.
-                    // const contextNode = context.nodeList[context.position];
-                    // node.childNodes = contextNode.childNodes;
+
                     node.transformedNodeName = name;
 
                     domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
@@ -315,11 +311,34 @@ export class Xslt {
                     this.xsltChildNodes(context, template, output);
                     break;
                 case 'template':
-                    if (template.visited) return;
+                    // If `<xsl:template>` is executed outside `<xsl:apply-templates>`,
+                    // only one match is accepted per level (or per context here).
+                    if (!context.inApplyTemplates && context.baseTemplateMatched) {
+                        break;
+                    }
+
                     match = xmlGetAttribute(template, 'match');
-                    if (match && this.xsltMatch(match, context)) {
+                    if (!match) break;
+                    nodes = this.xsltMatch(match, context);
+                    if (nodes.length > 0) {
+                        if (!context.inApplyTemplates) {
+                            context.baseTemplateMatched = true;
+                        }
+
+                        // const clonedContext = context.clone(nodes, undefined, 0, undefined);
                         this.xsltChildNodes(context, template, output);
                     }
+                    /* if (match && this.xsltMatch(match, context)) {
+                        if (!context.inApplyTemplates) {
+                            context.baseTemplateMatched = true;
+                        }
+
+                        this.xsltChildNodes(context, template, output);
+                        // `template.visited` here is not a good idea because if we
+                        // have N nodes to be executed in the same level and this is on,
+                        // only the first node is executed.
+                        // template.visited = true;
+                    } */
                     break;
                 case 'text':
                     text = xmlValue(template);
@@ -711,82 +730,101 @@ export class Xslt {
      * @see [XSLT] section 5.2, paragraph 1
      * @param match TODO
      * @param context The Expression Context.
-     * @returns true or false.
+     * @returns {XNode[]} A list of the found nodes.
      */
     protected xsltMatch(match: string, context: ExprContext) {
         const expression = this.xPath.xPathParse(match);
 
         if (expression instanceof LocationExpr) {
-            return this.xsltLocationExpressionMatch(match, expression, context);
+            return this.xsltLocationExpressionMatch(expression, context);
         }
 
         if (expression instanceof UnionExpr) {
             // TODO: What about if `expr1` and `expr2` are not `LocationExpr`?
-            return this.xsltLocationExpressionMatch(match, expression.expr1 as LocationExpr, context) ||
-                this.xsltLocationExpressionMatch(match, expression.expr2 as LocationExpr, context);
+            return this.xsltLocationExpressionMatch(expression.expr1 as LocationExpr, context) ||
+                this.xsltLocationExpressionMatch(expression.expr2 as LocationExpr, context);
         }
 
         // TODO: Other expressions
-        return true;
+        return [];
     }
 
-    private xsltLocationExpressionMatch(match: string, expression: LocationExpr, context: ExprContext) {
+    private xsltLocationExpressionMatch(expression: LocationExpr, context: ExprContext) {
         if (expression === undefined || expression.steps === undefined || expression.steps.length <= 0) {
             throw new Error('Error resolving XSLT match: Location Expression should have steps.');
         }
 
-        const firstStep = expression.steps[0];
-
-        // Shortcut for the most common case.
-        if (
-            expression.steps &&
-            !expression.absolute &&
-            expression.steps.length === 1 &&
-            firstStep.axis == 'child' &&
-            firstStep.predicate.length === 0
-        ) {
-            return firstStep.nodeTest.evaluate(context).booleanValue();
-        }
-
-        if (expression.absolute && firstStep.axis !== 'self') {
-            // TODO: `xPathCollectDescendants()`?
-            const levels = match.split('/');
-            if (levels.length > 1) {
-                const matchedNodeList = this.absoluteXsltMatch(expression, context);
-                if (matchedNodeList.length > 0) {
-                    context.nodeList = matchedNodeList;
-                    return true;
-                }
-
-                return false;
-            }
+        if (expression.absolute && expression.steps[0].axis !== 'self') {
+            return this.absoluteXsltMatch(expression, context);
         }
 
         return this.relativeXsltMatch(expression, context);
     }
 
+    /**
+     * Finds all the nodes through absolute xPath search.
+     * Returns only nodes that have as ancestor the actual context node.
+     * @param expression The Expression.
+     * @param context The Expression Context.
+     * @returns The list of found nodes.
+     */
     private absoluteXsltMatch(expression: Expression, context: ExprContext): XNode[] {
-        return expression.evaluate(context.clone([context.nodeList[context.position]])).nodeSetValue();
+        const clonedContext = context.clone();
+        const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
+        const finalList = [];
+
+        for (let element of matchedNodes) {
+            if (element.getAncestorById(context.nodeList[context.position].id) !== undefined) {
+                finalList.push(element);
+            }
+        }
+
+        return finalList;
     }
 
-    private relativeXsltMatch(expr: Expression, context: ExprContext) {
-        let node = context.nodeList[context.position];
+    /**
+     * Tries to find relative nodes from the actual context position.
+     * If found nodes are already in the context, or if they are children of
+     * nodes in the context, they are returned.
+     * @param expression The expression used.
+     * @param context The Expression Context.
+     * @returns The list of found nodes.
+     */
+    private relativeXsltMatch(expression: Expression, context: ExprContext): XNode[] {
+        // For some reason, XPath understands a default as 'child axis'.
+        // There's no "self + siblings" axis, so this method works with 2 heuristics.
 
+        // Heuristic 1: Traditional XPath.
+        const clonedContext = context.clone();
+        let nodes = expression.evaluate(clonedContext).nodeSetValue();
+        if (nodes.length === 1 && nodes[0].nodeName === "#document") {
+            return [nodes[0].childNodes[0]];
+        }
+
+        // Heuristic 2: For 'child' axis, get the first parent and re-run the
+        // XPath query.
+        if (nodes.length === 0) {
+            const parentOfPosition = context.nodeList[context.position].parentNode;
+            if (parentOfPosition !== null && parentOfPosition !== undefined) {
+                const parentContext = context.clone([parentOfPosition], undefined, 0);
+                nodes = expression.evaluate(parentContext).nodeSetValue();
+            }
+        }
+        return nodes;
+
+        /* const finalList = [];
         while (node) {
-            const result = expr.evaluate(context.clone([node])).nodeSetValue();
+            const result = expression.evaluate(context.clone([node])).nodeSetValue();
             for (let i = 0; i < result.length; ++i) {
-                if (result[i] == context.nodeList[context.position]) {
-                    /* if (context.node.nodeName === "#document") {
-                        context.node = con
-                    } */
-                    return true;
+                if (result[i].getAncestorById(context.nodeList[context.position].id) == context.nodeList[context.position]) {
+                    finalList.push(result[i])
                 }
             }
 
             node = node.parentNode;
         }
 
-        return false;
+        return finalList; */
     }
 
     /**

@@ -100,7 +100,8 @@ import {
     ASSOC_LEFT,
     TOK_LITERALQ,
     TOK_LITERALQQ,
-    TOK_NUMBER
+    TOK_NUMBER,
+    xPathAxis
 } from './tokens';
 import {
     XPathLocationPath,
@@ -443,25 +444,25 @@ export class XPath {
 
     // Used before parsing for optimization of common simple cases. See
     // the begin of xpathParse() for which they are.
-    makeSimpleExpr(expr: any) {
-        if (expr.charAt(0) == '$') {
-            return new VariableExpr(expr.substr(1));
+    makeSimpleExpr(expression: string) {
+        if (expression.charAt(0) == '$') {
+            return new VariableExpr(expression.substr(1));
         }
 
-        if (expr.charAt(0) == '@') {
-            let a = new NodeTestName(expr.substr(1));
+        if (expression.charAt(0) == '@') {
+            let a = new NodeTestName(expression.substr(1));
             let b = new StepExpr('attribute', a, this);
             let c = new LocationExpr(this);
             c.appendStep(b);
             return c;
         }
 
-        if (expr.match(/^[0-9]+$/)) {
-            return new NumberExpr(expr);
+        if (expression.match(/^[0-9]+$/)) {
+            return new NumberExpr(expression);
         }
 
-        let a = new NodeTestName(expr);
-        let b = new StepExpr('child', a, this);
+        let a = new NodeTestName(expression);
+        let b = new StepExpr(xPathAxis.CHILD, a, this);
         let c = new LocationExpr(this);
         c.appendStep(b);
         return c;

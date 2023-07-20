@@ -1,14 +1,15 @@
 import { ExprContext } from "../expr-context";
 import { NodeSetValue } from "../values/node-set-value";
 import { NodeTestAny } from "../node-test-any";
-import { xpathAxis } from "../tokens";
+import { xPathAxis } from "../tokens";
 import { Expression } from "./expression";
 import { XPath } from "../xpath";
 import { XNode } from "../../dom";
+import { StepExpr } from "./step-expr";
 
 export class LocationExpr extends Expression {
     absolute: boolean;
-    steps: any[];
+    steps: StepExpr[];
     xPath: XPath;
 
     constructor(xPath: XPath) {
@@ -43,18 +44,18 @@ export class LocationExpr extends Expression {
         const hasPredicates = prevStep.predicates && prevStep.predicates.length > 0;
         if (prevStep.nodeTest instanceof NodeTestAny && !hasPredicates) {
             // maybe suitable to be combined
-            if (prevStep.axis == xpathAxis.DESCENDANT_OR_SELF) {
-                if (nextStep.axis == xpathAxis.CHILD) {
+            if (prevStep.axis == xPathAxis.DESCENDANT_OR_SELF) {
+                if (nextStep.axis == xPathAxis.CHILD) {
                     // HBC - commenting out, because this is not a valid reduction
                     //nextStep.axis = xpathAxis.DESCENDANT;
                     //return nextStep;
-                } else if (nextStep.axis == xpathAxis.SELF) {
-                    nextStep.axis = xpathAxis.DESCENDANT_OR_SELF;
+                } else if (nextStep.axis == xPathAxis.SELF) {
+                    nextStep.axis = xPathAxis.DESCENDANT_OR_SELF;
                     return nextStep;
                 }
-            } else if (prevStep.axis == xpathAxis.DESCENDANT) {
-                if (nextStep.axis == xpathAxis.SELF) {
-                    nextStep.axis = xpathAxis.DESCENDANT;
+            } else if (prevStep.axis == xPathAxis.DESCENDANT) {
+                if (nextStep.axis == xPathAxis.SELF) {
+                    nextStep.axis = xPathAxis.DESCENDANT;
                     return nextStep;
                 }
             }

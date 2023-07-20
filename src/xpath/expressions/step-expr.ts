@@ -3,7 +3,7 @@ import { XNode } from '../../dom';
 import { ExprContext } from '../expr-context';
 import { NodeSetValue } from '../values/node-set-value';
 import { NodeTestAny } from '../node-test-any';
-import { xpathAxis } from '../tokens';
+import { xPathAxis } from '../tokens';
 import { Expression } from './expression';
 import { XPath } from '../xpath';
 import { BinaryExpr } from './binary-expr';
@@ -118,16 +118,16 @@ export class StepExpr extends Expression {
             skipNodeTest = true;
         }
 
-        if (this.axis == xpathAxis.ANCESTOR_OR_SELF) {
+        if (this.axis == xPathAxis.ANCESTOR_OR_SELF) {
             nodeList.push(input);
             for (let n = input.parentNode; n; n = n.parentNode) {
                 nodeList.push(n);
             }
-        } else if (this.axis == xpathAxis.ANCESTOR) {
+        } else if (this.axis == xPathAxis.ANCESTOR) {
             for (let n = input.parentNode; n; n = n.parentNode) {
                 nodeList.push(n);
             }
-        } else if (this.axis == xpathAxis.ATTRIBUTE) {
+        } else if (this.axis == xPathAxis.ATTRIBUTE) {
             if (this.nodeTest.name != undefined) {
                 // single-attribute step
                 if (input.attributes) {
@@ -158,9 +158,9 @@ export class StepExpr extends Expression {
                     copyArray(nodeList, input.attributes);
                 }
             }
-        } else if (this.axis == xpathAxis.CHILD) {
+        } else if (this.axis == xPathAxis.CHILD) {
             copyArray(nodeList, input.childNodes);
-        } else if (this.axis == xpathAxis.DESCENDANT_OR_SELF) {
+        } else if (this.axis == xPathAxis.DESCENDANT_OR_SELF) {
             if (this.nodeTest.evaluate(context).booleanValue()) {
                 nodeList.push(input);
             }
@@ -170,45 +170,45 @@ export class StepExpr extends Expression {
             );
             this.xPath.xPathCollectDescendants(nodeList, input, tagName);
             if (tagName) skipNodeTest = true;
-        } else if (this.axis == xpathAxis.DESCENDANT) {
+        } else if (this.axis == xPathAxis.DESCENDANT) {
             let tagName = this.xPath.xPathExtractTagNameFromNodeTest(
                 this.nodeTest,
                 context.ignoreNonElementNodesForNTA
             );
             this.xPath.xPathCollectDescendants(nodeList, input, tagName);
             if (tagName) skipNodeTest = true;
-        } else if (this.axis == xpathAxis.FOLLOWING) {
+        } else if (this.axis == xPathAxis.FOLLOWING) {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.nextSibling; nn; nn = nn.nextSibling) {
                     nodeList.push(nn);
                     this.xPath.xPathCollectDescendants(nodeList, nn);
                 }
             }
-        } else if (this.axis == xpathAxis.FOLLOWING_SIBLING) {
+        } else if (this.axis == xPathAxis.FOLLOWING_SIBLING) {
             for (let n = input.nextSibling; n; n = n.nextSibling) {
                 nodeList.push(n);
             }
-        } else if (this.axis == xpathAxis.NAMESPACE) {
+        } else if (this.axis == xPathAxis.NAMESPACE) {
             throw new Error('not implemented: axis namespace');
-        } else if (this.axis == xpathAxis.PARENT) {
+        } else if (this.axis == xPathAxis.PARENT) {
             if (input.parentNode) {
                 nodeList.push(input.parentNode);
             }
-        } else if (this.axis == xpathAxis.PRECEDING) {
+        } else if (this.axis == xPathAxis.PRECEDING) {
             for (let n = input; n; n = n.parentNode) {
                 for (let nn = n.previousSibling; nn; nn = nn.previousSibling) {
                     nodeList.push(nn);
                     this.xPath.xPathCollectDescendantsReverse(nodeList, nn);
                 }
             }
-        } else if (this.axis == xpathAxis.PRECEDING_SIBLING) {
+        } else if (this.axis == xPathAxis.PRECEDING_SIBLING) {
             for (let n = input.previousSibling; n; n = n.previousSibling) {
                 nodeList.push(n);
             }
-        } else if (this.axis == xpathAxis.SELF) {
+        } else if (this.axis == xPathAxis.SELF) {
             nodeList.push(input);
         } else {
-            throw `ERROR -- NO SUCH AXIS: ${this.axis}`;
+            throw new Error(`ERROR -- NO SUCH AXIS: ${this.axis}`);
         }
 
         if (!skipNodeTest) {

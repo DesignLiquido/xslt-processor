@@ -51,6 +51,8 @@ export class ExprContext {
     returnOnFirstMatch: any;
     ignoreNonElementNodesForNTA: any;
     root: any;
+    inApplyTemplates: boolean;
+    baseTemplateMatched: boolean;
 
     /**
      * Constructor -- gets the node, its position, the node set it
@@ -94,13 +96,16 @@ export class ExprContext {
         this.ignoreAttributesWithoutValue = opt_ignoreAttributesWithoutValue || false;
         this.returnOnFirstMatch = opt_returnOnFirstMatch || false;
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
+        this.inApplyTemplates = false;
+        this.baseTemplateMatched = false;
+
         if (opt_parent) {
             this.root = opt_parent.root;
         } else if (this.nodeList[this.position].nodeType == DOM_DOCUMENT_NODE) {
             // NOTE(mesch): DOM Spec stipulates that the ownerDocument of a
             // document is null. Our root, however is the document that we are
             // processing, so the initial context is created from its document
-            // node, which case we must handle here explcitly.
+            // node, which case we must handle here explicitly.
             this.root = this.nodeList[this.position];
         } else {
             this.root = this.nodeList[this.position].ownerDocument;
