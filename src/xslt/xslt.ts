@@ -613,7 +613,7 @@ export class Xslt {
 
             const outputNode = context.outputNodeList[context.outputPosition];
             domAppendTransformedChild(outputNode, newNode);
-            const clonedContext = context.clone(
+            const clonedContext = elementContext.clone(
                 undefined,
                 outputNode.transformedChildNodes,
                 undefined,
@@ -811,20 +811,6 @@ export class Xslt {
             }
         }
         return nodes;
-
-        /* const finalList = [];
-        while (node) {
-            const result = expression.evaluate(context.clone([node])).nodeSetValue();
-            for (let i = 0; i < result.length; ++i) {
-                if (result[i].getAncestorById(context.nodeList[context.position].id) == context.nodeList[context.position]) {
-                    finalList.push(result[i])
-                }
-            }
-
-            node = node.parentNode;
-        }
-
-        return finalList; */
     }
 
     /**
