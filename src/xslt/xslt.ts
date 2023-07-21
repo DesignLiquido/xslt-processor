@@ -320,39 +320,18 @@ export class Xslt {
 
                     match = xmlGetAttribute(template, 'match');
                     if (!match) break;
-                    // Uses the parent node of each selected node.
+
                     // XPath doesn't have an axis to select "self and siblings", and
                     // the default axis is "child", so to select the correct children
-                    // we assign the parent here.
-                    /* let parentNode: XNode;
-                    if (context.nodeList[context.position].nodeName === "#document") {
-                        parentNode = context.nodeList[context.position];
-                    } else {
-                        parentNode = context.nodeList[context.position].parentNode;
-                    }
-
-                    const matchContext = context.clone([parentNode], undefined, 0, undefined); */
-                    // nodes = this.xsltMatch(match, matchContext);
+                    // in relative path, we force a 'self-and-siblings' axis.
                     nodes = this.xsltMatch(match, context, context.inApplyTemplates ? 'self-and-siblings' : undefined);
                     if (nodes.length > 0) {
                         if (!context.inApplyTemplates) {
                             context.baseTemplateMatched = true;
                         }
 
-                        // const clonedContext = context.clone(nodes, undefined, 0, undefined);
                         this.xsltChildNodes(context, template, output);
                     }
-                    /* if (match && this.xsltMatch(match, context)) {
-                        if (!context.inApplyTemplates) {
-                            context.baseTemplateMatched = true;
-                        }
-
-                        this.xsltChildNodes(context, template, output);
-                        // `template.visited` here is not a good idea because if we
-                        // have N nodes to be executed in the same level and this is on,
-                        // only the first node is executed.
-                        // template.visited = true;
-                    } */
                     break;
                 case 'text':
                     text = xmlValue(template);
@@ -786,18 +765,18 @@ export class Xslt {
 
     /**
      * Finds all the nodes through absolute xPath search.
-     * Returns only nodes that have as ancestor the actual context node.
+     * Returns only nodes that match the context position node.
      * @param expression The Expression.
      * @param context The Expression Context.
      * @returns The list of found nodes.
      */
     private absoluteXsltMatch(expression: Expression, context: ExprContext): XNode[] {
-        const clonedContext = context.clone();
+        const clonedContext = context.clone([context.root], undefined, 0, undefined);
         const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
         const finalList = [];
 
         for (let element of matchedNodes) {
-            if (element.getAncestorById(context.nodeList[context.position].id) !== undefined) {
+            if (element.id === context.nodeList[context.position].id) {
                 finalList.push(element);
             }
         }

@@ -744,7 +744,7 @@ export class XPath {
 
         let result = stack[0].expr;
         // TODO: Remove this `if` after getting to rewrite `xPathReduce`.
-        if (axis !== undefined && result.steps && Array.isArray(result.steps)) {
+        if (axis !== undefined && !result.absolute && result.steps && Array.isArray(result.steps)) {
             result.steps[0].axis = axis;
         }
 
