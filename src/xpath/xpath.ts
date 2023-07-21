@@ -316,8 +316,8 @@ export class XPath {
         return new StepExpr('attribute', nodeTest, this);
     }
 
-    makeStepExpr5(nodeTest: any) {
-        return new StepExpr('child', nodeTest, this);
+    makeStepExpr5(nodeTest: any, axis?: string) {
+        return new StepExpr(axis || 'child', nodeTest, this);
     }
 
     makeStepExpr6(step: any, predicate: any) {
@@ -729,7 +729,7 @@ export class XPath {
                 done = true;
             }
 
-            while (this.xPathReduce(stack, ahead, xPathLog)) {
+            while (this.xPathReduce(stack, ahead, axis, xPathLog)) {
                 reduce_count++;
                 xPathLog(`stack: ${this.stackToString(stack)}`);
             }
@@ -743,6 +743,11 @@ export class XPath {
         }
 
         let result = stack[0].expr;
+        // TODO: Remove this `if` after getting to rewrite `xPathReduce`.
+        if (axis !== undefined && result.steps && Array.isArray(result.steps)) {
+            result.steps[0].axis = axis;
+        }
+
         this.xPathParseCache[cachekey] = result;
 
         xPathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
@@ -876,6 +881,7 @@ export class XPath {
     xPathReduce(
         stack: any,
         ahead: any,
+        axis?: string,
         xpathLog = (message: string) => {
             // console.log(message);
         }
@@ -915,9 +921,9 @@ export class XPath {
                 }`
             );
 
-            const matchexpr = mapExpr(cand.match, (m) => m.expr);
+            const matchExpression = mapExpr(cand.match, (m) => m.expr);
             xpathLog(`going to apply ${cand.rule[3]}`);
-            cand.expr = cand.rule[3].apply(this, matchexpr);
+            cand.expr = cand.rule[3].apply(this, matchExpression);
 
             stack.push(cand);
             ret = true;
