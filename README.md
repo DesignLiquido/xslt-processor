@@ -67,14 +67,14 @@ You can pass an `options` object to `Xslt` class:
 const options = {
   escape: false,
   selfClosingTags: true,
-  properties: [{ name: 'myparam', value: '123' }]
+  parameters: [{ name: 'myparam', value: '123' }]
 };
 const xslt = new Xslt(options);
 ```
 
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm).
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `properties` (`array`, default `[]`): external parameters that you want to use.
+- `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
     - `value`: the value.
