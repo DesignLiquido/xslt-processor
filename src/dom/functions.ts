@@ -182,6 +182,7 @@ export function xmlParse(xml: string): XDocument {
                     domSetAttribute(node, att[1], val);
                 }
 
+                node.siblingPosition = parent.childNodes.length;
                 domAppendChild(parent, node);
                 if (!empty) {
                     parent = node;

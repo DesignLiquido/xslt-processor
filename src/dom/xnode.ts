@@ -18,10 +18,11 @@ export class XNode {
     lastChild: XNode;
     nextSibling: XNode;
     previousSibling: XNode;
+    siblingPosition: number;
 
     ownerDocument: any;
     namespaceUri: any;
-    prefix: any;
+    prefix: string;
     localName: string;
 
     parentNode: XNode;
@@ -54,6 +55,7 @@ export class XNode {
         this.transformedChildNodes = [];
         this.visited = false;
         this.escape = true;
+        this.siblingPosition = -1;
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);
     }

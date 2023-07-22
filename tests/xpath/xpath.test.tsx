@@ -706,7 +706,7 @@ describe('xpath', () => {
         }
     });
 
-    it.only('returns on first match', () => {
+    it('returns on first match', () => {
         const xPath = new XPath();
 
         const xml = (

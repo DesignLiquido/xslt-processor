@@ -189,6 +189,9 @@ export class Xslt {
                         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
                             const clonedContext = modifiedContext.clone([modifiedContext.nodeList[j]], undefined, 0, undefined);
                             clonedContext.inApplyTemplates = true;
+                            // The output depth should be restarted, since
+                            // another template is being applied from this point.
+                            clonedContext.outputDepth = 0;
                             this.xsltProcessContext(
                                 clonedContext,
                                 templates[i],
@@ -353,6 +356,7 @@ export class Xslt {
                     const attribute = this.xPath.xPathEval(select, context);
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(this.outputDocument, value);
+                    node.siblingPosition = context.nodeList[context.position].siblingPosition;
                     context.outputNodeList[context.outputPosition].appendTransformedChild(node);
                     break;
                 case 'variable':
@@ -594,6 +598,7 @@ export class Xslt {
             let newNode: XNode;
             if (node.outputNode === undefined || node.outputNode === null || context.outputDepth > 0) {
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
+                newNode.siblingPosition = node.siblingPosition;
                 node.outputNode = newNode;
             } else {
                 newNode = node.outputNode;
