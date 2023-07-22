@@ -766,7 +766,8 @@ export class Xslt {
 
     /**
      * Finds all the nodes through absolute xPath search.
-     * Returns only nodes that match the context position node.
+     * Returns only nodes that match either the context position node,
+     * or an ancestor.
      * @param expression The Expression.
      * @param context The Expression Context.
      * @returns The list of found nodes.
@@ -778,6 +779,11 @@ export class Xslt {
 
         for (let element of matchedNodes) {
             if (element.id === context.nodeList[context.position].id) {
+                finalList.push(element);
+                continue;
+            }
+
+            if (element.getAncestorById(context.nodeList[context.position].id) !== undefined) {
                 finalList.push(element);
             }
         }
