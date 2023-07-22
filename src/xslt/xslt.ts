@@ -298,6 +298,9 @@ export class Xslt {
                     this.outputMethod = xmlGetAttribute(template, 'method');
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     break;
+                case 'param':
+                    this.xsltVariable(context, template, false);
+                    break;
                 case 'preserve-space':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'processing-instruction':
@@ -351,9 +354,6 @@ export class Xslt {
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(this.outputDocument, value);
                     context.outputNodeList[context.outputPosition].appendTransformedChild(node);
-                    break;
-                case 'param':
-                    this.xsltVariable(context, template, false);
                     break;
                 case 'variable':
                     this.xsltVariable(context, template, true);
@@ -756,7 +756,6 @@ export class Xslt {
             throw new Error('Error resolving XSLT match: Location Expression should have steps.');
         }
 
-        // if (expression.absolute && expression.steps[0].axis !== 'self') {
         if (expression.absolute) {
             return this.absoluteXsltMatch(expression, context);
         }
@@ -836,7 +835,7 @@ export class Xslt {
     // Test if the given element is an XSLT element, optionally the one with the given name
     protected isXsltElement(element: any, opt_wantedName?: string) {
         if (opt_wantedName && element.localName != opt_wantedName) return false;
-        if (element.namespaceURI) return element.namespaceURI === 'http://www.w3.org/1999/XSL/Transform';
+        if (element.namespaceUri) return element.namespaceUri === 'http://www.w3.org/1999/XSL/Transform';
         return element.prefix === 'xsl'; // backwards compatibility with earlier versions of xslt-processor
     }
 }

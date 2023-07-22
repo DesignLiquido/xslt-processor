@@ -453,7 +453,7 @@ export class XNode {
                 this,
                 (node: any) => {
                     if (self == node) return;
-                    if (node.namespaceURI == namespace) ret.push(node);
+                    if (node.namespaceUri == namespace) ret.push(node);
                 },
                 null
             );
@@ -462,7 +462,7 @@ export class XNode {
                 this,
                 (node: any) => {
                     if (self == node) return;
-                    if (node.localName == localName && node.namespaceURI == namespace) {
+                    if (node.localName == localName && node.namespaceUri == namespace) {
                         ret.push(node);
                     }
                 },

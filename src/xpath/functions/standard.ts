@@ -1,4 +1,4 @@
-import { xmlValue } from "../../dom";
+import { XNode, xmlValue } from "../../dom";
 import { ExprContext } from "../expr-context";
 import { BooleanValue, NodeSetValue, NumberValue, StringValue } from "../values";
 import { assert, regExpEscape } from "./internal-functions";
@@ -191,18 +191,18 @@ export function _name(context: ExprContext) {
 
 export function namespaceUri(context: ExprContext) {
     assert(this.args.length === 1 || this.args.length === 0);
-    let n;
+    let nodes: XNode[];
     if (this.args.length === 0) {
-        n = [context.nodeList[context.position]];
+        nodes = [context.nodeList[context.position]];
     } else {
-        n = this.args[0].evaluate(context).nodeSetValue();
+        nodes = this.args[0].evaluate(context).nodeSetValue();
     }
 
-    if (n.length === 0) {
+    if (nodes.length === 0) {
         return new StringValue('');
     }
 
-    return new StringValue(n[0].namespaceURI || '');
+    return new StringValue(nodes[0].namespaceUri || '');
 }
 
 export function normalizeSpace(context: ExprContext) {
