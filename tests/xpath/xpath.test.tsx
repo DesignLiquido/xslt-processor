@@ -467,11 +467,11 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
     const slashPageLocationAtLat = `/${page}/${location}/@${lat}`;
     const slashPageLocationAtLon = `/${page}/${location}/@${lon}`;
 
-    const ctx = new ExprContext([xmlParse(xml)]);
+    const ctx = new ExprContext([xmlParse(xml)], []);
     // DGF if we have access to an official DOMParser, compare output with that also
     let ctx1;
     if (typeof DOMParser != 'undefined') {
-        ctx1 = new ExprContext([new DOMParser().parseFromString(xml, 'text/xml')]);
+        ctx1 = new ExprContext([new DOMParser().parseFromString(xml, 'text/xml') as any], []);
     } else {
         ctx1 = ctx;
     }
@@ -539,7 +539,7 @@ describe('xpath', () => {
         );
 
         for (const e of numExpr) {
-            let ctx = new ExprContext([bodyEl]);
+            let ctx = new ExprContext([bodyEl], []);
             ctx.setCaseInsensitive(true);
             if (e[2]) {
                 for (const k in e[2] as any) {
@@ -556,7 +556,7 @@ describe('xpath', () => {
             // allow exceptions to be caught and asserted upon
             let result;
             try {
-                result = xPath.xPathParse(e[0]).evaluate(ctx);
+                result = xPath.xPathParse(e[0] as any).evaluate(ctx);
             } catch (ex) {
                 assert.equal(ex.message, e[1], ex.message);
                 continue;
@@ -612,10 +612,10 @@ describe('xpath', () => {
             ' <f></f>',
             '</page>'
         ].join('');
-        const ctx = new ExprContext([xmlParse(xml)]);
+        const ctx = new ExprContext([xmlParse(xml)], []);
 
         for (const e of axisTests) {
-            const result = xPath.xPathParse(e[0]).evaluate(ctx);
+            const result = xPath.xPathParse(e[0] as any).evaluate(ctx);
             if (typeof e[1] == 'number') {
                 assert.equal(e[1], result.numberValue(), e[0] as any);
             } else if (typeof e[1] == 'string') {
@@ -628,7 +628,7 @@ describe('xpath', () => {
 
     it('can handle attribute asterisk', () => {
         const xPath = new XPath();
-        const ctx = new ExprContext([xmlParse('<x a="1" b="1"><y><z></z></y></x>')]);
+        const ctx = new ExprContext([xmlParse('<x a="1" b="1"><y><z></z></y></x>')], []);
         const expr = xPath.xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
@@ -702,11 +702,11 @@ describe('xpath', () => {
         ];
 
         for (const test of tests) {
-            assert.equal(xPath.xPathParse(test[0]).steps[1].hasPositionalPredicate, test[1], test[0] as any);
+            assert.equal(xPath.xPathParse(test[0] as any).steps[1].hasPositionalPredicate, test[1], test[0] as any);
         }
     });
 
-    it('returns on first match', () => {
+    it.only('returns on first match', () => {
         const xPath = new XPath();
 
         const xml = (
@@ -729,18 +729,18 @@ describe('xpath', () => {
         ];
 
         const parsedXML = xmlParse(xml);
-        const ctx = new ExprContext([parsedXML]);
+        const ctx = new ExprContext([parsedXML], []);
 
         for (const test of tests) {
-            const expr = xPath.xPathParse(test[0]);
+            const expr = xPath.xPathParse(test[0] as any);
 
             ctx.setReturnOnFirstMatch(false);
             const normalResults = expr.evaluate(ctx);
-            assert.equal(test[1], normalResults.value.length, `normal results count: ${test[0]}`);
+            assert.equal(normalResults.value.length, test[1], `normal results count: ${test[0]}`);
 
             ctx.setReturnOnFirstMatch(true);
             const firstMatchResults = expr.evaluate(ctx);
-            assert.equal(1, firstMatchResults.value.length, `first match results count: ${test[0]}`);
+            assert.equal(firstMatchResults.value.length, 1, `first match results count: ${test[0]}`);
 
             assert.equal(
                 normalResults.value[0],

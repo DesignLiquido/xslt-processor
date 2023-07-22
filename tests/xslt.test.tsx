@@ -129,9 +129,13 @@ describe('xslt', () => {
         });
 
         // The three examples below from Marco Balestra illustrate
-        // a behavior that should not be happening: template matches
-        // should match _only once_, following a best match heuristic.
-        // The base match algorithm should consider them.
+        // the difference between triggering `<xsl:template>` vs. triggering
+        // `<xsl:apply-templates>`:
+        //
+        // - For the top input node, only one `<xsl:template>` is triggered.
+        // it should follow a "best match heuristic" (to be implemented);
+        // - For `<xsl:apply-templates>`, all the templates can be triggered,
+        // except the template that started the processing.
         // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
 
         it('Example 1 from Marco', () => {
