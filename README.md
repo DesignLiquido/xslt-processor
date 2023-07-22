@@ -74,7 +74,7 @@ const xslt = new Xslt(options);
 
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm).
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `parameters` (`array`, default `[]`): external parameters that you want to use.
+- `properties` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
     - `value`: the value.
@@ -84,7 +84,7 @@ const xslt = new Xslt(options);
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.1.6/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.2.0/umd/xslt-processor.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
