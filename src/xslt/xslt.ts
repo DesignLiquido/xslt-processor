@@ -561,7 +561,7 @@ export class Xslt {
      */
     protected xsltPassThrough(
         context: ExprContext,
-        template: any,
+        template: XNode,
         output: XNode
     ) {
         if (template.nodeType == DOM_TEXT_NODE) {
@@ -591,7 +591,7 @@ export class Xslt {
             }
 
             let newNode: XNode;
-            if (node.outputNode === undefined || node.outputNode === null) {
+            if (node.outputNode === undefined || node.outputNode === null || context.outputDepth > 0) {
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
                 node.outputNode = newNode;
             } else {
@@ -614,11 +614,10 @@ export class Xslt {
 
             const outputNode = context.outputNodeList[context.outputPosition];
             domAppendTransformedChild(outputNode, newNode);
-            const clonedContext = elementContext.clone(
-                undefined,
+            const clonedContext = elementContext.cloneByOutput(
                 outputNode.transformedChildNodes,
-                undefined,
-                outputNode.transformedChildNodes.length - 1
+                outputNode.transformedChildNodes.length - 1,
+                ++elementContext.outputDepth
             );
             this.xsltChildNodes(clonedContext, template, node);
         } else {

@@ -44,13 +44,18 @@ export class ExprContext {
     nodeList: XNode[];
     outputPosition: number;
     outputNodeList: XNode[];
+    outputDepth: number;
+
     variables: { [name: string]: any };
-    parent: ExprContext;
+
     caseInsensitive: any;
     ignoreAttributesWithoutValue: any;
     returnOnFirstMatch: any;
     ignoreNonElementNodesForNTA: any;
-    root: any;
+
+    parent: ExprContext;
+    root: XNode;
+
     inApplyTemplates: boolean;
     baseTemplateMatched: boolean;
 
@@ -80,6 +85,7 @@ export class ExprContext {
         outputNodeList: XNode[],
         opt_position?: number,
         opt_outputPosition?: number,
+        opt_outputDepth?: number,
         opt_parent?: ExprContext,
         opt_caseInsensitive?: any,
         opt_ignoreAttributesWithoutValue?: any,
@@ -98,6 +104,7 @@ export class ExprContext {
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
         this.inApplyTemplates = false;
         this.baseTemplateMatched = false;
+        this.outputDepth = opt_outputDepth || 0;
 
         if (opt_parent) {
             this.root = opt_parent.root;
@@ -129,6 +136,22 @@ export class ExprContext {
             opt_outputNodeList || this.outputNodeList,
             typeof opt_position !== 'undefined' ? opt_position : this.position,
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
+            this.outputDepth,
+            this,
+            this.caseInsensitive,
+            this.ignoreAttributesWithoutValue,
+            this.returnOnFirstMatch,
+            this.ignoreNonElementNodesForNTA
+        );
+    }
+
+    cloneByOutput(opt_outputNodeList?: XNode[], opt_outputPosition?: number, opt_outputDepth?: number) {
+        return new ExprContext(
+            this.nodeList,
+            opt_outputNodeList || this.outputNodeList,
+            this.position,
+            typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
+            typeof opt_outputDepth !== 'undefined' ? opt_outputDepth : this.outputDepth,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,
