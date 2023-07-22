@@ -997,8 +997,11 @@ export class XPath {
 
         const nodes = [];
         for (let i = 0; i < sortlist.length; ++i) {
-            nodes.push(sortlist[i].node);
+            const node = sortlist[i].node;
+            node.siblingPosition = i;
+            nodes.push(node);
         }
+
         context.nodeList = nodes;
         context.setNode(0);
     }
