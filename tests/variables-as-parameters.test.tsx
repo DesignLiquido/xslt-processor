@@ -26,15 +26,14 @@ describe('variables-as-parameters', () => {
 
         const expectedOutString = `<root><span>hugo</span></root>`;
 
-        const xsltClass = new Xslt();
+        const xsltClass = new Xslt({ parameters: [
+          { name: 'test', value: 'hugo' }
+        ] });
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
           xml,
           xslt,
-          [
-            { name: 'test', value: 'hugo' }
-          ]
         );
 
         assert.equal(outXmlString, expectedOutString);

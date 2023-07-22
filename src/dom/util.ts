@@ -10,7 +10,7 @@
 
 // Applies the given function to each element of the array, preserving
 // this, and passing the index.
-export function mapExec(array, func) {
+export function mapExec(array: any[], func: Function) {
     for (let i = 0; i < array.length; ++i) {
         func.call(this, array[i], i);
     }
@@ -27,7 +27,7 @@ export function mapExpr(array, func) {
 }
 
 // Reverses the given array in place.
-export function reverseInplace(array) {
+export function reverseInPlace(array: any[]) {
     for (let i = 0; i < array.length / 2; ++i) {
         const h = array[i];
         const ii = array.length - i - 1;

@@ -1,6 +1,6 @@
 // Shallow-copies an array to the end of another array
 // Basically Array.concat, but works with other non-array collections
-export function copyArray(dst, src) {
+export function copyArray(dst: any[], src: any[]) {
     if (!src) return;
     const dstLength = dst.length;
     for (let i = src.length - 1; i >= 0; --i) {

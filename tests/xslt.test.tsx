@@ -129,12 +129,16 @@ describe('xslt', () => {
         });
 
         // The three examples below from Marco Balestra illustrate
-        // a behavior that should not be happening: template matches
-        // should match _only once_, following a best match heuristic.
-        // The base match algorithm should consider them.
+        // the difference between triggering `<xsl:template>` vs. triggering
+        // `<xsl:apply-templates>`:
+        //
+        // - For the top input node, only one `<xsl:template>` is triggered.
+        // it should follow a "best match heuristic" (to be implemented);
+        // - For `<xsl:apply-templates>`, all the templates can be triggered,
+        // except the template that started the processing.
         // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
 
-        it.skip('Example 1 from Marco', () => {
+        it('Example 1 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -179,7 +183,7 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it.skip('Example 2 from Marco', () => {
+        it('Example 2 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -222,7 +226,7 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it.skip('Example 3 from Marco', () => {
+        it('Example 3 from Marco', () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -306,8 +310,8 @@ describe('xslt', () => {
         const xsltClass = new Xslt();
         const xml = xmlParse(xmlApplyTemplates);
         const xslt = xmlParse(xsltApplyTemplates);
-        const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, 'ABC');
+        const result = xsltClass.xsltProcess(xml, xslt);
+        assert.equal(result, 'ABC');
     });
 
     it('handles global variables', () => {

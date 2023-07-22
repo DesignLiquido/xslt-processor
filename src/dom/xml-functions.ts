@@ -172,7 +172,7 @@ export function xmlTransformedText(
 }
 
 function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOutputOptions) {
-    if (node.printed) return;
+    if (node.visited) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
@@ -201,13 +201,14 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
 
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, options);
         }
     }
 
-    node.printed = true;
+    node.visited = true;
 }
 
 /**
