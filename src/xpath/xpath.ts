@@ -633,11 +633,14 @@ export class XPath {
         xPathLog(`parse ${expression}`);
         this.xPathParseInit(xPathLog);
 
-        const cached = this.xPathCacheLookup(expression);
+        // TODO: Removing the cache for now.
+        // The cache became a real problem when having to deal with `self-and-siblings`
+        // axis.
+        /* const cached = this.xPathCacheLookup(expression);
         if (cached && axis === undefined) {
             xPathLog(' ... cached');
             return cached;
-        }
+        } */
 
         // Optimize for a few common cases: simple attribute node tests
         // (@id), simple element node tests (page), variable references
