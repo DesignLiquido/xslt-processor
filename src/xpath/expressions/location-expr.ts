@@ -69,6 +69,9 @@ export class LocationExpr extends Expression {
             start = context.root;
         } else {
             start = context.nodeList[context.position];
+            if (start.nodeName === '#document') {
+                start = start.childNodes[0];
+            }
         }
 
         const nodes = [];

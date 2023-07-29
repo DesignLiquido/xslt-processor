@@ -330,7 +330,6 @@ export class Xslt {
                     // XPath doesn't have an axis to select "self and siblings", and
                     // the default axis is "child", so to select the correct children
                     // in relative path, we force a 'self-and-siblings' axis.
-                    // nodes = this.xsltMatch(match, context, context.inApplyTemplates ? 'self-and-siblings' : undefined);
                     nodes = this.xsltMatch(match, context, 'self-and-siblings');
                     if (nodes.length > 0) {
                         if (!context.inApplyTemplates) {
