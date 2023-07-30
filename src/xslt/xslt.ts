@@ -775,7 +775,7 @@ export class Xslt {
      * @param context The Expression Context.
      * @returns The list of found nodes.
      */
-    private absoluteXsltMatch(expression: Expression, context: ExprContext): XNode[] {
+    private absoluteXsltMatch(expression: LocationExpr, context: ExprContext): XNode[] {
         const clonedContext = context.clone([context.root], undefined, 0, undefined);
         const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
         const finalList = [];
@@ -802,7 +802,7 @@ export class Xslt {
      * @param context The Expression Context.
      * @returns The list of found nodes.
      */
-    private relativeXsltMatch(expression: Expression, context: ExprContext): XNode[] {
+    private relativeXsltMatch(expression: LocationExpr, context: ExprContext): XNode[] {
         // For some reason, XPath understands a default as 'child axis'.
         // There's no "self + siblings" axis, so what is expected at this point
         // is to have in the expression context the parent that should

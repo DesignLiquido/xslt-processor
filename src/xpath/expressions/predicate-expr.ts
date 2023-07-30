@@ -3,22 +3,22 @@ import { BooleanValue } from "../values/boolean-value";
 import { Expression } from "./expression";
 
 export class PredicateExpr extends Expression {
-    expr: any;
+    expr: Expression;
 
-    constructor(expr: any) {
+    constructor(expr: Expression) {
         super();
         this.expr = expr;
     }
 
-    evaluate(ctx: ExprContext) {
-        const v = this.expr.evaluate(ctx);
+    evaluate(context: ExprContext) {
+        const v = this.expr.evaluate(context);
         if (v.type == 'number') {
             // NOTE(mesch): Internally, position is represented starting with
             // 0, however in XPath position starts with 1. See functions
             // position() and last().
-            return new BooleanValue(ctx.position == v.numberValue() - 1);
-        } else {
-            return new BooleanValue(v.booleanValue());
+            return new BooleanValue(context.position == v.numberValue() - 1);
         }
+
+        return new BooleanValue(v.booleanValue());
     }
 }

@@ -1,3 +1,4 @@
+import { ExprContext } from "./expr-context";
 import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestNC {
@@ -5,13 +6,13 @@ export class NodeTestNC {
 
     nsprefix: any;
 
-    constructor(nsprefix) {
+    constructor(nsprefix: string) {
         this.regex = new RegExp(`^${nsprefix}:`);
         this.nsprefix = nsprefix;
     }
 
-    evaluate(ctx) {
-        const n = ctx.node;
+    evaluate(ctx: ExprContext) {
+        const n = ctx.nodeList[ctx.position];
         return new BooleanValue(n.nodeName.match(this.regex));
     }
 }

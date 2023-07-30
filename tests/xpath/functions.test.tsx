@@ -97,7 +97,7 @@ describe('XPath Functions', () => {
         assert.ok(!outXmlString);
     });
 
-    it.skip('translate', () => {
+    it('translate', () => {
         const xmlString = (
             <root>
                 <typeA />
