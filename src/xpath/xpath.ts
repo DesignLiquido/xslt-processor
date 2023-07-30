@@ -626,6 +626,7 @@ export class XPath {
     xPathParse(
         expression: string,
         axis?: string,
+        // eslint-disable-next-line no-unused-vars
         xPathLog = (message: string) => {
             // console.log(message);
         }
@@ -891,6 +892,7 @@ export class XPath {
         stack: any,
         ahead: any,
         axis?: string,
+        // eslint-disable-next-line no-unused-vars
         xpathLog = (message: string) => {
             // console.log(message);
         }

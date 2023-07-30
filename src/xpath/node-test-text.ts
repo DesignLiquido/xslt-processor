@@ -1,8 +1,9 @@
 import { DOM_TEXT_NODE } from "../constants";
+import { ExprContext } from "./expr-context";
 import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestText {
-    evaluate(ctx) {
-        return new BooleanValue(ctx.node.nodeType == DOM_TEXT_NODE);
+    evaluate(ctx: ExprContext) {
+        return new BooleanValue(ctx.nodeList[ctx.position].nodeType == DOM_TEXT_NODE);
     }
 }

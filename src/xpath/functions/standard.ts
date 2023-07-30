@@ -3,6 +3,8 @@ import { ExprContext } from "../expr-context";
 import { BooleanValue, NodeSetValue, NumberValue, StringValue } from "../values";
 import { assert, regExpEscape } from "./internal-functions";
 
+/* Support functions. They are not exported. */
+
 function cyrb53(str: string, seed = 0) {
     let h1 = 0xdeadbeef ^ seed;
     let h2 = 0x41c6ce57 ^ seed;
@@ -21,6 +23,7 @@ function cyrb53(str: string, seed = 0) {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
+// Exported functions.
 // In theory none of the `this.args` should work here,
 // but `this` is replaced on `FunctionCallExpr.evaluate()`
 // executes.
@@ -55,6 +58,11 @@ export function count(context: ExprContext) {
     assert(this.args.length === 1);
     const v = this.args[0].evaluate(context);
     return new NumberValue(v.nodeSetValue().length);
+}
+
+export function current(context: ExprContext) {
+    assert(this.args.length === 0);
+    return new NodeSetValue([context.nodeList[context.position]]);
 }
 
 export function endsWith(context: ExprContext) {
@@ -114,21 +122,21 @@ export function id(context: ExprContext) {
 export function lang(context: ExprContext) {
     assert(this.args.length === 1);
     const lang = this.args[0].evaluate(context).stringValue();
-    let xmllang;
+    let xmlLang;
     let n = context.nodeList[context.position];
     while (n && n != n.parentNode /* just in case ... */) {
-        xmllang = n.getAttributeValue('xml:lang');
-        if (xmllang) {
+        xmlLang = n.getAttributeValue('xml:lang');
+        if (xmlLang) {
             break;
         }
         n = n.parentNode;
     }
-    if (!xmllang) {
+    if (!xmlLang) {
         return new BooleanValue(false);
     }
 
     const re = new RegExp(`^${lang}$`, 'i');
-    return new BooleanValue(xmllang.match(re) || xmllang.replace(/_.*$/, '').match(re));
+    return new BooleanValue(xmlLang.match(re) || xmlLang.replace(/_.*$/, '').match(re));
 }
 
 export function last(context: ExprContext) {
@@ -139,7 +147,7 @@ export function last(context: ExprContext) {
 
 export function localName(context: ExprContext) {
     assert(this.args.length === 1 || this.args.length === 0);
-    let n;
+    let n: XNode[];
     if (this.args.length == 0) {
         n = [context.nodeList[context.position]];
     } else {

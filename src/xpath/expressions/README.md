@@ -6,7 +6,5 @@ expression classes closely mirrors the set of non terminal symbols in the gramma
 The common expression interface consists of the following methods:
 
 - `evaluate(context)` - evaluates the expression, returns a value.
-
 - `toString(expr)` - returns the XPath text representation of the expression.
-
 - `parseTree(expr, indent)` - returns a parse tree representation of the expression.

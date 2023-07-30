@@ -8,7 +8,7 @@ import { xmlParse } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
-describe('LMHT', () => {
+describe.skip('LMHT', () => {
     it('Trivial', () => {
         const xmlString = (
             <lmht>

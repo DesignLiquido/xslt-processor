@@ -1,4 +1,5 @@
 import { xmlValue } from "../../dom";
+import { ExprContext } from "../expr-context";
 import { BooleanValue } from "../values/boolean-value";
 import { NumberValue } from "../values/number-value";
 import { Expression } from "./expression";
@@ -80,7 +81,7 @@ export class BinaryExpr extends Expression {
         return ret;
     }
 
-    compare(ctx, cmp) {
+    compare(ctx: ExprContext, cmp: any) {
         const v1 = this.expr1.evaluate(ctx);
         const v2 = this.expr2.evaluate(ctx);
 

@@ -1,16 +1,18 @@
 import { DOM_PROCESSING_INSTRUCTION_NODE } from "../constants";
+import { ExprContext } from "./expr-context";
 import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestPI {
     target: any;
 
-    constructor(target) {
+    constructor(target: any) {
         this.target = target;
     }
 
-    evaluate(ctx) {
+    evaluate(ctx: ExprContext) {
+        const node = ctx.nodeList[ctx.position];
         return new BooleanValue(
-            ctx.node.nodeType == DOM_PROCESSING_INSTRUCTION_NODE && (!this.target || ctx.node.nodeName == this.target)
+            node.nodeType == DOM_PROCESSING_INSTRUCTION_NODE && (!this.target || node.nodeName == this.target)
         );
     }
 }
