@@ -15,6 +15,26 @@ import { Xslt } from '../../src/xslt';
 console.log(dom);
 
 describe('XPath Functions', () => {
+    it('current', () => {
+        const xml = xmlParse(<root>test</root>);
+        const xsltDefinition = xmlParse(
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <xsl:value-of select="current()"/>
+                </xsl:template>
+            </xsl:stylesheet>
+        );
+
+        const xsltClass = new Xslt();
+
+        const outXmlString = xsltClass.xsltProcess(
+            xml,
+            xsltDefinition
+        );
+
+        assert.equal(outXmlString, 'test');
+    });
+
     it('generate-id, trivial', () => {
         const xml = xmlParse(<root></root>);
         const xsltDefinition = xmlParse(

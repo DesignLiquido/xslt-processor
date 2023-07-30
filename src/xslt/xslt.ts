@@ -99,7 +99,6 @@ export class Xslt {
     xsltProcess(xmlDoc: XDocument, stylesheet: XDocument) {
         const outputDocument = new XDocument();
         this.outputDocument = outputDocument;
-        // output.appendChild(XNode.clone(xmlDoc.childNodes[0], output));
         const expressionContext = new ExprContext([xmlDoc], [outputDocument]);
 
         if (this.options.parameters.length > 0) {
