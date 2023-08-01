@@ -9,8 +9,6 @@
 // the subset of the W3C DOM that is used in the XSLT implementation.
 import he from 'he';
 
-import { DOM_ELEMENT_NODE } from "../constants";
-
 import {
     namespaceMapAt
 } from './util';
@@ -78,39 +76,6 @@ export function domCreateDocumentFragment(doc: XDocument): XNode {
 
 export function domCreateDTDSection(doc: XDocument, data: any) {
     return doc.createDTDSection(data);
-}
-
-// Traverses the element nodes in the DOM section underneath the given
-// node and invokes the given callbacks as methods on every element
-// node encountered. Function opt_pre is invoked before a node's
-// children are traversed; opt_post is invoked after they are
-// traversed. Traversal will not be continued if a callback function
-// returns boolean false. NOTE(mesch): copied from
-// <//google3/maps/webmaps/javascript/dom.js>.
-export function domTraverseElements(node: any, opt_pre: any, opt_post: any) {
-    let ret;
-    if (opt_pre) {
-        ret = opt_pre.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
-
-    for (let c = node.firstChild; c; c = c.nextSibling) {
-        if (c.nodeType == DOM_ELEMENT_NODE) {
-            ret = domTraverseElements.call(this, c, opt_pre, opt_post);
-            if (typeof ret == 'boolean' && !ret) {
-                return false;
-            }
-        }
-    }
-
-    if (opt_post) {
-        ret = opt_post.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
 }
 
 /**
