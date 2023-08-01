@@ -3,8 +3,7 @@
 // where we can't reuse the HTML DOM for parsing our own XML, and for
 // Safari, where it is too expensive to have the template processor
 
-import { DOM_ATTRIBUTE_NODE } from '../constants';
-import { domTraverseElements } from './functions';
+import { DOM_ATTRIBUTE_NODE, DOM_ELEMENT_NODE } from '../constants';
 
 // operate on native DOM nodes.
 export class XNode {
@@ -89,6 +88,39 @@ export class XNode {
         }
 
         return [null, name];
+    }
+
+    // Traverses the element nodes in the DOM section underneath the given
+    // node and invokes the given callbacks as methods on every element
+    // node encountered. Function opt_pre is invoked before a node's
+    // children are traversed; opt_post is invoked after they are
+    // traversed. Traversal will not be continued if a callback function
+    // returns boolean false. NOTE(mesch): copied from
+    // <//google3/maps/webmaps/javascript/dom.js>.
+    protected domTraverseElements(node: any, opt_pre: any, opt_post: any) {
+        let ret;
+        if (opt_pre) {
+            ret = opt_pre.call(null, node);
+            if (typeof ret == 'boolean' && !ret) {
+                return false;
+            }
+        }
+
+        for (let c = node.firstChild; c; c = c.nextSibling) {
+            if (c.nodeType == DOM_ELEMENT_NODE) {
+                ret = this.domTraverseElements.call(this, c, opt_pre, opt_post);
+                if (typeof ret == 'boolean' && !ret) {
+                    return false;
+                }
+            }
+        }
+
+        if (opt_post) {
+            ret = opt_post.call(null, node);
+            if (typeof ret == 'boolean' && !ret) {
+                return false;
+            }
+        }
     }
 
     static recycle(node: any) {
@@ -406,7 +438,7 @@ export class XNode {
         const ret = [];
         const self = this;
         if ('*' == name) {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -415,7 +447,7 @@ export class XNode {
                 null
             );
         } else {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -433,7 +465,7 @@ export class XNode {
         const ret = [];
         const self = this;
         if ('*' == namespace && '*' == localName) {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -442,7 +474,7 @@ export class XNode {
                 null
             );
         } else if ('*' == namespace) {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -451,7 +483,7 @@ export class XNode {
                 null
             );
         } else if ('*' == localName) {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -460,7 +492,7 @@ export class XNode {
                 null
             );
         } else {
-            domTraverseElements(
+            this.domTraverseElements(
                 this,
                 (node: any) => {
                     if (self == node) return;
@@ -476,7 +508,7 @@ export class XNode {
 
     getElementById(id: any): any {
         let ret = null;
-        domTraverseElements(
+        this.domTraverseElements(
             this,
             (node: any) => {
                 if (node.getAttributeValue('id') == id) {
