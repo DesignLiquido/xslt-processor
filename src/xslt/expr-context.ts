@@ -1,10 +1,11 @@
 import { DOM_DOCUMENT_NODE } from '../constants';
-import { BooleanValue } from './values/boolean-value';
-import { NodeSetValue } from './values/node-set-value';
-import { NumberValue } from './values/number-value';
-import { StringValue } from './values/string-value';
-import { TOK_NUMBER } from './tokens';
+import { BooleanValue } from '../xpath/values/boolean-value';
+import { NodeSetValue } from '../xpath/values/node-set-value';
+import { NumberValue } from '../xpath/values/number-value';
+import { StringValue } from '../xpath/values/string-value';
+import { TOK_NUMBER } from '../xpath/tokens';
 import { XNode } from '../dom';
+import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
 
 /** XPath expression evaluation context. An XPath context consists of a
  * DOM node, a list of DOM nodes that contains this node, a number
@@ -55,6 +56,7 @@ export class ExprContext {
 
     parent: ExprContext;
     root: XNode;
+    decimalFormatSettings: XsltDecimalFormatSettings;
 
     inApplyTemplates: boolean;
     baseTemplateMatched: boolean;
@@ -86,6 +88,7 @@ export class ExprContext {
         opt_position?: number,
         opt_outputPosition?: number,
         opt_outputDepth?: number,
+        opt_decimalFormatSettings?: XsltDecimalFormatSettings,
         opt_parent?: ExprContext,
         opt_caseInsensitive?: any,
         opt_ignoreAttributesWithoutValue?: any,
@@ -105,6 +108,19 @@ export class ExprContext {
         this.inApplyTemplates = false;
         this.baseTemplateMatched = false;
         this.outputDepth = opt_outputDepth || 0;
+
+        this.decimalFormatSettings = opt_decimalFormatSettings || {
+            decimalSeparator: '.',
+            groupingSeparator: ',',
+            infinity: 'Infinity',
+            minusSign: '-',
+            naN: 'NaN',
+            percent: '%',
+            perMille: '‰',
+            zeroDigit: '0',
+            digit: '#',
+            patternSeparator: ';'
+        };
 
         if (opt_parent) {
             this.root = opt_parent.root;
@@ -137,6 +153,7 @@ export class ExprContext {
             typeof opt_position !== 'undefined' ? opt_position : this.position,
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             this.outputDepth,
+            this.decimalFormatSettings,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,
@@ -152,6 +169,7 @@ export class ExprContext {
             this.position,
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             typeof opt_outputDepth !== 'undefined' ? opt_outputDepth : this.outputDepth,
+            this.decimalFormatSettings,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,

@@ -42,6 +42,7 @@ import { Expression } from '../xpath/expressions/expression';
 import { StringValue, NodeSetValue } from '../xpath/values';
 import { LocationExpr, UnionExpr } from '../xpath/expressions';
 import { XsltOptions } from './xslt-options';
+import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
@@ -70,16 +71,19 @@ import { XsltOptions } from './xslt-options';
 export class Xslt {
     xPath: XPath;
     options: XsltOptions;
+    decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
     outputMethod: string;
     outputOmitXmlDeclaration: string;
 
-    constructor(options: Partial<XsltOptions> = {
-        escape: true,
-        selfClosingTags: true,
-        parameters: []
-    }) {
+    constructor(
+        options: Partial<XsltOptions> = {
+            escape: true,
+            selfClosingTags: true,
+            parameters: []
+        }
+    ) {
         this.xPath = new XPath();
         this.options = {
             escape: options.escape || true,
@@ -88,6 +92,18 @@ export class Xslt {
         };
         this.outputMethod = 'xml';
         this.outputOmitXmlDeclaration = 'no';
+        this.decimalFormatSettings = {
+            decimalSeparator: '.',
+            groupingSeparator: ',',
+            infinity: 'Infinity',
+            minusSign: '-',
+            naN: 'NaN',
+            percent: '%',
+            perMille: '‰',
+            zeroDigit: '0',
+            digit: '#',
+            patternSeparator: ';'
+        };
     }
 
     /**
@@ -161,15 +177,13 @@ export class Xslt {
                     top = template.ownerDocument.documentElement;
 
                     templates = [];
-                    for (let element of top.childNodes
-                        .filter((c: XNode) => c.nodeType == DOM_ELEMENT_NODE &&
-                            this.isXsltElement(c, 'template')
-                        )
-                    ) {
+                    for (let element of top.childNodes.filter(
+                        (c: XNode) => c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'template')
+                    )) {
                         // Actual template should be executed.
                         // `<xsl:apply-templates>` should have an ancestor `<xsl:template>`
                         // for comparison.
-                        const templateAncestor = template.getAncestorByLocalName("template");
+                        const templateAncestor = template.getAncestorByLocalName('template');
                         if (templateAncestor === undefined) {
                             continue;
                         }
@@ -186,16 +200,17 @@ export class Xslt {
                     const modifiedContext = context.clone(nodes);
                     for (let i = 0; i < templates.length; ++i) {
                         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
-                            const clonedContext = modifiedContext.clone([modifiedContext.nodeList[j]], undefined, 0, undefined);
+                            const clonedContext = modifiedContext.clone(
+                                [modifiedContext.nodeList[j]],
+                                undefined,
+                                0,
+                                undefined
+                            );
                             clonedContext.inApplyTemplates = true;
                             // The output depth should be restarted, since
                             // another template is being applied from this point.
                             clonedContext.outputDepth = 0;
-                            this.xsltProcessContext(
-                                clonedContext,
-                                templates[i],
-                                output
-                            );
+                            this.xsltProcessContext(clonedContext, templates[i], output);
                         }
                     }
 
@@ -259,7 +274,32 @@ export class Xslt {
                     }
                     break;
                 case 'decimal-format':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    name = xmlGetAttribute(template, 'name');
+                    const decimalSeparator = xmlGetAttribute(template, 'decimal-separator');
+                    const groupingSeparator = xmlGetAttribute(template, 'grouping-separator');
+                    const infinity = xmlGetAttribute(template, 'infinity');
+                    const minusSign = xmlGetAttribute(template, 'minus-sign');
+                    const naN = xmlGetAttribute(template, 'NaN');
+                    const percent = xmlGetAttribute(template, 'percent');
+                    const perMille = xmlGetAttribute(template, 'per-mille');
+                    const zeroDigit = xmlGetAttribute(template, 'zero-digit');
+                    const digit = xmlGetAttribute(template, 'digit');
+                    const patternSeparator = xmlGetAttribute(template, 'pattern-separator');
+                    this.decimalFormatSettings = {
+                        name: name || this.decimalFormatSettings.name,
+                        decimalSeparator: decimalSeparator || this.decimalFormatSettings.decimalSeparator,
+                        groupingSeparator: groupingSeparator || this.decimalFormatSettings.groupingSeparator,
+                        infinity: infinity || this.decimalFormatSettings.infinity,
+                        minusSign: minusSign || this.decimalFormatSettings.minusSign,
+                        naN: naN || this.decimalFormatSettings.naN,
+                        percent: percent || this.decimalFormatSettings.percent,
+                        perMille: perMille || this.decimalFormatSettings.perMille,
+                        zeroDigit: zeroDigit || this.decimalFormatSettings.zeroDigit,
+                        digit: digit || this.decimalFormatSettings.digit,
+                        patternSeparator: patternSeparator || this.decimalFormatSettings.patternSeparator
+                    };
+                    context.decimalFormatSettings = this.decimalFormatSettings;
+                    break;
                 case 'element':
                     nameExpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameExpr, context);
@@ -455,7 +495,7 @@ export class Xslt {
             value = this.xPath.xPathEval(select, input);
         } else {
             let parameterValue = '';
-            const filteredParameter = this.options.parameters.filter(p => p.name === name);
+            const filteredParameter = this.options.parameters.filter((p) => p.name === name);
             if (filteredParameter.length > 0) {
                 parameterValue = filteredParameter[0].value;
             }
@@ -562,11 +602,7 @@ export class Xslt {
      * @param template The XSLT stylesheet or transformation.
      * @param output The output.
      */
-    protected xsltPassThrough(
-        context: ExprContext,
-        template: XNode,
-        output: XNode
-    ) {
+    protected xsltPassThrough(context: ExprContext, template: XNode, output: XNode) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
                 const textNodeList = context.outputNodeList[context.outputPosition].transformedChildNodes.filter(
@@ -746,8 +782,10 @@ export class Xslt {
 
         if (expression instanceof UnionExpr) {
             // TODO: What about if `expr1` and `expr2` are not `LocationExpr`?
-            return this.xsltLocationExpressionMatch(expression.expr1 as LocationExpr, context) ||
-                this.xsltLocationExpressionMatch(expression.expr2 as LocationExpr, context);
+            return (
+                this.xsltLocationExpressionMatch(expression.expr1 as LocationExpr, context) ||
+                this.xsltLocationExpressionMatch(expression.expr2 as LocationExpr, context)
+            );
         }
 
         // TODO: Other expressions
@@ -809,7 +847,7 @@ export class Xslt {
 
         const clonedContext = context.clone();
         let nodes = expression.evaluate(clonedContext).nodeSetValue();
-        if (nodes.length === 1 && nodes[0].nodeName === "#document") {
+        if (nodes.length === 1 && nodes[0].nodeName === '#document') {
             // As we don't work with the #document node directly, this part
             // returns its first sibling.
             // By the way, it should be *always* one sibling here.

@@ -26,13 +26,124 @@ describe('XPath Functions', () => {
         );
 
         const xsltClass = new Xslt();
-
         const outXmlString = xsltClass.xsltProcess(
             xml,
             xsltDefinition
         );
 
         assert.equal(outXmlString, 'test');
+    });
+
+    describe('format-number', () => {
+        const xml = xmlParse(<root></root>);
+
+        it('Trivial', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number(500100, '#')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, '500100');
+        });
+
+        it('Decimal, only integer part', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number(500100.20, '#')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, '500100');
+        });
+
+        it('Decimal, everything', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number(500100.20, '#.#')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, '500100.2');
+        });
+
+        it('Decimal, mask with thousand separator, everything', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number(500100.20, '###,###.#')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, '500,100.2');
+        });
+
+        it('Decimal, mask with filling zeroes', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number(500100.20, '#.000')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, '500100.200');
+        });
+
+        it('NaN', () => {
+            const xsltDefinition = xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="format-number('test', '#')"/>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xsltClass = new Xslt();
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xsltDefinition
+            );
+
+            assert.equal(outXmlString, 'NaN');
+        });
     });
 
     it('generate-id, trivial', () => {

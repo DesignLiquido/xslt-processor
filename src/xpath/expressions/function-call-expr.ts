@@ -1,4 +1,4 @@
-import { ExprContext } from '../expr-context';
+import { ExprContext } from '../../xslt/expr-context';
 import {
     count,
     generateId,
@@ -31,7 +31,8 @@ import {
     floor,
     ceiling,
     round,
-    current
+    current,
+    formatNumber
 } from '../functions';
 import { extCardinal, extIf, extJoin } from '../functions/non-standard';
 import { BooleanValue } from '../values/boolean-value';
@@ -50,6 +51,7 @@ export class FunctionCallExpr extends Expression {
         current,
         'ends-with': endsWith,
         false: _false,
+        'format-number': formatNumber,
         floor,
         'generate-id': generateId,
         id,

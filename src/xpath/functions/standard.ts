@@ -1,5 +1,6 @@
 import { XNode, xmlValue } from "../../dom";
-import { ExprContext } from "../expr-context";
+import { ExprContext } from "../../xslt/expr-context";
+import { XsltDecimalFormatSettings } from "../../xslt/xslt-decimal-format-settings";
 import { BooleanValue, NodeSetValue, NumberValue, StringValue } from "../values";
 import { assert, regExpEscape } from "./internal-functions";
 
@@ -66,7 +67,7 @@ export function current(context: ExprContext) {
 }
 
 export function endsWith(context: ExprContext) {
-    assert(this.args.length == 2);
+    assert(this.args.length === 2);
     const s0 = this.args[0].evaluate(context).stringValue();
     const s1 = this.args[1].evaluate(context).stringValue();
     const re = new RegExp(`${regExpEscape(s1)}$`);
@@ -76,6 +77,130 @@ export function endsWith(context: ExprContext) {
 export function _false() {
     assert(this.args.length === 0);
     return new BooleanValue(false);
+}
+
+/**
+ * Formats the integer part of a number. Used by `formatNumber`.
+ * @param _number The integer part of the number.
+ * @param _mask The mask provided.
+ * @returns The formatted integer part of the number as a string.
+ */
+function formatNumberIntegerPart(_number: string, _mask: string, settings: XsltDecimalFormatSettings): string {
+    let formattedIntegerPart: string = "";
+    let lastMaskPlaceholder: string = "";
+    let numberPosition: number = _number.length - 1;
+
+    for (let i = _mask.length - 1; i >= 0; i--) {
+        lastMaskPlaceholder = _mask[i];
+        switch (lastMaskPlaceholder) {
+            case '#':
+                formattedIntegerPart = _number[numberPosition] + formattedIntegerPart;
+                numberPosition--;
+                break;
+            case '0':
+                formattedIntegerPart = _number[numberPosition] + formattedIntegerPart;
+                numberPosition--;
+                break;
+            case ',':
+                formattedIntegerPart = settings.groupingSeparator + formattedIntegerPart;
+                break;
+        }
+    }
+
+    for (; numberPosition >= 0; numberPosition--) {
+        formattedIntegerPart = _number[numberPosition] + formattedIntegerPart;
+    }
+
+    return formattedIntegerPart;
+}
+
+/**
+ * Formats the decimal part of a number. Used by `formatNumber`.
+ * @param _number The decimal part of the number.
+ * @param _mask The mask provided.
+ * @returns The formatted decimal part of the number as a string.
+ */
+function formatNumberDecimalPart(_number: string, _mask?: string, settings?: XsltDecimalFormatSettings): string {
+    let formattedDecimalPart: string = "";
+    // eslint-disable-next-line no-unused-vars
+    let _settings: XsltDecimalFormatSettings = settings;
+    if (_mask === null || _mask === undefined) {
+        return formattedDecimalPart;
+    }
+
+    let i = 0;
+    for (; i < _mask.length; i++) {
+        switch (_mask[i]) {
+            case '#':
+                formattedDecimalPart += _number[i];
+
+                break;
+            case '0':
+                if (i >= _number.length) {
+                    formattedDecimalPart += '0';
+                } else {
+                    formattedDecimalPart += _number[i];
+                }
+
+                break;
+        }
+    }
+
+    return formattedDecimalPart;
+}
+
+/**
+ * XPath `format-number` function implementation.
+ * @param context The Expression Context.
+ * @returns A formatted number as string.
+ */
+export function formatNumber(context: ExprContext): StringValue {
+    assert(this.args.length >= 2 && this.args.length < 4);
+    const firstArgument = this.args[0].evaluate(context).stringValue();
+    const secondArgument = this.args[1].evaluate(context).stringValue();
+    const numberTest = parseFloat(firstArgument);
+    if (isNaN(numberTest)) {
+        return new StringValue(context.decimalFormatSettings.naN);
+    }
+
+    const numberParts = String(numberTest).split('.');
+    const maskParts = secondArgument.split('.');
+    switch (numberParts.length) {
+        case 1: // Integer
+            return new StringValue(
+                formatNumberIntegerPart(
+                    numberParts[0],
+                    maskParts[0],
+                    context.decimalFormatSettings
+                )
+            );
+        case 2: // Decimal
+            const decimalPart = formatNumberDecimalPart(
+                numberParts[1],
+                maskParts.length === 2 ? maskParts[1] : undefined,
+                context.decimalFormatSettings
+            );
+
+            if (decimalPart.length === 0) {
+                return new StringValue(
+                    formatNumberIntegerPart(
+                        numberParts[0],
+                        maskParts[0],
+                        context.decimalFormatSettings
+                    )
+                );
+            }
+
+            return new StringValue(
+                formatNumberIntegerPart(
+                        numberParts[0],
+                        maskParts[0],
+                        context.decimalFormatSettings
+                    ) +
+                    context.decimalFormatSettings.decimalSeparator +
+                    decimalPart
+            );
+    }
 }
 
 export function floor(context: ExprContext) {
