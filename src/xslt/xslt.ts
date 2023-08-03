@@ -298,6 +298,7 @@ export class Xslt {
                         digit: digit || this.decimalFormatSettings.digit,
                         patternSeparator: patternSeparator || this.decimalFormatSettings.patternSeparator
                     };
+                    context.decimalFormatSettings = this.decimalFormatSettings;
                     break;
                 case 'element':
                     nameExpr = xmlGetAttribute(template, 'name');

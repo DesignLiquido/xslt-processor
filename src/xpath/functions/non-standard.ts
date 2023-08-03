@@ -1,5 +1,5 @@
 import { xmlValue } from "../../dom";
-import { ExprContext } from "../expr-context";
+import { ExprContext } from "../../xslt/expr-context";
 import { NodeSetValue, StringValue } from "../values";
 import { assert } from "./internal-functions";
 

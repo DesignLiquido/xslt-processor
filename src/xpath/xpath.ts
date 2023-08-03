@@ -37,7 +37,7 @@
 
 import { mapExec, mapExpr, reverseInPlace } from '../dom/util';
 import { copyArray } from './common-function';
-import { ExprContext } from './expr-context';
+import { ExprContext } from '../xslt/expr-context';
 import {
     BinaryExpr,
     FilterExpr,

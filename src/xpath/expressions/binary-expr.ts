@@ -1,5 +1,5 @@
 import { xmlValue } from "../../dom";
-import { ExprContext } from "../expr-context";
+import { ExprContext } from "../../xslt/expr-context";
 import { BooleanValue } from "../values/boolean-value";
 import { NumberValue } from "../values/number-value";
 import { Expression } from "./expression";

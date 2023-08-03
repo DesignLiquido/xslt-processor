@@ -1,5 +1,5 @@
 import { DOM_TEXT_NODE } from "../constants";
-import { ExprContext } from "./expr-context";
+import { ExprContext } from "../xslt/expr-context";
 import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestText {

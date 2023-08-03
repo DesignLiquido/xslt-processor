@@ -1,4 +1,4 @@
-export * from './expr-context';
+export * from '../xslt/expr-context';
 export * from './node-test-any';
 export * from './node-test-comment';
 export * from './node-test-element-or-attribute';
