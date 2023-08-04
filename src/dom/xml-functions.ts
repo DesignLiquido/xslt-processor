@@ -98,48 +98,56 @@ export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolea
 
 /**
  * Returns the representation of a node as XML text.
- * @param node The starting node.
- * @param opt_cdata If using CDATA configuration.
+ * @param {XNode} node The starting node.
+ * @param {XmlOutputOptions} options XML output options.
  * @returns The XML string.
  */
-export function xmlText(node: XNode, opt_cdata: boolean = false) {
-    const buf = [];
-    xmlTextRecursive(node, buf, opt_cdata);
-    return buf.join('');
+export function xmlText(node: XNode, options: XmlOutputOptions = {
+    cData: false,
+    escape: true,
+    selfClosingTags: true
+}) {
+    const buffer: string[] = [];
+    xmlTextRecursive(node, buffer, options);
+    return buffer.join('');
 }
 
-function xmlTextRecursive(node: XNode, buf: any[], cdata: any) {
+function xmlTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptions) {
     if (node.nodeType == DOM_TEXT_NODE) {
-        buf.push(xmlEscapeText(node.nodeValue));
+        buffer.push(xmlEscapeText(node.nodeValue));
     } else if (node.nodeType == DOM_CDATA_SECTION_NODE) {
-        if (cdata) {
-            buf.push(node.nodeValue);
+        if (options.cData) {
+            buffer.push(node.nodeValue);
         } else {
-            buf.push(`<![CDATA[${node.nodeValue}]]>`);
+            buffer.push(`<![CDATA[${node.nodeValue}]]>`);
         }
     } else if (node.nodeType == DOM_COMMENT_NODE) {
-        buf.push(`<!--${node.nodeValue}-->`);
+        buffer.push(`<!--${node.nodeValue}-->`);
     } else if (node.nodeType == DOM_ELEMENT_NODE) {
-        buf.push(`<${xmlFullNodeName(node)}`);
+        buffer.push(`<${xmlFullNodeName(node)}`);
         for (let i = 0; i < node.attributes.length; ++i) {
             const a = node.attributes[i];
             if (a && a.nodeName && a.nodeValue) {
-                buf.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
+                buffer.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
             }
         }
 
-        if (node.childNodes.length == 0) {
-            buf.push('/>');
-        } else {
-            buf.push('>');
-            for (let i = 0; i < node.childNodes.length; ++i) {
-                xmlTextRecursive(node.childNodes[i], buf, cdata);
+        if (node.childNodes.length === 0) {
+            if (options.selfClosingTags) {
+                buffer.push('/>');
+            } else {
+                buffer.push(`></${xmlFullNodeName(node)}>`);
             }
-            buf.push(`</${xmlFullNodeName(node)}>`);
+        } else {
+            buffer.push('>');
+            for (let i = 0; i < node.childNodes.length; ++i) {
+                xmlTextRecursive(node.childNodes[i], buffer, options);
+            }
+            buffer.push(`</${xmlFullNodeName(node)}>`);
         }
     } else if (node.nodeType == DOM_DOCUMENT_NODE || node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         for (let i = 0; i < node.childNodes.length; ++i) {
-            xmlTextRecursive(node.childNodes[i], buf, cdata);
+            xmlTextRecursive(node.childNodes[i], buffer, options);
         }
     }
 }
@@ -154,16 +162,17 @@ export function xmlTransformedText(
     node: XNode,
     options: XmlOutputOptions = {
         cData: false,
-        escape: true
+        escape: true,
+        selfClosingTags: true
     }
 ) {
-    const buffer = [];
+    const buffer: string[] = [];
     xmlTransformedTextRecursive(node, buffer, options);
     return buffer.join('');
 }
 
 function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOutputOptions) {
-    if (node.printed) return;
+    if (node.visited) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
     if (nodeType == DOM_TEXT_NODE) {
@@ -180,7 +189,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
             buffer.push(`<![CDATA[${nodeValue}]]>`);
         }
     } else if (nodeType == DOM_COMMENT_NODE) {
-        buffer.push(`<!--${nodeValue}-->`);
+        buffer.push(`<!-- ${nodeValue} -->`);
     } else if (nodeType == DOM_ELEMENT_NODE) {
         // If node didn't have a transformed name, but its children
         // had transformations, children should be present at output.
@@ -192,13 +201,14 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
         }
     } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
         const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
 
         for (let i = 0; i < childNodes.length; ++i) {
             xmlTransformedTextRecursive(childNodes[i], buffer, options);
         }
     }
 
-    node.printed = true;
+    node.visited = true;
 }
 
 /**
@@ -207,7 +217,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
  * @param buffer The XML buffer.
  * @param cdata If using CDATA configuration.
  */
-function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOptions) {
+function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
     const attributes = node.transformedAttributes || node.attributes;
@@ -217,16 +227,18 @@ function xmlElementLogicTrivial(node: XNode, buffer: any[], options: XmlOutputOp
             continue;
         }
 
-        const attributeNodeName = attribute.transformedNodeName || attribute.nodeName;
-        const attributeNodeValue = attribute.transformedNodeValue || attribute.nodeValue;
-        if (attributeNodeName && attributeNodeValue) {
-            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attributeNodeValue)}"`);
+        if (attribute.transformedNodeName && attribute.transformedNodeValue) {
+            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
         }
     }
 
     const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
-    if (childNodes.length == 0) {
-        buffer.push('/>');
+    if (childNodes.length === 0) {
+        if (options.selfClosingTags) {
+            buffer.push('/>');
+        } else {
+            buffer.push(`></${xmlFullNodeName(node)}>`);
+        }
     } else {
         buffer.push('>');
         for (let i = 0; i < childNodes.length; ++i) {

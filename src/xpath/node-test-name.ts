@@ -1,4 +1,4 @@
-import { ExprContext } from "./expr-context";
+import { ExprContext } from "../xslt/expr-context";
 import { BooleanValue } from "./values/boolean-value";
 
 export class NodeTestName {
@@ -11,7 +11,7 @@ export class NodeTestName {
     }
 
     evaluate(context: ExprContext) {
-        const n = context.nodelist[context.position];
+        const n = context.nodeList[context.position];
         if (context.caseInsensitive) {
             if (n.nodeName.length != this.name.length) return new BooleanValue(false);
             return new BooleanValue(this.re.test(n.nodeName));

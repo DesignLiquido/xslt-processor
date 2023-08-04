@@ -1,6 +1,7 @@
 XSLT-processor TODO
 =====
 
+* Rethink match algorithm, as described in https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453;
 * Deal with namespaces (if namespaces are not the same in XSLT and XML document, matches do no occur.)
 * XSLT validation
 * XSL:number

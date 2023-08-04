@@ -45,7 +45,7 @@ export let parseTree = function (expr, indent) {
             }
             break;
         case StepExpr:
-            ret = `${indent}[step]\n${indent} [axis] ${expr.axis}\n${parseTree(expr.nodetest, `${indent} `)}`;
+            ret = `${indent}[step]\n${indent} [axis] ${expr.axis}\n${parseTree(expr.nodeTest, `${indent} `)}`;
             for (let i = 0; i < expr.predicate.length; ++i) {
                 ret += parseTree(expr.predicate[i], `${indent} `);
             }
@@ -57,7 +57,7 @@ export let parseTree = function (expr, indent) {
         case NodeTestPI:
         case NodeTestName:
         case NodeTestNC:
-            ret = `${indent}[nodetest] ${toString(expr)}\n`;
+            ret = `${indent}[nodeTest] ${toString(expr)}\n`;
             break;
         case PredicateExpr:
             ret = `${indent}[predicate]\n${parseTree(expr.expr, `${indent} `)}`;
@@ -159,7 +159,7 @@ export let toString = function (expr) {
             ret = expr.nodeName;
             break;
         case ExprContext:
-            ret = `[${expr.position}/${expr.nodelist.length}] ${expr.node.nodeName}`;
+            ret = `[${expr.position}/${expr.nodeList.length}] ${expr.node.nodeName}`;
             break;
         case TokenExpr:
             ret = expr.value;
@@ -177,7 +177,7 @@ export let toString = function (expr) {
             }
             break;
         case StepExpr:
-            ret = `${expr.axis}::${toString(expr.nodetest)}`;
+            ret = `${expr.axis}::${toString(expr.nodeTest)}`;
             for (let i = 0; i < expr.predicate.length; ++i) {
                 ret += toString(expr.predicate[i]);
             }

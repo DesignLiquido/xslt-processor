@@ -9,8 +9,6 @@
 // the subset of the W3C DOM that is used in the XSLT implementation.
 import he from 'he';
 
-import { DOM_ELEMENT_NODE } from "../constants";
-
 import {
     namespaceMapAt
 } from './util';
@@ -60,7 +58,7 @@ export function domCreateTransformedTextNode(node: XDocument, text: string) {
     return node.createTransformedTextNode(text);
 }
 
-export function domCreateElement(doc: any, name: any) {
+export function domCreateElement(doc: XDocument, name: string) {
     return doc.createElement(name);
 }
 
@@ -80,42 +78,13 @@ export function domCreateDTDSection(doc: XDocument, data: any) {
     return doc.createDTDSection(data);
 }
 
-// Traverses the element nodes in the DOM section underneath the given
-// node and invokes the given callbacks as methods on every element
-// node encountered. Function opt_pre is invoked before a node's
-// children are traversed; opt_post is invoked after they are
-// traversed. Traversal will not be continued if a callback function
-// returns boolean false. NOTE(mesch): copied from
-// <//google3/maps/webmaps/javascript/dom.js>.
-export function domTraverseElements(node: any, opt_pre: any, opt_post: any) {
-    let ret;
-    if (opt_pre) {
-        ret = opt_pre.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
-
-    for (let c = node.firstChild; c; c = c.nextSibling) {
-        if (c.nodeType == DOM_ELEMENT_NODE) {
-            ret = domTraverseElements.call(this, c, opt_pre, opt_post);
-            if (typeof ret == 'boolean' && !ret) {
-                return false;
-            }
-        }
-    }
-
-    if (opt_post) {
-        ret = opt_post.call(null, node);
-        if (typeof ret == 'boolean' && !ret) {
-            return false;
-        }
-    }
-}
-
-// Parses the given XML string with our custom, JavaScript XML parser. Written
-// by Steffen Meschkat (mesch@google.com).
-export function xmlParse(xml: string) {
+/**
+ * Parses the given XML string with our custom, JavaScript XML parser
+ * @param xml The XML String.
+ * @returns A XDocument.
+ * @author Steffen Meschkat <mesch@google.com>
+ */
+export function xmlParse(xml: string): XDocument {
     const regex_empty = /\/$/;
 
     let regex_tagname;
@@ -144,7 +113,7 @@ export function xmlParse(xml: string) {
     const root = xmldoc;
     const stack = [];
 
-    let parent = root;
+    let parent: XNode = root;
     stack.push(parent);
 
     let tag = false,
@@ -178,6 +147,7 @@ export function xmlParse(xml: string) {
                     domSetAttribute(node, att[1], val);
                 }
 
+                node.siblingPosition = parent.childNodes.length;
                 domAppendChild(parent, node);
                 if (!empty) {
                     parent = node;
@@ -186,15 +156,15 @@ export function xmlParse(xml: string) {
 
                 const namespaceMap = namespaceMapAt(node);
                 if (node.prefix !== null) {
-                    if (node.prefix in namespaceMap) node.namespaceURI = namespaceMap[node.prefix];
+                    if (node.prefix in namespaceMap) node.namespaceUri = namespaceMap[node.prefix];
                     // else, prefix is undefined. do anything?
                 } else {
-                    if ('' in namespaceMap) node.namespaceURI = namespaceMap[''];
+                    if ('' in namespaceMap) node.namespaceUri = namespaceMap[''];
                 }
                 for (let i = 0; i < node.attributes.length; ++i) {
                     if (node.attributes[i].prefix !== null) {
                         if (node.attributes[i].prefix in namespaceMap) {
-                            node.attributes[i].namespaceURI = namespaceMap[node.attributes[i].prefix];
+                            node.attributes[i].namespaceUri = namespaceMap[node.attributes[i].prefix];
                         }
                         // else, prefix undefined.
                     }
@@ -207,7 +177,7 @@ export function xmlParse(xml: string) {
             doublequotes = false;
         } else if (!tag && char === '<') {
             let text = xml.slice(start, i);
-            if (text && parent != root) {
+            if (text && parent !== root) {
                 domAppendChild(parent, domCreateTextNode(xmldoc, text));
             }
             if (xml.slice(i + 1, i + 4) === '!--') {

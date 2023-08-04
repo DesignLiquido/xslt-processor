@@ -35,8 +35,9 @@
 //
 // Original author: Steffen Meschkat <mesch@google.com>
 
-import { copyArray, mapExec, mapExpr, reverseInplace } from '../dom/util';
-import { ExprContext } from './expr-context';
+import { mapExec, mapExpr, reverseInPlace } from '../dom/util';
+import { copyArray } from './common-function';
+import { ExprContext } from '../xslt/expr-context';
 import {
     BinaryExpr,
     FilterExpr,
@@ -52,6 +53,7 @@ import {
     UnionExpr,
     VariableExpr
 } from './expressions';
+import { Expression } from './expressions/expression';
 
 import { NodeTestAny } from './node-test-any';
 import { NodeTestComment } from './node-test-comment';
@@ -99,7 +101,8 @@ import {
     ASSOC_LEFT,
     TOK_LITERALQ,
     TOK_LITERALQQ,
-    TOK_NUMBER
+    TOK_NUMBER,
+    xPathAxis
 } from './tokens';
 import {
     XPathLocationPath,
@@ -305,16 +308,16 @@ export class XPath {
         return this.makeAbbrevStep(ddot.value);
     }
 
-    makeStepExpr3(axisname: any, axis: any, nodetest: any) {
-        return new StepExpr(axisname.value, nodetest, this);
+    makeStepExpr3(axisname: any, axis: any, nodeTest: any) {
+        return new StepExpr(axisname.value, nodeTest, this);
     }
 
-    makeStepExpr4(at: any, nodetest: any) {
-        return new StepExpr('attribute', nodetest, this);
+    makeStepExpr4(at: any, nodeTest: any) {
+        return new StepExpr('attribute', nodeTest, this);
     }
 
-    makeStepExpr5(nodetest: any) {
-        return new StepExpr('child', nodetest, this);
+    makeStepExpr5(nodeTest: any, axis?: string) {
+        return new StepExpr(axis || 'child', nodeTest, this);
     }
 
     makeStepExpr6(step: any, predicate: any) {
@@ -440,27 +443,32 @@ export class XPath {
         return new VariableExpr(name.value);
     }
 
-    // Used before parsing for optimization of common simple cases. See
-    // the begin of xpathParse() for which they are.
-    makeSimpleExpr(expr: any) {
-        if (expr.charAt(0) == '$') {
-            return new VariableExpr(expr.substr(1));
+    /**
+     * Used before parsing for optimization of common simple cases. See
+     * the begin of xPathParse() for which they are.
+     * @param expression The XPath expression.
+     * @param axis The axis, if required. Default is 'child'.
+     * @returns An `Expression` object.
+     */
+    makeSimpleExpr(expression: string, axis?: string): Expression {
+        if (expression.charAt(0) == '$') {
+            return new VariableExpr(expression.substr(1));
         }
 
-        if (expr.charAt(0) == '@') {
-            let a = new NodeTestName(expr.substr(1));
+        if (expression.charAt(0) == '@') {
+            let a = new NodeTestName(expression.substr(1));
             let b = new StepExpr('attribute', a, this);
             let c = new LocationExpr(this);
             c.appendStep(b);
             return c;
         }
 
-        if (expr.match(/^[0-9]+$/)) {
-            return new NumberExpr(expr);
+        if (expression.match(/^[0-9]+$/)) {
+            return new NumberExpr(expression);
         }
 
-        let a = new NodeTestName(expr);
-        let b = new StepExpr('child', a, this);
+        let a = new NodeTestName(expression);
+        let b = new StepExpr(axis || xPathAxis.CHILD, a, this);
         let c = new LocationExpr(this);
         c.appendStep(b);
         return c;
@@ -471,7 +479,7 @@ export class XPath {
         const c = new LocationExpr(this);
         for (let i = 0; i < steps.length; ++i) {
             const a = new NodeTestName(steps[i]);
-            const b = new StepExpr('child', a, this);
+            const b = new StepExpr(xPathAxis.CHILD, a, this);
             c.appendStep(b);
         }
         return c;
@@ -492,21 +500,21 @@ export class XPath {
         return this.xPathParseCache[expr];
     }
 
-    xPathCollectDescendants(nodelist: any, node: any, opt_tagName?: any) {
+    xPathCollectDescendants(nodeList: any, node: any, opt_tagName?: any) {
         if (opt_tagName && node.getElementsByTagName) {
-            copyArray(nodelist, node.getElementsByTagName(opt_tagName));
+            copyArray(nodeList, node.getElementsByTagName(opt_tagName));
             return;
         }
         for (let n = node.firstChild; n; n = n.nextSibling) {
-            nodelist.push(n);
-            this.xPathCollectDescendants(nodelist, n);
+            nodeList.push(n);
+            this.xPathCollectDescendants(nodeList, n);
         }
     }
 
-    xPathCollectDescendantsReverse(nodelist: any, node: any) {
+    xPathCollectDescendantsReverse(nodeList: any, node: any) {
         for (let n = node.lastChild; n; n = n.previousSibling) {
-            nodelist.push(n);
-            this.xPathCollectDescendantsReverse(nodelist, n);
+            nodeList.push(n);
+            this.xPathCollectDescendantsReverse(nodeList, n);
         }
     }
 
@@ -521,20 +529,20 @@ export class XPath {
     /**
      * DGF - extract a tag name suitable for getElementsByTagName
      *
-     * @param nodetest                     the node test
+     * @param nodeTest                     the node test
      * @param ignoreNonElementNodesForNTA  if true, the node list returned when
      *                                     evaluating "node()" will not contain
      *                                     non-element nodes. This can boost
      *                                     performance. This is false by default.
      */
-    xPathExtractTagNameFromNodeTest(nodetest: any, ignoreNonElementNodesForNTA: any) {
-        if (nodetest instanceof NodeTestName) {
-            return nodetest.name;
+    xPathExtractTagNameFromNodeTest(nodeTest: any, ignoreNonElementNodesForNTA: any) {
+        if (nodeTest instanceof NodeTestName) {
+            return nodeTest.name;
         }
 
         if (
-            (ignoreNonElementNodesForNTA && nodetest instanceof NodeTestAny) ||
-            nodetest instanceof NodeTestElementOrAttribute
+            (ignoreNonElementNodesForNTA && nodeTest instanceof NodeTestAny) ||
+            nodeTest instanceof NodeTestElementOrAttribute
         ) {
             return '*';
         }
@@ -594,11 +602,11 @@ export class XPath {
                 return [];
             }
 
-            reverseInplace(qmatch);
+            reverseInPlace(qmatch);
             qmatch.expr = mapExpr(qmatch, (m) => m.expr);
         }
 
-        reverseInplace(match);
+        reverseInPlace(match);
 
         if (p == -1) {
             return match;
@@ -609,25 +617,32 @@ export class XPath {
 
     /**
      * The entry point for the parser.
-     * @param expr a string that contains an XPath expression.
+     * @param expression a string that contains an XPath expression.
+     * @param axis The XPath axis. Used when the match does not start with the parent.
      * @param xPathLog TODO
      * @returns an expression object that can be evaluated with an
      * expression context.
      */
     xPathParse(
-        expr,
+        expression: string,
+        axis?: string,
+        // eslint-disable-next-line no-unused-vars
         xPathLog = (message: string) => {
             // console.log(message);
         }
     ) {
-        xPathLog(`parse ${expr}`);
+        const originalExpression = `${expression}`;
+        xPathLog(`parse ${expression}`);
         this.xPathParseInit(xPathLog);
 
-        const cached = this.xPathCacheLookup(expr);
-        if (cached) {
+        // TODO: Removing the cache for now.
+        // The cache became a real problem when having to deal with `self-and-siblings`
+        // axis.
+        /* const cached = this.xPathCacheLookup(expression);
+        if (cached && axis === undefined) {
             xPathLog(' ... cached');
             return cached;
-        }
+        } */
 
         // Optimize for a few common cases: simple attribute node tests
         // (@id), simple element node tests (page), variable references
@@ -635,21 +650,21 @@ export class XPath {
         // step is a plain element node test
         // (page/overlay/locations/location).
 
-        if (expr.match(/^(\$|@)?\w+$/i)) {
-            let ret = this.makeSimpleExpr(expr);
-            this.xPathParseCache[expr] = ret;
+        if (expression.match(/^(\$|@)?\w+$/i)) {
+            let ret = this.makeSimpleExpr(expression, axis);
+            this.xPathParseCache[expression] = ret;
             xPathLog(' ... simple');
             return ret;
         }
 
-        if (expr.match(/^\w+(\/\w+)*$/i)) {
-            let ret = this.makeSimpleExpr2(expr);
-            this.xPathParseCache[expr] = ret;
+        if (expression.match(/^\w+(\/\w+)*$/i)) {
+            let ret = this.makeSimpleExpr2(expression);
+            this.xPathParseCache[expression] = ret;
             xPathLog(' ... simple 2');
             return ret;
         }
 
-        const cachekey = expr; // expr is modified during parse
+        const cachekey = expression; // expr is modified during parse
 
         const stack = [];
         let ahead = null;
@@ -662,14 +677,14 @@ export class XPath {
 
         while (!done) {
             parse_count++;
-            expr = expr.replace(/^\s*/, '');
+            expression = expression.replace(/^\s*/, '');
             previous = ahead;
             ahead = null;
 
             let rule = null;
             let match = '';
             for (let i = 0; i < xpathTokenRules.length; ++i) {
-                let result = xpathTokenRules[i].re.exec(expr);
+                let result = xpathTokenRules[i].re.exec(expression);
                 lexer_count++;
                 if (result && result.length > 0 && result[0].length > match.length) {
                     rule = xpathTokenRules[i];
@@ -706,7 +721,7 @@ export class XPath {
             }
 
             if (rule) {
-                expr = expr.substr(match.length);
+                expression = expression.substr(match.length);
                 xPathLog(`token: ${match} -- ${rule.label}`);
                 ahead = {
                     tag: rule,
@@ -719,7 +734,7 @@ export class XPath {
                 done = true;
             }
 
-            while (this.xPathReduce(stack, ahead, xPathLog)) {
+            while (this.xPathReduce(stack, ahead, axis, xPathLog)) {
                 reduce_count++;
                 xPathLog(`stack: ${this.stackToString(stack)}`);
             }
@@ -733,6 +748,16 @@ export class XPath {
         }
 
         let result = stack[0].expr;
+        // TODO: Remove this `if` after getting to rewrite `xPathReduce`.
+        if (axis !== undefined &&
+            !result.absolute &&
+            !originalExpression.startsWith('*') &&
+            result.steps &&
+            Array.isArray(result.steps)
+        ) {
+            result.steps[0].axis = axis;
+        }
+
         this.xPathParseCache[cachekey] = result;
 
         xPathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
@@ -866,6 +891,8 @@ export class XPath {
     xPathReduce(
         stack: any,
         ahead: any,
+        axis?: string,
+        // eslint-disable-next-line no-unused-vars
         xpathLog = (message: string) => {
             // console.log(message);
         }
@@ -905,9 +932,9 @@ export class XPath {
                 }`
             );
 
-            const matchexpr = mapExpr(cand.match, (m) => m.expr);
+            const matchExpression = mapExpr(cand.match, (m) => m.expr);
             xpathLog(`going to apply ${cand.rule[3]}`);
-            cand.expr = cand.rule[3].apply(this, matchexpr);
+            cand.expr = cand.rule[3].apply(this, matchExpression);
 
             stack.push(cand);
             ret = true;
@@ -928,27 +955,27 @@ export class XPath {
     // Utility function to sort a list of nodes. Used by xsltSort() and
     // nxslSelect().
     xPathSort(context: ExprContext, sort: any[]) {
-        if (sort.length == 0) {
+        if (sort.length === 0) {
             return;
         }
 
         const sortlist = [];
 
         for (let i = 0; i < context.contextSize(); ++i) {
-            const node = context.nodelist[i];
+            const node = context.nodeList[i];
             const sortitem = {
                 node,
                 key: []
             };
-            const clonedContext = context.clone([node], 0);
+            const clonedContext = context.clone([node], undefined, 0, undefined);
 
             for (const s of sort) {
                 const value = s.expr.evaluate(clonedContext);
 
                 let evalue: any;
-                if (s.type == 'text') {
+                if (s.type === 'text') {
                     evalue = value.stringValue();
-                } else if (s.type == 'number') {
+                } else if (s.type === 'number') {
                     evalue = value.numberValue();
                 }
                 sortitem.key.push({
@@ -972,9 +999,12 @@ export class XPath {
 
         const nodes = [];
         for (let i = 0; i < sortlist.length; ++i) {
-            nodes.push(sortlist[i].node);
+            const node = sortlist[i].node;
+            node.siblingPosition = i;
+            nodes.push(node);
         }
-        context.nodelist = nodes;
+
+        context.nodeList = nodes;
         context.setNode(0);
     }
 
@@ -1003,32 +1033,32 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step: any, input: any, ctx: ExprContext) {
-        const resolvedStep = steps[step];
-        const ctx2 = ctx.clone([input], 0);
+    xPathStep(nodes: any[], steps: any[], step: any, input: any, context: ExprContext) {
+        const s = steps[step];
+        const ctx2 = context.clone([input], undefined, 0, undefined);
 
-        if (ctx.returnOnFirstMatch && !resolvedStep.hasPositionalPredicate) {
-            let nodelist = resolvedStep.evaluate(ctx2).nodeSetValue();
+        if (context.returnOnFirstMatch && !s.hasPositionalPredicate) {
+            let nodeList = s.evaluate(ctx2).nodeSetValue();
             // the predicates were not processed in the last evaluate(), so that we can
             // process them here with the returnOnFirstMatch optimization. We do a
             // depth-first grab at any nodes that pass the predicate tests. There is no
             // way to optimize when predicates contain positional selectors, including
             // indexes or uses of the last() or position() functions, because they
-            // typically require the entire nodelist for context. Process without
+            // typically require the entire nodeList for context. Process without
             // optimization if we encounter such selectors.
-            const nodeListLength = nodelist.length;
-            const predicatesLength = resolvedStep.predicate.length;
-            nodelistLoop: for (let i = 0; i < nodeListLength; ++i) {
-                for (let j = 0; j < predicatesLength; ++j) {
-                    if (!resolvedStep.predicate[j].evaluate(ctx.clone(nodelist, i)).booleanValue()) {
-                        continue nodelistLoop;
+            const nLength = nodeList.length;
+            const pLength = s.predicate.length;
+            nodeListLoop: for (let i = 0; i < nLength; ++i) {
+                for (let j = 0; j < pLength; ++j) {
+                    if (!s.predicate[j].evaluate(context.clone(nodeList, undefined, i, undefined)).booleanValue()) {
+                        continue nodeListLoop;
                     }
                 }
                 // n survived the predicate tests!
                 if (step == steps.length - 1) {
-                    nodes.push(nodelist[i]);
+                    nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], context);
                 }
                 if (nodes.length > 0) {
                     break;
@@ -1039,12 +1069,12 @@ export class XPath {
             // behavior in StepExpr.prototype.evaluate is driven off its value. Note
             // that the original context may still have true for this value.
             ctx2.returnOnFirstMatch = false;
-            let nodelist = resolvedStep.evaluate(ctx2).nodeSetValue();
-            for (let i = 0; i < nodelist.length; ++i) {
+            let nodeList = s.evaluate(ctx2).nodeSetValue();
+            for (let i = 0; i < nodeList.length; ++i) {
                 if (step == steps.length - 1) {
-                    nodes.push(nodelist[i]);
+                    nodes.push(nodeList[i]);
                 } else {
-                    this.xPathStep(nodes, steps, step + 1, nodelist[i], ctx);
+                    this.xPathStep(nodes, steps, step + 1, nodeList[i], context);
                 }
             }
         }

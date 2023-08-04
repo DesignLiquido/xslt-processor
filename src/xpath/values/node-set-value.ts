@@ -1,7 +1,7 @@
-import { xmlValue } from "../../dom";
+import { XNode, xmlValue } from "../../dom";
 
 export class NodeSetValue {
-    value: any;
+    value: XNode[];
     type: string;
 
     constructor(value: any) {

@@ -16,6 +16,7 @@
         "babel.config.js",
         "jest.config.ts",
         "rollup.config.js",
+        "coverage/**/*",
         "demo/**/*",
         "dist/**/*",
         "test_src/**/*",

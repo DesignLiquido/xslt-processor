@@ -87,6 +87,185 @@ describe('xslt', () => {
         });
     });
 
+    describe('xsl:template', () => {
+        it('Trivial', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
+                <xsl:template match="*|/*">
+                    <outputUnknown original-name="{name(.)}">
+                        <xsl:apply-templates select="*" />
+                    </outputUnknown>
+                </xsl:template>
+                <xsl:template match="typeA">
+                    <outputA />
+                </xsl:template>
+                <xsl:template match="/*/typeB">
+                    <outputB>I have text!</outputB>
+                </xsl:template>
+            </xsl:stylesheet>
+
+            // Needs to be this way. `isomorphic-jsx rewrites `<outputA />` as `<outputA></outputA>`.
+            const expectedOutString = `<outputUnknown original-name="root">`+
+                `<outputA/>`+
+                `<outputB>I have text!</outputB>`+
+            `</outputUnknown>`;
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltString);
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xslt
+            );
+
+            assert.equal(outXmlString, expectedOutString);
+        });
+
+        // The three examples below from Marco Balestra illustrate
+        // the difference between triggering `<xsl:template>` vs. triggering
+        // `<xsl:apply-templates>`:
+        //
+        // - For the top input node, only one `<xsl:template>` is triggered.
+        // it should follow a "best match heuristic" (to be implemented);
+        // - For `<xsl:apply-templates>`, all the templates can be triggered,
+        // except the template that started the processing.
+        // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
+
+        it('Example 1 from Marco', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
+                <xsl:template match="*|/*">
+                    <outputUnknown original-name="{name(.)}">
+                        <subnode>Custom text</subnode>
+                        <xsl:apply-templates select="*" />
+                    </outputUnknown>
+                </xsl:template>
+                <xsl:template match="typeA">
+                    <outputA>
+                        <yep />
+                    </outputA>
+                </xsl:template>
+                <xsl:template match="/*/typeB">
+                    <outputB foo="bar">I have text!</outputB>
+                </xsl:template>
+            </xsl:stylesheet>;
+
+            const expectedOutString = `<outputUnknown original-name="root">` +
+                `<subnode>Custom text</subnode>` +
+                `<outputA>`+
+                    `<yep/>`+
+                `</outputA>`+
+                `<outputB foo="bar">I have text!</outputB>`+
+            `</outputUnknown>`;
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltString);
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xslt
+            );
+
+            assert.equal(outXmlString, expectedOutString);
+        });
+
+        it('Example 2 from Marco', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
+                <xsl:template match="*|/*">
+                    <outputUnknown original-name="{name(.)}">
+                        <xsl:apply-templates select="*" />
+                    </outputUnknown>
+                </xsl:template>
+                <xsl:template match="typeA">
+                    <outputA>
+                        <yep />
+                    </outputA>
+                </xsl:template>
+                <xsl:template match="/*/typeB">
+                    <outputB foo="bar">I have text!</outputB>
+                </xsl:template>
+            </xsl:stylesheet>;
+
+            const expectedOutString = `<outputUnknown original-name="root">`+
+                `<outputA>`+
+                    `<yep/>`+
+                `</outputA>`+
+                `<outputB foo="bar">I have text!</outputB>`+
+            `</outputUnknown>`;
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltString);
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xslt
+            );
+
+            assert.equal(outXmlString, expectedOutString);
+        });
+
+        it('Example 3 from Marco', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
+                <xsl:template match="*|/*">
+                    <outputUnknown original-name="{name(.)}">
+                        <xsl:apply-templates select="*" />
+                    </outputUnknown>
+                </xsl:template>
+                <xsl:template match="typeA">
+                    <outputA />
+                </xsl:template>
+                <xsl:template match="/*/typeB">
+                    <outputB foo="bar">I have text!</outputB>
+                </xsl:template>
+            </xsl:stylesheet>;
+
+            const expectedOutString = `<outputUnknown original-name="root">`+
+                `<outputA/>`+
+                `<outputB foo="bar">I have text!</outputB>`+
+            `</outputUnknown>`;
+
+            const xsltClass = new Xslt();
+            const xml = xmlParse(xmlString);
+            const xslt = xmlParse(xsltString);
+            const outXmlString = xsltClass.xsltProcess(
+                xml,
+                xslt
+            );
+
+            assert.equal(outXmlString, expectedOutString);
+        });
+    });
+
     describe('xsl:text', () => {
         it('disable-output-escaping', () => {
             const xml = <anything></anything>;
@@ -131,8 +310,8 @@ describe('xslt', () => {
         const xsltClass = new Xslt();
         const xml = xmlParse(xmlApplyTemplates);
         const xslt = xmlParse(xsltApplyTemplates);
-        const html = xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, 'ABC');
+        const result = xsltClass.xsltProcess(xml, xslt);
+        assert.equal(result, 'ABC');
     });
 
     it('handles global variables', () => {
