@@ -66,7 +66,7 @@ import {
     Q_MM,
     Q_01,
     Q_1M,
-    xpathTokenRules,
+    xPathTokenRules,
     TOK_DIV,
     TOK_MOD,
     TOK_AND,
@@ -123,10 +123,12 @@ import {
     XPathFilterExpr,
     XPathDigits
 } from './xpath-grammar-rules';
+import { XPathMatchRule } from './xpath-match-rule';
 
 export class XPath {
     xPathParseCache: any;
     xPathRules: any[];
+    xPathLog: (message: string) => void;
 
     // The productions of the grammar. Columns of the table:
     //
@@ -239,6 +241,7 @@ export class XPath {
     constructor() {
         this.xPathParseCache = {};
         this.xPathRules = [];
+        this.xPathLog = () => {};
     }
 
     // Factory functions for semantic values (i.e. Expressions) of the
@@ -608,39 +611,34 @@ export class XPath {
 
         reverseInPlace(match);
 
-        if (p == -1) {
+        if (p === -1) {
             return match;
-        } else {
-            return [];
         }
+
+        return [];
     }
 
     /**
      * The entry point for the parser.
      * @param expression a string that contains an XPath expression.
      * @param axis The XPath axis. Used when the match does not start with the parent.
-     * @param xPathLog TODO
      * @returns an expression object that can be evaluated with an
      * expression context.
      */
     xPathParse(
         expression: string,
-        axis?: string,
-        // eslint-disable-next-line no-unused-vars
-        xPathLog = (message: string) => {
-            // console.log(message);
-        }
+        axis?: string
     ) {
         const originalExpression = `${expression}`;
-        xPathLog(`parse ${expression}`);
-        this.xPathParseInit(xPathLog);
+        this.xPathLog(`parse ${expression}`);
+        this.xPathParseInit();
 
         // TODO: Removing the cache for now.
         // The cache became a real problem when having to deal with `self-and-siblings`
         // axis.
         /* const cached = this.xPathCacheLookup(expression);
         if (cached && axis === undefined) {
-            xPathLog(' ... cached');
+            this.xPathLog(' ... cached');
             return cached;
         } */
 
@@ -653,41 +651,41 @@ export class XPath {
         if (expression.match(/^(\$|@)?\w+$/i)) {
             let ret = this.makeSimpleExpr(expression, axis);
             this.xPathParseCache[expression] = ret;
-            xPathLog(' ... simple');
+            this.xPathLog(' ... simple');
             return ret;
         }
 
         if (expression.match(/^\w+(\/\w+)*$/i)) {
             let ret = this.makeSimpleExpr2(expression);
             this.xPathParseCache[expression] = ret;
-            xPathLog(' ... simple 2');
+            this.xPathLog(' ... simple 2');
             return ret;
         }
 
-        const cachekey = expression; // expr is modified during parse
+        const cachekey = expression; // expression is modified during parse
 
         const stack = [];
-        let ahead = null;
+        let ahead: XPathMatchRule = null;
         let previous = null;
         let done = false;
 
-        let parse_count = 0;
-        let lexer_count = 0;
-        let reduce_count = 0;
+        let parseCount = 0;
+        let lexerCount = 0;
+        let reduceCount = 0;
 
         while (!done) {
-            parse_count++;
+            parseCount++;
             expression = expression.replace(/^\s*/, '');
             previous = ahead;
             ahead = null;
 
             let rule = null;
             let match = '';
-            for (let i = 0; i < xpathTokenRules.length; ++i) {
-                let result = xpathTokenRules[i].re.exec(expression);
-                lexer_count++;
+            for (let i = 0; i < xPathTokenRules.length; ++i) {
+                let result = xPathTokenRules[i].re.exec(expression);
+                lexerCount++;
                 if (result && result.length > 0 && result[0].length > match.length) {
-                    rule = xpathTokenRules[i];
+                    rule = xPathTokenRules[i];
                     match = result[0];
                     break;
                 }
@@ -722,7 +720,7 @@ export class XPath {
 
             if (rule) {
                 expression = expression.substr(match.length);
-                xPathLog(`token: ${match} -- ${rule.label}`);
+                this.xPathLog(`token: ${match} -- ${rule.label}`);
                 ahead = {
                     tag: rule,
                     match,
@@ -730,17 +728,17 @@ export class XPath {
                     expr: this.makeTokenExpr(match)
                 };
             } else {
-                xPathLog('DONE');
+                this.xPathLog('DONE');
                 done = true;
             }
 
-            while (this.xPathReduce(stack, ahead, axis, xPathLog)) {
-                reduce_count++;
-                xPathLog(`stack: ${this.stackToString(stack)}`);
+            while (this.xPathReduce(stack, ahead, axis)) {
+                reduceCount++;
+                this.xPathLog(`stack: ${this.stackToString(stack)}`);
             }
         }
 
-        xPathLog(`stack: ${this.stackToString(stack)}`);
+        this.xPathLog(`stack: ${this.stackToString(stack)}`);
 
         // DGF any valid XPath should "reduce" to a single Expr token
         if (stack.length != 1) {
@@ -760,12 +758,12 @@ export class XPath {
 
         this.xPathParseCache[cachekey] = result;
 
-        xPathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
+        this.xPathLog(`XPath parse: ${parseCount} / ${lexerCount} / ${reduceCount}`);
 
         return result;
     }
 
-    xPathParseInit(xPathLog: Function) {
+    xPathParseInit() {
         if (this.xPathRules.length) {
             return;
         }
@@ -801,9 +799,9 @@ export class XPath {
                 return 1;
             } else if (la > lb) {
                 return -1;
-            } else {
-                return 0;
             }
+
+            return 0;
         });
 
         let k = 1;
@@ -811,11 +809,11 @@ export class XPath {
             xpathNonTerminals[i].key = k++;
         }
 
-        for (let i = 0; i < xpathTokenRules.length; ++i) {
-            xpathTokenRules[i].key = k++;
+        for (let i = 0; i < xPathTokenRules.length; ++i) {
+            xPathTokenRules[i].key = k++;
         }
 
-        xPathLog(`XPath parse INIT: ${k} rules`);
+        this.xPathLog(`XPath parse INIT: ${k} rules`);
 
         // Another slight optimization: sort the rules into bins according
         // to the last element (observing quantifiers), so we can restrict
@@ -851,7 +849,7 @@ export class XPath {
             }
         }
 
-        xPathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
+        this.xPathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
 
         let sum = 0;
         mapExec(this.xPathRules, (i: any) => {
@@ -860,11 +858,11 @@ export class XPath {
             }
         });
 
-        xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
+        this.xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
     }
 
-    /*DGF xpathReduce is where the magic happens in this parser.
-    Skim down to the bottom of this file to find the table of
+    /*DGF xPathReduce is where the magic happens in this parser.
+    Check `src\xpath\xpath-grammar-rules.ts` to find the table of
     grammatical rules and precedence numbers, "The productions of the grammar".
 
     The idea here is that we want to take a stack of tokens and apply
@@ -873,7 +871,7 @@ export class XPath {
     "Expr" token.
 
     Reduce too early or too late and you'll have two tokens that can't reduce
-    to single Expr.  For example, you may hastily reduce a qname that
+    to single Expr. For example, you may hastily reduce a qname that
     should name a function, incorrectly treating it as a tag name.
     Or you may reduce too late, accidentally reducing the last part of the
     XPath into a top-level "Expr" that won't reduce with earlier parts of
@@ -891,11 +889,7 @@ export class XPath {
     xPathReduce(
         stack: any,
         ahead: any,
-        axis?: string,
-        // eslint-disable-next-line no-unused-vars
-        xpathLog = (message: string) => {
-            // console.log(message);
-        }
+        axis?: string
     ) {
         let cand = null;
 
@@ -926,21 +920,21 @@ export class XPath {
                 stack.pop();
             }
 
-            xpathLog(
+            this.xPathLog(
                 `reduce ${cand.tag.label} ${cand.prec} ahead ${
                     ahead ? ahead.tag.label + ' ' + ahead.prec + (ahead.tag.left ? ' left' : '') : ' none '
                 }`
             );
 
             const matchExpression = mapExpr(cand.match, (m) => m.expr);
-            xpathLog(`going to apply ${cand.rule[3]}`);
+            this.xPathLog(`going to apply ${cand.rule[3]}`);
             cand.expr = cand.rule[3].apply(this, matchExpression);
 
             stack.push(cand);
             ret = true;
         } else {
             if (ahead) {
-                xpathLog(
+                this.xPathLog(
                     `shift ${ahead.tag.label} ${ahead.prec}${ahead.tag.left ? ' left' : ''} over ${
                         cand ? cand.tag.label + ' ' + cand.prec : ' none'
                     }`

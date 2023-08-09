@@ -7,3 +7,4 @@ export * from './node-test-nc';
 export * from './node-test-pi';
 export * from './node-test-text';
 export * from './xpath';
+export * from './xpath-token-rule';

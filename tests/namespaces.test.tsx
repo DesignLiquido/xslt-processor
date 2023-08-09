@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-undef */
 import assert from 'assert';
 
@@ -135,6 +136,8 @@ describe('namespaces', () => {
             <test xmlns="http://testnamespace" name="test5"/>`
 
         const xsltClass = new Xslt();
+        // Uncomment to see how XPath resolves.
+        xsltClass.xPath.xPathLog = console.log;
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
