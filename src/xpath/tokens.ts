@@ -5,6 +5,7 @@
 // necessary and too complicated. Simplify this!
 
 import { XML_NC_NAME } from "../dom/xmltoken";
+import { XPathTokenRule } from "./xpath-token-rule";
 
 // NOTE: tabular formatting is the big exception, but here it should
 // be OK.
@@ -47,147 +48,167 @@ const xpathAxesRe =
     ].join('(?=::)|') + '(?=::)'; //(viat) bodgy fix because namespace-uri() was getting detected as the namespace axis. maybe less bodgy fix later.
 
 
-export const TOK_PIPE = {
+export const TOK_PIPE: XPathTokenRule = {
     label: '|',
     prec: 17,
     re: new RegExp('^\\|'),
     key: undefined
 };
-export const TOK_DSLASH = {
+
+export const TOK_DSLASH: XPathTokenRule = {
     label: '//',
     prec: 19,
     re: new RegExp('^//'),
     key: undefined
 };
-export const TOK_SLASH = {
+
+export const TOK_SLASH: XPathTokenRule = {
     label: '/',
     prec: 30,
     re: new RegExp('^/'),
     key: undefined
 };
-export const TOK_AXIS = {
+
+export const TOK_AXIS: XPathTokenRule = {
     label: '::',
     prec: 20,
     re: new RegExp('^::'),
     key: undefined
 };
-export const TOK_COLON = {
+
+export const TOK_COLON: XPathTokenRule = {
     label: ':',
     prec: 1000,
     re: new RegExp('^:'),
     key: undefined
 };
-export const TOK_AXISNAME = {
+
+export const TOK_AXISNAME: XPathTokenRule = {
     label: '[axis]',
     re: new RegExp(`^(${xpathAxesRe})`),
     key: undefined
 };
-export const TOK_PARENO = {
+
+export const TOK_PARENO: XPathTokenRule = {
     label: '(',
     prec: 34,
     re: new RegExp('^\\('),
     key: undefined
 };
-export const TOK_PARENC = {
+
+export const TOK_PARENC: XPathTokenRule = {
     label: ')',
     re: new RegExp('^\\)'),
     key: undefined
 };
-export const TOK_DDOT = {
+export const TOK_DDOT: XPathTokenRule = {
     label: '..',
     prec: 34,
     re: new RegExp('^\\.\\.'),
     key: undefined
 };
-export const TOK_DOT = {
+
+export const TOK_DOT: XPathTokenRule = {
     label: '.',
     prec: 34,
     re: new RegExp('^\\.'),
     key: undefined
 };
-export const TOK_AT = {
+
+export const TOK_AT: XPathTokenRule = {
     label: '@',
     prec: 34,
     re: new RegExp('^@'),
     key: undefined
 };
 
-export const TOK_COMMA = {
+export const TOK_COMMA: XPathTokenRule = {
     label: ',',
     re: new RegExp('^,'),
     key: undefined
 };
 
-export const TOK_OR = {
+export const TOK_OR: XPathTokenRule = {
     label: 'or',
     prec: 10,
     re: new RegExp('^or\\b'),
     key: undefined
 };
-export const TOK_AND = {
+
+export const TOK_AND: XPathTokenRule = {
     label: 'and',
     prec: 11,
     re: new RegExp('^and\\b'),
     key: undefined
 };
-export const TOK_EQ = {
+
+export const TOK_EQ: XPathTokenRule = {
     label: '=',
     prec: 12,
     re: new RegExp('^='),
     key: undefined
 };
-export const TOK_NEQ = {
+
+export const TOK_NEQ: XPathTokenRule = {
     label: '!=',
     prec: 12,
     re: new RegExp('^!='),
     key: undefined
 };
-export const TOK_GE = {
+
+export const TOK_GE: XPathTokenRule = {
     label: '>=',
     prec: 13,
     re: new RegExp('^>='),
     key: undefined
 };
-export const TOK_GT = {
+
+export const TOK_GT: XPathTokenRule = {
     label: '>',
     prec: 13,
     re: new RegExp('^>'),
     key: undefined
 };
-export const TOK_LE = {
+
+export const TOK_LE: XPathTokenRule = {
     label: '<=',
     prec: 13,
     re: new RegExp('^<='),
     key: undefined
 };
-export const TOK_LT = {
+
+export const TOK_LT: XPathTokenRule = {
     label: '<',
     prec: 13,
     re: new RegExp('^<'),
     key: undefined
 };
-export const TOK_PLUS = {
+
+export const TOK_PLUS: XPathTokenRule = {
     label: '+',
     prec: 14,
     re: new RegExp('^\\+'),
     left: true,
     key: undefined
 };
-export const TOK_MINUS = {
+
+export const TOK_MINUS: XPathTokenRule = {
     label: '-',
     prec: 14,
     re: new RegExp('^\\-'),
     left: true,
     key: undefined
 };
-export const TOK_DIV = {
+
+export const TOK_DIV: XPathTokenRule = {
     label: 'div',
     prec: 15,
     re: new RegExp('^div\\b'),
     left: true,
     key: undefined
 };
-export const TOK_MOD = {
+
+export const TOK_MOD: XPathTokenRule = {
     label: 'mod',
     prec: 15,
     re: new RegExp('^mod\\b'),
@@ -195,63 +216,67 @@ export const TOK_MOD = {
     key: undefined
 };
 
-export const TOK_BRACKO = {
+export const TOK_BRACKO: XPathTokenRule = {
     label: '[',
     prec: 32,
     re: new RegExp('^\\['),
     key: undefined
 };
-export const TOK_BRACKC = {
+
+export const TOK_BRACKC: XPathTokenRule = {
     label: ']',
     re: new RegExp('^\\]'),
     key: undefined
 };
-export const TOK_DOLLAR = {
+
+export const TOK_DOLLAR: XPathTokenRule = {
     label: '$',
     re: new RegExp('^\\$'),
     key: undefined
 };
 
-export const TOK_NCNAME = {
+export const TOK_NCNAME: XPathTokenRule = {
     label: '[ncname]',
     re: new RegExp(`^${XML_NC_NAME}`),
     key: undefined
 };
 
-export const TOK_ASTERISK = {
+export const TOK_ASTERISK: XPathTokenRule = {
     label: '*',
     prec: 15,
     re: new RegExp('^\\*'),
     left: true,
     key: undefined
 };
-export const TOK_LITERALQ = {
+
+export const TOK_LITERALQ: XPathTokenRule = {
     label: '[litq]',
     prec: 20,
     re: new RegExp("^'[^\\']*'"),
     key: undefined
 };
-export const TOK_LITERALQQ = {
+
+export const TOK_LITERALQQ: XPathTokenRule = {
     label: '[litqq]',
     prec: 20,
     re: new RegExp('^"[^\\"]*"'),
     key: undefined
 };
 
-export const TOK_NUMBER = {
+export const TOK_NUMBER: XPathTokenRule = {
     label: '[number]',
     prec: 35,
     re: new RegExp('^\\d+(\\.\\d*)?'),
     key: undefined
 };
 
-export const TOK_QNAME = {
+export const TOK_QNAME: XPathTokenRule = {
     label: '[qname]',
     re: new RegExp(`^(${XML_NC_NAME}:)?${XML_NC_NAME}`),
     key: undefined
 };
 
-export const TOK_NODEO = {
+export const TOK_NODEO: XPathTokenRule = {
     label: '[nodeTest-start]',
     re: new RegExp('^(processing-instruction|comment|text|node)\\('),
     key: undefined
@@ -265,7 +290,7 @@ export const TOK_NODEO = {
 // NOTE: order of this list is important, because the first match
 // counts. Cf. DDOT and DOT, and AXIS and COLON.
 
-export const xpathTokenRules = [
+export const xPathTokenRules: XPathTokenRule[] = [
     TOK_DSLASH,
     TOK_SLASH,
     TOK_DDOT,

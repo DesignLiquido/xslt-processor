@@ -26,7 +26,10 @@ export function mapExpr(array, func) {
     return ret;
 }
 
-// Reverses the given array in place.
+/**
+ * Reverses the given array in place.
+ * @param array The array to be reversed.
+ */
 export function reverseInPlace(array: any[]) {
     for (let i = 0; i < array.length / 2; ++i) {
         const h = array[i];

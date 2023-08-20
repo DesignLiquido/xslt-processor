@@ -6,14 +6,7 @@
 // Debug stuff for the XPath parser. Also used by XSLT.
 import { XNode } from './dom';
 import {
-    ExprContext,
-    NodeTestName,
-    NodeTestNC,
-    NodeTestComment,
-    NodeTestPI,
-    NodeTestText,
-    NodeTestElementOrAttribute,
-    NodeTestAny
+    ExprContext
 } from './xpath';
 import {
     BinaryExpr,
@@ -30,6 +23,7 @@ import {
     UnionExpr,
     VariableExpr
 } from './xpath/expressions';
+import { NodeTestAny, NodeTestElementOrAttribute, NodeTestText, NodeTestComment, NodeTestPI, NodeTestName, NodeTestNC } from './xpath/node-tests';
 import { StringValue, NumberValue, BooleanValue, NodeSetValue } from './xpath/values';
 
 export let parseTree = function (expr, indent) {

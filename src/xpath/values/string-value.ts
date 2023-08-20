@@ -1,8 +1,10 @@
-export class StringValue {
+import { NodeValue } from "./node-value";
+
+export class StringValue implements NodeValue {
     value: any;
     type: string;
 
-    constructor(value) {
+    constructor(value: any) {
         this.value = value;
         this.type = 'string';
     }

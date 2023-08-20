@@ -55,18 +55,11 @@ import {
 } from './expressions';
 import { Expression } from './expressions/expression';
 
-import { NodeTestAny } from './node-test-any';
-import { NodeTestComment } from './node-test-comment';
-import { NodeTestElementOrAttribute } from './node-test-element-or-attribute';
-import { NodeTestName } from './node-test-name';
-import { NodeTestNC } from './node-test-nc';
-import { NodeTestPI } from './node-test-pi';
-import { NodeTestText } from './node-test-text';
 import {
     Q_MM,
     Q_01,
     Q_1M,
-    xpathTokenRules,
+    xPathTokenRules,
     TOK_DIV,
     TOK_MOD,
     TOK_AND,
@@ -124,9 +117,19 @@ import {
     XPathDigits
 } from './xpath-grammar-rules';
 
+import { GrammarRuleCandidate } from './grammar-rule-candidate';
+import { XPathTokenRule } from './xpath-token-rule';
+import { XNode } from '../dom';
+import { NodeTestAny, NodeTestElementOrAttribute, NodeTestNC, NodeTestName, NodeTestText, NodeTestComment, NodeTestPI } from './node-tests';
+
 export class XPath {
     xPathParseCache: any;
     xPathRules: any[];
+    xPathLog: (message: string) => void;
+
+    lexerCount: number;
+    parseCount: number;
+    reduceCount: number;
 
     // The productions of the grammar. Columns of the table:
     //
@@ -239,6 +242,11 @@ export class XPath {
     constructor() {
         this.xPathParseCache = {};
         this.xPathRules = [];
+        this.xPathLog = () => {};
+
+        this.lexerCount = 0;
+        this.parseCount = 0;
+        this.reduceCount = 0;
     }
 
     // Factory functions for semantic values (i.e. Expressions) of the
@@ -505,6 +513,7 @@ export class XPath {
             copyArray(nodeList, node.getElementsByTagName(opt_tagName));
             return;
         }
+
         for (let n = node.firstChild; n; n = n.nextSibling) {
             nodeList.push(n);
             this.xPathCollectDescendants(nodeList, n);
@@ -608,169 +617,76 @@ export class XPath {
 
         reverseInPlace(match);
 
-        if (p == -1) {
+        if (p === -1) {
             return match;
-        } else {
-            return [];
         }
+
+        return [];
     }
 
     /**
-     * The entry point for the parser.
-     * @param expression a string that contains an XPath expression.
-     * @param axis The XPath axis. Used when the match does not start with the parent.
-     * @param xPathLog TODO
-     * @returns an expression object that can be evaluated with an
-     * expression context.
+     * Finds the best rule for the XPath expression provided.
+     * @param expression The XPath string expression.
+     * @param previous The previous matched XPath rule.
+     * @returns The found rule and the corresponding match.
      */
-    xPathParse(
+    private findXPathRuleForExpression(
         expression: string,
-        axis?: string,
-        // eslint-disable-next-line no-unused-vars
-        xPathLog = (message: string) => {
-            // console.log(message);
-        }
-    ) {
-        const originalExpression = `${expression}`;
-        xPathLog(`parse ${expression}`);
-        this.xPathParseInit(xPathLog);
+        previous: GrammarRuleCandidate
+    ): { rule: XPathTokenRule | null, match: string } {
 
-        // TODO: Removing the cache for now.
-        // The cache became a real problem when having to deal with `self-and-siblings`
-        // axis.
-        /* const cached = this.xPathCacheLookup(expression);
-        if (cached && axis === undefined) {
-            xPathLog(' ... cached');
-            return cached;
-        } */
-
-        // Optimize for a few common cases: simple attribute node tests
-        // (@id), simple element node tests (page), variable references
-        // ($address), numbers (4), multi-step path expressions where each
-        // step is a plain element node test
-        // (page/overlay/locations/location).
-
-        if (expression.match(/^(\$|@)?\w+$/i)) {
-            let ret = this.makeSimpleExpr(expression, axis);
-            this.xPathParseCache[expression] = ret;
-            xPathLog(' ... simple');
-            return ret;
-        }
-
-        if (expression.match(/^\w+(\/\w+)*$/i)) {
-            let ret = this.makeSimpleExpr2(expression);
-            this.xPathParseCache[expression] = ret;
-            xPathLog(' ... simple 2');
-            return ret;
-        }
-
-        const cachekey = expression; // expr is modified during parse
-
-        const stack = [];
-        let ahead = null;
-        let previous = null;
-        let done = false;
-
-        let parse_count = 0;
-        let lexer_count = 0;
-        let reduce_count = 0;
-
-        while (!done) {
-            parse_count++;
-            expression = expression.replace(/^\s*/, '');
-            previous = ahead;
-            ahead = null;
-
-            let rule = null;
-            let match = '';
-            for (let i = 0; i < xpathTokenRules.length; ++i) {
-                let result = xpathTokenRules[i].re.exec(expression);
-                lexer_count++;
-                if (result && result.length > 0 && result[0].length > match.length) {
-                    rule = xpathTokenRules[i];
-                    match = result[0];
-                    break;
-                }
-            }
-
-            // Special case: allow operator keywords to be element and
-            // variable names.
-
-            // NOTE(mesch): The parser resolves conflicts by looking ahead,
-            // and this is the only case where we look back to
-            // disambiguate. So this is indeed something different, and
-            // looking back is usually done in the lexer (via states in the
-            // general case, called "start conditions" in flex(1)). Also,the
-            // conflict resolution in the parser is not as robust as it could
-            // be, so I'd like to keep as much off the parser as possible (all
-            // these precedence values should be computed from the grammar
-            // rules and possibly associativity declarations, as in bison(1),
-            // and not explicitly set.
-
-            if (
-                rule &&
-                (rule == TOK_DIV || rule == TOK_MOD || rule == TOK_AND || rule == TOK_OR) &&
-                (!previous ||
-                    previous.tag == TOK_AT ||
-                    previous.tag == TOK_DSLASH ||
-                    previous.tag == TOK_SLASH ||
-                    previous.tag == TOK_AXIS ||
-                    previous.tag == TOK_DOLLAR)
-            ) {
-                rule = TOK_QNAME;
-            }
-
-            if (rule) {
-                expression = expression.substr(match.length);
-                xPathLog(`token: ${match} -- ${rule.label}`);
-                ahead = {
-                    tag: rule,
-                    match,
-                    prec: rule.prec ? rule.prec : 0, // || 0 is removed by the compiler
-                    expr: this.makeTokenExpr(match)
-                };
-            } else {
-                xPathLog('DONE');
-                done = true;
-            }
-
-            while (this.xPathReduce(stack, ahead, axis, xPathLog)) {
-                reduce_count++;
-                xPathLog(`stack: ${this.stackToString(stack)}`);
+        let rule: XPathTokenRule = null;
+        let match: string = '';
+        for (let i = 0; i < xPathTokenRules.length; ++i) {
+            let result: RegExpExecArray = xPathTokenRules[i].re.exec(expression);
+            this.lexerCount++;
+            if (result !== null && result.length > 0 && result[0].length > 0) {
+                rule = xPathTokenRules[i];
+                match = result[0];
+                break;
             }
         }
 
-        xPathLog(`stack: ${this.stackToString(stack)}`);
+        // Special case: allow operator keywords to be element and
+        // variable names.
 
-        // DGF any valid XPath should "reduce" to a single Expr token
-        if (stack.length != 1) {
-            throw `XPath parse error ${cachekey}:\n${this.stackToString(stack)}`;
-        }
+        // NOTE(mesch): The parser resolves conflicts by looking ahead,
+        // and this is the only case where we look back to
+        // disambiguate. So this is indeed something different, and
+        // looking back is usually done in the lexer (via states in the
+        // general case, called "start conditions" in flex(1)). Also, the
+        // conflict resolution in the parser is not as robust as it could
+        // be, so I'd like to keep as much off the parser as possible (all
+        // these precedence values should be computed from the grammar
+        // rules and possibly associativity declarations, as in bison(1),
+        // and not explicitly set.
 
-        let result = stack[0].expr;
-        // TODO: Remove this `if` after getting to rewrite `xPathReduce`.
-        if (axis !== undefined &&
-            !result.absolute &&
-            !originalExpression.startsWith('*') &&
-            result.steps &&
-            Array.isArray(result.steps)
+        if (
+            rule &&
+            (rule == TOK_DIV || rule == TOK_MOD || rule == TOK_AND || rule == TOK_OR) &&
+            (!previous ||
+                previous.tag == TOK_AT ||
+                previous.tag == TOK_DSLASH ||
+                previous.tag == TOK_SLASH ||
+                previous.tag == TOK_AXIS ||
+                previous.tag == TOK_DOLLAR)
         ) {
-            result.steps[0].axis = axis;
+            rule = TOK_QNAME;
         }
 
-        this.xPathParseCache[cachekey] = result;
-
-        xPathLog(`XPath parse: ${parse_count} / ${lexer_count} / ${reduce_count}`);
-
-        return result;
+        return { rule, match };
     }
 
-    xPathParseInit(xPathLog: Function) {
+    /**
+     * Initialization for `xPathParse`.
+     * @see xPathParse
+     */
+    private xPathParseInit() {
         if (this.xPathRules.length) {
             return;
         }
 
-        let xpathNonTerminals = [
+        let xPathNonTerminals = [
             XPathLocationPath,
             XPathRelativeLocationPath,
             XPathAbsoluteLocationPath,
@@ -801,21 +717,21 @@ export class XPath {
                 return 1;
             } else if (la > lb) {
                 return -1;
-            } else {
-                return 0;
             }
+
+            return 0;
         });
 
         let k = 1;
-        for (let i = 0; i < xpathNonTerminals.length; ++i) {
-            xpathNonTerminals[i].key = k++;
+        for (let i = 0; i < xPathNonTerminals.length; ++i) {
+            xPathNonTerminals[i].key = k++;
         }
 
-        for (let i = 0; i < xpathTokenRules.length; ++i) {
-            xpathTokenRules[i].key = k++;
+        for (let i = 0; i < xPathTokenRules.length; ++i) {
+            xPathTokenRules[i].key = k++;
         }
 
-        xPathLog(`XPath parse INIT: ${k} rules`);
+        this.xPathLog(`XPath parse INIT: ${k} rules`);
 
         // Another slight optimization: sort the rules into bins according
         // to the last element (observing quantifiers), so we can restrict
@@ -851,7 +767,7 @@ export class XPath {
             }
         }
 
-        xPathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
+        this.xPathLog(`XPath parse INIT: ${this.xPathRules.length} rule bins`);
 
         let sum = 0;
         mapExec(this.xPathRules, (i: any) => {
@@ -860,89 +776,199 @@ export class XPath {
             }
         });
 
-        xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
+        this.xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
     }
 
-    /*DGF xpathReduce is where the magic happens in this parser.
-    Skim down to the bottom of this file to find the table of
-    grammatical rules and precedence numbers, "The productions of the grammar".
-
-    The idea here is that we want to take a stack of tokens and apply
-    grammatical rules to them, "reducing" them to higher-level
-    tokens. Ultimately, any valid XPath should reduce to exactly one
-    "Expr" token.
-
-    Reduce too early or too late and you'll have two tokens that can't reduce
-    to single Expr.  For example, you may hastily reduce a qname that
-    should name a function, incorrectly treating it as a tag name.
-    Or you may reduce too late, accidentally reducing the last part of the
-    XPath into a top-level "Expr" that won't reduce with earlier parts of
-    the XPath.
-
-    A "cand" is a grammatical rule candidate, with a given precedence
-    number. "ahead" is the upcoming token, which also has a precedence
-    number. If the token has a higher precedence number than
-    the rule candidate, we'll "shift" the token onto the token stack,
-    instead of immediately applying the rule candidate.
-
-    Some tokens have left associativity, in which case we shift when they
-    have LOWER precedence than the candidate.
-    */
-    xPathReduce(
-        stack: any,
-        ahead: any,
-        axis?: string,
-        // eslint-disable-next-line no-unused-vars
-        xpathLog = (message: string) => {
-            // console.log(message);
-        }
+    /**
+     * The entry point for the parser.
+     * @param expression a string that contains an XPath expression.
+     * @param axis The XPath axis. Used when the match does not start with the parent.
+     * @returns an expression object that can be evaluated with an
+     * expression context.
+     */
+    xPathParse(
+        expression: string,
+        axis?: string
     ) {
-        let cand = null;
+        const originalExpression = `${expression}`;
+        this.xPathLog(`parse ${expression}`);
+        this.xPathParseInit();
+
+        // TODO: Removing the cache for now.
+        // The cache became a real problem when having to deal with `self-and-siblings`
+        // axis.
+        /* const cached = this.xPathCacheLookup(expression);
+        if (cached && axis === undefined) {
+            this.xPathLog(' ... cached');
+            return cached;
+        } */
+
+        // Optimize for a few common cases: simple attribute node tests
+        // (@id), simple element node tests (page), variable references
+        // ($address), numbers (4), multi-step path expressions where each
+        // step is a plain element node test
+        // (page/overlay/locations/location).
+
+        if (expression.match(/^(\$|@)?\w+$/i)) {
+            let ret = this.makeSimpleExpr(expression, axis);
+            this.xPathParseCache[expression] = ret;
+            this.xPathLog(' ... simple');
+            return ret;
+        }
+
+        if (expression.match(/^\w+(\/\w+)*$/i)) {
+            let ret = this.makeSimpleExpr2(expression);
+            this.xPathParseCache[expression] = ret;
+            this.xPathLog(' ... simple 2');
+            return ret;
+        }
+
+        const cachekey = expression; // expression is modified during parse
+
+        const stack: GrammarRuleCandidate[] = [];
+        let ahead: GrammarRuleCandidate = null;
+        let previous: GrammarRuleCandidate = null;
+        let done: boolean = false;
+
+        let parseCount = 0;
+        this.lexerCount = 0;
+        let reduceCount = 0;
+
+        while (!done) {
+            parseCount++;
+            expression = expression.replace(/^\s*/, '');
+            previous = ahead;
+            ahead = null;
+
+            let { rule, match } = this.findXPathRuleForExpression(expression, previous);
+
+            if (rule) {
+                expression = expression.substr(match.length);
+                this.xPathLog(`token: ${match} -- ${rule.label}`);
+                ahead = {
+                    tag: rule,
+                    match,
+                    prec: rule.prec ? rule.prec : 0, // || 0 is removed by the compiler
+                    expr: this.makeTokenExpr(match)
+                };
+            } else {
+                this.xPathLog('DONE');
+                done = true;
+            }
+
+            while (this.xPathReduce(stack, ahead)) {
+                reduceCount++;
+                this.xPathLog(`stack: ${this.stackToString(stack)}`);
+            }
+        }
+
+        this.xPathLog(`stack: ${this.stackToString(stack)}`);
+
+        // DGF any valid XPath should "reduce" to a single Expr token
+        if (stack.length !== 1) {
+            throw `XPath parse error ${cachekey}:\n${this.stackToString(stack)}`;
+        }
+
+        let result = stack[0].expr;
+        // TODO: Remove this `if` after getting to rewrite `xPathReduce`.
+        if (axis !== undefined &&
+            !result.absolute &&
+            !originalExpression.startsWith('*') &&
+            result.steps &&
+            Array.isArray(result.steps)
+        ) {
+            result.steps[0].axis = axis;
+        }
+
+        this.xPathParseCache[cachekey] = result;
+
+        this.xPathLog(`XPath parse: ${parseCount} / ${this.lexerCount} / ${reduceCount}`);
+        return result;
+    }
+
+    private findGrammarRuleCandidate(ruleset: any, stack: any[]): GrammarRuleCandidate {
+        for (let i = 0; i < ruleset.length; ++i) {
+            const rule = ruleset[i];
+            const match = this.xPathMatchStack(stack, rule[1]);
+            if (match.length) {
+                const candidate = {
+                    tag: rule[0],
+                    rule,
+                    match,
+                    prec: undefined
+                };
+                candidate.prec = this.xPathGrammarPrecedence(candidate);
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * DGF xPathReduce is where the magic happens in this parser.
+     * Check `src\xpath\xpath-grammar-rules.ts` to find the table of
+     * grammatical rules and precedence numbers, "The productions of the grammar".
+     *
+     * The idea here is that we want to take a stack of tokens and apply
+     * grammatical rules to them, "reducing" them to higher-level
+     * tokens. Ultimately, any valid XPath should reduce to exactly one
+     * "Expr" token.
+
+     * Reduce too early or too late and you'll have two tokens that can't reduce
+     * to single Expr. For example, you may hastily reduce a qname that
+     * should name a function, incorrectly treating it as a tag name.
+     * Or you may reduce too late, accidentally reducing the last part of the
+     * XPath into a top-level "Expr" that won't reduce with earlier parts of
+     * the XPath.
+     *
+     * A "candidate" is a grammatical rule candidate, with a given precedence
+     * number. "ahead" is the upcoming token, which also has a precedence
+     * number. If the token has a higher precedence number than
+     * the rule candidate, we'll "shift" the token onto the token stack,
+     * instead of immediately applying the rule candidate.
+     *
+     * Some tokens have left associativity, in which case we shift when they
+     * have LOWER precedence than the candidate.
+     */
+    private xPathReduce(
+        stack: GrammarRuleCandidate[],
+        ahead: GrammarRuleCandidate
+    ) {
+        let candidate: GrammarRuleCandidate = null;
 
         if (stack.length > 0) {
             const top = stack[stack.length - 1];
             const ruleset = this.xPathRules[top.tag.key];
 
             if (ruleset) {
-                for (let i = 0; i < ruleset.length; ++i) {
-                    const rule = ruleset[i];
-                    const match = this.xPathMatchStack(stack, rule[1]);
-                    if (match.length) {
-                        cand = {
-                            tag: rule[0],
-                            rule,
-                            match
-                        };
-                        cand.prec = this.xPathGrammarPrecedence(cand);
-                        break;
-                    }
-                }
+                candidate = this.findGrammarRuleCandidate(ruleset, stack);
             }
         }
 
         let ret;
-        if (cand && (!ahead || cand.prec > ahead.prec || (ahead.tag.left && cand.prec >= ahead.prec))) {
-            for (let i = 0; i < cand.match.matchlength; ++i) {
+        if (candidate && (!ahead || candidate.prec > ahead.prec || (ahead.tag.left && candidate.prec >= ahead.prec))) {
+            for (let i = 0; i < candidate.match.matchlength; ++i) {
                 stack.pop();
             }
 
-            xpathLog(
-                `reduce ${cand.tag.label} ${cand.prec} ahead ${
+            this.xPathLog(
+                `reduce ${candidate.tag.label} ${candidate.prec} ahead ${
                     ahead ? ahead.tag.label + ' ' + ahead.prec + (ahead.tag.left ? ' left' : '') : ' none '
                 }`
             );
 
-            const matchExpression = mapExpr(cand.match, (m) => m.expr);
-            xpathLog(`going to apply ${cand.rule[3]}`);
-            cand.expr = cand.rule[3].apply(this, matchExpression);
+            const matchExpression = mapExpr(candidate.match, (m) => m.expr);
+            this.xPathLog(`going to apply ${candidate.rule[3]}`);
+            candidate.expr = candidate.rule[3].apply(this, matchExpression);
 
-            stack.push(cand);
+            stack.push(candidate);
             ret = true;
         } else {
             if (ahead) {
-                xpathLog(
+                this.xPathLog(
                     `shift ${ahead.tag.label} ${ahead.prec}${ahead.tag.left ? ' left' : ''} over ${
-                        cand ? cand.tag.label + ' ' + cand.prec : ' none'
+                        candidate ? candidate.tag.label + ' ' + candidate.prec : ' none'
                     }`
                 );
                 stack.push(ahead);
@@ -952,8 +978,11 @@ export class XPath {
         return ret;
     }
 
-    // Utility function to sort a list of nodes. Used by xsltSort() and
-    // nxslSelect().
+    /**
+     * Utility function to sort a list of nodes. Used by xsltSort().
+     * @param context The Expression Context.
+     * @param sort TODO
+     */
     xPathSort(context: ExprContext, sort: any[]) {
         if (sort.length === 0) {
             return;
@@ -1033,7 +1062,7 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step: any, input: any, context: ExprContext) {
+    xPathStep(nodes: any[], steps: any[], step: any, input: XNode, context: ExprContext) {
         const s = steps[step];
         const ctx2 = context.clone([input], undefined, 0, undefined);
 

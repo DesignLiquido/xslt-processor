@@ -31,7 +31,7 @@ describe('xslt', () => {
     describe('xsl:for-each', () => {
         it('handles for-each sort', () => {
             const xsltForEachSort = (
-                <xsl:stylesheet>
+                <xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="@pos" />
@@ -50,7 +50,7 @@ describe('xslt', () => {
 
         it('handles for-each sort ascending', () => {
             const xsltForEachSortAscending = (
-                <xsl:stylesheet>
+                <xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="." order="ascending" />
@@ -69,7 +69,7 @@ describe('xslt', () => {
 
         it('handles for-each sort descending', () => {
             const xsltForEachSortDescending = (
-                <xsl:stylesheet>
+                <xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="." order="descending" />
@@ -294,7 +294,7 @@ describe('xslt', () => {
         );
 
         const xsltApplyTemplates = (
-            <xsl:stylesheet>
+            <xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:apply-templates select="//item" />
                 </xsl:template>
@@ -316,7 +316,7 @@ describe('xslt', () => {
 
     it('handles global variables', () => {
         const xsltGlobalVariables = (
-            <xsl:stylesheet>
+            <xsl:stylesheet version="1.0">
                 <xsl:variable name="x" select="'x'" />
                 <xsl:variable name="y" select="'y'" />
                 <xsl:variable name="z">
@@ -341,7 +341,7 @@ describe('xslt', () => {
 
     it('handles top level output', () => {
         const xsltTopLevelOutput = (
-            <xsl:stylesheet>
+            <xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:element name="x">
                         <xsl:attribute name="y">
@@ -362,7 +362,7 @@ describe('xslt', () => {
 
     it('handles copy', () => {
         const xsltCopy = (
-            <xsl:stylesheet>
+            <xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:for-each select="//item">
                         <xsl:copy>
