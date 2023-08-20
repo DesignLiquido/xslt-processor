@@ -26,10 +26,17 @@ export class NodeTestName implements NodeTest {
             if (namespaceValue !== node.namespaceUri) {
                 return new BooleanValue(false);
             }
+
+            if (context.caseInsensitive) {
+                if (node.localName.length !== this.name.length) return new BooleanValue(false);
+                return new BooleanValue(this.re.test(node.localName));
+            }
+
+            return new BooleanValue(node.localName === this.name);
         }
 
         if (context.caseInsensitive) {
-            if (node.nodeName.length != this.name.length) return new BooleanValue(false);
+            if (node.nodeName.length !== this.name.length) return new BooleanValue(false);
             return new BooleanValue(this.re.test(node.nodeName));
         }
 
