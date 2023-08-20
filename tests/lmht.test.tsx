@@ -8,7 +8,7 @@ import { xmlParse } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
-describe.skip('LMHT', () => {
+describe('LMHT', () => {
     it('Trivial', () => {
         const xmlString = (
             <lmht>
@@ -25,7 +25,7 @@ describe.skip('LMHT', () => {
             '<?xml version="1.0"?>' +
             (
                 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-                    <xsl:template match="lmht">
+                    <xsl:template match="/lmht">
                         <html>
                             Teste
                         </html>
