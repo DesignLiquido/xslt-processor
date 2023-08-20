@@ -354,26 +354,7 @@ export class Xslt {
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'stylesheet':
                 case 'transform':
-                    for (let stylesheetAttribute of template.attributes) {
-                        switch (stylesheetAttribute.nodeName) {
-                            case 'version':
-                                this.version = stylesheetAttribute.nodeValue;
-                                break;
-                            default:
-                                if (stylesheetAttribute.prefix === 'xmlns') {
-                                    context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
-                                }
-                                break;
-                        }
-                    }
-
-                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
-                        throw new Error(
-                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
-                        );
-                    }
-
-                    this.xsltChildNodes(context, template, output);
+                    this.xsltTransformOrStylesheet(template, context, output);
                     break;
                 case 'template':
                     // If `<xsl:template>` is executed outside `<xsl:apply-templates>`,
@@ -427,6 +408,35 @@ export class Xslt {
                     throw new Error(`error if here: ${template.localName}`);
             }
         }
+    }
+
+    /**
+     * Implements `<xsl:stylesheet>` and `<xsl:transform>`, and its corresponding
+     * validations.
+     * @param template The `<xsl:stylesheet>` or `<xsl:transform>` node.
+     * @param context The Expression Context.
+     * @param output The output XML.
+     */
+    protected xsltTransformOrStylesheet(template: XNode, context: ExprContext, output: XNode): void {
+        for (let stylesheetAttribute of template.attributes) {
+            switch (stylesheetAttribute.nodeName) {
+                case 'version':
+                    this.version = stylesheetAttribute.nodeValue;
+                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
+                        throw new Error(
+                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
+                        );
+                    }
+                    break;
+                default:
+                    if (stylesheetAttribute.prefix === 'xmlns') {
+                        context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
+                    }
+                    break;
+            }
+        }
+
+        this.xsltChildNodes(context, template, output);
     }
 
     /**

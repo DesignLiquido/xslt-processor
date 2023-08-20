@@ -90,6 +90,8 @@ export class ExprContext {
         opt_outputPosition?: number,
         opt_outputDepth?: number,
         opt_decimalFormatSettings?: XsltDecimalFormatSettings,
+        opt_variables?: { [name: string]: any },
+        opt_knownNamespaces?: { [alias: string]: string },
         opt_parent?: ExprContext,
         opt_caseInsensitive?: any,
         opt_ignoreAttributesWithoutValue?: any,
@@ -101,8 +103,8 @@ export class ExprContext {
         this.position = opt_position || 0;
         this.outputPosition = opt_outputPosition || 0;
 
-        this.variables = {};
-        this.knownNamespaces = {};
+        this.variables = opt_variables || {};
+        this.knownNamespaces = opt_knownNamespaces || {};
 
         this.parent = opt_parent || null;
         this.caseInsensitive = opt_caseInsensitive || false;
@@ -158,6 +160,8 @@ export class ExprContext {
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             this.outputDepth,
             this.decimalFormatSettings,
+            this.variables,
+            this.knownNamespaces,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,
