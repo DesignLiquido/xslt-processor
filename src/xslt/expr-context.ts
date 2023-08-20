@@ -48,6 +48,7 @@ export class ExprContext {
     outputDepth: number;
 
     variables: { [name: string]: any };
+    knownNamespaces: { [alias: string]: string };
 
     caseInsensitive: any;
     ignoreAttributesWithoutValue: any;
@@ -99,7 +100,10 @@ export class ExprContext {
         this.outputNodeList = outputNodeList;
         this.position = opt_position || 0;
         this.outputPosition = opt_outputPosition || 0;
+
         this.variables = {};
+        this.knownNamespaces = {};
+
         this.parent = opt_parent || null;
         this.caseInsensitive = opt_caseInsensitive || false;
         this.ignoreAttributesWithoutValue = opt_ignoreAttributesWithoutValue || false;

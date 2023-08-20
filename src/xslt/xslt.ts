@@ -6,7 +6,6 @@
 // TODO(mesch): add jsdoc comments. Use more coherent naming. Finish
 // remaining XSLT features.
 //
-//
 // Original author: Steffen Meschkat <mesch@google.com>
 
 import {
@@ -38,7 +37,7 @@ import {
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
-import { Expression } from '../xpath/expressions/expression';
+
 import { StringValue, NodeSetValue } from '../xpath/values';
 import { LocationExpr, UnionExpr } from '../xpath/expressions';
 import { XsltOptions } from './xslt-options';
@@ -76,6 +75,7 @@ export class Xslt {
     outputDocument: XDocument;
     outputMethod: string;
     outputOmitXmlDeclaration: string;
+    version: string;
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -354,6 +354,25 @@ export class Xslt {
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'stylesheet':
                 case 'transform':
+                    for (let stylesheetAttribute of template.attributes) {
+                        switch (stylesheetAttribute.nodeName) {
+                            case 'version':
+                                this.version = stylesheetAttribute.nodeValue;
+                                break;
+                            default:
+                                if (stylesheetAttribute.prefix === 'xmlns') {
+                                    context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
+                                }
+                                break;
+                        }
+                    }
+
+                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
+                        throw new Error(
+                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
+                        );
+                    }
+
                     this.xsltChildNodes(context, template, output);
                     break;
                 case 'template':
