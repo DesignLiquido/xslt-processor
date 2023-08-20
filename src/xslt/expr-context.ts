@@ -178,6 +178,8 @@ export class ExprContext {
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             typeof opt_outputDepth !== 'undefined' ? opt_outputDepth : this.outputDepth,
             this.decimalFormatSettings,
+            this.variables,
+            this.knownNamespaces,
             this,
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,

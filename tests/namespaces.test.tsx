@@ -111,7 +111,7 @@ describe('namespaces', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
-    it.only('namespace per node', () => {
+    it('namespace per node', () => {
         const xmlString = `<?xml version="1.0" encoding="ISO-8859-1"?>
             <ClinicalDocument xmlns="http://testnamespace">
                 <test name="test1" />
@@ -129,11 +129,10 @@ describe('namespaces', () => {
                 </xsl:template>
             </xsl:stylesheet>`;
 
-        const expectedOutString = `<?xml version="1.0"?>
-            <test xmlns="http://testnamespace" name="test1"/>
-            <test xmlns="http://testnamespace" name="test2"/>
-            <test xmlns="http://testnamespace" name="test3"/>
-            <test xmlns="http://testnamespace" name="test5"/>`
+        const expectedOutString = `<test xmlns="http://testnamespace" name="test1"/>` +
+            `<test xmlns="http://testnamespace" name="test2"/>` +
+            `<test xmlns="http://testnamespace" name="test3"/>` +
+            `<test xmlns="http://testnamespace" name="test5"/>`;
 
         const xsltClass = new Xslt();
         // Uncomment to see how XPath resolves.

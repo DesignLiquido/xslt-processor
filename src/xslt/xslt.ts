@@ -255,7 +255,7 @@ export class Xslt {
                     output.appendChild(commentNode);
                     break;
                 case 'copy':
-                    node = this.xsltCopy(output, context.nodeList[context.position], this.outputDocument);
+                    node = this.xsltCopy(output, context.nodeList[context.position]);
                     if (node) {
                         this.xsltChildNodes(context, template, node);
                     }
@@ -266,7 +266,7 @@ export class Xslt {
                     if (value.type === 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
-                            this.xsltCopyOf(output, nodes[i], this.outputDocument);
+                            this.xsltCopyOf(output, nodes[i]);
                         }
                     } else {
                         let node = domCreateTextNode(this.outputDocument, value.stringValue());
@@ -411,132 +411,6 @@ export class Xslt {
     }
 
     /**
-     * Implements `<xsl:stylesheet>` and `<xsl:transform>`, and its corresponding
-     * validations.
-     * @param template The `<xsl:stylesheet>` or `<xsl:transform>` node.
-     * @param context The Expression Context.
-     * @param output The output XML.
-     */
-    protected xsltTransformOrStylesheet(template: XNode, context: ExprContext, output: XNode): void {
-        for (let stylesheetAttribute of template.attributes) {
-            switch (stylesheetAttribute.nodeName) {
-                case 'version':
-                    this.version = stylesheetAttribute.nodeValue;
-                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
-                        throw new Error(
-                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
-                        );
-                    }
-                    break;
-                default:
-                    if (stylesheetAttribute.prefix === 'xmlns') {
-                        context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
-                    }
-                    break;
-            }
-        }
-
-        this.xsltChildNodes(context, template, output);
-    }
-
-    /**
-     * Implements `xsl:copy` for all node types.
-     * @param {XNode} destination the node being copied to, part of output document
-     * @param {XNode} source the node being copied, part in input document
-     * @param {XDocument} destinationDocument dstDocument
-     * @returns {XNode|null} If an element node was created, the element node. Otherwise null.
-     */
-    protected xsltCopy(destination: any, source: any, destinationDocument: any): XNode {
-        if (source.nodeType == DOM_ELEMENT_NODE) {
-            let node = domCreateElement(destinationDocument, source.nodeName);
-            node.transformedNodeName = source.nodeName;
-            domAppendTransformedChild(destination, node);
-            return node;
-        }
-
-        if (source.nodeType == DOM_TEXT_NODE) {
-            let node = domCreateTransformedTextNode(destinationDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
-        } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
-            let node = domCreateCDATASection(destinationDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
-        } else if (source.nodeType == DOM_COMMENT_NODE) {
-            let node = domCreateComment(destinationDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
-        } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
-            domSetTransformedAttribute(destination, source.nodeName, source.nodeValue);
-        }
-
-        return null;
-    }
-
-    /**
-     * Orders the current node list in the input context according to the
-     * sort order specified by xsl:sort child nodes of the current
-     * template node. This happens before the operation specified by the
-     * current template node is executed.
-     * @param context TODO
-     * @param template TODO
-     * @todo case-order is not implemented.
-     */
-    protected xsltSort(context: ExprContext, template: XNode) {
-        const sort: any[] = [];
-
-        for (const childNode of template.childNodes) {
-            if (childNode.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'sort')) {
-                const select = xmlGetAttribute(childNode, 'select');
-                const expression = this.xPath.xPathParse(select);
-                const type = xmlGetAttribute(childNode, 'data-type') || 'text';
-                const order = xmlGetAttribute(childNode, 'order') || 'ascending';
-                sort.push({
-                    expr: expression,
-                    type,
-                    order
-                });
-            }
-        }
-
-        this.xPath.xPathSort(context, sort);
-    }
-
-    /**
-     * Evaluates a variable or parameter and set it in the current input
-     * context. Implements `xsl:variable`, `xsl:param`, and `xsl:with-param`.
-     *
-     * @param input TODO
-     * @param template TODO
-     * @param override flag that defines if the value computed here
-     * overrides the one already in the input context if that is the
-     * case. I.e. decides if this is a default value or a local
-     * value. `xsl:variable` and `xsl:with-param` override; `xsl:param` doesn't.
-     */
-    protected xsltVariable(input: ExprContext, template: any, override: boolean) {
-        const name = xmlGetAttribute(template, 'name');
-        const select = xmlGetAttribute(template, 'select');
-
-        let value: any;
-
-        if (template.childNodes.length > 0) {
-            const root = domCreateDocumentFragment(template.ownerDocument);
-            this.xsltChildNodes(input, template, root);
-            value = new NodeSetValue([root]);
-        } else if (select) {
-            value = this.xPath.xPathEval(select, input);
-        } else {
-            let parameterValue = '';
-            const filteredParameter = this.options.parameters.filter((p) => p.name === name);
-            if (filteredParameter.length > 0) {
-                parameterValue = filteredParameter[0].value;
-            }
-            value = new StringValue(parameterValue);
-        }
-
-        if (override || !input.getVariable(name)) {
-            input.setVariable(name, value);
-        }
-    }
-
-    /**
      * Implements xsl:choose and its child nodes xsl:when and
      * xsl:otherwise.
      * @param input The Expression Context.
@@ -558,6 +432,67 @@ export class Xslt {
             } else if (this.isXsltElement(childNode, 'otherwise')) {
                 this.xsltChildNodes(input, childNode, output);
                 break;
+            }
+        }
+    }
+
+    /**
+     * Implements `xsl:copy` for all node types.
+     * @param {XNode} destination the node being copied to, part of output document.
+     * @param {XNode} source the node being copied, part in input document.
+     * @returns {XNode|null} If an element node was created, the element node. Otherwise, null.
+     */
+    protected xsltCopy(destination: XNode, source: XNode): XNode {
+        if (source.nodeType == DOM_ELEMENT_NODE) {
+            let node = domCreateElement(this.outputDocument, source.nodeName);
+            node.transformedNodeName = source.nodeName;
+            if (source.namespaceUri !== null && source.namespaceUri !== undefined) {
+                domSetTransformedAttribute(node, 'xmlns', source.namespaceUri);
+            }
+            domAppendTransformedChild(destination, node);
+            return node;
+        }
+
+        if (source.nodeType == DOM_TEXT_NODE) {
+            let node = domCreateTransformedTextNode(this.outputDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
+            let node = domCreateCDATASection(this.outputDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_COMMENT_NODE) {
+            let node = domCreateComment(this.outputDocument, source.nodeValue);
+            domAppendTransformedChild(destination, node);
+        } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
+            domSetTransformedAttribute(destination, source.nodeName, source.nodeValue);
+        }
+
+        return null;
+    }
+
+    /**
+     * Implements `xsl:copy-of` for node-set values of the select
+     * expression. Recurses down the source node tree, which is part of
+     * the input document.
+     * @param {XNode} dst the node being copied to, part of output document.
+     * @param {XNode} src the node being copied, part in input document.
+     */
+    protected xsltCopyOf(dst: XNode, src: XNode): void {
+        if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE || src.nodeType == DOM_DOCUMENT_NODE) {
+            for (let i = 0; i < src.childNodes.length; ++i) {
+                this.xsltCopyOf(dst, src.childNodes[i]);
+            }
+        } else {
+            const node = this.xsltCopy(dst, src);
+            if (node) {
+                // This was an element node -- recurse to attributes and
+                // children.
+                for (let i = 0; i < src.attributes.length; ++i) {
+                    this.xsltCopyOf(node, src.attributes[i]);
+                }
+
+                for (let i = 0; i < src.childNodes.length; ++i) {
+                    this.xsltCopyOf(node, src.childNodes[i]);
+                }
             }
         }
     }
@@ -603,6 +538,101 @@ export class Xslt {
             (rv[x[key]] = rv[x[key]] || []).push(x);
             return rv;
         }, {});
+    }
+
+    /**
+     * Orders the current node list in the input context according to the
+     * sort order specified by xsl:sort child nodes of the current
+     * template node. This happens before the operation specified by the
+     * current template node is executed.
+     * @param context TODO
+     * @param template TODO
+     * @todo case-order is not implemented.
+     */
+    protected xsltSort(context: ExprContext, template: XNode) {
+        const sort: any[] = [];
+
+        for (const childNode of template.childNodes) {
+            if (childNode.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'sort')) {
+                const select = xmlGetAttribute(childNode, 'select');
+                const expression = this.xPath.xPathParse(select);
+                const type = xmlGetAttribute(childNode, 'data-type') || 'text';
+                const order = xmlGetAttribute(childNode, 'order') || 'ascending';
+                sort.push({
+                    expr: expression,
+                    type,
+                    order
+                });
+            }
+        }
+
+        this.xPath.xPathSort(context, sort);
+    }
+
+    /**
+     * Implements `<xsl:stylesheet>` and `<xsl:transform>`, and its corresponding
+     * validations.
+     * @param template The `<xsl:stylesheet>` or `<xsl:transform>` node.
+     * @param context The Expression Context.
+     * @param output The output XML.
+     */
+    protected xsltTransformOrStylesheet(template: XNode, context: ExprContext, output: XNode): void {
+        for (let stylesheetAttribute of template.attributes) {
+            switch (stylesheetAttribute.nodeName) {
+                case 'version':
+                    this.version = stylesheetAttribute.nodeValue;
+                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
+                        throw new Error(
+                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
+                        );
+                    }
+                    break;
+                default:
+                    if (stylesheetAttribute.prefix === 'xmlns') {
+                        context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
+                    }
+                    break;
+            }
+        }
+
+        this.xsltChildNodes(context, template, output);
+    }
+
+    /**
+     * Evaluates a variable or parameter and set it in the current input
+     * context. Implements `xsl:variable`, `xsl:param`, and `xsl:with-param`.
+     *
+     * @param input TODO
+     * @param template TODO
+     * @param override flag that defines if the value computed here
+     * overrides the one already in the input context if that is the
+     * case. I.e. decides if this is a default value or a local
+     * value. `xsl:variable` and `xsl:with-param` override; `xsl:param` doesn't.
+     */
+    protected xsltVariable(input: ExprContext, template: any, override: boolean) {
+        const name = xmlGetAttribute(template, 'name');
+        const select = xmlGetAttribute(template, 'select');
+
+        let value: any;
+
+        if (template.childNodes.length > 0) {
+            const root = domCreateDocumentFragment(template.ownerDocument);
+            this.xsltChildNodes(input, template, root);
+            value = new NodeSetValue([root]);
+        } else if (select) {
+            value = this.xPath.xPathEval(select, input);
+        } else {
+            let parameterValue = '';
+            const filteredParameter = this.options.parameters.filter((p) => p.name === name);
+            if (filteredParameter.length > 0) {
+                parameterValue = filteredParameter[0].value;
+            }
+            value = new StringValue(parameterValue);
+        }
+
+        if (override || !input.getVariable(name)) {
+            input.setVariable(name, value);
+        }
     }
 
     /**
@@ -762,35 +792,6 @@ export class Xslt {
         }
 
         return ret;
-    }
-
-    /**
-     * Implements xsl:copy-of for node-set values of the select
-     * expression. Recurses down the source node tree, which is part of
-     * the input document.
-     * @param {XNode} dst the node being copied to, part of output document
-     * @param {XNode} src the node being copied, part in input document
-     * @param {XDocument} dstDocument dstDocument
-     */
-    protected xsltCopyOf(dst: any, src: any, dstDocument: any) {
-        if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE || src.nodeType == DOM_DOCUMENT_NODE) {
-            for (let i = 0; i < src.childNodes.length; ++i) {
-                this.xsltCopyOf(dst, src.childNodes[i], dstDocument);
-            }
-        } else {
-            const node = this.xsltCopy(dst, src, dstDocument);
-            if (node) {
-                // This was an element node -- recurse to attributes and
-                // children.
-                for (let i = 0; i < src.attributes.length; ++i) {
-                    this.xsltCopyOf(node, src.attributes[i], dstDocument);
-                }
-
-                for (let i = 0; i < src.childNodes.length; ++i) {
-                    this.xsltCopyOf(node, src.childNodes[i], dstDocument);
-                }
-            }
-        }
     }
 
     /**
