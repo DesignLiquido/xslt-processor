@@ -1,6 +1,7 @@
-export class BooleanValue {
-    value: any;
+import { NodeValue } from "./node-value";
 
+export class BooleanValue implements NodeValue {
+    value: any;
     type: string;
 
     constructor(value: any) {

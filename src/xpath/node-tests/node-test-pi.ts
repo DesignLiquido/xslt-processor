@@ -1,8 +1,9 @@
-import { DOM_PROCESSING_INSTRUCTION_NODE } from "../constants";
-import { ExprContext } from "../xslt/expr-context";
-import { BooleanValue } from "./values/boolean-value";
+import { DOM_PROCESSING_INSTRUCTION_NODE } from "../../constants";
+import { ExprContext } from "../../xslt/expr-context";
+import { BooleanValue } from "../values/boolean-value";
+import { NodeTest } from "./node-test";
 
-export class NodeTestPI {
+export class NodeTestPI implements NodeTest {
     target: any;
 
     constructor(target: any) {

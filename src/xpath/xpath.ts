@@ -55,13 +55,6 @@ import {
 } from './expressions';
 import { Expression } from './expressions/expression';
 
-import { NodeTestAny } from './node-test-any';
-import { NodeTestComment } from './node-test-comment';
-import { NodeTestElementOrAttribute } from './node-test-element-or-attribute';
-import { NodeTestName } from './node-test-name';
-import { NodeTestNC } from './node-test-nc';
-import { NodeTestPI } from './node-test-pi';
-import { NodeTestText } from './node-test-text';
 import {
     Q_MM,
     Q_01,
@@ -126,6 +119,8 @@ import {
 
 import { GrammarRuleCandidate } from './grammar-rule-candidate';
 import { XPathTokenRule } from './xpath-token-rule';
+import { XNode } from '../dom';
+import { NodeTestAny, NodeTestElementOrAttribute, NodeTestNC, NodeTestName, NodeTestText, NodeTestComment, NodeTestPI } from './node-tests';
 
 export class XPath {
     xPathParseCache: any;
@@ -936,7 +931,7 @@ export class XPath {
      * Some tokens have left associativity, in which case we shift when they
      * have LOWER precedence than the candidate.
      */
-    xPathReduce(
+    private xPathReduce(
         stack: GrammarRuleCandidate[],
         ahead: GrammarRuleCandidate
     ) {
@@ -1067,7 +1062,7 @@ export class XPath {
         return 0;
     }
 
-    xPathStep(nodes: any[], steps: any[], step: any, input: any, context: ExprContext) {
+    xPathStep(nodes: any[], steps: any[], step: any, input: XNode, context: ExprContext) {
         const s = steps[step];
         const ctx2 = context.clone([input], undefined, 0, undefined);
 

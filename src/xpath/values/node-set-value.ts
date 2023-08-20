@@ -1,6 +1,7 @@
 import { XNode, xmlValue } from "../../dom";
+import { NodeValue } from "./node-value";
 
-export class NodeSetValue {
+export class NodeSetValue implements NodeValue {
     value: XNode[];
     type: string;
 

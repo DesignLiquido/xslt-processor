@@ -1,7 +1,8 @@
-import { ExprContext } from "../xslt/expr-context";
-import { BooleanValue } from "./values/boolean-value";
+import { ExprContext } from "../../xslt/expr-context";
+import { NodeTest } from "./node-test";
+import { BooleanValue } from "../values/boolean-value";
 
-export class NodeTestNC {
+export class NodeTestNC implements NodeTest {
     regex: RegExp;
 
     nsprefix: any;

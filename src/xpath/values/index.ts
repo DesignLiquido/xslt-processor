@@ -10,27 +10,22 @@
 //
 // The four types are:
 //
-//   StringValue
-//
-//   NumberValue
-//
-//   BooleanValue
-//
-//   NodeSetValue
+//   - `StringValue`
+//   - `NumberValue`
+//   - `BooleanValue`
+//   - `NodeSetValue`
 //
 // The common interface of the value classes consists of methods that
 // implement the XPath type coercion rules:
 //
-//   stringValue() -- returns the value as a JavaScript String,
-//
-//   numberValue() -- returns the value as a JavaScript Number,
-//
-//   booleanValue() -- returns the value as a JavaScript Boolean,
-//
-//   nodeSetValue() -- returns the value as a JavaScript Array of DOM
-//   Node objects.
-//
+//   - `stringValue()` -- returns the value as a JavaScript String;
+//   - `numberValue()` -- returns the value as a JavaScript Number;
+//   - `booleanValue()` -- returns the value as a JavaScript Boolean;
+//   - `nodeSetValue()` -- returns the value as a JavaScript Array of DOM
+//                       Node objects.
+
 export * from './boolean-value';
 export * from './node-set-value';
+export * from './node-value';
 export * from './number-value';
 export * from './string-value';

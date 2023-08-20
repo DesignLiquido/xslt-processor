@@ -1,6 +1,6 @@
 import { ExprContext } from "../../xslt/expr-context";
 import { NodeSetValue } from "../values/node-set-value";
-import { NodeTestAny } from "../node-test-any";
+import { NodeTestAny } from "../node-tests/node-test-any";
 import { xPathAxis } from "../tokens";
 import { Expression } from "./expression";
 import { XPath } from "../xpath";

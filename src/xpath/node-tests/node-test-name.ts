@@ -1,7 +1,8 @@
-import { ExprContext } from "../xslt/expr-context";
-import { BooleanValue } from "./values/boolean-value";
+import { ExprContext } from "../../xslt/expr-context";
+import { BooleanValue } from "../values/boolean-value";
+import { NodeTest } from "./node-test";
 
-export class NodeTestName {
+export class NodeTestName implements NodeTest {
     name: string;
     re: RegExp;
 
@@ -17,6 +18,6 @@ export class NodeTestName {
             return new BooleanValue(this.re.test(n.nodeName));
         }
 
-        return new BooleanValue(n.nodeName == this.name);
+        return new BooleanValue(n.nodeName === this.name);
     }
 }
