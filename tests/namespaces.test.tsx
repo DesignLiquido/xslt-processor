@@ -137,7 +137,7 @@ describe('namespaces', () => {
 
         const xsltClass = new Xslt();
         // Uncomment to see how XPath resolves.
-        xsltClass.xPath.xPathLog = console.log;
+        // xsltClass.xPath.xPathLog = console.log;
         const xml = xmlParse(xmlString);
         const xslt = xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(

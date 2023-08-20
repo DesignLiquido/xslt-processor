@@ -124,6 +124,7 @@ import {
     XPathDigits
 } from './xpath-grammar-rules';
 import { XPathMatchRule } from './xpath-match-rule';
+import { GrammarRuleCandidate } from './grammar-rule-candidate';
 
 export class XPath {
     xPathParseCache: any;
@@ -618,6 +619,18 @@ export class XPath {
         return [];
     }
 
+    // xPathRuleForExpression(expression: string, lexerCount: number) {
+    //     for (let i = 0; i < xPathTokenRules.length; ++i) {
+    //         let result: RegExpExecArray = xPathTokenRules[i].re.exec(expression);
+    //         lexerCount++;
+    //         if (result && result.length > 0 && result[0].length > match.length) {
+    //             rule = xPathTokenRules[i];
+    //             match = result[0];
+    //             break;
+    //         }
+    //     }
+    // }
+
     /**
      * The entry point for the parser.
      * @param expression a string that contains an XPath expression.
@@ -664,10 +677,10 @@ export class XPath {
 
         const cachekey = expression; // expression is modified during parse
 
-        const stack = [];
+        const stack: GrammarRuleCandidate[] = [];
         let ahead: XPathMatchRule = null;
-        let previous = null;
-        let done = false;
+        let previous: XPathMatchRule = null;
+        let done: boolean = false;
 
         let parseCount = 0;
         let lexerCount = 0;
@@ -682,7 +695,7 @@ export class XPath {
             let rule = null;
             let match = '';
             for (let i = 0; i < xPathTokenRules.length; ++i) {
-                let result = xPathTokenRules[i].re.exec(expression);
+                let result: RegExpExecArray = xPathTokenRules[i].re.exec(expression);
                 lexerCount++;
                 if (result && result.length > 0 && result[0].length > match.length) {
                     rule = xPathTokenRules[i];
@@ -732,7 +745,7 @@ export class XPath {
                 done = true;
             }
 
-            while (this.xPathReduce(stack, ahead, axis)) {
+            while (this.xPathReduce(stack, ahead)) {
                 reduceCount++;
                 this.xPathLog(`stack: ${this.stackToString(stack)}`);
             }
@@ -741,7 +754,7 @@ export class XPath {
         this.xPathLog(`stack: ${this.stackToString(stack)}`);
 
         // DGF any valid XPath should "reduce" to a single Expr token
-        if (stack.length != 1) {
+        if (stack.length !== 1) {
             throw `XPath parse error ${cachekey}:\n${this.stackToString(stack)}`;
         }
 
@@ -759,7 +772,6 @@ export class XPath {
         this.xPathParseCache[cachekey] = result;
 
         this.xPathLog(`XPath parse: ${parseCount} / ${lexerCount} / ${reduceCount}`);
-
         return result;
     }
 
@@ -861,37 +873,58 @@ export class XPath {
         this.xPathLog(`XPath parse INIT: ${sum / this.xPathRules.length} average bin size`);
     }
 
-    /*DGF xPathReduce is where the magic happens in this parser.
-    Check `src\xpath\xpath-grammar-rules.ts` to find the table of
-    grammatical rules and precedence numbers, "The productions of the grammar".
+    // private findGrammarRuleCandidate(candidate: GrammarRuleCandidate) {
+    //     const top = stack[stack.length - 1];
+    //     const ruleset = this.xPathRules[top.tag.key];
 
-    The idea here is that we want to take a stack of tokens and apply
-    grammatical rules to them, "reducing" them to higher-level
-    tokens. Ultimately, any valid XPath should reduce to exactly one
-    "Expr" token.
+    //     if (ruleset) {
+    //         for (let i = 0; i < ruleset.length; ++i) {
+    //             const rule = ruleset[i];
+    //             const match = this.xPathMatchStack(stack, rule[1]);
+    //             if (match.length) {
+    //                 candidate = {
+    //                     tag: rule[0],
+    //                     rule,
+    //                     match
+    //                 };
+    //                 candidate.precedence = this.xPathGrammarPrecedence(candidate);
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
 
-    Reduce too early or too late and you'll have two tokens that can't reduce
-    to single Expr. For example, you may hastily reduce a qname that
-    should name a function, incorrectly treating it as a tag name.
-    Or you may reduce too late, accidentally reducing the last part of the
-    XPath into a top-level "Expr" that won't reduce with earlier parts of
-    the XPath.
+    /**
+     * DGF xPathReduce is where the magic happens in this parser.
+     * Check `src\xpath\xpath-grammar-rules.ts` to find the table of
+     * grammatical rules and precedence numbers, "The productions of the grammar".
+     *
+     * The idea here is that we want to take a stack of tokens and apply
+     * grammatical rules to them, "reducing" them to higher-level
+     * tokens. Ultimately, any valid XPath should reduce to exactly one
+     * "Expr" token.
 
-    A "cand" is a grammatical rule candidate, with a given precedence
-    number. "ahead" is the upcoming token, which also has a precedence
-    number. If the token has a higher precedence number than
-    the rule candidate, we'll "shift" the token onto the token stack,
-    instead of immediately applying the rule candidate.
-
-    Some tokens have left associativity, in which case we shift when they
-    have LOWER precedence than the candidate.
-    */
+     * Reduce too early or too late and you'll have two tokens that can't reduce
+     * to single Expr. For example, you may hastily reduce a qname that
+     * should name a function, incorrectly treating it as a tag name.
+     * Or you may reduce too late, accidentally reducing the last part of the
+     * XPath into a top-level "Expr" that won't reduce with earlier parts of
+     * the XPath.
+     *
+     * A "candidate" is a grammatical rule candidate, with a given precedence
+     * number. "ahead" is the upcoming token, which also has a precedence
+     * number. If the token has a higher precedence number than
+     * the rule candidate, we'll "shift" the token onto the token stack,
+     * instead of immediately applying the rule candidate.
+     *
+     * Some tokens have left associativity, in which case we shift when they
+     * have LOWER precedence than the candidate.
+     */
     xPathReduce(
-        stack: any,
-        ahead: any,
-        axis?: string
+        stack: GrammarRuleCandidate[],
+        ahead: any
     ) {
-        let cand = null;
+        let candidate: GrammarRuleCandidate = null;
 
         if (stack.length > 0) {
             const top = stack[stack.length - 1];
@@ -902,12 +935,12 @@ export class XPath {
                     const rule = ruleset[i];
                     const match = this.xPathMatchStack(stack, rule[1]);
                     if (match.length) {
-                        cand = {
+                        candidate = {
                             tag: rule[0],
                             rule,
                             match
                         };
-                        cand.prec = this.xPathGrammarPrecedence(cand);
+                        candidate.prec = this.xPathGrammarPrecedence(candidate);
                         break;
                     }
                 }
@@ -915,28 +948,28 @@ export class XPath {
         }
 
         let ret;
-        if (cand && (!ahead || cand.prec > ahead.prec || (ahead.tag.left && cand.prec >= ahead.prec))) {
-            for (let i = 0; i < cand.match.matchlength; ++i) {
+        if (candidate && (!ahead || candidate.prec > ahead.prec || (ahead.tag.left && candidate.prec >= ahead.prec))) {
+            for (let i = 0; i < candidate.match.matchlength; ++i) {
                 stack.pop();
             }
 
             this.xPathLog(
-                `reduce ${cand.tag.label} ${cand.prec} ahead ${
+                `reduce ${candidate.tag.label} ${candidate.prec} ahead ${
                     ahead ? ahead.tag.label + ' ' + ahead.prec + (ahead.tag.left ? ' left' : '') : ' none '
                 }`
             );
 
-            const matchExpression = mapExpr(cand.match, (m) => m.expr);
-            this.xPathLog(`going to apply ${cand.rule[3]}`);
-            cand.expr = cand.rule[3].apply(this, matchExpression);
+            const matchExpression = mapExpr(candidate.match, (m) => m.expr);
+            this.xPathLog(`going to apply ${candidate.rule[3]}`);
+            candidate.expr = candidate.rule[3].apply(this, matchExpression);
 
-            stack.push(cand);
+            stack.push(candidate);
             ret = true;
         } else {
             if (ahead) {
                 this.xPathLog(
                     `shift ${ahead.tag.label} ${ahead.prec}${ahead.tag.left ? ' left' : ''} over ${
-                        cand ? cand.tag.label + ' ' + cand.prec : ' none'
+                        candidate ? candidate.tag.label + ' ' + candidate.prec : ' none'
                     }`
                 );
                 stack.push(ahead);
