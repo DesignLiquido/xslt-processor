@@ -1,5 +1,5 @@
 import { DOM_COMMENT_NODE } from "../../constants";
-import { ExprContext } from "../../xslt/expr-context";
+import { ExprContext } from "../expr-context";
 import { NodeTest } from "./node-test";
 import { BooleanValue } from "../values/boolean-value";
 

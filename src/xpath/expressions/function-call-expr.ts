@@ -1,4 +1,4 @@
-import { ExprContext } from '../../xslt/expr-context';
+import { ExprContext } from '../expr-context';
 import {
     count,
     generateId,

@@ -1,5 +1,5 @@
 import { XNode, xmlValue } from "../../dom";
-import { ExprContext } from "../../xslt/expr-context";
+import { ExprContext } from "../expr-context";
 import { XsltDecimalFormatSettings } from "../../xslt/xslt-decimal-format-settings";
 import { BooleanValue, NodeSetValue, NumberValue, StringValue } from "../values";
 import { assert, regExpEscape } from "./internal-functions";

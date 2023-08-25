@@ -1,4 +1,4 @@
-import { ExprContext } from "../../xslt/expr-context";
+import { ExprContext } from "../expr-context";
 import { NodeValue } from "../values";
 import { BooleanValue } from "../values/boolean-value";
 import { NodeTest } from "./node-test";

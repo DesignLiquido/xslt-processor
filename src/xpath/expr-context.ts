@@ -1,11 +1,11 @@
 import { DOM_DOCUMENT_NODE } from '../constants';
-import { BooleanValue } from '../xpath/values/boolean-value';
-import { NodeSetValue } from '../xpath/values/node-set-value';
-import { NumberValue } from '../xpath/values/number-value';
-import { StringValue } from '../xpath/values/string-value';
-import { TOK_NUMBER } from '../xpath/tokens';
+import { BooleanValue } from './values/boolean-value';
+import { NodeSetValue } from './values/node-set-value';
+import { NumberValue } from './values/number-value';
+import { StringValue } from './values/string-value';
+import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
-import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
+import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
 
 /** XPath expression evaluation context. An XPath context consists of a
  * DOM node, a list of DOM nodes that contains this node, a number

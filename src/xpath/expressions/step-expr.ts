@@ -1,6 +1,6 @@
 import { DOM_ATTRIBUTE_NODE } from '../../constants';
 import { XNode } from '../../dom';
-import { ExprContext } from '../../xslt/expr-context';
+import { ExprContext } from '../expr-context';
 import { NodeSetValue } from '../values/node-set-value';
 import { NodeTestAny } from '../node-tests/node-test-any';
 import { xPathAxis } from '../tokens';
