@@ -126,12 +126,12 @@ export class Xslt {
         }
 
         this.xsltProcessContext(expressionContext, stylesheet, outputDocument);
-        const ret = xmlTransformedText(outputDocument, {
+        const transformedOutputXml = xmlTransformedText(outputDocument, {
             cData: false,
             escape: this.options.escape,
             selfClosingTags: this.options.selfClosingTags
         });
-        return ret;
+        return transformedOutputXml;
     }
 
     /**
@@ -202,17 +202,25 @@ export class Xslt {
                     const modifiedContext = context.clone(nodes);
                     for (let i = 0; i < templates.length; ++i) {
                         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
-                            const clonedContext = modifiedContext.clone(
-                                [modifiedContext.nodeList[j]],
-                                undefined,
-                                0,
-                                undefined
-                            );
-                            clonedContext.inApplyTemplates = true;
-                            // The output depth should be restarted, since
-                            // another template is being applied from this point.
-                            clonedContext.outputDepth = 0;
-                            this.xsltProcessContext(clonedContext, templates[i], output);
+                            // If the current node is text, there's no need to test all the templates
+                            // against it. Just appending it to its parent is fine.
+                            if (modifiedContext.nodeList[j].nodeType === DOM_TEXT_NODE) {
+                                const textNodeContext = context.clone([modifiedContext.nodeList[j]], undefined, 0, undefined);
+                                // TODO: verify if it is okay to pass the own text node as template.
+                                this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j]);
+                            } else {
+                                const clonedContext = modifiedContext.clone(
+                                    [modifiedContext.nodeList[j]],
+                                    undefined,
+                                    0,
+                                    undefined
+                                );
+                                clonedContext.inApplyTemplates = true;
+                                // The output depth should be restarted, since
+                                // another template is being applied from this point.
+                                clonedContext.outputDepth = 0;
+                                this.xsltProcessContext(clonedContext, templates[i], output);
+                            }
                         }
                     }
 
@@ -522,24 +530,6 @@ export class Xslt {
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             this.xsltChildNodes(sortContext.clone(sortContext.nodeList, undefined, i), template, output);
         }
-        // TODO: group nodes by parent node.
-        // const nodeGroups = this.groupBy(nodes, 'parentNode');
-
-        /* for (let [group, _nodes] of Object.entries(nodeGroups)) {
-            const sortContext = context.clone(_nodes, 0);
-            this.xsltSort(sortContext, template);
-
-            for (let i = 0; i < sortContext.contextSize(); ++i) {
-                this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output);
-            }
-        } */
-    }
-
-    protected groupBy(xs: any, key: any) {
-        return xs.reduce((rv, x) => {
-            (rv[x[key]] = rv[x[key]] || []).push(x);
-            return rv;
-        }, {});
     }
 
     /**
@@ -655,6 +645,28 @@ export class Xslt {
     }
 
     /**
+     * This logic is used in two different places:
+     * - `xsltPassThrough`, if the template asks this library to write a text node;
+     * - `xsltProcessContext`, `apply-templates` operation, when the current node is text.
+     * @param context The Expression Context.
+     * @param template The template, that contains the node value to be written.
+     */
+    private commonLogicTextNode(context: ExprContext, template: XNode) {
+        const textNodeList = context.outputNodeList[context.outputPosition].transformedChildNodes.filter(
+            (n) => n.nodeType === DOM_TEXT_NODE
+        );
+
+        if (textNodeList.length > 0) {
+            let node = textNodeList[0];
+            node.transformedNodeValue = template.nodeValue;
+        } else {
+            let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
+            node.transformedParentNode = context.outputNodeList[context.outputPosition];
+            domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+        }
+    }
+
+    /**
      * Passes template text to the output. The current template node does
      * not specify an XSL-T operation and therefore is appended to the
      * output with all its attributes. Then continues traversing the
@@ -666,22 +678,10 @@ export class Xslt {
     protected xsltPassThrough(context: ExprContext, template: XNode, output: XNode) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
-                const textNodeList = context.outputNodeList[context.outputPosition].transformedChildNodes.filter(
-                    (n) => n.nodeType === DOM_TEXT_NODE
-                );
-
-                if (textNodeList.length > 0) {
-                    let node = textNodeList[0];
-                    node.transformedNodeValue = template.nodeValue;
-                } else {
-                    let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
-                    node.transformedParentNode = context.outputNodeList[context.outputPosition];
-                    domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
-                }
+                this.commonLogicTextNode(context, template);
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
-            // let node = domCreateElement(outputDocument, template.nodeName);
             let elementContext = context;
             if (context.nodeList[context.position].nodeName === '#document') {
                 node = context.nodeList[context.position].firstChild;

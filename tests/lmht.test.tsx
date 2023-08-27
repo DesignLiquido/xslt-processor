@@ -24,17 +24,43 @@ describe('LMHT', () => {
         const xsltString =
             '<?xml version="1.0"?>' +
             (
-                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-                    <xsl:template match="/lmht">
-                        <html>
-                            Teste
-                        </html>
-                    </xsl:template>
-                </xsl:stylesheet>
+            <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.0">
+                <xsl:output method="html" version="5.0" omit-xml-declaration="yes" encoding="UTF-8" indent="yes" />
+
+                <xsl:template match="/lmht">
+                    <html>
+                        <xsl:apply-templates select="node()" />
+                    </html>
+                </xsl:template>
+
+                <xsl:template match="/lmht/cabeca|/lmht/cabeça">
+                    <head>
+                        <xsl:apply-templates select="@*|node()" />
+                    </head>
+                </xsl:template>
+                <xsl:template match="/lmht/cabeca/titulo|/lmht/cabeca/título|/lmht/cabeça/titulo|/lmht/cabeça/título">
+                    <title>
+                        <xsl:apply-templates select="@*|node()" />
+                    </title>
+                </xsl:template>
+
+                <xsl:template match="/lmht/corpo">
+                    <body>
+                        <xsl:apply-templates select="@*|node()" />
+                    </body>
+                </xsl:template>
+            </xsl:transform>
             );
 
             const expectedOutString = (
-                <html>Teste</html>
+                <html>
+                    <head>
+                        <title>Teste</title>
+                    </head>
+                    <body>
+                        Teste
+                    </body>
+                </html>
             );
 
             const xsltClass = new Xslt();
