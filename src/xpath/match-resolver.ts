@@ -40,6 +40,15 @@ export class MatchResolver {
         }
 
         if (expression.absolute) {
+            // If expression is absolute and the axis of first step is self,
+            // the match starts by the #document node (for instance, `<xsl:template match="/">`).
+            // Otherwise (axis === 'child'), the match stasts on the first
+            // child of #document node.
+            const firstStep = expression.steps[0];
+            if (firstStep.axis === 'self') {
+                return this.absoluteXsltMatchByDocumentNode(expression, context);
+            }
+
             return this.absoluteXsltMatch(expression, context);
         }
 
@@ -58,14 +67,13 @@ export class MatchResolver {
     }
 
     /**
-     * Finds all the nodes through absolute xPath search.
-     * Returns only nodes that match either the context position node,
-     * or an ancestor.
+     * Finds all the nodes through absolute XPath search, starting on
+     * the #document parent node.
      * @param expression The Expression.
      * @param context The Expression Context.
      * @returns The list of found nodes.
      */
-    private absoluteXsltMatch(expression: LocationExpr, context: ExprContext): XNode[] {
+    private absoluteXsltMatchByDocumentNode(expression: LocationExpr, context: ExprContext): XNode[] {
         const clonedContext = context.clone([context.root], undefined, 0, undefined);
         const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
         const finalList = [];
@@ -75,9 +83,37 @@ export class MatchResolver {
                 finalList.push(element);
                 continue;
             }
+        }
 
-            if (element.getAncestorById(context.nodeList[context.position].id) !== undefined) {
+        return finalList;
+    }
+
+    /**
+     * Finds all the nodes through absolute xPath search, starting with the
+     * first child of the #document node.
+     * @param expression The Expression.
+     * @param context The Expression Context.
+     * @returns The list of found nodes.
+     */
+    private absoluteXsltMatch(expression: LocationExpr, context: ExprContext): XNode[] {
+        const firstChildOfRoot = context.root.childNodes[0];
+        const clonedContext = context.clone([firstChildOfRoot], undefined, 0, undefined);
+        const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
+        const finalList = [];
+
+        // If the context is pointing to #document node, it's child node is
+        // considered.
+        let nodeList: XNode[];
+        if (context.nodeList.length === 1 && context.nodeList[0].nodeName === '#document') {
+            nodeList = [context.nodeList[0].childNodes[0]];
+        } else {
+            nodeList = context.nodeList;
+        }
+
+        for (let element of matchedNodes) {
+            if (element.id === nodeList[context.position].id) {
                 finalList.push(element);
+                continue;
             }
         }
 
