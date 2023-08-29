@@ -85,19 +85,19 @@ export function domCreateDTDSection(doc: XDocument, data: any) {
  * @author Steffen Meschkat <mesch@google.com>
  */
 export function xmlParse(xml: string): XDocument {
-    const regex_empty = /\/$/;
+    const regexEmpty = /\/$/;
 
-    let regex_tagname;
-    let regex_attribute;
+    let regexTagname;
+    let regexAttribute;
     if (xml.match(/^<\?xml/)) {
         // When an XML document begins with an XML declaration
         // VersionInfo must appear.
         if (xml.search(new RegExp(XML10_VERSION_INFO)) == 5) {
-            regex_tagname = XML10_TAGNAME_REGEXP;
-            regex_attribute = XML10_ATTRIBUTE_REGEXP;
+            regexTagname = XML10_TAGNAME_REGEXP;
+            regexAttribute = XML10_ATTRIBUTE_REGEXP;
         } else if (xml.search(new RegExp(XML11_VERSION_INFO)) == 5) {
-            regex_tagname = XML11_TAGNAME_REGEXP;
-            regex_attribute = XML11_ATTRIBUTE_REGEXP;
+            regexTagname = XML11_TAGNAME_REGEXP;
+            regexAttribute = XML11_ATTRIBUTE_REGEXP;
         } else {
             // VersionInfo is missing, or unknown version number.
             // TODO : Fallback to XML 1.0 or XML 1.1, or just return null?
@@ -105,8 +105,8 @@ export function xmlParse(xml: string): XDocument {
         }
     } else {
         // When an XML declaration is missing it's an XML 1.0 document.
-        regex_tagname = XML10_TAGNAME_REGEXP;
-        regex_attribute = XML10_ATTRIBUTE_REGEXP;
+        regexTagname = XML10_TAGNAME_REGEXP;
+        regexAttribute = XML10_ATTRIBUTE_REGEXP;
     }
 
     const xmldoc = new XDocument();
@@ -137,14 +137,14 @@ export function xmlParse(xml: string): XDocument {
                 // Ignore comments
                 // console.log(`Ignored ${text}`);
             } else {
-                const empty = text.match(regex_empty);
-                const tagname = regex_tagname.exec(text)[1];
+                const empty = text.match(regexEmpty);
+                const tagname = regexTagname.exec(text)[1];
                 let node = domCreateElement(xmldoc, tagname);
 
-                let att;
-                while ((att = regex_attribute.exec(text))) {
-                    const val = he.decode(att[5] || att[7] || '');
-                    domSetAttribute(node, att[1], val);
+                let attribute;
+                while ((attribute = regexAttribute.exec(text))) {
+                    const val = he.decode(attribute[5] || attribute[7] || '');
+                    domSetAttribute(node, attribute[1], val);
                 }
 
                 node.siblingPosition = parent.childNodes.length;

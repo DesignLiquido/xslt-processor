@@ -46,7 +46,7 @@ export class XNode {
 
     static _unusedXNodes: any[] = [];
 
-    constructor(type: any, name: any, opt_value: any, opt_owner: any, opt_namespace?: any) {
+    constructor(type: any, name: string, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.id = Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1;
         this.attributes = [];
         this.childNodes = [];
@@ -151,7 +151,7 @@ export class XNode {
         node.init.call(0, '', '', null);
     }
 
-    static create(type: any, name: any, value: any, owner: any, namespace?: any): XNode {
+    static create(type: any, name: string, value: any, owner: any, namespace?: any): XNode {
         if (this._unusedXNodes.length > 0) {
             const node = this._unusedXNodes.pop();
             node.init(type, name, value, owner, namespace);
@@ -333,7 +333,7 @@ export class XNode {
         return this.attributes.length > 0;
     }
 
-    setAttribute(name: any, value: any) {
+    setAttribute(name: string, value: any) {
         for (let i = 0; i < this.attributes.length; ++i) {
             if (this.attributes[i].nodeName == name) {
                 this.attributes[i].nodeValue = `${value}`;
@@ -341,7 +341,9 @@ export class XNode {
             }
         }
 
-        this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this));
+        const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
+        newAttribute.parentNode = this;
+        this.attributes.push(newAttribute);
     }
 
     setTransformedAttribute(name: string, value: any) {
@@ -356,6 +358,7 @@ export class XNode {
         const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
         newAttribute.transformedNodeName = name;
         newAttribute.transformedNodeValue = value;
+        newAttribute.parentNode = this;
         this.transformedAttributes.push(newAttribute);
     }
 
