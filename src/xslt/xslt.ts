@@ -125,7 +125,7 @@ export class Xslt {
             }
         }
 
-        this.xsltProcessContext(expressionContext, stylesheet, outputDocument);
+        this.xsltProcessContext(expressionContext, stylesheet);
         const transformedOutputXml = xmlTransformedText(outputDocument, {
             cData: false,
             escape: this.options.escape,
@@ -136,11 +136,11 @@ export class Xslt {
 
     /**
      * The main entry point of the XSL-T processor, as explained on the top of the file.
-     * @param context The input document root, as XPath ExprContext.
+     * @param context The input document root, as XPath `ExprContext`.
      * @param template The stylesheet document root, as DOM node.
-     * @param output the root of the generated output, as DOM node.
+     * @param output If set, the output where the transformation should occur.
      */
-    protected xsltProcessContext(context: ExprContext, template: XNode, output: XNode) {
+    protected xsltProcessContext(context: ExprContext, template: XNode, output?: XNode) {
         if (!this.isXsltElement(template)) {
             this.xsltPassThrough(context, template, output);
         } else {
@@ -228,10 +228,28 @@ export class Xslt {
                 case 'attribute':
                     nameExpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameExpr, context);
-                    node = domCreateDocumentFragment(this.outputDocument);
-                    this.xsltChildNodes(context, template, node);
-                    value = xmlValue2(node);
-                    domSetTransformedAttribute(output, name, value);
+                    const documentFragment = domCreateDocumentFragment(this.outputDocument);
+                    this.xsltChildNodes(context, template, documentFragment);
+                    value = xmlValue2(documentFragment);
+                    if (output !== null && output !== undefined) {
+                        domSetTransformedAttribute(output, name, value);
+                    } else {
+                        let outputNode = context.outputNodeList[context.outputPosition];
+                        // Corner case:
+                        // It can happen here that we don't have the root node set.
+                        // In this case we need to append a copy of the root
+                        // source node to receive the attribute.
+                        if (outputNode.localName === "#document") {
+                            const sourceRootNode = context.root.childNodes[0];
+                            const newRootNode = domCreateElement(this.outputDocument, sourceRootNode.nodeName);
+                            newRootNode.transformedNodeName = sourceRootNode.nodeName;
+                            newRootNode.transformedLocalName = sourceRootNode.localName;
+                            domAppendTransformedChild(outputNode, newRootNode);
+                            outputNode = newRootNode;
+                        }
+                        domSetTransformedAttribute(outputNode, name, value);
+                    }
+
                     break;
                 case 'attribute-set':
                     throw new Error(`not implemented: ${template.localName}`);
@@ -265,7 +283,8 @@ export class Xslt {
                     output.appendChild(commentNode);
                     break;
                 case 'copy':
-                    node = this.xsltCopy(output, context.nodeList[context.position]);
+                    const destinationCopyNode = output || context.outputNodeList[context.outputPosition];
+                    node = this.xsltCopy(destinationCopyNode, context.nodeList[context.position]);
                     if (node) {
                         this.xsltChildNodes(context, template, node);
                     }
@@ -273,14 +292,15 @@ export class Xslt {
                 case 'copy-of':
                     select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, context);
+                    const destinationNode = output || context.outputNodeList[context.outputPosition];
                     if (value.type === 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
-                            this.xsltCopyOf(output, nodes[i]);
+                            this.xsltCopyOf(destinationNode, nodes[i]);
                         }
                     } else {
                         let node = domCreateTextNode(this.outputDocument, value.stringValue());
-                        domAppendChild(output, node);
+                        domAppendChild(destinationNode, node);
                     }
                     break;
                 case 'decimal-format':
@@ -397,7 +417,8 @@ export class Xslt {
                     if (disableOutputEscaping.length > 0 && disableOutputEscaping[0].nodeValue === 'yes') {
                         node.escape = false;
                     }
-                    output.appendTransformedChild(node);
+                    const destinationTextNode = output || context.outputNodeList[context.outputPosition];
+                    destinationTextNode.appendTransformedChild(node);
                     break;
                 case 'value-of':
                     select = xmlGetAttribute(template, 'select');
@@ -405,7 +426,12 @@ export class Xslt {
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(this.outputDocument, value);
                     node.siblingPosition = context.nodeList[context.position].siblingPosition;
-                    context.outputNodeList[context.outputPosition].appendTransformedChild(node);
+                    if (output !== null && output !== undefined) {
+                        output.appendTransformedChild(node);
+                    } else {
+                        context.outputNodeList[context.outputPosition].appendTransformedChild(node);
+                    }
+
                     break;
                 case 'variable':
                     this.xsltVariable(context, template, true);
@@ -483,25 +509,25 @@ export class Xslt {
      * Implements `xsl:copy-of` for node-set values of the select
      * expression. Recurses down the source node tree, which is part of
      * the input document.
-     * @param {XNode} dst the node being copied to, part of output document.
-     * @param {XNode} src the node being copied, part in input document.
+     * @param {XNode} destination the node being copied to, part of output document.
+     * @param {XNode} source the node being copied, part in input document.
      */
-    protected xsltCopyOf(dst: XNode, src: XNode): void {
-        if (src.nodeType == DOM_DOCUMENT_FRAGMENT_NODE || src.nodeType == DOM_DOCUMENT_NODE) {
-            for (let i = 0; i < src.childNodes.length; ++i) {
-                this.xsltCopyOf(dst, src.childNodes[i]);
+    protected xsltCopyOf(destination: XNode, source: XNode): void {
+        if (source.nodeType == DOM_DOCUMENT_FRAGMENT_NODE || source.nodeType == DOM_DOCUMENT_NODE) {
+            for (let i = 0; i < source.childNodes.length; ++i) {
+                this.xsltCopyOf(destination, source.childNodes[i]);
             }
         } else {
-            const node = this.xsltCopy(dst, src);
+            const node = this.xsltCopy(destination, source);
             if (node) {
                 // This was an element node -- recurse to attributes and
                 // children.
-                for (let i = 0; i < src.attributes.length; ++i) {
-                    this.xsltCopyOf(node, src.attributes[i]);
+                for (let i = 0; i < source.attributes.length; ++i) {
+                    this.xsltCopyOf(node, source.attributes[i]);
                 }
 
-                for (let i = 0; i < src.childNodes.length; ++i) {
-                    this.xsltCopyOf(node, src.childNodes[i]);
+                for (let i = 0; i < source.childNodes.length; ++i) {
+                    this.xsltCopyOf(node, source.childNodes[i]);
                 }
             }
         }
@@ -633,9 +659,9 @@ export class Xslt {
      * current template node.
      * @param context Normally the Expression Context.
      * @param template The XSL-T definition.
-     * @param output The XML output.
+     * @param output If set, the output where the transformation should occur.
      */
-    protected xsltChildNodes(context: ExprContext, template: XNode, output: XNode) {
+    protected xsltChildNodes(context: ExprContext, template: XNode, output?: XNode) {
         // Clone input context to keep variables declared here local to the
         // siblings of the children.
         const contextClone = context.clone();
@@ -720,7 +746,7 @@ export class Xslt {
                 outputNode.transformedChildNodes.length - 1,
                 ++elementContext.outputDepth
             );
-            this.xsltChildNodes(clonedContext, template, node);
+            this.xsltChildNodes(clonedContext, template);
         } else {
             // This applies also to the DOCUMENT_NODE of the XSL stylesheet,
             // so we don't have to treat it specially.
