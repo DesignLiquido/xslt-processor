@@ -88,8 +88,8 @@ export class Xslt {
         this.xPath = new XPath();
         this.matchResolver = new MatchResolver();
         this.options = {
-            escape: options.escape || true,
-            selfClosingTags: options.selfClosingTags || true,
+            escape: options.escape === true,
+            selfClosingTags: options.selfClosingTags === true,
             parameters: options.parameters || []
         };
         this.outputMethod = 'xml';
