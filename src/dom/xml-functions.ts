@@ -232,7 +232,8 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
         }
     }
 
-    const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
         if (options.selfClosingTags) {
             buffer.push('/>');
@@ -257,7 +258,8 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
  * @param cdata If using CDATA configuration.
  */
 function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions) {
-    const childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     for (let i = 0; i < childNodes.length; ++i) {
         xmlTransformedTextRecursive(childNodes[i], buffer, options);
     }
