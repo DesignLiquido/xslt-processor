@@ -1465,7 +1465,8 @@ describe('HTML to LMHT', () => {
                 </xsl:transform>
             );
 
-        const xmlString = (
+        const xmlString = '<!DOCTYPE html>' +
+        (
             <html>
                 <head>
                     <title>Teste</title>
