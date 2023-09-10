@@ -710,7 +710,6 @@ export class Xslt {
             let node: XNode;
             let elementContext = context;
             if (context.nodeList[context.position].nodeName === '#document') {
-                // node = context.nodeList[context.position].firstChild;
                 node = context.nodeList[context.position].childNodes.find(c => c.nodeName !== '#dtd-section');
                 elementContext = context.clone([node]);
             } else {
