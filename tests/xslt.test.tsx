@@ -14,7 +14,7 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { xmlParse } from '../src/dom';
+import { XmlParser } from '../src/dom';
 import { Xslt } from '../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
@@ -42,8 +42,9 @@ describe('xslt', () => {
             );
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltForEachSort);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltForEachSort);
             const html = xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'CAB');
         });
@@ -61,8 +62,9 @@ describe('xslt', () => {
             );
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltForEachSortAscending);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltForEachSortAscending);
             const html = xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'ABC');
         });
@@ -80,8 +82,9 @@ describe('xslt', () => {
             );
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltForEachSortDescending);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltForEachSortDescending);
             const html = xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'CBA');
         });
@@ -118,8 +121,9 @@ describe('xslt', () => {
             `</outputUnknown>`;
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltString);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
             const outXmlString = xsltClass.xsltProcess(
                 xml,
                 xslt
@@ -173,8 +177,9 @@ describe('xslt', () => {
             `</outputUnknown>`;
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltString);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
             const outXmlString = xsltClass.xsltProcess(
                 xml,
                 xslt
@@ -216,8 +221,9 @@ describe('xslt', () => {
             `</outputUnknown>`;
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltString);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
             const outXmlString = xsltClass.xsltProcess(
                 xml,
                 xslt
@@ -255,8 +261,9 @@ describe('xslt', () => {
             `</outputUnknown>`;
 
             const xsltClass = new Xslt();
-            const xml = xmlParse(xmlString);
-            const xslt = xmlParse(xsltString);
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
             const outXmlString = xsltClass.xsltProcess(
                 xml,
                 xslt
@@ -277,8 +284,9 @@ describe('xslt', () => {
             </xsl:stylesheet>;
 
             const xsltClass = new Xslt();
-            const parsedXml = xmlParse(xml);
-            const parsedXslt = xmlParse(xslt);
+            const xmlParser = new XmlParser();
+            const parsedXml = xmlParser.xmlParse(xml);
+            const parsedXslt = xmlParser.xmlParse(xslt);
             const html = xsltClass.xsltProcess(parsedXml, parsedXslt);
             assert.equal(html, '<!DOCTYPE html>');
         });
@@ -308,8 +316,9 @@ describe('xslt', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlApplyTemplates);
-        const xslt = xmlParse(xsltApplyTemplates);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlApplyTemplates);
+        const xslt = xmlParser.xmlParse(xsltApplyTemplates);
         const result = xsltClass.xsltProcess(xml, xslt);
         assert.equal(result, 'ABC');
     });
@@ -333,8 +342,9 @@ describe('xslt', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltGlobalVariables);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltGlobalVariables);
         const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, 'xzyyy');
     });
@@ -354,8 +364,9 @@ describe('xslt', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltTopLevelOutput);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltTopLevelOutput);
         const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<x y="z">k</x>');
     });
@@ -376,8 +387,9 @@ describe('xslt', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltCopy);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltCopy);
         const html = xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<item pos="2">A</item><item pos="3">B</item><item pos="1">C</item>');
     });

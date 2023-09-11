@@ -4,8 +4,8 @@ import assert from 'assert';
 import React from 'react';
 import { dom } from 'isomorphic-jsx';
 
-import { xmlParse } from '../src/dom/functions';
 import { Xslt } from '../src/xslt';
+import { XmlParser } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -49,8 +49,9 @@ describe('root-element', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltString);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);

@@ -4,7 +4,7 @@ import assert from 'assert';
 import React from 'react';
 import { dom } from 'isomorphic-jsx';
 import { Xslt } from '../src/xslt';
-import { xmlParse } from '../src/dom';
+import { XmlParser } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -1466,14 +1466,24 @@ describe('HTML to LMHT', () => {
             );
 
         const xmlString = '<!DOCTYPE html>' +
-        (
-            <html>
-                <head>
-                    <title>Teste</title>
-                </head>
-                <body>Teste</body>
-            </html>
-        );
+        `<html lang="en">
+        <head>
+            <!-- <meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content=""><meta name="author" content=""> -->
+            <title>About - Simple Blog Template</title>
+            <!-- Bootstrap Core CSS -->
+            <link href="css/bootstrap.min.css" rel="stylesheet">
+            <!-- Custom CSS -->
+            <link href="css/simple-blog-template.css" rel="stylesheet">
+            <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+            <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+            <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+            <![endif]-->
+        </head>
+        
+    </html>
+        `;
 
         const expectedOutString = (
             <lmht>
@@ -1485,8 +1495,9 @@ describe('HTML to LMHT', () => {
         );
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltString);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);

@@ -1,7 +1,7 @@
 import assert from 'assert';
 
 import { Xslt } from '../src/xslt';
-import { xmlParse } from '../src/dom';
+import { XmlParser } from '../src/dom';
 
 describe('variables-as-parameters', () => {
     it('variables-as-parameters 1', () => {
@@ -29,8 +29,9 @@ describe('variables-as-parameters', () => {
         const xsltClass = new Xslt({ parameters: [
           { name: 'test', value: 'hugo' }
         ] });
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltString);
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
           xml,
           xslt,

@@ -5,7 +5,7 @@ import React from 'react';
 import { dom } from 'isomorphic-jsx';
 
 import { Xslt } from '../src/xslt';
-import { xmlParse } from '../src/dom/functions';
+import { XmlParser } from '../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -42,8 +42,9 @@ describe('local-name', () => {
     </root>;
 
     const xsltClass = new Xslt();
-    const xml = xmlParse(xmlString);
-    const xslt = xmlParse(xsltString);
+    const xmlParser = new XmlParser();
+    const xml = xmlParser.xmlParse(xmlString);
+    const xslt = xmlParser.xmlParse(xsltString);
 
     const outXmlString = xsltClass.xsltProcess(
       xml,
@@ -87,8 +88,9 @@ describe('local-name', () => {
     </root>;
 
     const xsltClass = new Xslt();
-    const xml = xmlParse(xmlString);
-    const xslt = xmlParse(xsltString);
+    const xmlParser = new XmlParser();
+    const xml = xmlParser.xmlParse(xmlString);
+    const xslt = xmlParser.xmlParse(xsltString);
 
     const outXmlString = xsltClass.xsltProcess(
       xml,

@@ -16,7 +16,7 @@ console.log(dom);
 
 describe('XPath Functions', () => {
     it('current', () => {
-        const xml = xmlParse(<root>test</root>);
+        const xml = xmlParser.xmlParse(<root>test</root>);
         const xsltDefinition = xmlParse(
             <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                 <xsl:template match="/">
@@ -35,7 +35,7 @@ describe('XPath Functions', () => {
     });
 
     describe('format-number', () => {
-        const xml = xmlParse(<root></root>);
+        const xml = xmlParser.xmlParse(<root></root>);
 
         it('Trivial', () => {
             const xsltDefinition = xmlParse(
@@ -147,7 +147,7 @@ describe('XPath Functions', () => {
     });
 
     it('generate-id, trivial', () => {
-        const xml = xmlParse(<root></root>);
+        const xml = xmlParser.xmlParse(<root></root>);
         const xsltDefinition = xmlParse(
             <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                 <xsl:template match="/">
@@ -191,7 +191,7 @@ describe('XPath Functions', () => {
             </xsl:stylesheet>
         );
 
-        const xml = xmlParse(
+        const xml = xmlParser.xmlParse(
             <chapter>
                 <para>Then with expanded wings he steers his flight</para>
                 <figure>
@@ -244,8 +244,8 @@ describe('XPath Functions', () => {
 
         const xsltClass = new Xslt();
 
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltString);
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
 
         const outXmlString = xsltClass.xsltProcess(
             xml,

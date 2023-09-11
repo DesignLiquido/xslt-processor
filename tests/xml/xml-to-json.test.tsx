@@ -32,8 +32,8 @@ describe('xml-to-json', () => {
         const expectedOutString = `<root><span>"test"</span><span>"123"</span><span>"{hugo}"</span><span>""</span></root>`;
 
         const xsltClass = new Xslt();
-        const xml = xmlParse(xmlString);
-        const xslt = xmlParse(xsltString);
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
           xml,
           xslt
