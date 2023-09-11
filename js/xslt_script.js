@@ -8,7 +8,7 @@
 //
 // Author: Steffen Meschkat <mesch@google.com>
 import {
-    xmlParse
+    XmlParser
 } from "../../src/dom"
 import {
     xsltProcess
@@ -22,8 +22,9 @@ window.el = function(id) {
 }
 
 window.test_xslt = function() {
-    const xml = xmlParse(el('xml').value);
-    const xslt = xmlParse(el('xslt').value);
+    const xmlParser = new XmlParser();
+    const xml = xmlParser.xmlParse(el('xml').value);
+    const xslt = xmlParser.xmlParse(el('xslt').value);
     const html = xsltProcess(xml, xslt);
     el('html').value = html;
     el('htmldisplay').innerHTML = html;
