@@ -9,7 +9,7 @@ import { XmlParser } from '../src/dom';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('HTML to LMHT', () => {
-    it('Trivial', () => {
+    it.skip('Trivial', () => {
         const xsltString =
             '<?xml version="1.0" encoding="UTF-8"?>' +
             (

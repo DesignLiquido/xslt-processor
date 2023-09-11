@@ -9,7 +9,7 @@
 //         Johannes Wilm <johannes@fiduswriter.org>
 import he from 'he';
 
-import { xmlParse, xmlText } from '../src/dom';
+import { XmlParser, xmlText } from '../src/dom';
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
@@ -17,6 +17,12 @@ import { dom } from 'isomorphic-jsx';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('dom parsing', () => {
+    let xmlParser: XmlParser;
+
+    beforeAll(() => {
+        xmlParser = new XmlParser();
+    });
+
     it('can parse xml', () => {
         const xml = "<page> " +
                 "    <request> " +
@@ -25,8 +31,8 @@ describe('dom parsing', () => {
                 "    <location lat=\"100\" lon=\"200\" /> " +
                 "</page>";
 
-        const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
-        const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
+        const dom1 = xmlParser.xmlParse(`<?xml version="1.0"?>${xml}`);
+        const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
         assert.equal(
@@ -57,8 +63,8 @@ describe('dom parsing', () => {
             '</_>'
         ].join('');
 
-        const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
-        const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
+        const dom1 = xmlParser.xmlParse(`<?xml version="1.0"?>${xml}`);
+        const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
         assert.equal(
@@ -80,8 +86,8 @@ describe('dom parsing', () => {
             '</\u30da\u30fc\u30b8>'
         ].join('');
 
-        const dom1 = xmlParse(`<?xml version="1.0"?>${xml}`);
-        const dom2 = xmlParse(`<?xml version='1.1'?>${xml}`);
+        const dom1 = xmlParser.xmlParse(`<?xml version="1.0"?>${xml}`);
+        const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
         assert.equal(

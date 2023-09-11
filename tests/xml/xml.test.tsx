@@ -3,7 +3,7 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { xmlParse, xmlText } from '../../src/dom';
+import { XmlParser, xmlText } from '../../src/dom';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -16,7 +16,8 @@ describe('General XML', () => {
             </root>
         );
 
-        const outXmlString = xmlText(xmlParse(xmlString), {
+        const xmlParser = new XmlParser();
+        const outXmlString = xmlText(xmlParser.xmlParse(xmlString), {
             cData: false,
             selfClosingTags: false,
             escape: true

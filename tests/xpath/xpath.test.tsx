@@ -17,7 +17,7 @@ import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
 import { ExprContext, XPath } from '../../src/xpath';
-import { xmlParse, xmlValue } from '../../src/dom';
+import { XmlParser, xmlValue } from '../../src/dom';
 import { BooleanValue } from '../../src/xpath/values/boolean-value';
 import { NumberValue } from '../../src/xpath/values/number-value';
 import { StringValue } from '../../src/xpath/values/string-value';
@@ -467,7 +467,8 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
     const slashPageLocationAtLat = `/${page}/${location}/@${lat}`;
     const slashPageLocationAtLon = `/${page}/${location}/@${lon}`;
 
-    const ctx = new ExprContext([xmlParse(xml)], []);
+    const xmlParser = new XmlParser();
+    const ctx = new ExprContext([xmlParser.xmlParse(xml)], []);
     // DGF if we have access to an official DOMParser, compare output with that also
     let ctx1;
     if (typeof DOMParser != 'undefined') {
@@ -515,6 +516,8 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
 };
 
 describe('xpath', () => {
+    let xmlParser = new XmlParser();
+
     it('can parse the xpaths', () => {
         const xPath = new XPath();
         for (let i = 0; i < expr.length; ++i) {
@@ -524,7 +527,7 @@ describe('xpath', () => {
 
     it('can evaluate variables on a HTML context', () => {
         const xPath = new XPath();
-        const bodyEl = xmlParse(
+        const bodyEl = xmlParser.xmlParse(
             <body>
                 <div id="test1"></div>
                 <div id="testid">test1</div>
@@ -612,7 +615,7 @@ describe('xpath', () => {
             ' <f></f>',
             '</page>'
         ].join('');
-        const ctx = new ExprContext([xmlParse(xml)], []);
+        const ctx = new ExprContext([xmlParser.xmlParse(xml)], []);
 
         for (const e of axisTests) {
             const result = xPath.xPathParse(e[0] as any).evaluate(ctx);
@@ -628,7 +631,7 @@ describe('xpath', () => {
 
     it('can handle attribute asterisk', () => {
         const xPath = new XPath();
-        const ctx = new ExprContext([xmlParse('<x a="1" b="1"><y><z></z></y></x>')], []);
+        const ctx = new ExprContext([xmlParser.xmlParse('<x a="1" b="1"><y><z></z></y></x>')], []);
         const expr = xPath.xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
@@ -672,7 +675,7 @@ describe('xpath', () => {
         const xmlString =
             '<div><p> Here is some <strong>funky </strong> text' +
             '<ul> <li>that contains</li> <li> spaces and stuff</li> </ul></p></div>';
-        const value = xmlValue(xmlParse(xmlString));
+        const value = xmlValue(xmlParser.xmlParse(xmlString));
         assert.equal(' Here is some funky  text that contains  spaces and stuff ', value);
     });
 
@@ -728,7 +731,7 @@ describe('xpath', () => {
             ['(//a)[2]', 1]
         ];
 
-        const parsedXML = xmlParse(xml);
+        const parsedXML = xmlParser.xmlParse(xml);
         const ctx = new ExprContext([parsedXML], []);
 
         for (const test of tests) {

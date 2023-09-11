@@ -8,16 +8,22 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { xmlParse } from '../../src/dom';
+import { XmlParser } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 
 describe('XPath Functions', () => {
+    let xmlParser: XmlParser;
+
+    beforeAll(() => {
+        xmlParser = new XmlParser();
+    });
+
     it('current', () => {
         const xml = xmlParser.xmlParse(<root>test</root>);
-        const xsltDefinition = xmlParse(
+        const xsltDefinition = xmlParser.xmlParse(
             <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                 <xsl:template match="/">
                     <xsl:value-of select="current()"/>
@@ -35,10 +41,11 @@ describe('XPath Functions', () => {
     });
 
     describe('format-number', () => {
+        xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(<root></root>);
 
         it('Trivial', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number(500100, '#')"/>
@@ -56,7 +63,7 @@ describe('XPath Functions', () => {
         });
 
         it('Decimal, only integer part', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number(500100.20, '#')"/>
@@ -74,7 +81,7 @@ describe('XPath Functions', () => {
         });
 
         it('Decimal, everything', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number(500100.20, '#.#')"/>
@@ -92,7 +99,7 @@ describe('XPath Functions', () => {
         });
 
         it('Decimal, mask with thousand separator, everything', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number(500100.20, '###,###.#')"/>
@@ -110,7 +117,7 @@ describe('XPath Functions', () => {
         });
 
         it('Decimal, mask with filling zeroes', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number(500100.20, '#.000')"/>
@@ -128,7 +135,7 @@ describe('XPath Functions', () => {
         });
 
         it('NaN', () => {
-            const xsltDefinition = xmlParse(
+            const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
                         <xsl:value-of select="format-number('test', '#')"/>
@@ -148,7 +155,7 @@ describe('XPath Functions', () => {
 
     it('generate-id, trivial', () => {
         const xml = xmlParser.xmlParse(<root></root>);
-        const xsltDefinition = xmlParse(
+        const xsltDefinition = xmlParser.xmlParse(
             <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                 <xsl:template match="/">
                     <xsl:attribute name="uid">
@@ -169,7 +176,7 @@ describe('XPath Functions', () => {
     });
 
     it.skip('generate-id, complete', () => {
-        const xsltDefinition = xmlParse(
+        const xsltDefinition = xmlParser.xmlParse(
             <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                 <xsl:output method="xml" omit-xml-declaration="yes"/>
 

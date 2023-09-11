@@ -2,7 +2,7 @@
 import assert from 'assert';
 
 import { Xslt } from '../../src/xslt';
-import { xmlParse } from '../../src/dom';
+import { XmlParser } from '../../src/dom';
 
 describe('xml-to-json', () => {
     it('xml-to-json() without namespace test', () => {
@@ -32,6 +32,7 @@ describe('xml-to-json', () => {
         const expectedOutString = `<root><span>"test"</span><span>"123"</span><span>"{hugo}"</span><span>""</span></root>`;
 
         const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = xsltClass.xsltProcess(
