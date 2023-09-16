@@ -36,7 +36,7 @@ export class XmlParser {
     XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
     XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
-    lenientHtmlTags = ['link'];
+    lenientHtmlTags = ['hr', 'link'];
 
     /**
      * The entry point for this parser.
@@ -46,7 +46,7 @@ export class XmlParser {
      * @returns A DOM document.
      */
     xmlParse(xmlOrHtml: string): XDocument {
-        if (xmlOrHtml.toUpperCase().includes('<!DOCTYPE HTML')) {
+        if (xmlOrHtml.toUpperCase().startsWith('<!DOCTYPE HTML')) {
             return this.htmlParse(xmlOrHtml);
         }
 
@@ -61,7 +61,7 @@ export class XmlParser {
      */
     private namespaceMapAt(node: XNode): { [prefix: string]: string } {
         const map = {
-            // reserved namespaces https://www.w3.org/TR/REC-xml-names/#xmlReserved
+            // reserved namespaces: https://www.w3.org/TR/REC-xml-names/#xmlReserved
             xmlns: 'http://www.w3.org/2000/xmlns/',
             xml: 'http://www.w3.org/XML/1998/namespace'
         };
@@ -138,23 +138,6 @@ export class XmlParser {
                             parent = node;
                             stack.push(node);
                         }
-
-                        const namespaceMap = this.namespaceMapAt(node);
-                        if (node.prefix !== null) {
-                            if (node.prefix in namespaceMap) node.namespaceUri = namespaceMap[node.prefix];
-                            // else, prefix is undefined. do anything?
-                        } else {
-                            if ('' in namespaceMap) node.namespaceUri = namespaceMap[''];
-                        }
-                        for (let i = 0; i < node.attributes.length; ++i) {
-                            if (node.attributes[i].prefix !== null) {
-                                if (node.attributes[i].prefix in namespaceMap) {
-                                    node.attributes[i].namespaceUri = namespaceMap[node.attributes[i].prefix];
-                                }
-                                // else, prefix undefined.
-                            }
-                            // elements with no prefix always have no namespace, so do nothing here.
-                        }
                     }
 
                     start = i + 1;
@@ -223,8 +206,8 @@ export class XmlParser {
             regexAttribute = this.XML10_ATTRIBUTE_REGEXP;
         }
 
-        const xmlDoc = new XDocument();
-        const root = xmlDoc;
+        const xmlDocument = new XDocument();
+        const root = xmlDocument;
         const stack = [];
 
         let parent: XNode = root;
@@ -253,7 +236,7 @@ export class XmlParser {
                 } else {
                     const empty = text.match(this.regexEmpty);
                     const tagname = regexTagname.exec(text)[1];
-                    let node = domCreateElement(xmlDoc, tagname);
+                    let node = domCreateElement(xmlDocument, tagname);
 
                     let attribute;
                     while ((attribute = regexAttribute.exec(text))) {
@@ -292,21 +275,31 @@ export class XmlParser {
             } else if (!tag && char === '<') {
                 let text = xml.slice(start, i);
                 if (text && parent !== root) {
-                    domAppendChild(parent, domCreateTextNode(xmlDoc, text));
+                    domAppendChild(parent, domCreateTextNode(xmlDocument, text));
                 }
                 if (xml.slice(i + 1, i + 4) === '!--') {
                     let endTagIndex = xml.slice(i + 4).indexOf('-->');
                     if (endTagIndex) {
-                        let node = domCreateComment(xmlDoc, xml.slice(i + 4, i + endTagIndex + 4));
+                        let node = domCreateComment(xmlDocument, xml.slice(i + 4, i + endTagIndex + 4));
                         domAppendChild(parent, node);
                         i += endTagIndex + 6;
                     }
                 } else if (xml.slice(i + 1, i + 9) === '![CDATA[') {
                     let endTagIndex = xml.slice(i + 9).indexOf(']]>');
                     if (endTagIndex) {
-                        let node = domCreateCDATASection(xmlDoc, xml.slice(i + 9, i + endTagIndex + 9));
+                        let node = domCreateCDATASection(xmlDocument, xml.slice(i + 9, i + endTagIndex + 9));
                         domAppendChild(parent, node);
                         i += endTagIndex + 11;
+                    }
+                } else if (xml.slice(i + 1, i + 9) === '!DOCTYPE') { // "!DOCTYPE" can be used in a XSLT template.
+                    let endTagIndex = xml.slice(i + 9).indexOf('>');
+                    if (endTagIndex) {
+                        const dtdValue = xml.slice(i + 9, i + endTagIndex + 9).trimStart();
+                        // TODO: Not sure if this is a good solution.
+                        // Trying to implement this: https://github.com/DesignLiquido/xslt-processor/issues/30
+                        const node = domCreateDTDSection(xmlDocument, dtdValue);
+                        domAppendChild(parent, node);
+                        i += endTagIndex + dtdValue.length + 5;
                     }
                 } else {
                     tag = true;

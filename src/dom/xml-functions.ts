@@ -6,6 +6,7 @@ import {
     DOM_COMMENT_NODE,
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_DOCUMENT_NODE,
+    DOM_DOCUMENT_TYPE_NODE,
     DOM_ELEMENT_NODE,
     DOM_TEXT_NODE
 } from '../constants';
@@ -14,49 +15,57 @@ import { XNode } from './xnode';
 import { XDocument } from './xdocument';
 import { XmlOutputOptions } from './xml-output-options';
 
-// Returns the text value of a node; for nodes without children this
-// is the nodeValue, for nodes with children this is the concatenation
-// of the value of all children. Browser-specific optimizations are used by
-// default; they can be disabled by passing "true" in as the second parameter.
-export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean = false) {
+
+/**
+ * Returns the text value of a node; for nodes without children this
+ * is the nodeValue, for nodes with children this is the concatenation
+ * of the value of all children. Browser-specific optimizations are used by
+ * default; they can be disabled by passing "true" in as the second parameter.
+ * @param node The Node (not exactly a `XNode` here).
+ * @param disallowBrowserSpecificOptimization A boolean, to avoid browser optimization.
+ * @returns The XML value as a string.
+ */
+export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean = false): string {
     if (!node) {
         return '';
     }
 
     let ret = '';
-    if (node.nodeType == DOM_TEXT_NODE || node.nodeType == DOM_CDATA_SECTION_NODE) {
-        ret += node.nodeValue;
-    } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
-        ret += node.nodeValue;
-    } else if (
-        node.nodeType == DOM_ELEMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE
-    ) {
-        if (!disallowBrowserSpecificOptimization) {
-            // IE, Safari, Opera, and friends
-            const innerText = node.innerText;
-            if (innerText != undefined) {
-                return innerText;
+    switch (node.nodeType) {
+        case DOM_DOCUMENT_TYPE_NODE:
+            return `<!DOCTYPE ${node.nodeValue}>`
+        case DOM_TEXT_NODE:
+        case DOM_CDATA_SECTION_NODE:
+        case DOM_ATTRIBUTE_NODE:
+            return node.nodeValue;
+        case DOM_ELEMENT_NODE:
+        case DOM_DOCUMENT_NODE:
+        case DOM_DOCUMENT_FRAGMENT_NODE:
+            if (!disallowBrowserSpecificOptimization) {
+                // IE, Safari, Opera, and friends
+                const innerText = node.innerText;
+                if (innerText != undefined) {
+                    return innerText;
+                }
+                // Firefox
+                const textContent = node.textContent;
+                if (textContent != undefined) {
+                    return textContent;
+                }
             }
-            // Firefox
-            const textContent = node.textContent;
-            if (textContent != undefined) {
-                return textContent;
-            }
-        }
 
-        if (node.transformedChildNodes.length > 0) {
-            for (let i = 0; i < node.transformedChildNodes.length; ++i) {
-                ret += xmlValue(node.transformedChildNodes[i]);
+            if (node.transformedChildNodes.length > 0) {
+                for (let i = 0; i < node.transformedChildNodes.length; ++i) {
+                    ret += xmlValue(node.transformedChildNodes[i]);
+                }
+            } else {
+                for (let i = 0; i < node.childNodes.length; ++i) {
+                    ret += xmlValue(node.childNodes[i]);
+                }
             }
-        } else {
-            for (let i = 0; i < node.childNodes.length; ++i) {
-                ret += xmlValue(node.childNodes[i]);
-            }
-        }
+
+            return ret;
     }
-    return ret;
 }
 
 // TODO: Give a better name to this.
@@ -98,14 +107,17 @@ export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolea
 
 /**
  * Returns the representation of a node as XML text.
+ * In general it is not used by XSLT, that uses `xmlTransformedText` instead.
  * @param {XNode} node The starting node.
  * @param {XmlOutputOptions} options XML output options.
  * @returns The XML string.
+ * @see xmlTransformedText
  */
 export function xmlText(node: XNode, options: XmlOutputOptions = {
     cData: false,
     escape: true,
-    selfClosingTags: true
+    selfClosingTags: true,
+    outputMethod: 'xml'
 }) {
     const buffer: string[] = [];
     xmlTextRecursive(node, buffer, options);
@@ -133,7 +145,7 @@ function xmlTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptio
         }
 
         if (node.childNodes.length === 0) {
-            if (options.selfClosingTags) {
+            if (options.selfClosingTags || (options.outputMethod === 'html' && ['hr', 'link'].includes(node.nodeName))) {
                 buffer.push('/>');
             } else {
                 buffer.push(`></${xmlFullNodeName(node)}>`);
@@ -163,7 +175,8 @@ export function xmlTransformedText(
     options: XmlOutputOptions = {
         cData: false,
         escape: true,
-        selfClosingTags: true
+        selfClosingTags: true,
+        outputMethod: 'xml'
     }
 ) {
     const buffer: string[] = [];
@@ -175,14 +188,14 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
     if (node.visited) return;
     const nodeType = node.transformedNodeType || node.nodeType;
     const nodeValue = node.transformedNodeValue || node.nodeValue;
-    if (nodeType == DOM_TEXT_NODE) {
+    if (nodeType === DOM_TEXT_NODE) {
         if (node.transformedNodeValue && node.transformedNodeValue.trim() !== '') {
             const finalText = node.escape && options.escape?
                 xmlEscapeText(node.transformedNodeValue) :
                 node.transformedNodeValue;
             buffer.push(finalText);
         }
-    } else if (nodeType == DOM_CDATA_SECTION_NODE) {
+    } else if (nodeType === DOM_CDATA_SECTION_NODE) {
         if (options.cData) {
             buffer.push(nodeValue);
         } else {
@@ -199,7 +212,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
         } else {
             xmlElementLogicMuted(node, buffer, options);
         }
-    } else if (nodeType == DOM_DOCUMENT_NODE || nodeType == DOM_DOCUMENT_FRAGMENT_NODE) {
+    } else if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
         const childNodes = node.transformedChildNodes.concat(node.childNodes);
         childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
 
@@ -235,7 +248,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
     let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
-        if (options.selfClosingTags) {
+        if (options.selfClosingTags || (options.outputMethod === 'html' && ['hr', 'link'].includes(node.nodeName))) {
             buffer.push('/>');
         } else {
             buffer.push(`></${xmlFullNodeName(node)}>`);

@@ -74,7 +74,7 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
-    outputMethod: string;
+    outputMethod: 'xml' | 'html';
     outputOmitXmlDeclaration: string;
     version: string;
 
@@ -129,8 +129,10 @@ export class Xslt {
         const transformedOutputXml = xmlTransformedText(outputDocument, {
             cData: false,
             escape: this.options.escape,
-            selfClosingTags: this.options.selfClosingTags
+            selfClosingTags: this.options.selfClosingTags,
+            outputMethod: this.outputMethod
         });
+
         return transformedOutputXml;
     }
 
