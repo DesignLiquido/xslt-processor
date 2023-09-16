@@ -17,7 +17,7 @@ _A JavaScript XSLT processor without native library dependencies._
 
 ## How to
 
-Install xslt-processor using npm or yarn:
+Install xslt-processor using [npm](https://docs.npmjs.com/about-npm) or [yarn](https://yarnpkg.com):
 
 ```sh
 npm install xslt-processor
@@ -27,18 +27,19 @@ npm install xslt-processor
 yarn add xslt-processor
 ```
 
-Within your ES2015+ code, import the `Xslt` class, the `xmlParse` function and use this way:
+Within your ES2015+ code, import the `Xslt` class, the `XmlParser` class and use this way:
 
 ```js
-import { Xslt, xmlParse } from 'xslt-processor'
+import { Xslt, XmlParser } from 'xslt-processor'
 
 // xmlString: string of xml file contents
 // xsltString: string of xslt file contents
 // outXmlString: output xml string.
 const xslt = new Xslt();
+const xmlParser = new XmlParser();
 const outXmlString = xslt.xsltProcess(
-	xmlParse(xmlString),
-	xmlParse(xsltString)
+	xmlParser.xmlParse(xmlString),
+	xmlParser.xmlParse(xsltString)
 );
 ```
 
@@ -67,13 +68,15 @@ You can pass an `options` object to `Xslt` class:
 const options = {
   escape: false,
   selfClosingTags: true,
-  parameters: [{ name: 'myparam', value: '123' }]
+  parameters: [{ name: 'myparam', value: '123' }],
+  outputMethod: 'xml'
 };
 const xslt = new Xslt(options);
 ```
 
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm).
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
+- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden.
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
@@ -84,12 +87,31 @@ const xslt = new Xslt(options);
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@1.2.0/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@2.0.0/umd/xslt-processor.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
 
 ### Breaking Changes
+
+#### Version 1
+
+Until version 1.2.8, use like the example below:
+
+```js
+import { Xslt, xmlParse } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const xslt = new Xslt();
+const outXmlString = xslt.xsltProcess(
+	xmlParse(xmlString),
+	xmlParse(xsltString)
+);
+```
+
+#### Version 0
 
 Until version 0.11.7, use like the example below:
 
@@ -135,7 +157,6 @@ used. This DOM comes with a minimal XML parser that can be used to
 generate a suitable DOM representation of the input documents if they
 are present as text.
 
-
 ## Tests and usage examples
 
 New tests are written in Jest an can be run by calling: `npm test`.
@@ -155,7 +176,14 @@ The DOM implementation is minimal so as to support the XSLT processing, and not 
 The implementation is all agnostic about namespaces. It just expects
 XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declaration for them.
 
-There are a few nonstandard XPath functions. Grep `xpath.js` for `ext-` to see their definitions.
+[There are a few nonstandard XPath functions](https://github.com/search?q=repo%3ADesignLiquido%2Fxslt-processor%20ext-&type=code). 
+
+### HTML Conformance
+
+HTML per se is not strict XML. Because of that, starting on version 2.0.0, this library handles HTML differently than XML:
+
+- Tags like `<hr>`, `<link>` and `<meta>` don't need to be closed. The output for these tags doesn't close them (adding a `/` before the tag closes, or a corresponding close tag);
+- This rule doesn't apply for XHTML, which is strict XML.
 
 ## References
 
