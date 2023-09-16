@@ -248,7 +248,9 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
     let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
-        if (options.selfClosingTags || (options.outputMethod === 'html' && ['hr', 'link'].includes(node.nodeName))) {
+        if (options.outputMethod === 'html' && ['hr', 'link', 'meta'].includes(node.nodeName)) {
+            buffer.push('>');
+        } else if (options.selfClosingTags) {
             buffer.push('/>');
         } else {
             buffer.push(`></${xmlFullNodeName(node)}>`);
@@ -278,7 +280,13 @@ function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOpti
     }
 }
 
-function xmlFullNodeName(node: XNode) {
+/**
+ * Gets the full node name.
+ * When namespace is set, the node name is `namespace:node`.
+ * @param node The node.
+ * @returns The full node name as a string.
+ */
+function xmlFullNodeName(node: XNode): string {
     const nodeName = node.transformedNodeName || node.nodeName;
     if (node.transformedPrefix && nodeName.indexOf(`${node.transformedPrefix}:`) != 0) {
         return `${node.transformedPrefix}:${nodeName}`;
@@ -294,7 +302,7 @@ function xmlFullNodeName(node: XNode) {
  * @param s The string to be escaped.
  * @returns The escaped string.
  */
-export function xmlEscapeText(s: string) {
+export function xmlEscapeText(s: string): string {
     return `${s}`
         .replace(/&/g, '&amp;')
         .replace(/&amp;amp;/g, '&amp;')
@@ -310,7 +318,7 @@ export function xmlEscapeText(s: string) {
  * @param s The string to be escaped.
  * @returns The escaped string.
  */
-function xmlEscapeAttr(s: string) {
+function xmlEscapeAttr(s: string): string {
     return xmlEscapeText(s).replace(/"/g, '&quot;');
 }
 
@@ -324,7 +332,7 @@ function xmlEscapeAttr(s: string) {
  * @param name TODO
  * @returns TODO
  */
-export function xmlGetAttribute(node: XNode, name: string) {
+export function xmlGetAttribute(node: XNode, name: string): string {
     // TODO(mesch): This should not be necessary if the DOM is working
     // correctly. The DOM is responsible for resolving entities, not the
     // application.

@@ -1576,24 +1576,22 @@ describe('LMHT', () => {
             </lmht>
         );
 
-        const expectedOutString = (
-            <html>
-                <head>
-                    <meta name="description" content="LMHT" />
-                    <meta name="keywords" content="HTML, LMHT, Desenvolvimento, Web" />
-                    <meta name="author" content="Leonel Sanches da Silva" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <title>Meu blog</title>
-                    <link rel="stylesheet" href="/publico/css/teste.css" />
-                </head>
-                <body>
-                    <article>
-                        <h1>Meu primeiro artigo</h1>
-                        <p>Este é meu primeiro artigo.</p>
-                    </article>
-                </body>
-            </html>
-        );
+        const expectedOutString = `<html>`+
+                `<head>`+
+                    `<meta name="description" content="LMHT">`+
+                    `<meta name="keywords" content="HTML, LMHT, Desenvolvimento, Web">`+
+                    `<meta name="author" content="Leonel Sanches da Silva">`+
+                    `<meta name="viewport" content="width=device-width, initial-scale=1.0">`+
+                    `<title>Meu blog</title>`+
+                    `<link rel="stylesheet" href="/publico/css/teste.css">`+
+                `</head>`+
+                `<body>`+
+                    `<article>`+
+                        `<h1>Meu primeiro artigo</h1>`+
+                        `<p>Este é meu primeiro artigo.</p>`+
+                    `</article>`+
+                `</body>`+
+            `</html>`;
 
         const xsltClass = new Xslt({ selfClosingTags: false });
         const xmlParser = new XmlParser();

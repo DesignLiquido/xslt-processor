@@ -74,7 +74,7 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
-    outputMethod: 'xml' | 'html';
+    outputMethod: 'xml' | 'html' | 'text' | 'name';
     outputOmitXmlDeclaration: string;
     version: string;
 
@@ -369,7 +369,7 @@ export class Xslt {
                 case 'otherwise':
                     throw `error if here: ${template.localName}`;
                 case 'output':
-                    this.outputMethod = xmlGetAttribute(template, 'method');
+                    this.outputMethod = (xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name');
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     break;
                 case 'param':

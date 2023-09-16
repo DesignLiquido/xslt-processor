@@ -36,7 +36,7 @@ export class XmlParser {
     XML11_TAGNAME_REGEXP = new RegExp(`^(${XML11_NAME})`);
     XML11_ATTRIBUTE_REGEXP = new RegExp(XML11_ATTRIBUTE, 'g');
 
-    lenientHtmlTags = ['hr', 'link'];
+    lenientHtmlTags = ['hr', 'link', 'meta'];
 
     /**
      * The entry point for this parser.
