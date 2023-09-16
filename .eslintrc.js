@@ -193,7 +193,7 @@ module.exports = {
         'prefer-template': 'off',
         'quote-props': 'off',
         quotes: 'off',
-        radix: 'error',
+        radix: 'off',
         'require-atomic-updates': 'error',
         'require-await': 'warn',
         'require-jsdoc': 'off',

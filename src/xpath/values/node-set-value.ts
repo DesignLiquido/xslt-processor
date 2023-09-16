@@ -23,7 +23,7 @@ export class NodeSetValue implements NodeValue {
     }
 
     numberValue() {
-        return this.stringValue() - 0;
+        return parseInt(this.stringValue()) - 0;
     }
 
     nodeSetValue() {

@@ -456,7 +456,7 @@ export function sum(context: ExprContext) {
     const n = this.args[0].evaluate(context).nodeSetValue();
     let sum = 0;
     for (let i = 0; i < n.length; ++i) {
-        sum += xmlValue(n[i]) - 0;
+        sum += parseInt(xmlValue(n[i])) - 0;
     }
     return new NumberValue(sum);
 }

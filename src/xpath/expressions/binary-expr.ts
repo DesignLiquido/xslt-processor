@@ -108,7 +108,7 @@ export class BinaryExpr extends Expression {
 
                 ret = false;
                 for (let i = 0; i < n.length; ++i) {
-                    let nn = xmlValue(n[i]) - 0;
+                    let nn = parseInt(xmlValue(n[i])) - 0;
                     if (cmp(s, nn)) {
                         ret = true;
                         break;
@@ -120,7 +120,7 @@ export class BinaryExpr extends Expression {
 
                 ret = false;
                 for (let i = 0; i < n.length; ++i) {
-                    let nn = xmlValue(n[i]) - 0;
+                    let nn = parseInt(xmlValue(n[i])) - 0;
                     if (cmp(nn, s)) {
                         ret = true;
                         break;
