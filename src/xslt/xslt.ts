@@ -565,8 +565,8 @@ export class Xslt {
      * sort order specified by xsl:sort child nodes of the current
      * template node. This happens before the operation specified by the
      * current template node is executed.
-     * @param context TODO
-     * @param template TODO
+     * @param context The expression context.
+     * @param template The template node.
      * @todo case-order is not implemented.
      */
     protected xsltSort(context: ExprContext, template: XNode) {
@@ -722,7 +722,9 @@ export class Xslt {
             if (node.outputNode === undefined || node.outputNode === null || context.outputDepth > 0) {
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
                 newNode.siblingPosition = node.siblingPosition;
-                node.outputNode = newNode;
+                if (context.outputDepth === 0) {
+                    node.outputNode = newNode;
+                }
             } else {
                 newNode = node.outputNode;
             }
