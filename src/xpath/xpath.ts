@@ -988,11 +988,11 @@ export class XPath {
             return;
         }
 
-        const sortlist = [];
+        const sortList = [];
 
         for (let i = 0; i < context.contextSize(); ++i) {
             const node = context.nodeList[i];
-            const sortitem = {
+            const sortItem = {
                 node,
                 key: []
             };
@@ -1007,7 +1007,7 @@ export class XPath {
                 } else if (s.type === 'number') {
                     evalue = value.numberValue();
                 }
-                sortitem.key.push({
+                sortItem.key.push({
                     value: evalue,
                     order: s.order
                 });
@@ -1016,19 +1016,19 @@ export class XPath {
             // Make the sort stable by adding a lowest priority sort by
             // id. This is very convenient and furthermore required by the
             // spec ([XSLT] - Section 10 Sorting).
-            sortitem.key.push({
+            sortItem.key.push({
                 value: i,
                 order: 'ascending'
             });
 
-            sortlist.push(sortitem);
+            sortList.push(sortItem);
         }
 
-        sortlist.sort(this.xPathSortByKey);
+        sortList.sort(this.xPathSortByKey);
 
         const nodes = [];
-        for (let i = 0; i < sortlist.length; ++i) {
-            const node = sortlist[i].node;
+        for (let i = 0; i < sortList.length; ++i) {
+            const node = sortList[i].node;
             node.siblingPosition = i;
             nodes.push(node);
         }
