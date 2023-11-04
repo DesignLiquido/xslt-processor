@@ -7,7 +7,8 @@ import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
 import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
 
-/** XPath expression evaluation context. An XPath context consists of a
+/**
+ * XPath expression evaluation context. An XPath context consists of a
  * DOM node, a list of DOM nodes that contains this node, a number
  * that represents the position of the single node in the list, and a
  * current set of variable bindings. (See XPath spec.)
@@ -46,6 +47,7 @@ export class ExprContext {
     outputPosition: number;
     outputNodeList: XNode[];
     outputDepth: number;
+    xsltVersion: '1.0' | '2.0' | '3.0';
 
     variables: { [name: string]: any };
     knownNamespaces: { [alias: string]: string };

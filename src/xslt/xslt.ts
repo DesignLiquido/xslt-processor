@@ -606,6 +606,7 @@ export class Xslt {
                             `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
                         );
                     }
+                    context.xsltVersion = this.version as any;
                     break;
                 default:
                     if (stylesheetAttribute.prefix === 'xmlns') {
