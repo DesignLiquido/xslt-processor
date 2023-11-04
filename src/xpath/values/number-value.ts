@@ -9,7 +9,7 @@ export class NumberValue implements NodeValue {
         this.type = 'number';
     }
 
-    stringValue() {
+    stringValue(): string {
         return `${this.value}`;
     }
 

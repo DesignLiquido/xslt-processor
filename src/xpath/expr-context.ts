@@ -88,6 +88,7 @@ export class ExprContext {
     constructor(
         nodeList: XNode[],
         outputNodeList: XNode[],
+        xsltVersion: '1.0' | '2.0' | '3.0' = '1.0',
         opt_position?: number,
         opt_outputPosition?: number,
         opt_outputDepth?: number,
@@ -102,6 +103,8 @@ export class ExprContext {
     ) {
         this.nodeList = nodeList;
         this.outputNodeList = outputNodeList;
+        this.xsltVersion = xsltVersion;
+
         this.position = opt_position || 0;
         this.outputPosition = opt_outputPosition || 0;
 
@@ -158,6 +161,7 @@ export class ExprContext {
         return new ExprContext(
             opt_nodeList || this.nodeList,
             opt_outputNodeList || this.outputNodeList,
+            this.xsltVersion,
             typeof opt_position !== 'undefined' ? opt_position : this.position,
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             this.outputDepth,
@@ -176,6 +180,7 @@ export class ExprContext {
         return new ExprContext(
             this.nodeList,
             opt_outputNodeList || this.outputNodeList,
+            this.xsltVersion,
             this.position,
             typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
             typeof opt_outputDepth !== 'undefined' ? opt_outputDepth : this.outputDepth,

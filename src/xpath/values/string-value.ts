@@ -9,8 +9,8 @@ export class StringValue implements NodeValue {
         this.type = 'string';
     }
 
-    stringValue() {
-        return this.value;
+    stringValue(): string {
+        return String(this.value);
     }
 
     booleanValue() {

@@ -10,7 +10,7 @@ export class NodeSetValue implements NodeValue {
         this.type = 'node-set';
     }
 
-    stringValue() {
+    stringValue(): string {
         if (this.value.length === 0) {
             return '';
         }

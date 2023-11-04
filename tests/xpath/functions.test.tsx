@@ -21,245 +21,268 @@ describe('XPath Functions', () => {
         xmlParser = new XmlParser();
     });
 
-    it('current', () => {
-        const xml = xmlParser.xmlParse(<root>test</root>);
-        const xsltDefinition = xmlParser.xmlParse(
-            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                <xsl:template match="/">
-                    <xsl:value-of select="current()"/>
-                </xsl:template>
-            </xsl:stylesheet>
-        );
-
-        const xsltClass = new Xslt();
-        const outXmlString = xsltClass.xsltProcess(
-            xml,
-            xsltDefinition
-        );
-
-        assert.equal(outXmlString, 'test');
-    });
-
-    describe('format-number', () => {
-        xmlParser = new XmlParser();
-        const xml = xmlParser.xmlParse(<root></root>);
-
-        it('Trivial', () => {
+    describe('1.0', () => {
+        it('current', () => {
+            const xml = xmlParser.xmlParse(<root>test</root>);
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
-                        <xsl:value-of select="format-number(500100, '#')"/>
+                        <xsl:value-of select="current()" />
                     </xsl:template>
                 </xsl:stylesheet>
             );
 
             const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
+            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
 
-            assert.equal(outXmlString, '500100');
+            assert.equal(outXmlString, 'test');
         });
 
-        it('Decimal, only integer part', () => {
+        describe('format-number', () => {
+            xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(<root></root>);
+
+            it('Trivial', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number(500100, '#')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, '500100');
+            });
+
+            it('Decimal, only integer part', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number(500100.20, '#')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, '500100');
+            });
+
+            it('Decimal, everything', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number(500100.20, '#.#')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, '500100.2');
+            });
+
+            it('Decimal, mask with thousand separator, everything', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number(500100.20, '###,###.#')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, '500,100.2');
+            });
+
+            it('Decimal, mask with filling zeroes', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number(500100.20, '#.000')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, '500100.200');
+            });
+
+            it('NaN', () => {
+                const xsltDefinition = xmlParser.xmlParse(
+                    <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                        <xsl:template match="/">
+                            <xsl:value-of select="format-number('test', '#')" />
+                        </xsl:template>
+                    </xsl:stylesheet>
+                );
+
+                const xsltClass = new Xslt();
+                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+
+                assert.equal(outXmlString, 'NaN');
+            });
+        });
+
+        it('generate-id, trivial', () => {
+            const xml = xmlParser.xmlParse(<root></root>);
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:template match="/">
-                        <xsl:value-of select="format-number(500100.20, '#')"/>
-                    </xsl:template>
-                </xsl:stylesheet>
-            );
-
-            const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
-
-            assert.equal(outXmlString, '500100');
-        });
-
-        it('Decimal, everything', () => {
-            const xsltDefinition = xmlParser.xmlParse(
-                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                    <xsl:template match="/">
-                        <xsl:value-of select="format-number(500100.20, '#.#')"/>
-                    </xsl:template>
-                </xsl:stylesheet>
-            );
-
-            const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
-
-            assert.equal(outXmlString, '500100.2');
-        });
-
-        it('Decimal, mask with thousand separator, everything', () => {
-            const xsltDefinition = xmlParser.xmlParse(
-                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                    <xsl:template match="/">
-                        <xsl:value-of select="format-number(500100.20, '###,###.#')"/>
-                    </xsl:template>
-                </xsl:stylesheet>
-            );
-
-            const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
-
-            assert.equal(outXmlString, '500,100.2');
-        });
-
-        it('Decimal, mask with filling zeroes', () => {
-            const xsltDefinition = xmlParser.xmlParse(
-                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                    <xsl:template match="/">
-                        <xsl:value-of select="format-number(500100.20, '#.000')"/>
-                    </xsl:template>
-                </xsl:stylesheet>
-            );
-
-            const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
-
-            assert.equal(outXmlString, '500100.200');
-        });
-
-        it('NaN', () => {
-            const xsltDefinition = xmlParser.xmlParse(
-                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                    <xsl:template match="/">
-                        <xsl:value-of select="format-number('test', '#')"/>
-                    </xsl:template>
-                </xsl:stylesheet>
-            );
-
-            const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(
-                xml,
-                xsltDefinition
-            );
-
-            assert.equal(outXmlString, 'NaN');
-        });
-    });
-
-    it('generate-id, trivial', () => {
-        const xml = xmlParser.xmlParse(<root></root>);
-        const xsltDefinition = xmlParser.xmlParse(
-            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                <xsl:template match="/">
-                    <xsl:attribute name="uid">
-                        <xsl:value-of select="generate-id(.)"/>
-                    </xsl:attribute>
-                </xsl:template>
-            </xsl:stylesheet>
-        );
-
-        const xsltClass = new Xslt();
-
-        const outXmlString = xsltClass.xsltProcess(
-            xml,
-            xsltDefinition
-        );
-
-        assert.ok(outXmlString);
-    });
-
-    it.skip('generate-id, complete', () => {
-        const xsltDefinition = xmlParser.xmlParse(
-            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                <xsl:output method="xml" omit-xml-declaration="yes"/>
-
-                <xsl:template match="chapter | sect1 | sect2">
-                    <xsl:copy>
                         <xsl:attribute name="uid">
-                            <xsl:value-of select="generate-id(.)"/>
+                            <xsl:value-of select="generate-id(.)" />
                         </xsl:attribute>
-                        <xsl:apply-templates select="@*|node()"/>
-                    </xsl:copy>
-                </xsl:template>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
 
-                <xsl:template match="@*|node()">
-                    <xsl:copy>
-                        <xsl:apply-templates select="@*|node()"/>
-                    </xsl:copy>
-                </xsl:template>
+            const xsltClass = new Xslt();
 
-            </xsl:stylesheet>
-        );
+            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
 
-        const xml = xmlParser.xmlParse(
-            <chapter>
-                <para>Then with expanded wings he steers his flight</para>
-                <figure>
-                    <title>"Incumbent on the Dusky Air"</title>
-                    <graphic fileref="pic1.jpg"/>
-                </figure>
-                <para>Aloft, incumbent on the dusky Air</para>
-                <sect1>
-                    <para>That felt unusual weight, till on dry Land</para>
+            assert.ok(outXmlString);
+        });
+
+        it.skip('generate-id, complete', () => {
+            const xsltDefinition = xmlParser.xmlParse(
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:output method="xml" omit-xml-declaration="yes" />
+
+                    <xsl:template match="chapter | sect1 | sect2">
+                        <xsl:copy>
+                            <xsl:attribute name="uid">
+                                <xsl:value-of select="generate-id(.)" />
+                            </xsl:attribute>
+                            <xsl:apply-templates select="@*|node()" />
+                        </xsl:copy>
+                    </xsl:template>
+
+                    <xsl:template match="@*|node()">
+                        <xsl:copy>
+                            <xsl:apply-templates select="@*|node()" />
+                        </xsl:copy>
+                    </xsl:template>
+                </xsl:stylesheet>
+            );
+
+            const xml = xmlParser.xmlParse(
+                <chapter>
+                    <para>Then with expanded wings he steers his flight</para>
                     <figure>
-                        <title>"He Lights"</title>
-                        <graphic fileref="pic2.jpg"/>
+                        <title>"Incumbent on the Dusky Air"</title>
+                        <graphic fileref="pic1.jpg" />
                     </figure>
-                    <para>He lights, if it were Land that ever burned</para>
-                    <sect2>
-                        <para>With solid, as the Lake with liquid fire</para>
+                    <para>Aloft, incumbent on the dusky Air</para>
+                    <sect1>
+                        <para>That felt unusual weight, till on dry Land</para>
                         <figure>
-                            <title>"The Lake with Liquid Fire"</title>
-                            <graphic fileref="pic3.jpg"/>
+                            <title>"He Lights"</title>
+                            <graphic fileref="pic2.jpg" />
                         </figure>
-                    </sect2>
-                </sect1>
-            </chapter>
-        );
+                        <para>He lights, if it were Land that ever burned</para>
+                        <sect2>
+                            <para>With solid, as the Lake with liquid fire</para>
+                            <figure>
+                                <title>"The Lake with Liquid Fire"</title>
+                                <graphic fileref="pic3.jpg" />
+                            </figure>
+                        </sect2>
+                    </sect1>
+                </chapter>
+            );
 
-        const xsltClass = new Xslt();
+            const xsltClass = new Xslt();
 
-        const outXmlString = xsltClass.xsltProcess(
-            xml,
-            xsltDefinition
-        );
+            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
 
-        console.log(outXmlString)
-        assert.ok(!outXmlString);
+            // Uncomment below to see the results
+            // console.log(outXmlString);
+            assert.ok(!outXmlString);
+        });
+
+        it('translate', () => {
+            const xmlString = (
+                <root>
+                    <typeA />
+                    <typeB />
+                </root>
+            );
+
+            const xsltString = (
+                <xsl:template match="/">
+                    <xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz'" />
+                    <xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
+                    <xsl:value-of select="translate(DELETED, $smallcase, $uppercase)" />
+                </xsl:template>
+            );
+
+            const xsltClass = new Xslt();
+
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+            // Uncomment below to see the results
+            // console.log(outXmlString);
+            assert.ok(!outXmlString);
+        });
     });
 
-    it('translate', () => {
-        const xmlString = (
-            <root>
-                <typeA />
-                <typeB />
-            </root>
-        );
+    describe('2.0', () => {
+        it('upper-case', () => {
+            const xmlString = (
+                <root></root>
+            );
 
-        const xsltString = <xsl:template match="/">
-            <xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz'" />
-            <xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
-            <xsl:value-of select="translate(DELETED, $smallcase, $uppercase)" />
-        </xsl:template>
+            const xsltString = (
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="upper-case('Lily')" />
+                    </xsl:template>
+                </xsl:stylesheet>
+            )
 
-        const xsltClass = new Xslt();
+            const xsltClass = new Xslt();
 
-        const xml = xmlParser.xmlParse(xmlString);
-        const xslt = xmlParser.xmlParse(xsltString);
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
 
-        const outXmlString = xsltClass.xsltProcess(
-            xml,
-            xslt
-        );
+            const outXmlString = xsltClass.xsltProcess(xml, xslt);
 
-        console.log(outXmlString)
-        assert.ok(!outXmlString);
-    })
+            assert.equal(outXmlString, 'LILY');
+        });
+
+        it('lower-case', () => {
+            const xmlString = (
+                <root></root>
+            );
+
+            const xsltString = (
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="lower-case('Lily')" />
+                    </xsl:template>
+                </xsl:stylesheet>
+            )
+
+            const xsltClass = new Xslt();
+
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(outXmlString, 'lily');
+        });
+    });
 });

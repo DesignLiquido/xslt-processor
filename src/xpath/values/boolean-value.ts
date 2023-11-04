@@ -9,7 +9,7 @@ export class BooleanValue implements NodeValue {
         this.type = 'boolean';
     }
 
-    stringValue() {
+    stringValue(): string {
         return `${this.value}`;
     }
 
