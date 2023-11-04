@@ -35,6 +35,7 @@ import {
     formatNumber
 } from '../functions';
 import { extCardinal, extIf, extJoin } from '../functions/non-standard';
+import { lowerCase, upperCase } from '../functions/standard-20';
 import { BooleanValue } from '../values/boolean-value';
 import { Expression } from './expression';
 
@@ -58,6 +59,7 @@ export class FunctionCallExpr extends Expression {
         lang,
         last,
         'local-name': localName,
+        'lower-case': lowerCase,
         matches,
         name: _name,
         'namespace-uri': namespaceUri,
@@ -76,6 +78,7 @@ export class FunctionCallExpr extends Expression {
         'string-length': stringLength,
         translate,
         true: _true,
+        'upper-case': upperCase,
 
         // TODO(mesch): The following functions are custom. There is a
         // standard that defines how to add functions, which should be
