@@ -87,7 +87,7 @@ const xslt = new Xslt(options);
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@2.0.0/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@2.1.0/umd/xslt-processor.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
@@ -137,25 +137,17 @@ These functions are part of `Xslt` and `XPath` classes, respectively, at version
 
 ## Introduction
 
-XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses
-XPath, it also contains an implementation of XPath that can be used
-independently of XSLT. This implementation has the advantage that it
-makes XSLT uniformly available whenever the browser's native `XSLTProcessor()`
+XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses XPath, it also contains an implementation of XPath that can be used
+independently of XSLT. This implementation has the advantage that it makes XSLT uniformly available whenever the browser's native `XSLTProcessor()`
 is not available such as in Node.js or in web workers.
 
-XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt)
-which was written before `XSLTProcessor()` became available in browsers, but the
-code base has been updated to comply with ES2015+ and to make it work outside of
-browsers.
+XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt) which was written before `XSLTProcessor()` became available in browsers, but the
+code base has been updated to comply with ES2015+ and to make it work outside of browsers.
 
-This implementation of XSLT operates at the DOM level on its input
-documents. It internally uses a DOM implementation to create the
-output document, but usually returns the output document as text
-stream. The DOM to construct the output document can be supplied by
-the application, or else an internal minimal DOM implementation is
-used. This DOM comes with a minimal XML parser that can be used to
-generate a suitable DOM representation of the input documents if they
-are present as text.
+This implementation of XSLT operates at the DOM level on its input documents. It internally uses a DOM implementation to create the
+output document, but usually returns the output document as text stream. The DOM to construct the output document can be supplied by
+the application, or else an internal minimal DOM implementation is used. This DOM comes with a minimal XML parser that can be used to
+generate a suitable DOM representation of the input documents if they are present as text.
 
 ## Tests and usage examples
 
@@ -169,12 +161,13 @@ Both interactive tests and automatic tests demonstrate the use of the library fu
 A few features that are required by the XSLT and XPath standards were left out (but patches to add them are welcome).
 See our [TODO](TODO.md) for a list of missing features that we are aware of (please add more items by means of PRs).
 
+So far, we have implemented XQuery functions for versions 1.0 and 2.0, but this is not complete yet.
+
 Issues are also marked in the source code using throw-statements.
 
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
 
-The implementation is all agnostic about namespaces. It just expects
-XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declaration for them.
+The implementation is all agnostic about namespaces. It just expects XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declaration for them.
 
 [There are a few nonstandard XPath functions](https://github.com/search?q=repo%3ADesignLiquido%2Fxslt-processor%20ext-&type=code). 
 
