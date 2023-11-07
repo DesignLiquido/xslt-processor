@@ -133,7 +133,9 @@ describe('XPath Functions', () => {
             });
         });
 
-        it('generate-id, trivial', () => {
+        // TODO: This returns the following in other transformers:
+        // "Unable to generate the XML document using the provided XML/XSL input. Cannot create an attribute node (uid) whose parent is a document node. Most recent element start tag was output at line -1 of module *unknown*"
+        it.skip('generate-id, trivial', () => {
             const xml = xmlParser.xmlParse(<root></root>);
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">

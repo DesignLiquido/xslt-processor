@@ -267,8 +267,17 @@ export class Xslt {
                             newRootNode.transformedLocalName = sourceRootNode.localName;
                             domAppendTransformedChild(outputNode, newRootNode);
                             outputNode = newRootNode;
+                            parentSourceNode = newRootNode;
                         }
-                        domSetTransformedAttribute(parentSourceNode, name, value);
+
+                        // Some operations start by the tag attributes, and not by the tag itself.
+                        // When this is the case, the output node is not set yet, so
+                        // we add the transformed attributes into the original tag.
+                        if (parentSourceNode && parentSourceNode.outputNode) {
+                            domSetTransformedAttribute(parentSourceNode.outputNode, name, value);
+                        } else {
+                            domSetTransformedAttribute(parentSourceNode, name, value);
+                        }
                     }
 
                     break;
