@@ -1461,7 +1461,7 @@ describe('HTML to LMHT', () => {
         );
 
     it('Trivial', () => {
-        /* const xmlString =
+        const xmlString =
             '<!DOCTYPE html>' +
             `<html lang="en">
         <head>
@@ -1482,22 +1482,14 @@ describe('HTML to LMHT', () => {
             <p class="anything">This is a paragraph with a class</p>
         </body>
     </html>
-        `; */
-
-        const xmlString =
-            '<!DOCTYPE html>' +
-                `<html lang="en">
-                    <body>
-                        <p class="anything">This is a paragraph with a class</p>
-                    </body>
-                </html>`;
+        `;
 
         const expectedOutString = `<lmht>` +
-                // `<cabeça>` +
-                //     `<título>About - Simple Blog Template</título>` +
-                //     `<recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>` +
-                //     `<recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>` +
-                // `</cabeça>` +
+                `<cabeça>` +
+                    `<título>About - Simple Blog Template</título>` +
+                    `<recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>` +
+                    `<recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>` +
+                `</cabeça>` +
                 `<corpo>` +
                     `<parágrafo classe="anything">This is a paragraph with a class</parágrafo>` +
                 `</corpo>` +
