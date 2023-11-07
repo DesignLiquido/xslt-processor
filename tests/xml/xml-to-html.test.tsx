@@ -32,7 +32,7 @@ describe('XML to HTML', () => {
           </xsl:template>
         </xsl:stylesheet>`;
 
-        const expectedOutHtml = `<div><div><table><tr><th>A</th><th>B</th><th>C</th></tr><tr><td>AA</td><td>BB</td><td>CC</td></tr></table></div><div>should be below table rite??!</div></div>`;
+        const expectedOutHtml = `<div><div><table><tr><th>A</th><th>B</th><th>C</th></tr><tr><td>AA</td><td>BB</td><td>CC</td></tr></table></div></div><div><div>should be below table rite??!</div></div>`;
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();

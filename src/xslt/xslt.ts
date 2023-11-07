@@ -214,8 +214,10 @@ export class Xslt {
                                 const clonedContext = modifiedContext.clone(
                                     [modifiedContext.nodeList[j]],
                                     undefined,
+                                    // [modifiedContext.nodeList[j].outputNode],
                                     0,
                                     undefined
+                                    // 0
                                 );
                                 clonedContext.inApplyTemplates = true;
                                 // The output depth should be restarted, since
@@ -230,13 +232,30 @@ export class Xslt {
                 case 'attribute':
                     nameExpr = xmlGetAttribute(template, 'name');
                     name = this.xsltAttributeValue(nameExpr, context);
+
                     const documentFragment = domCreateDocumentFragment(this.outputDocument);
                     this.xsltChildNodes(context, template, documentFragment);
                     value = xmlValue2(documentFragment);
                     if (output !== null && output !== undefined) {
                         domSetTransformedAttribute(output, name, value);
                     } else {
-                        let outputNode = context.outputNodeList[context.outputPosition];
+                        let sourceNode = context.nodeList[context.position];
+                        let parentSourceNode = sourceNode.parentNode;
+                        let outputNode = sourceNode.outputNode;
+
+                        // At this point, the output node should exist.
+                        // If not, a new node is created.
+                        if (outputNode === null || outputNode === undefined) {
+                            outputNode = new XNode(
+                                sourceNode.nodeType,
+                                sourceNode.nodeName,
+                                sourceNode.nodeValue,
+                                context.outputNodeList[context.outputPosition],
+                                sourceNode.namespaceUri
+                            );
+                            sourceNode.outputNode = outputNode;
+                        }
+
                         // Corner case:
                         // It can happen here that we don't have the root node set.
                         // In this case we need to append a copy of the root
@@ -248,8 +267,17 @@ export class Xslt {
                             newRootNode.transformedLocalName = sourceRootNode.localName;
                             domAppendTransformedChild(outputNode, newRootNode);
                             outputNode = newRootNode;
+                            parentSourceNode = newRootNode;
                         }
-                        domSetTransformedAttribute(outputNode, name, value);
+
+                        // Some operations start by the tag attributes, and not by the tag itself.
+                        // When this is the case, the output node is not set yet, so
+                        // we add the transformed attributes into the original tag.
+                        if (parentSourceNode && parentSourceNode.outputNode) {
+                            domSetTransformedAttribute(parentSourceNode.outputNode, name, value);
+                        } else {
+                            domSetTransformedAttribute(parentSourceNode, name, value);
+                        }
                     }
 
                     break;
@@ -407,7 +435,8 @@ export class Xslt {
                             context.baseTemplateMatched = true;
                         }
 
-                        this.xsltChildNodes(context, template, output);
+                        const templateContext = context.clone(nodes, undefined, 0);
+                        this.xsltChildNodes(templateContext, template, output);
                     }
                     break;
                 case 'text':
@@ -733,15 +762,18 @@ export class Xslt {
             newNode.transformedNodeName = template.nodeName;
             newNode.transformedLocalName = template.localName;
 
+            // The node can have transformed attributes from previous transformations.
+            for (const previouslyTransformedAttribute of node.transformedAttributes) {
+                const name = previouslyTransformedAttribute.transformedNodeName;
+                const value = previouslyTransformedAttribute.transformedNodeValue;
+                domSetTransformedAttribute(newNode, name, value);
+            }
+
             const templateAttributes = template.attributes.filter((a: any) => a);
-            if (templateAttributes.length === 0) {
-                newNode.transformedAttributes = [];
-            } else {
-                for (const attribute of templateAttributes) {
-                    const name = attribute.nodeName;
-                    const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
-                    domSetTransformedAttribute(newNode, name, value);
-                }
+            for (const attribute of templateAttributes) {
+                const name = attribute.nodeName;
+                const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
+                domSetTransformedAttribute(newNode, name, value);
             }
 
             const outputNode = context.outputNodeList[context.outputPosition];
@@ -794,6 +826,10 @@ export class Xslt {
         }
 
         return false;
+    }
+
+    protected xsltAttribute(attributeName: string, context: ExprContext): XNode {
+        return context.nodeList[context.position].attributes.find(a => a.nodeName === attributeName);
     }
 
     /**

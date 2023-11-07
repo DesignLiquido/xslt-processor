@@ -1478,7 +1478,9 @@ describe('HTML to LMHT', () => {
             <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
             <![endif]-->
         </head>
-        
+        <body>
+            <p class="anything">This is a paragraph with a class</p>
+        </body>
     </html>
         `;
 
@@ -1488,6 +1490,9 @@ describe('HTML to LMHT', () => {
                     `<recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>` +
                     `<recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>` +
                 `</cabeça>` +
+                `<corpo>` +
+                    `<parágrafo classe="anything">This is a paragraph with a class</parágrafo>` +
+                `</corpo>` +
             `</lmht>`
 
         const xsltClass = new Xslt();
