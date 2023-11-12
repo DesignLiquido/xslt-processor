@@ -144,10 +144,12 @@ is not available such as in Node.js or in web workers.
 XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt) which was written before `XSLTProcessor()` became available in browsers, but the
 code base has been updated to comply with ES2015+ and to make it work outside of browsers.
 
-This implementation of XSLT operates at the DOM level on its input documents. It internally uses a DOM implementation to create the
-output document, but usually returns the output document as text stream. The DOM to construct the output document can be supplied by
-the application, or else an internal minimal DOM implementation is used. This DOM comes with a minimal XML parser that can be used to
-generate a suitable DOM representation of the input documents if they are present as text.
+This implementation of XSLT operates at the DOM level on its input documents. 
+It internally uses a DOM implementation to create the output document, but usually 
+returns the output document as text stream. The DOM to construct the output document can 
+be supplied by the application, or else an internal minimal DOM implementation is used. This 
+DOM comes with a minimal XML parser that can be used to generate a suitable DOM 
+representation of the input documents if they are present as text.
 
 ## Tests and usage examples
 
@@ -175,8 +177,12 @@ The implementation is all agnostic about namespaces. It just expects XSLT elemen
 
 HTML per se is not strict XML. Because of that, starting on version 2.0.0, this library handles HTML differently than XML:
 
+- For a document to be treated as HTML, it needs to have a `<!DOCTYPE>` tag defined with one of the two valid formats:
+  - `<!DOCTYPE html>` (for HTML5);
+  - `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">` (for HTML4);
+  - `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">` (for XHTML 1.1).
 - Tags like `<hr>`, `<link>` and `<meta>` don't need to be closed. The output for these tags doesn't close them (adding a `/` before the tag closes, or a corresponding close tag);
-- This rule doesn't apply for XHTML, which is strict XML.
+  - This rule doesn't apply for XHTML, which is strict XML.
 
 ## References
 

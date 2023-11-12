@@ -1,3 +1,5 @@
+This document is no longer maintained in favor of GitHub's release system, and just kept here for historical reasons.
+
 2018-03-20  Johannes Wilm <johannes@fiduswriter.org>
 
 	* Version 0.9.0
