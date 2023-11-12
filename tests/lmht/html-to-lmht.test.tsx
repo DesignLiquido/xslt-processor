@@ -1465,6 +1465,10 @@ describe('HTML to LMHT', () => {
             '<!DOCTYPE html>' +
             `<html lang="en">
         <head>
+            <meta name="description" content="LMHT">
+            <meta name="keywords" content="HTML, LMHT, Desenvolvimento, Web">
+            <meta name="author" content="Leonel Sanches da Silva">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <!-- <meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content=""><meta name="author" content=""> -->
             <title>About - Simple Blog Template</title>
             <!-- Bootstrap Core CSS -->
@@ -1486,6 +1490,10 @@ describe('HTML to LMHT', () => {
 
         const expectedOutString = `<lmht>` +
                 `<cabeça>` +
+                    `<meta nome="description" conteúdo="LMHT"/>` +
+                    `<meta nome="keywords" conteúdo="HTML, LMHT, Desenvolvimento, Web"/>` +
+                    `<meta nome="author" conteúdo="Leonel Sanches da Silva"/>` +
+                    `<meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>` +
                     `<título>About - Simple Blog Template</título>` +
                     `<recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>` +
                     `<recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>` +
@@ -1495,7 +1503,7 @@ describe('HTML to LMHT', () => {
                 `</corpo>` +
             `</lmht>`
 
-        const xsltClass = new Xslt();
+        const xsltClass = new Xslt({ selfClosingTags: true });
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
