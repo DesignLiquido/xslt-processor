@@ -177,7 +177,7 @@ The implementation is all agnostic about namespaces. It just expects XSLT elemen
 
 HTML per se is not strict XML. Because of that, starting on version 2.0.0, this library handles HTML differently than XML:
 
-- For a document to be treated as HTML, it needs to have a `<!DOCTYPE>` tag defined with one of the two valid formats:
+- For a document to be treated as HTML, it needs to have a `<!DOCTYPE>` tag defined with one of the following valid formats:
   - `<!DOCTYPE html>` (for HTML5);
   - `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">` (for HTML4);
   - `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">` (for XHTML 1.1).
