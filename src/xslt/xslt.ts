@@ -573,6 +573,10 @@ export class Xslt {
     protected xsltForEach(context: ExprContext, template: XNode, output: XNode) {
         const select = xmlGetAttribute(template, 'select');
         const nodes = this.xPath.xPathEval(select, context).nodeSetValue();
+        if (nodes.length === 0) {
+            return;
+        }
+
         const sortContext = context.clone(nodes);
         this.xsltSort(sortContext, template);
 
