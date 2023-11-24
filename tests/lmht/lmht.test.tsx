@@ -1601,4 +1601,15 @@ describe('LMHT', () => {
 
         assert.equal(outXmlString, expectedOutString);
     });
+
+    it('Issue 80', () => {
+        const xmlString = `<lmht><cabeca><titulo>Listagem de clientes</titulo></cabeca><corpo><titulo1>Clientes</titulo1><tabela><cabeca-tabela><linha><celula>Id</celula><celula>Nome</celula></linha></cabeca-tabela><corpo-tabela><linha><celula>1</celula><celula>Italo</celula></linha><linha><celula>2</celula><celula>Leonel</celula></linha></corpo-tabela></tabela></corpo></lmht>`;
+        const xsltClass = new Xslt({ selfClosingTags: false });
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+        assert.ok(outXmlString);
+    });
 });
