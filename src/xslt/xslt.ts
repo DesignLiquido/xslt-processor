@@ -577,6 +577,10 @@ export class Xslt {
             return;
         }
 
+        // TODO: Why do we need this sort, really?
+        // I have no idea why this logic is here (it was implemented
+        // before Design Liquido taking over), so if it is proven not useful,
+        // this entire logic must be removed.
         const sortContext = context.clone(nodes);
         this.xsltSort(sortContext, template);
 
@@ -585,8 +589,10 @@ export class Xslt {
             throw new Error('Nodes with no parents defined.');
         }
 
-        const parent = nodesWithParent[0].parentNode;
-        parent.childNodes = sortContext.nodeList;
+        // TODO: Removed for now because sortContext can select attributes,
+        // and attributes are separated from child nodes.
+        /* const parent = nodesWithParent[0].parentNode;
+        parent.childNodes = sortContext.nodeList; */
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             this.xsltChildNodes(sortContext.clone(sortContext.nodeList, undefined, i), template, output);

@@ -1612,4 +1612,30 @@ describe('LMHT', () => {
 
         assert.ok(outXmlString);
     });
+
+    it('Form Fieldset', () => {
+        const xmlString = `<lmht>
+            <cabeça><título>Teste</título></cabeça>
+            <corpo>
+                <titulo1>Detalhes de Artigo</titulo1>
+                <formulário método="POST" ação="">
+                    <campos>
+                        <etiqueta para="id">id</etiqueta>
+                        <campo tipo="texto" id="{{id}}"></campo>
+                        <etiqueta para="titulo">titulo</etiqueta>
+                        <campo tipo="texto" id="{{titulo}}"></campo>
+                        <etiqueta para="conteudo">conteudo</etiqueta>
+                        <campo tipo="texto" id="{{conteudo}}"></campo>
+                    </campos>
+                </formulário>
+            </corpo>
+        </lmht>`;
+        const xsltClass = new Xslt({ selfClosingTags: false });
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+        assert.ok(outXmlString);
+    })
 });
