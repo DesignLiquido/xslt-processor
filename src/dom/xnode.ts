@@ -1,16 +1,16 @@
-// Our W3C DOM Node implementation. Note we call it XNode because we
-// can't define the identifier Node. We do this mostly for Opera,
-// where we can't reuse the HTML DOM for parsing our own XML, and for
-// Safari, where it is too expensive to have the template processor
-
 import { DOM_ATTRIBUTE_NODE, DOM_ELEMENT_NODE } from '../constants';
 
 // operate on native DOM nodes.
+/**
+ * Our W3C DOM Node implementation. Note we call it XNode because we
+ * can't define the identifier Node. We do this mostly for Opera,
+ * where we can't reuse the HTML DOM for parsing our own XML, and for
+ * Safari, where it is too expensive to have the template processor.
+ */
 export class XNode {
     id: number;
-    attributes: XNode[];
     childNodes: XNode[];
-    nodeType: any;
+    nodeType: number;
     nodeName: string;
     nodeValue: any;
     firstChild: XNode;
@@ -48,7 +48,6 @@ export class XNode {
 
     constructor(type: any, name: string, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.id = Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1;
-        this.attributes = [];
         this.childNodes = [];
         this.transformedAttributes = [];
         this.transformedChildNodes = [];
@@ -67,7 +66,7 @@ export class XNode {
      * @param owner The node owner.
      * @param namespaceUri The node namespace.
      */
-    init(type: any, name: string, value: string, owner: any, namespaceUri: any) {
+    init(type: number, name: string, value: string, owner: any, namespaceUri: any) {
         this.nodeType = type - 0;
         this.nodeName = `${name}`;
         this.nodeValue = `${value}`;
@@ -123,6 +122,7 @@ export class XNode {
         }
     }
 
+    // TODO: Do we still need this?
     static recycle(node: any) {
         if (!node) {
             return;
@@ -138,15 +138,15 @@ export class XNode {
         }
 
         this._unusedXNodes.push(node);
-        for (let a = 0; a < node.attributes.length; ++a) {
+        /* for (let a = 0; a < node.attributes.length; ++a) {
             this.recycle(node.attributes[a]);
-        }
+        } */
 
         for (let c = 0; c < node.childNodes.length; ++c) {
             this.recycle(node.childNodes[c]);
         }
 
-        node.attributes.length = 0;
+        // node.attributes.length = 0;
         node.childNodes.length = 0;
         node.init.call(0, '', '', null);
     }
@@ -168,9 +168,9 @@ export class XNode {
             newNode.appendChild(XNode.clone(child, newNode));
         }
 
-        for (let attribute of node.attributes) {
+        /* for (let attribute of node.attributes) {
             newNode.setAttribute(attribute.nodeName, attribute.nodeValue);
-        }
+        } */
 
         return newNode;
     }
@@ -330,20 +330,22 @@ export class XNode {
     }
 
     hasAttributes() {
-        return this.attributes.length > 0;
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        return attributes.length > 0;
     }
 
     setAttribute(name: string, value: any) {
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].nodeName == name) {
-                this.attributes[i].nodeValue = `${value}`;
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            if (attributes[i].nodeName == name) {
+                attributes[i].nodeValue = `${value}`;
                 return;
             }
         }
 
         const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
         newAttribute.parentNode = this;
-        this.attributes.push(newAttribute);
+        this.childNodes.push(newAttribute);
     }
 
     setTransformedAttribute(name: string, value: any) {
@@ -363,25 +365,28 @@ export class XNode {
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {
-        for (let i = 0; i < this.attributes.length; ++i) {
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            const attribute = attributes[i];
             if (
-                this.attributes[i].namespaceUri == namespace &&
-                this.attributes[i].localName == this.qualifiedNameToParts(`${name}`)[1]
+                attribute.namespaceUri == namespace &&
+                attribute.localName == this.qualifiedNameToParts(`${name}`)[1]
             ) {
-                this.attributes[i].nodeValue = `${value}`;
-                this.attributes[i].nodeName = `${name}`;
-                this.attributes[i].prefix = this.qualifiedNameToParts(`${name}`)[0];
+                attribute.nodeValue = `${value}`;
+                attribute.nodeName = `${name}`;
+                attribute.prefix = this.qualifiedNameToParts(`${name}`)[0];
                 return;
             }
         }
 
-        this.attributes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
+        this.childNodes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
     }
 
-    getAttributeValue(name: any): any {
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].nodeName == name) {
-                return this.attributes[i].nodeValue;
+    getAttributeValue(name: string): any {
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            if (attributes[i].nodeName === name) {
+                return attributes[i].nodeValue;
             }
         }
 
@@ -389,18 +394,21 @@ export class XNode {
     }
 
     getAttributeNS(namespace: any, localName: any) {
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].namespaceUri == namespace && this.attributes[i].localName == localName) {
-                return this.attributes[i].nodeValue;
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            const attribute = attributes[i];
+            if (attribute.namespaceUri === namespace && attribute.localName === localName) {
+                return attribute.nodeValue;
             }
         }
 
         return null;
     }
 
-    hasAttribute(name: any) {
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].nodeName == name) {
+    hasAttribute(name: string) {
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            if (attributes[i].nodeName === name) {
                 return true;
             }
         }
@@ -408,36 +416,52 @@ export class XNode {
         return false;
     }
 
-    hasAttributeNS(namespace: any, localName: any) {
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].namespaceUri == namespace && this.attributes[i].localName == localName) {
+    hasAttributeNS(namespace: string, localName: string) {
+        const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < attributes.length; ++i) {
+            const attribute = attributes[i];
+            if (attribute.namespaceUri === namespace && attribute.localName === localName) {
                 return true;
             }
         }
         return false;
     }
 
-    removeAttribute(name: any) {
-        const a = [];
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].nodeName != name) {
-                a.push(this.attributes[i]);
+    removeAttribute(name: string) {
+        const newChildNodes: XNode[] = [];
+        for (let i = 0; i < this.childNodes.length; ++i) {
+            const childNode = this.childNodes[i];
+            if (childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                newChildNodes.push(childNode);
+                continue;
+            }
+
+            if (childNode.nodeName !== name) {
+                newChildNodes.push(childNode);
             }
         }
-        this.attributes = a;
+
+        this.childNodes = newChildNodes;
     }
 
-    removeAttributeNS(namespace: any, localName: any) {
-        const a = [];
-        for (let i = 0; i < this.attributes.length; ++i) {
-            if (this.attributes[i].localName != localName || this.attributes[i].namespaceUri != namespace) {
-                a.push(this.attributes[i]);
+    removeAttributeNS(namespace: string, localName: string) {
+        const newChildNodes: XNode[] = [];
+        for (let i = 0; i < this.childNodes.length; ++i) {
+            const childNode = this.childNodes[i];
+            if (childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                newChildNodes.push(childNode);
+                continue;
+            }
+
+            if (childNode.localName !== localName || childNode.namespaceUri !== namespace) {
+                newChildNodes.push(childNode);
             }
         }
-        this.attributes = a;
+
+        this.childNodes = newChildNodes;
     }
 
-    getElementsByTagName(name: any) {
+    getElementsByTagName(name: string) {
         const ret = [];
         const self = this;
         if ('*' == name) {
@@ -464,7 +488,7 @@ export class XNode {
         return ret;
     }
 
-    getElementsByTagNameNS(namespace: any, localName: any) {
+    getElementsByTagNameNS(namespace: string, localName: string) {
         const ret = [];
         const self = this;
         if ('*' == namespace && '*' == localName) {
