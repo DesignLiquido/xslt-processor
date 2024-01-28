@@ -137,10 +137,15 @@ function xmlTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptio
         buffer.push(`<!--${node.nodeValue}-->`);
     } else if (node.nodeType == DOM_ELEMENT_NODE) {
         buffer.push(`<${xmlFullNodeName(node)}`);
-        for (let i = 0; i < node.attributes.length; ++i) {
-            const a = node.attributes[i];
-            if (a && a.nodeName && a.nodeValue) {
-                buffer.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
+
+        for (let i = 0; i < node.childNodes.length; ++i) {
+            const childNode = node.childNodes[i];
+            if (!childNode || childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                continue;
+            }
+
+            if (childNode.nodeName && childNode.nodeValue) {
+                buffer.push(` ${xmlFullNodeName(childNode)}="${xmlEscapeAttr(childNode.nodeValue)}"`);
             }
         }
 
@@ -233,7 +238,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
 function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
-    const attributes = node.transformedAttributes || node.attributes;
+    const attributes = node.transformedChildNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE) || node.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
     for (let i = 0; i < attributes.length; ++i) {
         const attribute = attributes[i];
         if (!attribute) {

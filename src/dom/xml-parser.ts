@@ -19,6 +19,7 @@ import {
     XML11_VERSION_INFO
 } from './xmltoken';
 import { XNode } from './xnode';
+import { DOM_ATTRIBUTE_NODE } from '../constants';
 
 /**
  * Original author: Steffen Meschkat <mesch@google.com> (the `xmlParse` function,
@@ -67,12 +68,17 @@ export class XmlParser {
         };
         let n = node;
         while (n !== null) {
-            for (let i = 0; i < n.attributes.length; i++) {
-                if (n.attributes[i].nodeName.startsWith('xmlns:')) {
-                    const prefix = n.attributes[i].nodeName.split(':')[1];
-                    if (!(prefix in map)) map[prefix] = n.attributes[i].nodeValue;
-                } else if (n.attributes[i].nodeName == 'xmlns') {
-                    if (!('' in map)) map[''] = n.attributes[i].nodeValue || null;
+            for (let i = 0; i < n.childNodes.length; i++) {
+                const childNode = n.childNodes[i];
+                if (childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                    continue;
+                }
+
+                if (childNode.nodeName.startsWith('xmlns:')) {
+                    const prefix = childNode.nodeName.split(':')[1];
+                    if (!(prefix in map)) map[prefix] = childNode.nodeValue;
+                } else if (childNode.nodeName == 'xmlns') {
+                    if (!('' in map)) map[''] = childNode.nodeValue || null;
                 }
             }
             n = n.parentNode;
@@ -258,11 +264,15 @@ export class XmlParser {
                     } else {
                         if ('' in namespaceMap) node.namespaceUri = namespaceMap[''];
                     }
-                    for (let i = 0; i < node.attributes.length; ++i) {
-                        if (node.attributes[i].prefix !== null) {
-                            if (node.attributes[i].prefix in namespaceMap) {
-                                node.attributes[i].namespaceUri = namespaceMap[node.attributes[i].prefix];
-                            }
+
+                    for (let i = 0; i < node.childNodes.length; ++i) {
+                        const childNode = node.childNodes[i];
+                        if (childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                            continue;
+                        }
+
+                        if (childNode.prefix !== null && childNode.prefix in namespaceMap) {
+                            childNode.namespaceUri = namespaceMap[childNode.prefix];
                             // else, prefix undefined.
                         }
                         // elements with no prefix always have no namespace, so do nothing here.
