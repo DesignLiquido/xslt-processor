@@ -291,13 +291,13 @@ export class Xslt {
                     this.xsltWithParam(paramContext, template);
 
                     for (let i = 0; i < top.childNodes.length; ++i) {
-                        let c = top.childNodes[i];
+                        let childNode = top.childNodes[i];
                         if (
-                            c.nodeType == DOM_ELEMENT_NODE &&
-                            this.isXsltElement(c, 'template') &&
-                            domGetAttributeValue(c, 'name') == name
+                            childNode.nodeType === DOM_ELEMENT_NODE &&
+                            this.isXsltElement(childNode, 'template') &&
+                            domGetAttributeValue(childNode, 'name') == name
                         ) {
-                            this.xsltChildNodes(paramContext, c, output);
+                            this.xsltChildNodes(paramContext, childNode, output);
                             break;
                         }
                     }
@@ -478,13 +478,13 @@ export class Xslt {
     }
 
     /**
-     * Implements xsl:choose and its child nodes xsl:when and
-     * xsl:otherwise.
-     * @param input The Expression Context.
+     * Implements `xsl:choose`, its child nodes `xsl:when`, and
+     * `xsl:otherwise`.
+     * @param context The Expression Context.
      * @param template The template.
      * @param output The output.
      */
-    protected xsltChoose(input: ExprContext, template: any, output: any) {
+    protected xsltChoose(context: ExprContext, template: XNode, output: any) {
         for (const childNode of template.childNodes) {
             if (childNode.nodeType !== DOM_ELEMENT_NODE) {
                 continue;
@@ -492,12 +492,12 @@ export class Xslt {
 
             if (this.isXsltElement(childNode, 'when')) {
                 const test = xmlGetAttribute(childNode, 'test');
-                if (this.xPath.xPathEval(test, input).booleanValue()) {
-                    this.xsltChildNodes(input, childNode, output);
+                if (this.xPath.xPathEval(test, context).booleanValue()) {
+                    this.xsltChildNodes(context, childNode, output);
                     break;
                 }
             } else if (this.isXsltElement(childNode, 'otherwise')) {
-                this.xsltChildNodes(input, childNode, output);
+                this.xsltChildNodes(context, childNode, output);
                 break;
             }
         }
@@ -662,14 +662,14 @@ export class Xslt {
      * Evaluates a variable or parameter and set it in the current input
      * context. Implements `xsl:variable`, `xsl:param`, and `xsl:with-param`.
      *
-     * @param input TODO
-     * @param template TODO
+     * @param context The expression context.
+     * @param template The template node.
      * @param override flag that defines if the value computed here
      * overrides the one already in the input context if that is the
      * case. I.e. decides if this is a default value or a local
      * value. `xsl:variable` and `xsl:with-param` override; `xsl:param` doesn't.
      */
-    protected xsltVariable(input: ExprContext, template: any, override: boolean) {
+    protected xsltVariable(context: ExprContext, template: XNode, override: boolean) {
         const name = xmlGetAttribute(template, 'name');
         const select = xmlGetAttribute(template, 'select');
 
@@ -677,10 +677,12 @@ export class Xslt {
 
         if (template.childNodes.length > 0) {
             const root = domCreateDocumentFragment(template.ownerDocument);
-            this.xsltChildNodes(input, template, root);
+            this.xsltChildNodes(context, template, root);
             value = new NodeSetValue([root]);
         } else if (select) {
-            value = this.xPath.xPathEval(select, input);
+            value = this.xPath.xPathEval(select, context);
+        } else if (name in context.variables) {
+            value = context.variables[name];
         } else {
             let parameterValue = '';
             const filteredParameter = this.options.parameters.filter((p) => p.name === name);
@@ -690,8 +692,8 @@ export class Xslt {
             value = new StringValue(parameterValue);
         }
 
-        if (override || !input.getVariable(name)) {
-            input.setVariable(name, value);
+        if (override || !context.getVariable(name)) {
+            context.setVariable(name, value);
         }
     }
 
@@ -892,13 +894,13 @@ export class Xslt {
      * current template node, in the current input context. This happens
      * before the operation specified by the current template node is
      * executed.
-     * @param input TODO
-     * @param template TODO
+     * @param context The Expression Context.
+     * @param template The template node.
      */
-    protected xsltWithParam(input: ExprContext, template: any) {
-        for (const c of template.childNodes) {
-            if (c.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(c, 'with-param')) {
-                this.xsltVariable(input, c, true);
+    protected xsltWithParam(context: ExprContext, template: XNode) {
+        for (const childNode of template.childNodes) {
+            if (childNode.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'with-param')) {
+                this.xsltVariable(context, childNode, true);
             }
         }
     }
