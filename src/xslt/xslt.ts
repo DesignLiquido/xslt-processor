@@ -442,8 +442,8 @@ export class Xslt {
                 case 'text':
                     text = xmlValue(template);
                     node = domCreateTransformedTextNode(this.outputDocument, text);
-                    const disableOutputEscaping = template.attributes.filter(
-                        (a) => a.nodeName === 'disable-output-escaping'
+                    const disableOutputEscaping = template.childNodes.filter(
+                        (a) => a.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'disable-output-escaping'
                     );
                     if (disableOutputEscaping.length > 0 && disableOutputEscaping[0].nodeValue === 'yes') {
                         node.escape = false;
@@ -553,9 +553,9 @@ export class Xslt {
             if (node) {
                 // This was an element node -- recurse to attributes and
                 // children.
-                for (let i = 0; i < source.attributes.length; ++i) {
+                /* for (let i = 0; i < source.attributes.length; ++i) {
                     this.xsltCopyOf(node, source.attributes[i]);
-                }
+                } */
 
                 for (let i = 0; i < source.childNodes.length; ++i) {
                     this.xsltCopyOf(node, source.childNodes[i]);
@@ -636,7 +636,7 @@ export class Xslt {
      * @param output The output XML.
      */
     protected xsltTransformOrStylesheet(template: XNode, context: ExprContext, output: XNode): void {
-        for (let stylesheetAttribute of template.attributes) {
+        for (let stylesheetAttribute of template.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE)) {
             switch (stylesheetAttribute.nodeName) {
                 case 'version':
                     this.version = stylesheetAttribute.nodeValue;
@@ -781,7 +781,7 @@ export class Xslt {
                 domSetTransformedAttribute(newNode, name, value);
             }
 
-            const templateAttributes = template.attributes.filter((a: any) => a);
+            const templateAttributes = template.childNodes.filter((a: XNode) => a?.nodeType === DOM_ATTRIBUTE_NODE);
             for (const attribute of templateAttributes) {
                 const name = attribute.nodeName;
                 const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
@@ -841,7 +841,7 @@ export class Xslt {
     }
 
     protected xsltAttribute(attributeName: string, context: ExprContext): XNode {
-        return context.nodeList[context.position].attributes.find(a => a.nodeName === attributeName);
+        return context.nodeList[context.position].childNodes.find((a: XNode) => a.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === attributeName);
     }
 
     /**
