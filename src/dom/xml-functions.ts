@@ -257,7 +257,11 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
         }
     }
 
-    let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    let childNodes = node.transformedChildNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
+    if (childNodes.length === 0) {
+        childNodes = node.childNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
+    }
+
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
         if (options.outputMethod === 'html' && ['hr', 'link', 'meta'].includes(node.nodeName)) {
