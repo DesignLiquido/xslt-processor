@@ -42,12 +42,13 @@ export function xmlValue(node: XNode | any, disallowBrowserSpecificOptimization:
         case DOM_DOCUMENT_NODE:
         case DOM_DOCUMENT_FRAGMENT_NODE:
             if (!disallowBrowserSpecificOptimization) {
-                // IE, Safari, Opera, and friends (node is not an XNode).
+                // Only returns something if node has either `innerText` or `textContent` (not an XNode).
+                // IE, Safari, Opera, and friends (`innerText`)
                 const innerText = node.innerText;
                 if (innerText != undefined) {
                     return innerText;
                 }
-                // Firefox
+                // Firefox (`textContent`)
                 const textContent = node.textContent;
                 if (textContent != undefined) {
                     return textContent;
@@ -55,12 +56,12 @@ export function xmlValue(node: XNode | any, disallowBrowserSpecificOptimization:
             }
 
             if (node.transformedChildNodes.length > 0) {
-                const transformedTextNodes = node.transformedChildNodes.filter((n: XNode) => n.nodeType === DOM_TEXT_NODE);
+                const transformedTextNodes = node.transformedChildNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
                 for (let i = 0; i < transformedTextNodes.length; ++i) {
                     ret += xmlValue(transformedTextNodes[i]);
                 }
             } else {
-                const textNodes = node.childNodes.filter((n: XNode) => n.nodeType === DOM_TEXT_NODE);
+                const textNodes = node.childNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
                 for (let i = 0; i < textNodes.length; ++i) {
                     ret += xmlValue(textNodes[i]);
                 }

@@ -13,6 +13,7 @@ import { XmlParser, xmlText } from '../src/dom';
 
 import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
+import { DOM_ATTRIBUTE_NODE } from '../src/constants';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
@@ -35,12 +36,14 @@ describe('dom parsing', () => {
         const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
+        const dom1Attributes = dom1.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const dom2Attributes = dom2.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+
         assert.equal(
-            dom1.firstChild.childNodes[1].attributes.length,
-            dom2.firstChild.childNodes[1].attributes.length,
+            dom1Attributes.length,
+            dom2Attributes.length,
             'location.attributes.length'
         );
-        // assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
 
         const tag = 'q';
         const byTag = dom1.getElementsByTagName(tag);
@@ -67,12 +70,15 @@ describe('dom parsing', () => {
         const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
+        const dom1Attributes = dom1.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const dom2Attributes = dom2.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+
         assert.equal(
-            dom1.firstChild.childNodes[1].attributes.length,
-            dom2.firstChild.childNodes[1].attributes.length,
+            dom1Attributes.length,
+            dom2Attributes.length,
             'location.attributes.length'
         );
-        assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
+        assert.equal(dom1Attributes.length, 2, 'location.attributes.length');
     });
 
     it('can parse Japanese xml', () => {
@@ -90,12 +96,15 @@ describe('dom parsing', () => {
         const dom2 = xmlParser.xmlParse(`<?xml version='1.1'?>${xml}`);
         doTestXmlParse(dom1, dom2);
 
+        const dom1Attributes = dom1.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const dom2Attributes = dom2.firstChild.childNodes[1].childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+
         assert.equal(
-            dom1.firstChild.childNodes[1].attributes.length,
-            dom2.firstChild.childNodes[1].attributes.length,
+            dom1Attributes.length,
+            dom2Attributes.length,
             'location.attributes.length'
         );
-        assert.equal(dom1.firstChild.childNodes[1].attributes.length, 2, 'location.attributes.length');
+        assert.equal(dom1Attributes.length, 2, 'location.attributes.length');
     });
 
     it('can resolve entities', () => {
