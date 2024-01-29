@@ -615,16 +615,16 @@ describe('xpath', () => {
             ' <f></f>',
             '</page>'
         ].join('');
-        const ctx = new ExprContext([xmlParser.xmlParse(xml)], []);
+        const context = new ExprContext([xmlParser.xmlParse(xml)], []);
 
-        for (const e of axisTests) {
-            const result = xPath.xPathParse(e[0] as any).evaluate(ctx);
-            if (typeof e[1] == 'number') {
-                assert.equal(e[1], result.numberValue(), e[0] as any);
-            } else if (typeof e[1] == 'string') {
-                assert.equal(e[1], result.stringValue(), e[0] as any);
-            } else if (typeof e[1] == 'boolean') {
-                assert.equal(e[1], result.booleanValue(), e[0] as any);
+        for (const axisTest of axisTests) {
+            const result = xPath.xPathParse(axisTest[0] as any).evaluate(context);
+            if (typeof axisTest[1] === 'number') {
+                assert.equal(result.numberValue(),axisTest[1], axisTest[0] as string);
+            } else if (typeof axisTest[1] === 'string') {
+                assert.equal(result.stringValue(), axisTest[1], axisTest[0] as string);
+            } else if (typeof axisTest[1] === 'boolean') {
+                assert.equal(result.booleanValue(), axisTest[1], axisTest[0] as string);
             }
         }
     });

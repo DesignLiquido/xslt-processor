@@ -122,13 +122,17 @@ export class StepExpr extends Expression {
             case xPathAxis.ANCESTOR_OR_SELF:
                 nodeList.push(node);
                 for (let n = node.parentNode; n; n = n.parentNode) {
-                    nodeList.push(n);
+                    if (n.nodeType !== DOM_ATTRIBUTE_NODE) {
+                        nodeList.push(n);
+                    }
                 }
                 break;
 
             case xPathAxis.ANCESTOR:
                 for (let n = node.parentNode; n; n = n.parentNode) {
-                    nodeList.push(n);
+                    if (n.nodeType !== DOM_ATTRIBUTE_NODE) {
+                        nodeList.push(n);
+                    }
                 }
                 break;
 
@@ -170,17 +174,19 @@ export class StepExpr extends Expression {
                 break;
 
             case xPathAxis.CHILD:
-                copyArray(nodeList, node.childNodes);
+                copyArray(nodeList, node.childNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE));
                 break;
 
             case xPathAxis.DESCENDANT_OR_SELF: {
                 if (this.nodeTest.evaluate(context).booleanValue()) {
                     nodeList.push(node);
                 }
+
                 let tagName = this.xPath.xPathExtractTagNameFromNodeTest(
                     this.nodeTest,
                     context.ignoreNonElementNodesForNTA
                 );
+
                 this.xPath.xPathCollectDescendants(nodeList, node, tagName);
                 if (tagName) skipNodeTest = true;
 
@@ -201,7 +207,10 @@ export class StepExpr extends Expression {
             case xPathAxis.FOLLOWING:
                 for (let n = node; n; n = n.parentNode) {
                     for (let nn = n.nextSibling; nn; nn = nn.nextSibling) {
-                        nodeList.push(nn);
+                        if (nn.nodeType !== DOM_ATTRIBUTE_NODE) {
+                            nodeList.push(nn);
+                        }
+
                         this.xPath.xPathCollectDescendants(nodeList, nn);
                     }
                 }
@@ -209,8 +218,14 @@ export class StepExpr extends Expression {
                 break;
 
             case xPathAxis.FOLLOWING_SIBLING:
+                if (node.nodeType === DOM_ATTRIBUTE_NODE) {
+                    break;
+                }
+
                 for (let n = node.nextSibling; n; n = n.nextSibling) {
-                    nodeList.push(n);
+                    if (n.nodeType !== DOM_ATTRIBUTE_NODE) {
+                        nodeList.push(n);
+                    }
                 }
 
                 break;
@@ -228,7 +243,10 @@ export class StepExpr extends Expression {
             case xPathAxis.PRECEDING:
                 for (let n = node; n; n = n.parentNode) {
                     for (let nn = n.previousSibling; nn; nn = nn.previousSibling) {
-                        nodeList.push(nn);
+                        if (nn.nodeType !== DOM_ATTRIBUTE_NODE) {
+                            nodeList.push(nn);
+                        }
+
                         this.xPath.xPathCollectDescendantsReverse(nodeList, nn);
                     }
                 }
@@ -237,7 +255,9 @@ export class StepExpr extends Expression {
 
             case xPathAxis.PRECEDING_SIBLING:
                 for (let n = node.previousSibling; n; n = n.previousSibling) {
-                    nodeList.push(n);
+                    if (n.nodeType !== DOM_ATTRIBUTE_NODE) {
+                        nodeList.push(n);
+                    }
                 }
 
                 break;
@@ -248,7 +268,9 @@ export class StepExpr extends Expression {
 
             case xPathAxis.SELF_AND_SIBLINGS:
                 for (const node of context.nodeList) {
-                    nodeList.push(node);
+                    if (node.nodeType !== DOM_ATTRIBUTE_NODE) {
+                        nodeList.push(node);
+                    }
                 }
 
                 break;

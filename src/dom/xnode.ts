@@ -45,7 +45,7 @@ export class XNode {
 
     static _unusedXNodes: any[] = [];
 
-    constructor(type: any, name: string, opt_value: any, opt_owner: any, opt_namespace?: any) {
+    constructor(type: number, name: string, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.id = Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1;
         this.childNodes = [];
         this.transformedChildNodes = [];
@@ -94,7 +94,7 @@ export class XNode {
     // traversed. Traversal will not be continued if a callback function
     // returns boolean false. NOTE(mesch): copied from
     // <//google3/maps/webmaps/javascript/dom.js>.
-    protected domTraverseElements(node: any, opt_pre: any, opt_post: any) {
+    protected domTraverseElements(node: XNode, opt_pre: Function, opt_post: any) {
         let ret;
         if (opt_pre) {
             ret = opt_pre.call(null, node);
@@ -175,7 +175,7 @@ export class XNode {
 
     appendChild(node: XNode) {
         // firstChild
-        if (this.childNodes.length == 0) {
+        if (this.childNodes.length === 0) {
             this.firstChild = node;
         }
 
@@ -200,7 +200,7 @@ export class XNode {
 
     appendTransformedChild(node: XNode) {
         // firstChild
-        if (this.transformedChildNodes.length == 0) {
+        if (this.transformedChildNodes.length === 0) {
             this.transformedFirstChild = node;
         }
 
@@ -302,7 +302,7 @@ export class XNode {
         this.childNodes = newChildren;
     }
 
-    removeChild(node: any) {
+    removeChild(node: XNode) {
         const newChildren = [];
 
         for (const c of this.childNodes) {
@@ -343,7 +343,7 @@ export class XNode {
 
         const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
         newAttribute.parentNode = this;
-        this.childNodes.push(newAttribute);
+        this.appendChild(newAttribute);
     }
 
     setTransformedAttribute(name: string, value: any) {
@@ -361,7 +361,7 @@ export class XNode {
         newAttribute.transformedNodeName = name;
         newAttribute.transformedNodeValue = value;
         newAttribute.parentNode = this;
-        this.transformedChildNodes.push(newAttribute);
+        this.appendTransformedChild(newAttribute);
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {
@@ -379,7 +379,9 @@ export class XNode {
             }
         }
 
-        this.childNodes.push(XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace));
+        const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this, namespace);
+        newAttribute.parentNode = this;
+        this.appendChild(newAttribute);
     }
 
     getAttributeValue(name: string): any {
@@ -467,7 +469,7 @@ export class XNode {
         if ('*' == name) {
             this.domTraverseElements(
                 this,
-                (node: any) => {
+                (node: XNode) => {
                     if (self == node) return;
                     ret.push(node);
                 },
@@ -476,7 +478,7 @@ export class XNode {
         } else {
             this.domTraverseElements(
                 this,
-                (node: any) => {
+                (node: XNode) => {
                     if (self == node) return;
                     if (node.nodeName == name) {
                         ret.push(node);
