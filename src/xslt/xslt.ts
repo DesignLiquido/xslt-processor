@@ -271,6 +271,10 @@ export class Xslt {
                             parentSourceNode = newRootNode;
                         }
 
+                        // If the parent transformation is something like `xsl:element`, we should
+                        // add a copy of the attribute to this element.
+                        domSetTransformedAttribute(output, name, value);
+
                         // Some operations start by the tag attributes, and not by the tag itself.
                         // When this is the case, the output node is not set yet, so
                         // we add the transformed attributes into the original tag.
@@ -458,7 +462,8 @@ export class Xslt {
                     value = attribute.stringValue();
                     node = domCreateTransformedTextNode(this.outputDocument, value);
                     node.siblingPosition = context.nodeList[context.position].siblingPosition;
-                    if (output !== null && output !== undefined) {
+
+                    if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
                         output.appendTransformedChild(node);
                     } else {
                         context.outputNodeList[context.outputPosition].appendTransformedChild(node);
