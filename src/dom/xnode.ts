@@ -27,7 +27,6 @@ export class XNode {
     parentNode: XNode;
 
     outputNode: XNode;
-    transformedAttributes: XNode[];
     transformedChildNodes: XNode[];
     transformedNodeType: any;
     transformedNodeName: string;
@@ -49,7 +48,6 @@ export class XNode {
     constructor(type: any, name: string, opt_value: any, opt_owner: any, opt_namespace?: any) {
         this.id = Math.random() * (Number.MAX_SAFE_INTEGER - 1) + 1;
         this.childNodes = [];
-        this.transformedAttributes = [];
         this.transformedChildNodes = [];
         this.visited = false;
         this.escape = true;
@@ -349,10 +347,12 @@ export class XNode {
     }
 
     setTransformedAttribute(name: string, value: any) {
-        for (let i = 0; i < this.transformedAttributes.length; ++i) {
-            if (this.transformedAttributes[i].nodeName === name) {
-                this.transformedAttributes[i].transformedNodeName = name;
-                this.transformedAttributes[i].transformedNodeValue = `${value}`;
+        const transformedAttributes = this.transformedChildNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        for (let i = 0; i < transformedAttributes.length; ++i) {
+            const transformedAttribute = transformedAttributes[i];
+            if (transformedAttribute.nodeName === name) {
+                transformedAttribute.transformedNodeName = name;
+                transformedAttribute.transformedNodeValue = `${value}`;
                 return;
             }
         }
@@ -361,7 +361,7 @@ export class XNode {
         newAttribute.transformedNodeName = name;
         newAttribute.transformedNodeValue = value;
         newAttribute.parentNode = this;
-        this.transformedAttributes.push(newAttribute);
+        this.transformedChildNodes.push(newAttribute);
     }
 
     setAttributeNS(namespace: any, name: any, value: any) {

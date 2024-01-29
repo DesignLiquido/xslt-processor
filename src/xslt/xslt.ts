@@ -775,7 +775,8 @@ export class Xslt {
             newNode.transformedLocalName = template.localName;
 
             // The node can have transformed attributes from previous transformations.
-            for (const previouslyTransformedAttribute of node.transformedAttributes) {
+            const transformedAttributes = node.transformedChildNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+            for (const previouslyTransformedAttribute of transformedAttributes) {
                 const name = previouslyTransformedAttribute.transformedNodeName;
                 const value = previouslyTransformedAttribute.transformedNodeValue;
                 domSetTransformedAttribute(newNode, name, value);
