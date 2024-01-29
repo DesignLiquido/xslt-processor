@@ -125,7 +125,7 @@ export class Xslt {
             }
         }
 
-        this.xsltProcessContext(expressionContext, stylesheet);
+        this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
         const transformedOutputXml = xmlTransformedText(outputDocument, {
             cData: false,
             escape: this.options.escape,
@@ -209,7 +209,7 @@ export class Xslt {
                             if (modifiedContext.nodeList[j].nodeType === DOM_TEXT_NODE) {
                                 const textNodeContext = context.clone([modifiedContext.nodeList[j]], undefined, 0, undefined);
                                 // TODO: verify if it is okay to pass the own text node as template.
-                                this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j]);
+                                this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j], output);
                             } else {
                                 const clonedContext = modifiedContext.clone(
                                     [modifiedContext.nodeList[j]],
@@ -236,7 +236,8 @@ export class Xslt {
                     const documentFragment = domCreateDocumentFragment(this.outputDocument);
                     this.xsltChildNodes(context, template, documentFragment);
                     value = xmlValue2(documentFragment);
-                    if (output !== null && output !== undefined) {
+
+                    if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
                         domSetTransformedAttribute(output, name, value);
                     } else {
                         let sourceNode = context.nodeList[context.position];
@@ -720,18 +721,23 @@ export class Xslt {
      * @param context The Expression Context.
      * @param template The template, that contains the node value to be written.
      */
-    private commonLogicTextNode(context: ExprContext, template: XNode) {
-        const textNodeList = context.outputNodeList[context.outputPosition].transformedChildNodes.filter(
-            (n) => n.nodeType === DOM_TEXT_NODE
-        );
-
-        if (textNodeList.length > 0) {
-            let node = textNodeList[0];
-            node.transformedNodeValue = template.nodeValue;
-        } else {
+    private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
+        if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
             let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
-            node.transformedParentNode = context.outputNodeList[context.outputPosition];
-            domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+            domAppendTransformedChild(output, node);
+        } else {
+            const textNodeList = context.outputNodeList[context.outputPosition].transformedChildNodes.filter(
+                (n) => n.nodeType === DOM_TEXT_NODE
+            );
+
+            if (textNodeList.length > 0) {
+                let node = textNodeList[0];
+                node.transformedNodeValue = template.nodeValue;
+            } else {
+                let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
+                node.transformedParentNode = context.outputNodeList[context.outputPosition];
+                domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+            }
         }
     }
 
@@ -747,7 +753,7 @@ export class Xslt {
     protected xsltPassThrough(context: ExprContext, template: XNode, output: XNode) {
         if (template.nodeType == DOM_TEXT_NODE) {
             if (this.xsltPassText(template)) {
-                this.commonLogicTextNode(context, template);
+                this.commonLogicTextNode(context, template, output);
             }
         } else if (template.nodeType == DOM_ELEMENT_NODE) {
             let node: XNode;
@@ -795,7 +801,7 @@ export class Xslt {
                 outputNode.transformedChildNodes.length - 1,
                 ++elementContext.outputDepth
             );
-            this.xsltChildNodes(clonedContext, template);
+            this.xsltChildNodes(clonedContext, template, output);
         } else {
             // This applies also to the DOCUMENT_NODE of the XSL stylesheet,
             // so we don't have to treat it specially.
