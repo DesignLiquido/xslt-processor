@@ -14,7 +14,7 @@ export function copyArray(dst: any[], src: any[]) {
  * significant extra processing when evaluating attribute steps. With this
  * function, we ignore any such attributes that has an empty string value.
  */
-export function copyArrayIgnoringAttributesWithoutValue(dst, src) {
+export function copyArrayIgnoringAttributesWithoutValue(dst: any[], src: any[]) {
     if (!src) return;
     for (let i = src.length - 1; i >= 0; --i) {
         // this test will pass so long as the attribute has a non-empty string

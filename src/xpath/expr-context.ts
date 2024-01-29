@@ -6,6 +6,7 @@ import { StringValue } from './values/string-value';
 import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
 import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
+import { NodeValue } from './values';
 
 /**
  * XPath expression evaluation context. An XPath context consists of a
@@ -49,7 +50,7 @@ export class ExprContext {
     outputDepth: number;
     xsltVersion: '1.0' | '2.0' | '3.0';
 
-    variables: { [name: string]: any };
+    variables: { [name: string]: NodeValue };
     knownNamespaces: { [alias: string]: string };
 
     caseInsensitive: any;
@@ -217,7 +218,7 @@ export class ExprContext {
         }
     }
 
-    getVariable(name: string) {
+    getVariable(name: string): NodeValue {
         if (typeof this.variables[name] != 'undefined') {
             return this.variables[name];
         }

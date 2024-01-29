@@ -25,7 +25,7 @@ import { XmlOutputOptions } from './xml-output-options';
  * @param disallowBrowserSpecificOptimization A boolean, to avoid browser optimization.
  * @returns The XML value as a string.
  */
-export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean = false): string {
+export function xmlValue(node: XNode | any, disallowBrowserSpecificOptimization: boolean = false): string {
     if (!node) {
         return '';
     }
@@ -42,12 +42,13 @@ export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean
         case DOM_DOCUMENT_NODE:
         case DOM_DOCUMENT_FRAGMENT_NODE:
             if (!disallowBrowserSpecificOptimization) {
-                // IE, Safari, Opera, and friends
+                // Only returns something if node has either `innerText` or `textContent` (not an XNode).
+                // IE, Safari, Opera, and friends (`innerText`)
                 const innerText = node.innerText;
                 if (innerText != undefined) {
                     return innerText;
                 }
-                // Firefox
+                // Firefox (`textContent`)
                 const textContent = node.textContent;
                 if (textContent != undefined) {
                     return textContent;
@@ -55,12 +56,14 @@ export function xmlValue(node: any, disallowBrowserSpecificOptimization: boolean
             }
 
             if (node.transformedChildNodes.length > 0) {
-                for (let i = 0; i < node.transformedChildNodes.length; ++i) {
-                    ret += xmlValue(node.transformedChildNodes[i]);
+                const transformedTextNodes = node.transformedChildNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
+                for (let i = 0; i < transformedTextNodes.length; ++i) {
+                    ret += xmlValue(transformedTextNodes[i]);
                 }
             } else {
-                for (let i = 0; i < node.childNodes.length; ++i) {
-                    ret += xmlValue(node.childNodes[i]);
+                const textNodes = node.childNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
+                for (let i = 0; i < textNodes.length; ++i) {
+                    ret += xmlValue(textNodes[i]);
                 }
             }
 
@@ -96,7 +99,7 @@ export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolea
                 return textContent;
             }
         }
-        // pobrecito!
+
         const len = node.transformedChildNodes.length;
         for (let i = 0; i < len; ++i) {
             ret += xmlValue(node.transformedChildNodes[i]);
@@ -137,10 +140,15 @@ function xmlTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptio
         buffer.push(`<!--${node.nodeValue}-->`);
     } else if (node.nodeType == DOM_ELEMENT_NODE) {
         buffer.push(`<${xmlFullNodeName(node)}`);
-        for (let i = 0; i < node.attributes.length; ++i) {
-            const a = node.attributes[i];
-            if (a && a.nodeName && a.nodeValue) {
-                buffer.push(` ${xmlFullNodeName(a)}="${xmlEscapeAttr(a.nodeValue)}"`);
+
+        for (let i = 0; i < node.childNodes.length; ++i) {
+            const childNode = node.childNodes[i];
+            if (!childNode || childNode.nodeType !== DOM_ATTRIBUTE_NODE) {
+                continue;
+            }
+
+            if (childNode.nodeName && childNode.nodeValue) {
+                buffer.push(` ${xmlFullNodeName(childNode)}="${xmlEscapeAttr(childNode.nodeValue)}"`);
             }
         }
 
@@ -233,7 +241,11 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
 function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
-    const attributes = node.transformedAttributes || node.attributes;
+    let attributes = node.transformedChildNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+    if (attributes.length === 0) {
+        attributes = node.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+    }
+
     for (let i = 0; i < attributes.length; ++i) {
         const attribute = attributes[i];
         if (!attribute) {
@@ -245,7 +257,11 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
         }
     }
 
-    let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    let childNodes = node.transformedChildNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
+    if (childNodes.length === 0) {
+        childNodes = node.childNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
+    }
+
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
         if (options.outputMethod === 'html' && ['hr', 'link', 'meta'].includes(node.nodeName)) {

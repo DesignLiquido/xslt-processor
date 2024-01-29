@@ -1,3 +1,4 @@
+import { XNode } from "../../dom";
 import { NodeValue } from "./node-value";
 
 export class NumberValue implements NodeValue {
@@ -21,7 +22,7 @@ export class NumberValue implements NodeValue {
         return this.value - 0;
     }
 
-    nodeSetValue() {
+    nodeSetValue(): XNode[] {
         throw this;
     }
 }

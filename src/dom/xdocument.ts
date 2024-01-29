@@ -20,10 +20,11 @@ export class XDocument extends XNode {
         this.documentElement = null;
     }
 
-    clear() {
+    // TODO: Do we still need this?
+    /* clear() {
         XNode.recycle(this.documentElement);
         this.documentElement = null;
-    }
+    } */
 
     appendChild(node: any) {
         super.appendChild(node);

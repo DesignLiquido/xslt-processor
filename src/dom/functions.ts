@@ -7,7 +7,7 @@ import { XDocument } from "./xdocument";
 import { XNode } from './xnode';
 
 // Wrapper around DOM methods so we can condense their invocations.
-export function domGetAttributeValue(node: any, name: string) {
+export function domGetAttributeValue(node: XNode, name: string) {
     return node.getAttributeValue(name);
 }
 

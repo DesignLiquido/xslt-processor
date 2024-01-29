@@ -26,7 +26,7 @@ export class NodeSetValue implements NodeValue {
         return parseInt(this.stringValue()) - 0;
     }
 
-    nodeSetValue() {
+    nodeSetValue(): XNode[] {
         return this.value;
     }
 }

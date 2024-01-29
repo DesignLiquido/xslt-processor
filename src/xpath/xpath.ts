@@ -120,7 +120,9 @@ import {
 import { GrammarRuleCandidate } from './grammar-rule-candidate';
 import { XPathTokenRule } from './xpath-token-rule';
 import { XNode } from '../dom';
-import { NodeTestAny, NodeTestElementOrAttribute, NodeTestNC, NodeTestName, NodeTestText, NodeTestComment, NodeTestPI } from './node-tests';
+import { NodeTestAny, NodeTestElementOrAttribute, NodeTestNC, NodeTestName, NodeTestText, NodeTestComment, NodeTestPI, NodeTest } from './node-tests';
+import { DOM_ATTRIBUTE_NODE } from '../constants';
+import { NodeValue } from './values';
 
 export class XPath {
     xPathParseCache: any;
@@ -508,14 +510,17 @@ export class XPath {
         return this.xPathParseCache[expr];
     }
 
-    xPathCollectDescendants(nodeList: any, node: any, opt_tagName?: any) {
+    xPathCollectDescendants(nodeList: XNode[], node: XNode, opt_tagName?: string) {
         if (opt_tagName && node.getElementsByTagName) {
             copyArray(nodeList, node.getElementsByTagName(opt_tagName));
             return;
         }
 
         for (let n = node.firstChild; n; n = n.nextSibling) {
-            nodeList.push(n);
+            if (n.nodeType !== DOM_ATTRIBUTE_NODE) {
+                nodeList.push(n);
+            }
+
             this.xPathCollectDescendants(nodeList, n);
         }
     }
@@ -527,12 +532,17 @@ export class XPath {
         }
     }
 
-    // Parses and then evaluates the given XPath expression in the given
-    // input context. Notice that parsed xpath expressions are cached.
-    xPathEval(select: string, context: ExprContext) {
-        const expr = this.xPathParse(select);
-        const ret = expr.evaluate(context);
-        return ret;
+    /**
+     * Parses and then evaluates the given XPath expression in the given
+     * input context.
+     * @param select The xPath string.
+     * @param context The Expression Context.
+     * @returns A Node Value.
+     */
+    xPathEval(select: string, context: ExprContext): NodeValue {
+        const expression = this.xPathParse(select);
+        const response = expression.evaluate(context);
+        return response;
     }
 
     /**
@@ -544,7 +554,7 @@ export class XPath {
      *                                     non-element nodes. This can boost
      *                                     performance. This is false by default.
      */
-    xPathExtractTagNameFromNodeTest(nodeTest: any, ignoreNonElementNodesForNTA: any) {
+    xPathExtractTagNameFromNodeTest(nodeTest: NodeTest, ignoreNonElementNodesForNTA: any): string {
         if (nodeTest instanceof NodeTestName) {
             return nodeTest.name;
         }
