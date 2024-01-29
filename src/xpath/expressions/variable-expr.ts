@@ -9,7 +9,7 @@ export class VariableExpr extends Expression {
         this.name = name;
     }
 
-    evaluate(ctx: ExprContext) {
-        return ctx.getVariable(this.name);
+    evaluate(context: ExprContext) {
+        return context.getVariable(this.name);
     }
 }

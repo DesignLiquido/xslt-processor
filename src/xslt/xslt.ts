@@ -675,14 +675,13 @@ export class Xslt {
 
         let value: any;
 
-        if (template.childNodes.length > 0) {
+        const nonAttributeChildren = template.childNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
+        if (nonAttributeChildren.length > 0) {
             const root = domCreateDocumentFragment(template.ownerDocument);
             this.xsltChildNodes(context, template, root);
             value = new NodeSetValue([root]);
         } else if (select) {
             value = this.xPath.xPathEval(select, context);
-        } else if (name in context.variables) {
-            value = context.variables[name];
         } else {
             let parameterValue = '';
             const filteredParameter = this.options.parameters.filter((p) => p.name === name);

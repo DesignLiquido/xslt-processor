@@ -122,6 +122,7 @@ import { XPathTokenRule } from './xpath-token-rule';
 import { XNode } from '../dom';
 import { NodeTestAny, NodeTestElementOrAttribute, NodeTestNC, NodeTestName, NodeTestText, NodeTestComment, NodeTestPI, NodeTest } from './node-tests';
 import { DOM_ATTRIBUTE_NODE } from '../constants';
+import { NodeValue } from './values';
 
 export class XPath {
     xPathParseCache: any;
@@ -536,9 +537,9 @@ export class XPath {
      * input context.
      * @param select The xPath string.
      * @param context The Expression Context.
-     * @returns TODO
+     * @returns A Node Value.
      */
-    xPathEval(select: string, context: ExprContext) {
+    xPathEval(select: string, context: ExprContext): NodeValue {
         const expression = this.xPathParse(select);
         const response = expression.evaluate(context);
         return response;
