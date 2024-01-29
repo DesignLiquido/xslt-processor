@@ -527,12 +527,17 @@ export class XPath {
         }
     }
 
-    // Parses and then evaluates the given XPath expression in the given
-    // input context. Notice that parsed xpath expressions are cached.
+    /**
+     * Parses and then evaluates the given XPath expression in the given
+     * input context.
+     * @param select The xPath string.
+     * @param context The Expression Context.
+     * @returns TODO
+     */
     xPathEval(select: string, context: ExprContext) {
-        const expr = this.xPathParse(select);
-        const ret = expr.evaluate(context);
-        return ret;
+        const expression = this.xPathParse(select);
+        const response = expression.evaluate(context);
+        return response;
     }
 
     /**
