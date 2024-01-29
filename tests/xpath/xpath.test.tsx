@@ -705,7 +705,8 @@ describe('xpath', () => {
         ];
 
         for (const test of tests) {
-            assert.equal(xPath.xPathParse(test[0] as any).steps[1].hasPositionalPredicate, test[1], test[0] as any);
+            const xPathParseResult = xPath.xPathParse(test[0] as string);
+            assert.equal(test[1], xPathParseResult.steps[1].hasPositionalPredicate, test[0] as string);
         }
     });
 

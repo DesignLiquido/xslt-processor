@@ -11,6 +11,7 @@ import { FunctionCallExpr } from './function-call-expr';
 import { NumberExpr } from './number-expr';
 import { UnaryMinusExpr } from './unary-minus-expr';
 import { copyArray, copyArrayIgnoringAttributesWithoutValue } from '../common-function';
+import { PredicateExpr } from './predicate-expr';
 
 export class StepExpr extends Expression {
     axis: any;
@@ -43,7 +44,7 @@ export class StepExpr extends Expression {
      * selector may be based on the result of evaluating predicates that precede
      * it.
      */
-    private predicateExprHasPositionalSelector(expr: any, isRecursiveCall?: any) {
+    private predicateExprHasPositionalSelector(expr: Expression, isRecursiveCall?: any) {
         if (!expr) {
             return false;
         }
@@ -102,10 +103,10 @@ export class StepExpr extends Expression {
         return false;
     }
 
-    appendPredicate(p) {
-        this.predicate.push(p);
+    appendPredicate(predicateExpression: PredicateExpr) {
+        this.predicate.push(predicateExpression);
         if (!this.hasPositionalPredicate) {
-            this.hasPositionalPredicate = this.predicateExprHasPositionalSelector(p.expr);
+            this.hasPositionalPredicate = this.predicateExprHasPositionalSelector(predicateExpression.expression);
         }
     }
 
