@@ -35,7 +35,7 @@ import {
     formatNumber
 } from '../functions';
 import { extCardinal, extIf, extJoin } from '../functions/non-standard';
-import { lowerCase, upperCase } from '../functions/standard-20';
+import { lowerCase, _replace, upperCase } from '../functions/standard-20';
 import { BooleanValue } from '../values/boolean-value';
 import { Expression } from './expression';
 
@@ -60,6 +60,7 @@ export class FunctionCallExpr extends Expression {
         last,
         'local-name': localName,
         'lower-case': lowerCase,
+        'replace': _replace,
         matches,
         name: _name,
         'namespace-uri': namespaceUri,

@@ -286,5 +286,51 @@ describe('XPath Functions', () => {
 
             assert.equal(outXmlString, 'lily');
         });
+
+        it('replace simple text', () => {
+            const xmlString = (
+                <root></root>
+            );
+
+            const xsltString = (
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="replace('Lily','Li','*')" />
+                    </xsl:template>
+                </xsl:stylesheet>
+            )
+
+            const xsltClass = new Xslt();
+
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(outXmlString, '*ly');
+        });
+
+        it('replace regex text', () => {
+            const xmlString = (
+                <root></root>
+            );
+
+            const xsltString = (
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+                    <xsl:template match="/">
+                        <xsl:value-of select="replace('This is some 123 text 456 with 789 numbers.', '[^\d]+', '')" />
+                    </xsl:template>
+                </xsl:stylesheet>
+            )
+
+            const xsltClass = new Xslt();
+
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(outXmlString, '123456789');
+        });
     });
 });
