@@ -1,4 +1,4 @@
-// Copyright 2023 Design Liquido
+// Copyright 2023-2024 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved

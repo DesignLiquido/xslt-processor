@@ -1,4 +1,4 @@
-// Copyright 2023 Design Liquido
+// Copyright 2023-2024 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -38,7 +38,7 @@ import {
     DOM_TEXT_NODE
 } from '../constants';
 
-import { StringValue, NodeSetValue } from '../xpath/values';
+import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
 import { XsltOptions } from './xslt-options';
 import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
 import { MatchResolver } from '../xpath/match-resolver';
@@ -80,6 +80,7 @@ export class Xslt {
 
     constructor(
         options: Partial<XsltOptions> = {
+            cData: true,
             escape: true,
             selfClosingTags: true,
             parameters: []
@@ -88,6 +89,7 @@ export class Xslt {
         this.xPath = new XPath();
         this.matchResolver = new MatchResolver();
         this.options = {
+            cData: options.cData === true,
             escape: options.escape === true,
             selfClosingTags: options.selfClosingTags === true,
             parameters: options.parameters || []
@@ -127,7 +129,7 @@ export class Xslt {
 
         this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
         const transformedOutputXml = xmlTransformedText(outputDocument, {
-            cData: false,
+            cData: this.options.cData,
             escape: this.options.escape,
             selfClosingTags: this.options.selfClosingTags,
             outputMethod: this.outputMethod
@@ -327,7 +329,7 @@ export class Xslt {
                 case 'copy-of':
                     select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, context);
-                    const destinationNode = output || context.outputNodeList[context.outputPosition];
+                    const destinationNode = context.outputNodeList[context.outputPosition] || output;
                     if (value.type === 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
@@ -488,9 +490,9 @@ export class Xslt {
      * `xsl:otherwise`.
      * @param context The Expression Context.
      * @param template The template.
-     * @param output The output.
+     * @param output The output. Only used if there's no corresponding output node already defined.
      */
-    protected xsltChoose(context: ExprContext, template: XNode, output: any) {
+    protected xsltChoose(context: ExprContext, template: XNode, output: XNode) {
         for (const childNode of template.childNodes) {
             if (childNode.nodeType !== DOM_ELEMENT_NODE) {
                 continue;
@@ -499,11 +501,13 @@ export class Xslt {
             if (this.isXsltElement(childNode, 'when')) {
                 const test = xmlGetAttribute(childNode, 'test');
                 if (this.xPath.xPathEval(test, context).booleanValue()) {
-                    this.xsltChildNodes(context, childNode, output);
+                    const outputNode = context.outputNodeList[context.outputPosition] || output;
+                    this.xsltChildNodes(context, childNode, outputNode);
                     break;
                 }
             } else if (this.isXsltElement(childNode, 'otherwise')) {
-                this.xsltChildNodes(context, childNode, output);
+                const outputNode = context.outputNodeList[context.outputPosition] || output;
+                this.xsltChildNodes(context, childNode, outputNode);
                 break;
             }
         }
@@ -557,12 +561,6 @@ export class Xslt {
         } else {
             const node = this.xsltCopy(destination, source);
             if (node) {
-                // This was an element node -- recurse to attributes and
-                // children.
-                /* for (let i = 0; i < source.attributes.length; ++i) {
-                    this.xsltCopyOf(node, source.attributes[i]);
-                } */
-
                 for (let i = 0; i < source.childNodes.length; ++i) {
                     this.xsltCopyOf(node, source.childNodes[i]);
                 }
@@ -679,7 +677,7 @@ export class Xslt {
         const name = xmlGetAttribute(template, 'name');
         const select = xmlGetAttribute(template, 'select');
 
-        let value: any;
+        let value: NodeValue;
 
         const nonAttributeChildren = template.childNodes.filter(n => n.nodeType !== DOM_ATTRIBUTE_NODE);
         if (nonAttributeChildren.length > 0) {

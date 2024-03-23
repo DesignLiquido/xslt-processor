@@ -77,35 +77,40 @@ export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolea
         return '';
     }
 
-    let ret = '';
-    if (node.nodeType == DOM_TEXT_NODE || node.nodeType == DOM_CDATA_SECTION_NODE) {
-        ret += node.nodeValue;
-    } else if (node.nodeType == DOM_ATTRIBUTE_NODE) {
-        ret += node.nodeValue;
-    } else if (
-        node.nodeType == DOM_ELEMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_NODE ||
-        node.nodeType == DOM_DOCUMENT_FRAGMENT_NODE
-    ) {
-        if (!disallowBrowserSpecificOptimization) {
-            // IE, Safari, Opera, and friends
-            const innerText = node.innerText;
-            if (innerText != undefined) {
-                return innerText;
+    let returnedXmlString = '';
+    switch (node.nodeType) {
+        case DOM_ATTRIBUTE_NODE:
+        case DOM_TEXT_NODE:
+            returnedXmlString += node.nodeValue;
+            break;
+        case DOM_CDATA_SECTION_NODE:
+            returnedXmlString += node.nodeValue;
+            break;
+        case DOM_DOCUMENT_NODE:
+        case DOM_DOCUMENT_FRAGMENT_NODE:
+        case DOM_ELEMENT_NODE:
+            if (!disallowBrowserSpecificOptimization) {
+                // IE, Safari, Opera, and friends
+                const innerText = node.innerText;
+                if (innerText != undefined) {
+                    return innerText;
+                }
+                // Firefox
+                const textContent = node.textContent;
+                if (textContent != undefined) {
+                    return textContent;
+                }
             }
-            // Firefox
-            const textContent = node.textContent;
-            if (textContent != undefined) {
-                return textContent;
-            }
-        }
 
-        const len = node.transformedChildNodes.length;
-        for (let i = 0; i < len; ++i) {
-            ret += xmlValue(node.transformedChildNodes[i]);
-        }
+            const len = node.transformedChildNodes.length;
+            for (let i = 0; i < len; ++i) {
+                returnedXmlString += xmlValue(node.transformedChildNodes[i]);
+            }
+
+            break;
     }
-    return ret;
+
+    return returnedXmlString;
 }
 
 /**
@@ -117,7 +122,7 @@ export function xmlValue2(node: any, disallowBrowserSpecificOptimization: boolea
  * @see xmlTransformedText
  */
 export function xmlText(node: XNode, options: XmlOutputOptions = {
-    cData: false,
+    cData: true,
     escape: true,
     selfClosingTags: true,
     outputMethod: 'xml'
@@ -181,7 +186,7 @@ function xmlTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptio
 export function xmlTransformedText(
     node: XNode,
     options: XmlOutputOptions = {
-        cData: false,
+        cData: true,
         escape: true,
         selfClosingTags: true,
         outputMethod: 'xml'
@@ -205,7 +210,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: any[], options: XmlOut
         }
     } else if (nodeType === DOM_CDATA_SECTION_NODE) {
         if (options.cData) {
-            buffer.push(nodeValue);
+            buffer.push(xmlEscapeText(nodeValue));
         } else {
             buffer.push(`<![CDATA[${nodeValue}]]>`);
         }
