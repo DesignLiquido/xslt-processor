@@ -18,9 +18,10 @@ describe('General XML', () => {
 
         const xmlParser = new XmlParser();
         const outXmlString = xmlText(xmlParser.xmlParse(xmlString), {
-            cData: false,
+            cData: true,
             selfClosingTags: false,
-            escape: true
+            escape: true,
+            outputMethod: 'xml'
         });
         assert.equal(outXmlString, '<root><typeA></typeA><typeB></typeB></root>');
     });

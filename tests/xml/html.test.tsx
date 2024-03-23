@@ -108,7 +108,7 @@ describe('HTML', () => {
         const xmlParser = new XmlParser();
         const parsedHtml = xmlParser.xmlParse(htmlString);
         const outHtmlString = xmlText(parsedHtml, {
-            cData: false,
+            cData: true,
             selfClosingTags: false,
             escape: true,
             outputMethod: 'html'
