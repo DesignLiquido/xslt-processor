@@ -1,4 +1,4 @@
-// Copyright 2023 Design Liquido
+// Copyright 2023-2024 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2005 Google Inc.
 // All Rights Reserved
@@ -488,9 +488,9 @@ export class Xslt {
      * `xsl:otherwise`.
      * @param context The Expression Context.
      * @param template The template.
-     * @param output The output.
+     * @param output The output. Only used if there's no corresponding output node already defined.
      */
-    protected xsltChoose(context: ExprContext, template: XNode, output: any) {
+    protected xsltChoose(context: ExprContext, template: XNode, output: XNode) {
         for (const childNode of template.childNodes) {
             if (childNode.nodeType !== DOM_ELEMENT_NODE) {
                 continue;
@@ -499,11 +499,13 @@ export class Xslt {
             if (this.isXsltElement(childNode, 'when')) {
                 const test = xmlGetAttribute(childNode, 'test');
                 if (this.xPath.xPathEval(test, context).booleanValue()) {
-                    this.xsltChildNodes(context, childNode, output);
+                    const outputNode = context.outputNodeList[context.outputPosition] || output;
+                    this.xsltChildNodes(context, childNode, outputNode);
                     break;
                 }
             } else if (this.isXsltElement(childNode, 'otherwise')) {
-                this.xsltChildNodes(context, childNode, output);
+                const outputNode = context.outputNodeList[context.outputPosition] || output;
+                this.xsltChildNodes(context, childNode, outputNode);
                 break;
             }
         }

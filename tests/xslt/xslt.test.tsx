@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 
-// Copyright 2023 Design Liquido
+// Copyright 2023-2024 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2006, Google Inc.
 // All Rights Reserved.
@@ -14,8 +14,8 @@ import assert from 'assert';
 import { dom } from 'isomorphic-jsx';
 import React from 'react';
 
-import { XmlParser } from '../src/dom';
-import { Xslt } from '../src/xslt';
+import { XmlParser } from '../../src/dom';
+import { Xslt } from '../../src/xslt';
 
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
