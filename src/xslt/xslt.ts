@@ -8,6 +8,12 @@
 //
 // Original author: Steffen Meschkat <mesch@google.com>
 
+import fetch, {
+    Headers,
+    Request,
+    Response
+  } from 'node-fetch'
+
 import {
     XDocument,
     XNode,
@@ -392,6 +398,15 @@ export class Xslt {
                 case 'import':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'include':
+                    // We need to test here whether `window.fetch` is available or not.
+                    // If it is a browser environemnt, it should be.
+                    // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
+                    if (!global.globalThis.fetch) {
+                        global.globalThis.fetch = fetch as any;
+                        global.globalThis.Headers = Headers as any;
+                        global.globalThis.Request = Request as any;
+                        global.globalThis.Response = Response as any;
+                    }
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'key':
                     throw new Error(`not implemented: ${template.localName}`);
