@@ -17,7 +17,6 @@ describe('xsl:include', () => {
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
         const resultingXml = await xsltClass.xsltProcess(xml, xslt);
-        // assert.equal(html, '<h1><D>Hello</D>-<D>World</D></h1>');
-        assert.ok(resultingXml)
+        assert.equal(resultingXml, '<html><head><link rel="stylesheet" type="text/css" href="style.css"><title/></head><body><div id="container"><div id="header"><div id="menu"><ul><li><a href="#" class="active">Home</a></li><li><a href="#">about</a></li></ul></div></div></div></body></html>');
     });
 });

@@ -13,6 +13,7 @@ import fetch, { Headers, Request, Response } from 'node-fetch';
 import {
     XDocument,
     XNode,
+    XmlParser,
     domAppendChild,
     domAppendTransformedChild,
     domCreateCDATASection,
@@ -71,6 +72,7 @@ import { MatchResolver } from '../xpath/match-resolver';
  */
 export class Xslt {
     xPath: XPath;
+    xmlParser: XmlParser;
     matchResolver: MatchResolver;
     options: XsltOptions;
     decimalFormatSettings: XsltDecimalFormatSettings;
@@ -89,6 +91,7 @@ export class Xslt {
         }
     ) {
         this.xPath = new XPath();
+        this.xmlParser = new XmlParser();
         this.matchResolver = new MatchResolver();
         this.options = {
             cData: options.cData === true,
@@ -397,22 +400,8 @@ export class Xslt {
                 case 'import':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'include':
-                    // We need to test here whether `window.fetch` is available or not.
-                    // If it is a browser environemnt, it should be.
-                    // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
-                    if (!global.globalThis.fetch) {
-                        global.globalThis.fetch = fetch as any;
-                        global.globalThis.Headers = Headers as any;
-                        global.globalThis.Request = Request as any;
-                        global.globalThis.Response = Response as any;
-                    }
-
-                    const fetchTest = await global.globalThis.fetch(
-                        'https://raw.githubusercontent.com/DesignLiquido/xslt-processor/xsl-include/examples/head.xsl'
-                    );
-                    const fetchResponse = await fetchTest.text();
-                    console.log(fetchResponse);
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltInclude(context, template, output);
+                    break;
                 case 'key':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'message':
@@ -616,6 +605,35 @@ export class Xslt {
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             await this.xsltChildNodes(sortContext.clone(sortContext.nodeList, undefined, i), template, output);
         }
+    }
+
+    /**
+     * Implements `xsl:include`.
+     * @param input The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltInclude(context: ExprContext, template: XNode, output: XNode) {
+        // We need to test here whether `window.fetch` is available or not.
+        // If it is a browser environemnt, it should be.
+        // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
+        if (!global.globalThis.fetch) {
+            global.globalThis.fetch = fetch as any;
+            global.globalThis.Headers = Headers as any;
+            global.globalThis.Request = Request as any;
+            global.globalThis.Response = Response as any;
+        }
+
+        const hrefAttributeFind = template.childNodes.filter(n => n.nodeName === 'href');
+        if (hrefAttributeFind.length <= 0) {
+            throw new Error('<xsl:include> with no href attribute defined.');
+        }
+        const hrefAttribute = hrefAttributeFind[0];
+
+        const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);
+        const fetchResponse = await fetchTest.text();
+        const includedXslt = this.xmlParser.xmlParse(fetchResponse);
+        await this.xsltChildNodes(context, includedXslt.childNodes[0], output);
     }
 
     /**
