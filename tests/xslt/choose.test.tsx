@@ -4,7 +4,7 @@ import { XmlParser } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
 describe('xsl:choose', () => {
-    it('Trivial', () => {
+    it('Trivial', async () => {
         const xmlSource = `<?xml version="1.0" encoding="UTF-8"?>
             <products>
                 <product>
@@ -41,7 +41,7 @@ describe('xsl:choose', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
-        const html = xsltClass.xsltProcess(xml, xslt);
+        const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<products><product>No</product><product>Yes</product></products>');
     });
 });

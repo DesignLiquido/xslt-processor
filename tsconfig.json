@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "lib": ["DOM"],
         "outDir": "dist",
         "module": "CommonJS",
         "target": "ES5",
@@ -21,6 +22,7 @@
         "demo/**/*",
         "dist/**/*",
         "interactive-tests/js/**/*",
+        "node_modules/**/*",
         "tests/**/*"
     ]
 }

@@ -5,7 +5,7 @@ import { Xslt } from '../../src/xslt';
 import { XmlParser } from '../../src/dom';
 
 describe('xml-to-json', () => {
-    it('xml-to-json() without namespace test', () => {
+    it('xml-to-json() without namespace test', async () => {
         const xmlString = `<root>
           <test name="test1" >test</test>
           <test name="test2" >123</test>
@@ -35,7 +35,7 @@ describe('xml-to-json', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
           xml,
           xslt
         );

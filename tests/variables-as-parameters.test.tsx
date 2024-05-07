@@ -4,7 +4,7 @@ import { Xslt } from '../src/xslt';
 import { XmlParser } from '../src/dom';
 
 describe('variables-as-parameters', () => {
-    it('variables-as-parameters 1', () => {
+    it('variables-as-parameters 1', async () => {
         const xmlString = `<root>
           <test name="test1"/>    
         </root> `;
@@ -32,7 +32,7 @@ describe('variables-as-parameters', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
           xml,
           xslt,
         );

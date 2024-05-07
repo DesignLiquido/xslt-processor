@@ -11,95 +11,90 @@
 //         Johannes Wilm <johannes@fiduswriter.org>
 import assert from 'assert';
 
-import { dom } from 'isomorphic-jsx';
-import React from 'react';
-
 import { XmlParser } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
-// Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom);
 const xmlString = (
-    <all>
+    `<all>
         <item pos="2">A</item>
         <item pos="3">B</item>
         <item pos="1">C</item>
-    </all>
+    </all>`
 );
 
 describe('xslt', () => {
     describe('xsl:for-each', () => {
-        it('handles for-each sort', () => {
+        it('handles for-each sort', async () => {
             const xsltForEachSort = (
-                <xsl:stylesheet version="1.0">
+                `<xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="@pos" />
                             <xsl:value-of select="." />
                         </xsl:for-each>
                     </xsl:template>
-                </xsl:stylesheet>
+                </xsl:stylesheet>`
             );
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltForEachSort);
-            const html = xsltClass.xsltProcess(xml, xslt);
+            const html = await xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'CAB');
         });
 
-        it('handles for-each sort ascending', () => {
+        it('handles for-each sort ascending', async () => {
             const xsltForEachSortAscending = (
-                <xsl:stylesheet version="1.0">
+                `<xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="." order="ascending" />
                             <xsl:value-of select="." />
                         </xsl:for-each>
                     </xsl:template>
-                </xsl:stylesheet>
+                </xsl:stylesheet>`
             );
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltForEachSortAscending);
-            const html = xsltClass.xsltProcess(xml, xslt);
+            const html = await xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'ABC');
         });
 
-        it('handles for-each sort descending', () => {
+        it('handles for-each sort descending', async () => {
             const xsltForEachSortDescending = (
-                <xsl:stylesheet version="1.0">
+                `<xsl:stylesheet version="1.0">
                     <xsl:template match="/">
                         <xsl:for-each select="//item">
                             <xsl:sort select="." order="descending" />
                             <xsl:value-of select="." />
                         </xsl:for-each>
                     </xsl:template>
-                </xsl:stylesheet>
+                </xsl:stylesheet>`
             );
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltForEachSortDescending);
-            const html = xsltClass.xsltProcess(xml, xslt);
+            const html = await xsltClass.xsltProcess(xml, xslt);
             assert.equal(html, 'CBA');
         });
     });
 
     describe('xsl:template', () => {
-        it('Trivial', () => {
+        it('Trivial', async () => {
             const xmlString = (
-                <root>
+                `<root>
                     <typeA />
                     <typeB />
-                </root>
+                </root>`
             );
 
-            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
                 <xsl:template match="*|/*">
                     <outputUnknown original-name="{name(.)}">
@@ -112,7 +107,7 @@ describe('xslt', () => {
                 <xsl:template match="/*/typeB">
                     <outputB>I have text!</outputB>
                 </xsl:template>
-            </xsl:stylesheet>
+            </xsl:stylesheet>`
 
             // Needs to be this way. `isomorphic-jsx rewrites `<outputA />` as `<outputA></outputA>`.
             const expectedOutString = `<outputUnknown original-name="root">`+
@@ -124,7 +119,7 @@ describe('xslt', () => {
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
-            const outXmlString = xsltClass.xsltProcess(
+            const outXmlString = await xsltClass.xsltProcess(
                 xml,
                 xslt
             );
@@ -142,15 +137,15 @@ describe('xslt', () => {
         // except the template that started the processing.
         // For more information: https://github.com/DesignLiquido/xslt-processor/pull/62#issuecomment-1636684453
 
-        it('Example 1 from Marco', () => {
+        it('Example 1 from Marco', async () => {
             const xmlString = (
-                <root>
+                `<root>
                     <typeA />
                     <typeB />
-                </root>
+                </root>`
             );
 
-            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
                 <xsl:template match="*|/*">
                     <outputUnknown original-name="{name(.)}">
@@ -166,7 +161,7 @@ describe('xslt', () => {
                 <xsl:template match="/*/typeB">
                     <outputB foo="bar">I have text!</outputB>
                 </xsl:template>
-            </xsl:stylesheet>;
+            </xsl:stylesheet>`;
 
             const expectedOutString = `<outputUnknown original-name="root">` +
                 `<subnode>Custom text</subnode>` +
@@ -180,7 +175,7 @@ describe('xslt', () => {
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
-            const outXmlString = xsltClass.xsltProcess(
+            const outXmlString = await xsltClass.xsltProcess(
                 xml,
                 xslt
             );
@@ -188,15 +183,15 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it('Example 2 from Marco', () => {
+        it('Example 2 from Marco', async () => {
             const xmlString = (
-                <root>
+                `<root>
                     <typeA />
                     <typeB />
-                </root>
+                </root>`
             );
 
-            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
                 <xsl:template match="*|/*">
                     <outputUnknown original-name="{name(.)}">
@@ -211,7 +206,7 @@ describe('xslt', () => {
                 <xsl:template match="/*/typeB">
                     <outputB foo="bar">I have text!</outputB>
                 </xsl:template>
-            </xsl:stylesheet>;
+            </xsl:stylesheet>`;
 
             const expectedOutString = `<outputUnknown original-name="root">`+
                 `<outputA>`+
@@ -224,7 +219,7 @@ describe('xslt', () => {
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
-            const outXmlString = xsltClass.xsltProcess(
+            const outXmlString = await xsltClass.xsltProcess(
                 xml,
                 xslt
             );
@@ -232,15 +227,15 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
-        it('Example 3 from Marco', () => {
+        it('Example 3 from Marco', async () => {
             const xmlString = (
-                <root>
+                `<root>
                     <typeA />
                     <typeB />
-                </root>
+                </root>`
             );
 
-            const xsltString = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="xml" version="1.0" encoding="utf-8" indent="yes" />
                 <xsl:template match="*|/*">
                     <outputUnknown original-name="{name(.)}">
@@ -253,7 +248,7 @@ describe('xslt', () => {
                 <xsl:template match="/*/typeB">
                     <outputB foo="bar">I have text!</outputB>
                 </xsl:template>
-            </xsl:stylesheet>;
+            </xsl:stylesheet>`;
 
             const expectedOutString = `<outputUnknown original-name="root">`+
                 `<outputA/>`+
@@ -264,7 +259,7 @@ describe('xslt', () => {
             const xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
-            const outXmlString = xsltClass.xsltProcess(
+            const outXmlString = await xsltClass.xsltProcess(
                 xml,
                 xslt
             );
@@ -274,35 +269,35 @@ describe('xslt', () => {
     });
 
     describe('xsl:text', () => {
-        it('disable-output-escaping', () => {
-            const xml = <anything></anything>;
-            const xslt = <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        it('disable-output-escaping', async () => {
+            const xml = `<anything></anything>`;
+            const xslt = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="html" indent="yes" />
                 <xsl:template match="/">
-                    <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;</xsl:text>
+                    <xsl:text disable-output-escaping="yes"><!DOCTYPE html></xsl:text>
                 </xsl:template>
-            </xsl:stylesheet>;
+            </xsl:stylesheet>`;
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
             const parsedXml = xmlParser.xmlParse(xml);
             const parsedXslt = xmlParser.xmlParse(xslt);
-            const html = xsltClass.xsltProcess(parsedXml, parsedXslt);
+            const html = await xsltClass.xsltProcess(parsedXml, parsedXslt);
             assert.equal(html, '<!DOCTYPE html>');
         });
     });
 
-    it('applies templates', () => {
+    it('applies templates', async () => {
         const xmlApplyTemplates = (
-            <all>
+            `<all>
                 <item type="X">A</item>
                 <item type="Y">B</item>
                 <item type="X">C</item>
-            </all>
+            </all>`
         );
 
         const xsltApplyTemplates = (
-            <xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:apply-templates select="//item" />
                 </xsl:template>
@@ -312,20 +307,20 @@ describe('xslt', () => {
                 <xsl:template match="item[@type='Y']">
                     <xsl:value-of select="." />
                 </xsl:template>
-            </xsl:stylesheet>
+            </xsl:stylesheet>`
         );
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlApplyTemplates);
         const xslt = xmlParser.xmlParse(xsltApplyTemplates);
-        const result = xsltClass.xsltProcess(xml, xslt);
+        const result = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(result, 'ABC');
     });
 
-    it('handles global variables', () => {
+    it('handles global variables', async () => {
         const xsltGlobalVariables = (
-            <xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0">
                 <xsl:variable name="x" select="'x'" />
                 <xsl:variable name="y" select="'y'" />
                 <xsl:variable name="z">
@@ -338,20 +333,20 @@ describe('xslt', () => {
                         <xsl:value-of select="$y" />
                     </xsl:for-each>
                 </xsl:template>
-            </xsl:stylesheet>
+            </xsl:stylesheet>`
         );
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltGlobalVariables);
-        const html = xsltClass.xsltProcess(xml, xslt);
+        const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, 'xzyyy');
     });
 
-    it('handles top level output', () => {
+    it('handles top level output', async () => {
         const xsltTopLevelOutput = (
-            <xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:element name="x">
                         <xsl:attribute name="y">
@@ -360,20 +355,20 @@ describe('xslt', () => {
                         <xsl:text>k</xsl:text>
                     </xsl:element>
                 </xsl:template>
-            </xsl:stylesheet>
+            </xsl:stylesheet>`
         );
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltTopLevelOutput);
-        const html = xsltClass.xsltProcess(xml, xslt);
+        const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<x y="z">k</x>');
     });
 
-    it('handles copy', () => {
+    it('handles copy', async () => {
         const xsltCopy = (
-            <xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0">
                 <xsl:template match="/">
                     <xsl:for-each select="//item">
                         <xsl:copy>
@@ -383,14 +378,14 @@ describe('xslt', () => {
                         </xsl:copy>
                     </xsl:for-each>
                 </xsl:template>
-            </xsl:stylesheet>
+            </xsl:stylesheet>`
         );
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltCopy);
-        const html = xsltClass.xsltProcess(xml, xslt);
+        const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<item pos="2">A</item><item pos="3">B</item><item pos="1">C</item>');
     });
 });

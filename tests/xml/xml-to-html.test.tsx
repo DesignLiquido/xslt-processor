@@ -3,7 +3,7 @@ import { XmlParser } from "../../src/dom";
 import { Xslt } from '../../src/xslt';
 
 describe('XML to HTML', () => {
-    it('Issue 74', () => {
+    it('Issue 74', async () => {
         const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
         <problem/>`;
 
@@ -38,7 +38,7 @@ describe('XML to HTML', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
           xml,
           xslt
         );
