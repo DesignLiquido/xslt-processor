@@ -4,7 +4,7 @@ import { XmlParser } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
 describe('xsl:copy-of', () => {
-    it('Trivial', () => {
+    it('Trivial', async () => {
         const xmlSource = `<?xml version="1.0" encoding="UTF-8"?>
             <test>
                 <A>
@@ -32,7 +32,7 @@ describe('xsl:copy-of', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
-        const html = xsltClass.xsltProcess(xml, xslt);
+        const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<h1><D>Hello</D>-<D>World</D></h1>');
     });
 });

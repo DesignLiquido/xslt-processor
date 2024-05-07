@@ -48,7 +48,6 @@
     "@rollup/plugin-typescript": "^11.1.1",
     "@types/he": "^1.2.0",
     "@types/jest": "^29.5.2",
-    "@types/react": "^18.2.74",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
     "babel-jest": "^29.5.0",

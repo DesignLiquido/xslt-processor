@@ -10,7 +10,7 @@ import { XmlParser } from '../src/dom';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('simple', () => {
-    it('simple test', () => {
+    it('simple test', async () => {
         const xmlString = (
             <root>
                 <test name="test1" />
@@ -51,7 +51,7 @@ describe('simple', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(xml, xslt);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);
     });

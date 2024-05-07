@@ -1460,7 +1460,7 @@ describe('HTML to LMHT', () => {
             </xsl:transform>
         );
 
-    it('Trivial', () => {
+    it('Trivial', async () => {
         const xmlString =
             '<!DOCTYPE html>' +
             `<html lang="en">
@@ -1507,7 +1507,7 @@ describe('HTML to LMHT', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(xml, xslt);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);
     });

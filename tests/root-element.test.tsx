@@ -10,8 +10,7 @@ import { XmlParser } from '../src/dom';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('root-element', () => {
-    it('select root element test', () => {
-        // TODO: Fix issue and re-enable test.
+    it('select root element test', async () => {
         const xmlString = (
             <root>
                 <test name="test1" />
@@ -52,7 +51,7 @@ describe('root-element', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(xml, xslt);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);
     });

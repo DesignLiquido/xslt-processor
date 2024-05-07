@@ -16,7 +16,7 @@ import { XmlParser } from '../src/dom';
 // Just touching the `dom`, otherwise Babel prunes the import.
 console.log(dom);
 describe('namespaces', () => {
-    it('non-"xsl" prefix in stylesheet test', () => {
+    it('non-"xsl" prefix in stylesheet test', async () => {
         const xmlString = (
             <root>
                 <test name="test1" />
@@ -56,7 +56,7 @@ describe('namespaces', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
             xml,
             xslt
         );
@@ -65,7 +65,7 @@ describe('namespaces', () => {
     });
 
     // TODO: Fix test to be relevant again.
-    it.skip('namespace-uri() test', () => {
+    it.skip('namespace-uri() test', async () => {
         const xmlString = (
             <root xmlns="http://example.com">
                 <test />
@@ -105,7 +105,7 @@ describe('namespaces', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
             xml,
             xslt
         );
@@ -113,7 +113,7 @@ describe('namespaces', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
-    it('namespace per node', () => {
+    it('namespace per node', async () => {
         const xmlString = `<?xml version="1.0" encoding="ISO-8859-1"?>
             <ClinicalDocument xmlns="http://testnamespace">
                 <test name="test1" />
@@ -142,7 +142,7 @@ describe('namespaces', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);
         const xslt = xmlParser.xmlParse(xsltString);
-        const outXmlString = xsltClass.xsltProcess(
+        const outXmlString = await xsltClass.xsltProcess(
             xml,
             xslt
         );

@@ -22,7 +22,7 @@ describe('XPath Functions', () => {
     });
 
     describe('1.0', () => {
-        it('current', () => {
+        it('current', async () => {
             const xml = xmlParser.xmlParse(<root>test</root>);
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
@@ -33,7 +33,7 @@ describe('XPath Functions', () => {
             );
 
             const xsltClass = new Xslt();
-            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+            const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
             assert.equal(outXmlString, 'test');
         });
@@ -42,7 +42,7 @@ describe('XPath Functions', () => {
             xmlParser = new XmlParser();
             const xml = xmlParser.xmlParse(<root></root>);
 
-            it('Trivial', () => {
+            it('Trivial', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -52,12 +52,12 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, '500100');
             });
 
-            it('Decimal, only integer part', () => {
+            it('Decimal, only integer part', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -67,12 +67,12 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, '500100');
             });
 
-            it('Decimal, everything', () => {
+            it('Decimal, everything', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -82,12 +82,12 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, '500100.2');
             });
 
-            it('Decimal, mask with thousand separator, everything', () => {
+            it('Decimal, mask with thousand separator, everything', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -97,12 +97,12 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, '500,100.2');
             });
 
-            it('Decimal, mask with filling zeroes', () => {
+            it('Decimal, mask with filling zeroes', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -112,12 +112,12 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, '500100.200');
             });
 
-            it('NaN', () => {
+            it('NaN', async () => {
                 const xsltDefinition = xmlParser.xmlParse(
                     <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                         <xsl:template match="/">
@@ -127,7 +127,7 @@ describe('XPath Functions', () => {
                 );
 
                 const xsltClass = new Xslt();
-                const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+                const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
                 assert.equal(outXmlString, 'NaN');
             });
@@ -135,7 +135,7 @@ describe('XPath Functions', () => {
 
         // TODO: This returns the following in other transformers:
         // "Unable to generate the XML document using the provided XML/XSL input. Cannot create an attribute node (uid) whose parent is a document node. Most recent element start tag was output at line -1 of module *unknown*"
-        it.skip('generate-id, trivial', () => {
+        it.skip('generate-id, trivial', async () => {
             const xml = xmlParser.xmlParse(<root></root>);
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
@@ -149,12 +149,12 @@ describe('XPath Functions', () => {
 
             const xsltClass = new Xslt();
 
-            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+            const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
             assert.ok(outXmlString);
         });
 
-        it.skip('generate-id, complete', () => {
+        it.skip('generate-id, complete', async () => {
             const xsltDefinition = xmlParser.xmlParse(
                 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:output method="xml" omit-xml-declaration="yes" />
@@ -204,14 +204,14 @@ describe('XPath Functions', () => {
 
             const xsltClass = new Xslt();
 
-            const outXmlString = xsltClass.xsltProcess(xml, xsltDefinition);
+            const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
             // Uncomment below to see the results
             // console.log(outXmlString);
             assert.ok(!outXmlString);
         });
 
-        it('translate', () => {
+        it('translate', async () => {
             const xmlString = (
                 <root>
                     <typeA />
@@ -232,7 +232,7 @@ describe('XPath Functions', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
             // Uncomment below to see the results
             // console.log(outXmlString);
@@ -241,7 +241,7 @@ describe('XPath Functions', () => {
     });
 
     describe('2.0', () => {
-        it('upper-case', () => {
+        it('upper-case', async () => {
             const xmlString = (
                 <root></root>
             );
@@ -259,12 +259,12 @@ describe('XPath Functions', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
             assert.equal(outXmlString, 'LILY');
         });
 
-        it('lower-case', () => {
+        it('lower-case', async () => {
             const xmlString = (
                 <root></root>
             );
@@ -282,12 +282,12 @@ describe('XPath Functions', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
             assert.equal(outXmlString, 'lily');
         });
 
-        it('replace simple text', () => {
+        it('replace simple text', async () => {
             const xmlString = (
                 <root></root>
             );
@@ -305,12 +305,12 @@ describe('XPath Functions', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
             assert.equal(outXmlString, '*ly');
         });
 
-        it('replace regex text', () => {
+        it('replace regex text', async () => {
             const xmlString = (
                 <root></root>
             );
@@ -328,7 +328,7 @@ describe('XPath Functions', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            const outXmlString = xsltClass.xsltProcess(xml, xslt);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
             assert.equal(outXmlString, '123456789');
         });
