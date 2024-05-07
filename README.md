@@ -37,10 +37,18 @@ import { Xslt, XmlParser } from 'xslt-processor'
 // outXmlString: output xml string.
 const xslt = new Xslt();
 const xmlParser = new XmlParser();
-const outXmlString = xslt.xsltProcess(
+// Either
+const outXmlString = await xslt.xsltProcess(
 	xmlParser.xmlParse(xmlString),
 	xmlParser.xmlParse(xsltString)
 );
+// Or
+xslt.xsltProcess(
+	xmlParser.xmlParse(xmlString),
+	xmlParser.xmlParse(xsltString)
+).then(output => {
+  // `output` is equivalent to `outXmlString` (a string with XML).
+});
 ```
 
 To access the XPath parser, you can use the instance present at `Xslt` class:
@@ -94,6 +102,26 @@ You can simply add a tag like this:
 All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
 
 ### Breaking Changes
+
+#### Version 2
+
+Until version 2.3.1, use like the example below:
+
+```js
+import { Xslt, XmlParser } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const xslt = new Xslt();
+const xmlParser = new XmlParser();
+const outXmlString = xslt.xsltProcess( // Not async.
+	xmlParser.xmlParse(xmlString),
+	xmlParser.xmlParse(xsltString)
+);
+```
+
+Version 3 received `<xsl:include>` which relies on Fetch API, which is asynchronous. Version 2 doesn't support `<xsl:include>`.
 
 #### Version 1
 
