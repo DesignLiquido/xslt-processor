@@ -15,7 +15,7 @@
           const xml = globalThis.XsltProcessor.xmlParse(el('xml').value);
           const xslt = globalThis.XsltProcessor.xmlParse(el('xslt').value);
           const xsltClass = new globalThis.XsltProcessor.Xslt();
-          const html = xsltClass.xsltProcess(xml, xslt);
+          const html = await xsltClass.xsltProcess(xml, xslt);
           el('html').value = html;
           el('htmldisplay').innerHTML = html;
       }
