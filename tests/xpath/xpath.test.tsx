@@ -13,17 +13,12 @@
 //         Johannes Wilm <johannes@fiduswriter.org>
 import assert from 'assert';
 
-import { dom } from 'isomorphic-jsx';
-import React from 'react';
-
 import { ExprContext, XPath } from '../../src/xpath';
 import { XmlParser, xmlValue } from '../../src/dom';
 import { BooleanValue } from '../../src/xpath/values/boolean-value';
 import { NumberValue } from '../../src/xpath/values/number-value';
 import { StringValue } from '../../src/xpath/values/string-value';
 
-// Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom);
 const expr = [
     '@*',
     '@*|node()',
@@ -528,7 +523,7 @@ describe('xpath', () => {
     it('can evaluate variables on a HTML context', () => {
         const xPath = new XPath();
         const bodyEl = xmlParser.xmlParse(
-            <body>
+            `<body>
                 <div id="test1"></div>
                 <div id="testid">test1</div>
                 <a id="jshref" href="javascript:doFoo('a', 'b')">
@@ -538,7 +533,7 @@ describe('xpath', () => {
                 <span id="u2" class="u"></span>
                 <span id="u3" class="u"></span>
                 <span style="visibility: visible">do not squint!</span>
-            </body>
+            </body>`
         );
 
         for (const e of numExpr) {
@@ -714,7 +709,7 @@ describe('xpath', () => {
         const xPath = new XPath();
 
         const xml = (
-            <body>
+            `<body>
                 <a href="#">top</a>
                 <div>
                     <a href="http://code.google.com/p/ajaxslt">ajaxslt</a>
@@ -722,7 +717,7 @@ describe('xpath', () => {
                         <a href="http://sourceforge.net/projects/goog-ajaxslt/">old site</a>
                     </p>
                 </div>
-            </body>
+            </body>`
         );
         const tests = [
             ['//a', 3],

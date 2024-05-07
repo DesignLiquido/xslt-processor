@@ -8,15 +8,12 @@
 //         Junji Takagi <jtakagi@google.com>
 //         Johannes Wilm <johannes@fiduswriter.org>
 import he from 'he';
+import assert from 'assert';
 
 import { XmlParser, xmlText } from '../src/dom';
 
-import assert from 'assert';
-import { dom } from 'isomorphic-jsx';
 import { DOM_ATTRIBUTE_NODE } from '../src/constants';
 
-// Just touching the `dom`, otherwise Babel prunes the import.
-console.log(dom);
 describe('dom parsing', () => {
     let xmlParser: XmlParser;
 
