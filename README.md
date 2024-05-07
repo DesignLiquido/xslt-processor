@@ -96,10 +96,10 @@ const xslt = new Xslt(options);
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@2.1.0/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@3.0.0/umd/xslt-processor.js"></script>
 ```
 
-All the exports will live under `globalThis.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
+All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
 
 ### Breaking Changes
 
