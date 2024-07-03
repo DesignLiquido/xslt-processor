@@ -6,14 +6,12 @@ import { XmlParser } from '../../src/dom';
 
 describe('LMHT', () => {
     const xsltString =
-        `<?xml version="1.0"?>
-        <xsl:transform
-            xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-            xmlns:xs="http://www.w3.org/2001/XMLSchema"
-            version="1.0"
-        >
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
             <xsl:output method="html" version="5.0" omit-xml-declaration="yes" encoding="UTF-8" indent="yes" />
 
+            <!-- Seção de _templates_ utilitários -->
+            <!-- Os _templates_ abaixo normalmente trabalham com transcrição de valores de atributos LMHT para HTML -->
             <xsl:template name="ProcessarAlvos">
                 <xsl:param name="Alvo" />
                 <xsl:choose>
@@ -35,19 +33,13 @@ describe('LMHT', () => {
             <xsl:template name="ProcessarPoliticasReferenciador">
                 <xsl:param name="Politica" />
                 <xsl:choose>
-                    <xsl:when test="$Politica = 'destino-não-seguro' or $Politica = 'destino-nao-seguro'">
-                        unsafe-url
-                    </xsl:when>
+                    <xsl:when test="$Politica = 'destino-não-seguro' or $Politica = 'destino-nao-seguro'">unsafe-url</xsl:when>
                     <xsl:when test="$Politica = 'mesma-origem'">same-origin</xsl:when>
                     <xsl:when test="$Politica = 'origem'">origin</xsl:when>
                     <xsl:when test="$Politica = 'origem-quando-origem-cruzada'">origin-when-cross-origin</xsl:when>
-                    <xsl:when test="$Politica = 'origem-quando-origem-cruzada-rigorosa'">
-                        strict-origin-when-cross-origin
-                    </xsl:when>
+                    <xsl:when test="$Politica = 'origem-quando-origem-cruzada-rigorosa'">strict-origin-when-cross-origin</xsl:when>
                     <xsl:when test="$Politica = 'sem-referenciador'">no-referrer</xsl:when>
-                    <xsl:when test="$Politica = 'sem-referenciador-ao-rebaixar'">
-                        no-referrer-when-downgrade
-                    </xsl:when>
+                    <xsl:when test="$Politica = 'sem-referenciador-ao-rebaixar'">no-referrer-when-downgrade</xsl:when>
                 </xsl:choose>
             </xsl:template>
             <xsl:template name="ProcessarPreCarga">
@@ -68,9 +60,7 @@ describe('LMHT', () => {
                     <xsl:when test="$Relacionamento = 'externo'">external</xsl:when>
                     <xsl:when test="$Relacionamento = 'licença' or $Relacionamento = 'licenca'">license</xsl:when>
                     <xsl:when test="$Relacionamento = 'marcador'">bookmark</xsl:when>
-                    <xsl:when test="$Relacionamento = 'não-seguir' or $Relacionamento = 'nao-seguir'">
-                        nofollow
-                    </xsl:when>
+                    <xsl:when test="$Relacionamento = 'não-seguir' or $Relacionamento = 'nao-seguir'">nofollow</xsl:when>
                     <xsl:when test="$Relacionamento = 'palavra-chave'">tag</xsl:when>
                     <xsl:when test="$Relacionamento = 'pesquisa'">search</xsl:when>
                     <xsl:when test="$Relacionamento = 'próximo' or $Relacionamento = 'proximo'">next</xsl:when>
@@ -104,6 +94,9 @@ describe('LMHT', () => {
                 </xsl:choose>
             </xsl:template>
 
+            <!-- Atributos independentes de tags (globais) -->
+            <!-- Por algum motivo, adicionar id aqui não funciona. -->
+            <!-- Atributo id, portanto, é usado em todas as estruturas de <corpo>. -->
             <xsl:template match="@arrastavel|@arrastável">
                 <xsl:attribute name="draggable">
                     <xsl:value-of select="." />
@@ -143,7 +136,7 @@ describe('LMHT', () => {
                 <xsl:attribute name="lang">
                     <xsl:value-of select="." />
                 </xsl:attribute>
-            </xsl:template>
+            </xsl:template>    
             <xsl:template match="@indice-tab|@índice-tab">
                 <xsl:attribute name="tabindex">
                     <xsl:value-of select="." />
@@ -171,6 +164,7 @@ describe('LMHT', () => {
                 </html>
             </xsl:template>
 
+            <!-- Especificação de cabeça, ou cabeca -->
             <xsl:template match="/lmht/cabeca|/lmht/cabeça">
                 <head>
                     <xsl:apply-templates select="@*|node()" />
@@ -197,28 +191,41 @@ describe('LMHT', () => {
                     <xsl:apply-templates select="node()" />
                 </base>
             </xsl:template>
-            <xsl:template match="/lmht/cabeca/estilo|/lmht/cabeça/estilo">
-                <style>
-                    <xsl:apply-templates select="@*|node()" />
-                </style>
-            </xsl:template>
-
+            <!-- Estrutura style é apenas replicada com o CSS que possui dentro. -->
+            <!-- https://github.com/DesignLiquido/FolEs -->
             <xsl:template match="/lmht/cabeca/style|/lmht/cabeça/style">
                 <style>
                     <xsl:apply-templates select="@*|node()" />
                 </style>
             </xsl:template>
+            <!-- Estrutura estilo é apenas replicada para ser usada por FolEs. -->
+            <!-- https://github.com/DesignLiquido/FolEs -->
+            <xsl:template match="/lmht/cabeca/estilo|/lmht/cabeça/estilo">
+                <estilo>
+                    <xsl:apply-templates select="@*|node()" />
+                </estilo>
+            </xsl:template>
             <xsl:template match="/lmht/cabeca/meta|/lmht/cabeça/meta">
                 <meta>
                     <xsl:for-each select="@*">
                         <xsl:choose>
-                            <xsl:when test="name() = 'nome'">
-                                <xsl:attribute name="name">
+                            <xsl:when test="name() = 'codificacao' or name() = 'codificação'">
+                                <xsl:attribute name="charset">
                                     <xsl:value-of select="." />
                                 </xsl:attribute>
                             </xsl:when>
                             <xsl:when test="name() = 'conteudo' or name() = 'conteúdo'">
                                 <xsl:attribute name="content">
+                                    <xsl:value-of select="." />
+                                </xsl:attribute>
+                            </xsl:when>
+                            <xsl:when test="name() = 'diretiva-http'">
+                                <xsl:attribute name="http-equiv">
+                                    <xsl:value-of select="." />
+                                </xsl:attribute>
+                            </xsl:when>
+                            <xsl:when test="name() = 'nome'">
+                                <xsl:attribute name="name">
                                     <xsl:value-of select="." />
                                 </xsl:attribute>
                             </xsl:when>
@@ -252,6 +259,7 @@ describe('LMHT', () => {
                 </title>
             </xsl:template>
 
+            <!-- Especificação de corpo -->
             <xsl:template match="/lmht/corpo">
                 <body>
                     <xsl:apply-templates select="@*|node()" />
@@ -754,6 +762,7 @@ describe('LMHT', () => {
                 </figcaption>
             </xsl:template>
 
+            <!-- Formulários -->
             <xsl:template match="/lmht/corpo//formulario|/lmht/corpo//formulário">
                 <form>
                     <xsl:for-each select="@*">
@@ -1056,6 +1065,7 @@ describe('LMHT', () => {
                 <hr />
             </xsl:template>
 
+            <!-- Listas -->
             <xsl:template match="/lmht/corpo//lista-definicoes|/lmht/corpo//lista-definições">
                 <dl>
                     <xsl:apply-templates select="@*|node()" />
@@ -1281,6 +1291,7 @@ describe('LMHT', () => {
                 </section>
             </xsl:template>
 
+            <!-- Seleção -->
             <xsl:template match="/lmht/corpo//selecao|/lmht/corpo//seleção">
                 <select>
                     <xsl:apply-templates select="@*|node()" />
@@ -1394,6 +1405,7 @@ describe('LMHT', () => {
                 </sub>
             </xsl:template>
 
+            <!-- Tabelas -->
             <xsl:template match="/lmht/corpo//tabela">
                 <table>
                     <xsl:apply-templates select="@*|node()" />
@@ -1523,6 +1535,7 @@ describe('LMHT', () => {
                 </small>
             </xsl:template>
 
+            <!-- Títulos -->
             <xsl:template match="/lmht/corpo//titulo1|/lmht/corpo//título1">
                 <h1>
                     <xsl:apply-templates select="@*|node()" />
