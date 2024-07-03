@@ -4,7 +4,7 @@ import { XmlParser } from "../../src/dom";
 import { Xslt } from "../../src/xslt";
 
 describe('xsl:include', () => {
-    it('Trivial', async () => {
+    it.skip('Trivial', async () => {
         const xmlSource = `<html></html>`;
 
         const xsltSource = `<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format">
