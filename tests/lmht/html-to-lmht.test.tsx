@@ -1570,4 +1570,39 @@ describe('HTML to LMHT', () => {
 
         assert.equal(outXmlString, expectedOutString);
     });
+
+    it('https://github.com/DesignLiquido/lmht-js/issues/3', async () => {
+        const xmlString = `<!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Blog Simples</title>
+            </head>
+            <body>
+                <div class="container main-content">
+                    <div class="post">
+                        <h2>Título da Postagem 1</h2>
+                        <p>Publicado em 2 de julho de 2024</p>
+                        <p>Conteúdo da postagem 1. Este é um exemplo de conteúdo para uma postagem de blog. Você pode adicionar mais postagens conforme necessário.</p>
+                    </div>
+                    <div class="post">
+                        <h2>Título da Postagem 2</h2>
+                        <p>Publicado em 1 de julho de 2024</p>
+                        <p>Conteúdo da postagem 2. Este é outro exemplo de conteúdo para uma postagem de blog.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        // const expectedOutString = ``;
+
+        const xsltClass = new Xslt({ selfClosingTags: true });
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.ok(outXmlString);
+    })
 });
