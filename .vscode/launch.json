@@ -11,8 +11,9 @@
             "runtimeArgs": [
                 "--inspect-brk",
                 "${workspaceRoot}/node_modules/jest/bin/jest.js",
-                "xslt.test",
-                "--runInBand"
+                // "include.test",
+                "--runInBand",
+                "--testTimeout=100000000"
             ],
             "skipFiles": ["<node_internals>/**", "node_modules/**"],
             "console": "integratedTerminal",
