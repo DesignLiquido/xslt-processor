@@ -9,7 +9,7 @@ describe('HTML to LMHT', () => {
         `<?xml version="1.0" encoding="UTF-8"?>
         <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="2.0">
             <xsl:output method="xml" version="1.0" omit-xml-declaration="yes" encoding="UTF-8" indent="yes" />
-
+        
             <!-- Seção de _templates_ utilitários -->
             <!-- Os _templates_ abaixo normalmente trabalham com transcrição de valores de atributos LMHT para HTML -->
             <xsl:template name="ProcessarInputTypes">
@@ -85,10 +85,10 @@ describe('HTML to LMHT', () => {
                     <xsl:when test="$Target = '_top'">_topo</xsl:when>
                 </xsl:choose>
             </xsl:template>
-
+        
             <!-- Atributos independentes de tags (globais) -->
-            <!-- Por algum motivo, adicionar id aqui não funciona. -->
-            <!-- Atributo id, portanto, é usado em todas as estruturas de <corpo>. -->
+            <!-- Por algum motivo, adicionar \`id\` aqui não funciona. -->
+            <!-- Atributo id, portanto, é usado em todas as estruturas de \`<corpo>\`. -->
             <xsl:template match="@draggable">
                 <xsl:attribute name="arrastável">
                     <xsl:value-of select="." />
@@ -149,14 +149,14 @@ describe('HTML to LMHT', () => {
                     <xsl:value-of select="." />
                 </xsl:attribute>
             </xsl:template>
-
+        
             <xsl:template match="/html">
                 <lmht>
                     <xsl:apply-templates select="node()" />
                 </lmht>
             </xsl:template>
             
-            <!-- Especificação de head -->
+            <!-- Especificação de \`head\` -->
             <xsl:template match="/html/head">
                 <cabeça>
                     <xsl:apply-templates select="@*|node()" />
@@ -183,7 +183,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="node()" />
                 </base-ligações>
             </xsl:template>
-            <!-- Tag style não é traduzida. -->
+            <!-- Tag \`style\` não é traduzida. -->
             <xsl:template match="/html/style">
                 <style>
                     <xsl:apply-templates select="@*|node()" />
@@ -242,8 +242,8 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </título>
             </xsl:template>
-
-            <!-- Especificação de body -->
+        
+            <!-- Especificação de \`body\` -->
             <xsl:template match="/html/body">
                 <corpo>
                     <xsl:apply-templates select="@*|node()" />
@@ -745,7 +745,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </descrição>
             </xsl:template>
-
+        
             <!-- Formulários -->
             <xsl:template match="/html/body//form">
                 <formulário>
@@ -901,7 +901,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </título>
             </xsl:template>
-
+        
             <xsl:template match="/html/body//hgroup">
                 <grupo-títulos>
                     <xsl:apply-templates select="@*|node()" />
@@ -1024,7 +1024,7 @@ describe('HTML to LMHT', () => {
             <xsl:template match="/html/body//hr">
                 <linha-horizontal />
             </xsl:template>
-
+        
             <!-- Listas -->
             <xsl:template match="/html/body//dl">
                 <lista-definições>
@@ -1066,7 +1066,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="node()" />
                 </item-lista>
             </xsl:template>
-
+        
             <xsl:template match="/html/body//map">
                 <mapa>
                     <xsl:for-each select="@*">
@@ -1250,7 +1250,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </seção>
             </xsl:template>
-
+        
             <!-- Seleção -->
             <xsl:template match="/html/body//select">
                 <seleção>
@@ -1267,7 +1267,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </opção>
             </xsl:template>
-
+        
             <xsl:template match="/html/body//noscript">
                 <sem-script>
                     <xsl:apply-templates select="@*|node()" />
@@ -1359,7 +1359,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </subscrito>
             </xsl:template>
-
+        
             <!-- Tabelas -->
             <xsl:template match="/html/body//table">
                 <tabela>
@@ -1468,7 +1468,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </título>
             </xsl:template>
-
+        
             <xsl:template match="/html/body//kbd">
                 <teclado>
                     <xsl:apply-templates select="@*|node()" />
@@ -1484,7 +1484,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </texto-pequeno>
             </xsl:template>
-
+        
             <!-- Títulos -->
             <xsl:template match="/html/body//h1">
                 <título1>
@@ -1595,7 +1595,28 @@ describe('HTML to LMHT', () => {
             </body>
             </html>
         `;
-        // const expectedOutString = ``;
+
+        const expectedOutString = `<lmht>`+
+            `<cabeça>`+
+                `<meta codificação="UTF-8"/>`+
+                `<meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>`+
+                `<título>Blog Simples</título>`+
+            `</cabeça>`+
+            `<corpo>`+
+                `<divisão classe="container main-content">`+
+                    `<divisão classe="post">`+
+                        `<título2>Título da Postagem 1</título2>`+
+                        `<parágrafo>Publicado em 2 de julho de 2024</parágrafo>`+
+                        `<parágrafo>Conteúdo da postagem 1. Este é um exemplo de conteúdo para uma postagem de blog. Você pode adicionar mais postagens conforme necessário.</parágrafo>`+
+                    `</divisão>`+
+                        `<divisão classe="post">`+
+                            `<título2>Título da Postagem 2</título2>`+
+                            `<parágrafo>Publicado em 1 de julho de 2024</parágrafo>`+
+                            `<parágrafo>Conteúdo da postagem 2. Este é outro exemplo de conteúdo para uma postagem de blog.</parágrafo>`+
+                        `</divisão>`+
+                `</divisão>`+
+            `</corpo>`+
+        `</lmht>`;
 
         const xsltClass = new Xslt({ selfClosingTags: true });
         const xmlParser = new XmlParser();
@@ -1603,6 +1624,6 @@ describe('HTML to LMHT', () => {
         const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
-        assert.ok(outXmlString);
+        assert.equal(outXmlString, expectedOutString);
     })
 });

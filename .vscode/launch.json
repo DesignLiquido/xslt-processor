@@ -15,6 +15,7 @@
                 "--runInBand",
                 "--testTimeout=100000000"
             ],
+            "smartStep": true, 
             "skipFiles": ["<node_internals>/**", "node_modules/**"],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"

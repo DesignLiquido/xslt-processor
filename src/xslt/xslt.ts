@@ -133,7 +133,7 @@ export class Xslt {
         }
 
         await this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
-        const transformedOutputXml = xmlTransformedText(outputDocument, {
+        const transformedOutputXml: string = xmlTransformedText(outputDocument, {
             cData: this.options.cData,
             escape: this.options.escape,
             selfClosingTags: this.options.selfClosingTags,
@@ -160,8 +160,6 @@ export class Xslt {
                 select: any,
                 value: any,
                 nodes: any,
-                mode: any,
-                templates: any,
                 paramContext: any,
                 commentData: any,
                 commentNode: any,
@@ -172,129 +170,10 @@ export class Xslt {
                 case 'apply-imports':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'apply-templates':
-                    select = xmlGetAttribute(template, 'select');
-                    if (select) {
-                        nodes = this.xPath.xPathEval(select, context).nodeSetValue();
-                    } else {
-                        nodes = context.nodeList[context.position].childNodes;
-                    }
-
-                    // TODO: Check why apply-templates was sorting and filing parameters
-                    // automatically.
-                    /* this.xsltWithParam(sortContext, template);
-                    this.xsltSort(sortContext, template); */
-
-                    mode = xmlGetAttribute(template, 'mode');
-                    top = template.ownerDocument.documentElement;
-
-                    templates = [];
-                    for (let element of top.childNodes.filter(
-                        (c: XNode) => c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'template')
-                    )) {
-                        // Actual template should be executed.
-                        // `<xsl:apply-templates>` should have an ancestor `<xsl:template>`
-                        // for comparison.
-                        const templateAncestor = template.getAncestorByLocalName('template');
-                        if (templateAncestor === undefined) {
-                            continue;
-                        }
-
-                        if (templateAncestor.id === element.id) {
-                            continue;
-                        }
-
-                        if (!mode || element.getAttributeValue('mode') === mode) {
-                            templates.push(element);
-                        }
-                    }
-
-                    const modifiedContext = context.clone(nodes);
-                    for (let i = 0; i < templates.length; ++i) {
-                        for (let j = 0; j < modifiedContext.contextSize(); ++j) {
-                            // If the current node is text, there's no need to test all the templates
-                            // against it. Just appending it to its parent is fine.
-                            if (modifiedContext.nodeList[j].nodeType === DOM_TEXT_NODE) {
-                                const textNodeContext = context.clone(
-                                    [modifiedContext.nodeList[j]],
-                                    undefined,
-                                    0,
-                                    undefined
-                                );
-                                // TODO: verify if it is okay to pass the own text node as template.
-                                this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j], output);
-                            } else {
-                                const clonedContext = modifiedContext.clone(
-                                    [modifiedContext.nodeList[j]],
-                                    undefined,
-                                    0,
-                                    undefined
-                                );
-                                clonedContext.inApplyTemplates = true;
-                                // The output depth should be restarted, since
-                                // another template is being applied from this point.
-                                clonedContext.outputDepth = 0;
-                                await this.xsltProcessContext(clonedContext, templates[i], output);
-                            }
-                        }
-                    }
-
+                    await this.xsltApplyTemplates(context, template, output);
                     break;
                 case 'attribute':
-                    nameExpr = xmlGetAttribute(template, 'name');
-                    name = this.xsltAttributeValue(nameExpr, context);
-
-                    const documentFragment = domCreateDocumentFragment(this.outputDocument);
-                    await this.xsltChildNodes(context, template, documentFragment);
-                    value = xmlValue2(documentFragment);
-
-                    if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
-                        domSetTransformedAttribute(output, name, value);
-                    } else {
-                        let sourceNode = context.nodeList[context.position];
-                        let parentSourceNode = sourceNode.parentNode;
-                        let outputNode = sourceNode.outputNode;
-
-                        // At this point, the output node should exist.
-                        // If not, a new node is created.
-                        if (outputNode === null || outputNode === undefined) {
-                            outputNode = new XNode(
-                                sourceNode.nodeType,
-                                sourceNode.nodeName,
-                                sourceNode.nodeValue,
-                                context.outputNodeList[context.outputPosition],
-                                sourceNode.namespaceUri
-                            );
-                            sourceNode.outputNode = outputNode;
-                        }
-
-                        // Corner case:
-                        // It can happen here that we don't have the root node set.
-                        // In this case we need to append a copy of the root
-                        // source node to receive the attribute.
-                        if (outputNode.localName === '#document') {
-                            const sourceRootNode = context.root.childNodes[0];
-                            const newRootNode = domCreateElement(this.outputDocument, sourceRootNode.nodeName);
-                            newRootNode.transformedNodeName = sourceRootNode.nodeName;
-                            newRootNode.transformedLocalName = sourceRootNode.localName;
-                            domAppendTransformedChild(outputNode, newRootNode);
-                            outputNode = newRootNode;
-                            parentSourceNode = newRootNode;
-                        }
-
-                        // If the parent transformation is something like `xsl:element`, we should
-                        // add a copy of the attribute to this element.
-                        domSetTransformedAttribute(output, name, value);
-
-                        // Some operations start by the tag attributes, and not by the tag itself.
-                        // When this is the case, the output node is not set yet, so
-                        // we add the transformed attributes into the original tag.
-                        if (parentSourceNode && parentSourceNode.outputNode) {
-                            domSetTransformedAttribute(parentSourceNode.outputNode, name, value);
-                        } else {
-                            domSetTransformedAttribute(parentSourceNode, name, value);
-                        }
-                    }
-
+                    await this.xsltAttribute(context, template, output);
                     break;
                 case 'attribute-set':
                     throw new Error(`not implemented: ${template.localName}`);
@@ -495,6 +374,153 @@ export class Xslt {
     }
 
     /**
+     * Implements `xsl:apply-templates`.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output. Only used if there's no corresponding output node already defined.
+     * @protected
+     */
+    protected async xsltApplyTemplates(context: ExprContext, template: XNode, output?: XNode) {
+        const getAllTemplates = (top: XNode, template: XNode, mode: string | null) => {
+            let templates = [];
+            for (let element of top.childNodes.filter(
+                (c: XNode) => c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'template')
+            )) {
+                // TODO: Remember why this logic was here.
+                // In the past the idea was to avoid executing the same matcher repeatedly,
+                // but this proved to be a *terrible* idea some time later.
+                // Will keep this code for a few more versions, then remove it.
+                /* const templateAncestor = template.getAncestorByLocalName('template');
+                if (templateAncestor === undefined) {
+                    continue;
+                }
+
+                if (templateAncestor.id === element.id) {
+                    continue;
+                } */
+
+                if (!mode || element.getAttributeValue('mode') === mode) {
+                    templates.push(element);
+                }
+            }
+
+            return templates;
+        }
+
+        const select = xmlGetAttribute(template, 'select');
+        let nodes: XNode[] = [];
+        if (select) {
+            nodes = this.xPath.xPathEval(select, context).nodeSetValue();
+        } else {
+            nodes = context.nodeList[context.position].childNodes;
+        }
+
+        // TODO: Check why apply-templates was sorting and filing parameters
+        // automatically.
+        /* this.xsltWithParam(sortContext, template);
+        this.xsltSort(sortContext, template); */
+
+        const mode: string | null = xmlGetAttribute(template, 'mode');
+        const top = template.ownerDocument.documentElement;
+
+        const templates = getAllTemplates(top, template, mode);
+
+        const modifiedContext = context.clone(nodes);
+        for (let i = 0; i < templates.length; ++i) {
+            for (let j = 0; j < modifiedContext.contextSize(); ++j) {
+                // If the current node is text, there's no need to test all the templates
+                // against it. Just appending it to its parent is fine.
+                if (modifiedContext.nodeList[j].nodeType === DOM_TEXT_NODE) {
+                    const textNodeContext = context.clone(
+                        [modifiedContext.nodeList[j]],
+                        undefined,
+                        0,
+                        undefined
+                    );
+                    // TODO: verify if it is okay to pass the own text node as template.
+                    this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j], output);
+                } else {
+                    const clonedContext = modifiedContext.clone(
+                        [modifiedContext.nodeList[j]],
+                        undefined,
+                        0,
+                        undefined
+                    );
+                    clonedContext.inApplyTemplates = true;
+                    // The output depth should be restarted, since
+                    // another template is being applied from this point.
+                    clonedContext.outputDepth = 0;
+                    await this.xsltProcessContext(clonedContext, templates[i], output);
+                }
+            }
+        }
+    }
+
+    /**
+     * Implements `xsl:attribute`.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output. Only used if there's no corresponding output node already defined.
+     * @protected
+     */
+    protected async xsltAttribute(context: ExprContext, template: XNode, output?: XNode) {
+        const nameExpr = xmlGetAttribute(template, 'name');
+        const name = this.xsltAttributeValue(nameExpr, context);
+
+        const documentFragment = domCreateDocumentFragment(this.outputDocument);
+        await this.xsltChildNodes(context, template, documentFragment);
+        const value = xmlValue2(documentFragment);
+
+        if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+            domSetTransformedAttribute(output, name, value);
+        } else {
+            let sourceNode = context.nodeList[context.position];
+            let parentSourceNode = sourceNode.parentNode;
+            let outputNode = sourceNode.outputNode;
+
+            // At this point, the output node should exist.
+            // If not, a new node is created.
+            if (outputNode === null || outputNode === undefined) {
+                outputNode = new XNode(
+                    sourceNode.nodeType,
+                    sourceNode.nodeName,
+                    sourceNode.nodeValue,
+                    context.outputNodeList[context.outputPosition],
+                    sourceNode.namespaceUri
+                );
+                sourceNode.outputNode = outputNode;
+            }
+
+            // Corner case:
+            // It can happen here that we don't have the root node set.
+            // In this case we need to append a copy of the root
+            // source node to receive the attribute.
+            if (outputNode.localName === '#document') {
+                const sourceRootNode = context.root.childNodes[0];
+                const newRootNode = domCreateElement(this.outputDocument, sourceRootNode.nodeName);
+                newRootNode.transformedNodeName = sourceRootNode.nodeName;
+                newRootNode.transformedLocalName = sourceRootNode.localName;
+                domAppendTransformedChild(outputNode, newRootNode);
+                outputNode = newRootNode;
+                parentSourceNode = newRootNode;
+            }
+
+            // If the parent transformation is something like `xsl:element`, we should
+            // add a copy of the attribute to this element.
+            domSetTransformedAttribute(output, name, value);
+
+            // Some operations start by the tag attributes, and not by the tag itself.
+            // When this is the case, the output node is not set yet, so
+            // we add the transformed attributes into the original tag.
+            if (parentSourceNode && parentSourceNode.outputNode) {
+                domSetTransformedAttribute(parentSourceNode.outputNode, name, value);
+            } else {
+                domSetTransformedAttribute(parentSourceNode, name, value);
+            }
+        }
+    }
+
+    /**
      * Implements `xsl:choose`, its child nodes `xsl:when`, and
      * `xsl:otherwise`.
      * @param context The Expression Context.
@@ -579,7 +605,7 @@ export class Xslt {
 
     /**
      * Implements `xsl:for-each`.
-     * @param input The Expression Context.
+     * @param context The Expression Context.
      * @param template The template.
      * @param output The output.
      */
@@ -609,7 +635,7 @@ export class Xslt {
 
     /**
      * Implements `xsl:include`.
-     * @param input The Expression Context.
+     * @param context The Expression Context.
      * @param template The template.
      * @param output The output.
      */
@@ -756,6 +782,7 @@ export class Xslt {
      * - `xsltProcessContext`, `apply-templates` operation, when the current node is text.
      * @param context The Expression Context.
      * @param template The template, that contains the node value to be written.
+     * @param output The output.
      */
     private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
         if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
@@ -882,7 +909,7 @@ export class Xslt {
         return false;
     }
 
-    protected xsltAttribute(attributeName: string, context: ExprContext): XNode {
+    protected findAttributeInContext(attributeName: string, context: ExprContext): XNode {
         return context.nodeList[context.position].childNodes.find(
             (a: XNode) => a.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === attributeName
         );

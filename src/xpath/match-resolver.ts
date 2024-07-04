@@ -42,7 +42,7 @@ export class MatchResolver {
         if (expression.absolute) {
             // If expression is absolute and the axis of first step is self,
             // the match starts by the #document node (for instance, `<xsl:template match="/">`).
-            // Otherwise (axis === 'child'), the match stasts on the first
+            // Otherwise (axis === 'child'), the match starts on the first
             // child of #document node.
             const firstStep = expression.steps[0];
             if (firstStep.axis === 'self') {
