@@ -18,7 +18,7 @@ export function mapExec(array: any[], func: Function) {
 
 // Returns an array that contains the return value of the given
 // function applied to every element of the input array.
-export function mapExpr(array, func) {
+export function mapExpr(array: any[], func: Function) {
     const ret = [];
     for (let i = 0; i < array.length; ++i) {
         ret.push(func(array[i]));

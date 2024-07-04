@@ -728,17 +728,17 @@ describe('xpath', () => {
         ];
 
         const parsedXML = xmlParser.xmlParse(xml);
-        const ctx = new ExprContext([parsedXML], []);
+        const context = new ExprContext([parsedXML], []);
 
         for (const test of tests) {
-            const expr = xPath.xPathParse(test[0] as any);
+            const expression = xPath.xPathParse(test[0] as any);
 
-            ctx.setReturnOnFirstMatch(false);
-            const normalResults = expr.evaluate(ctx);
+            context.setReturnOnFirstMatch(false);
+            const normalResults = expression.evaluate(context);
             assert.equal(normalResults.value.length, test[1], `normal results count: ${test[0]}`);
 
-            ctx.setReturnOnFirstMatch(true);
-            const firstMatchResults = expr.evaluate(ctx);
+            context.setReturnOnFirstMatch(true);
+            const firstMatchResults = expression.evaluate(context);
             assert.equal(firstMatchResults.value.length, 1, `first match results count: ${test[0]}`);
 
             assert.equal(

@@ -162,7 +162,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </cabeça>
             </xsl:template>
-            <xsl:template match="/html/base">
+            <xsl:template match="/html/head/base">
                 <base-ligações>
                     <xsl:for-each select="@*">
                         <xsl:choose>
@@ -184,7 +184,7 @@ describe('HTML to LMHT', () => {
                 </base-ligações>
             </xsl:template>
             <!-- Tag \`style\` não é traduzida. -->
-            <xsl:template match="/html/style">
+            <xsl:template match="/html/head/style">
                 <style>
                     <xsl:apply-templates select="@*|node()" />
                 </style>
@@ -1061,7 +1061,7 @@ describe('HTML to LMHT', () => {
                     <xsl:apply-templates select="@*|node()" />
                 </lista-simples>
             </xsl:template>
-            <xsl:template match="/html/body//ol/li|html/body//ul/li">
+            <xsl:template match="/html/body//ul/li|html/body//ol/li">
                 <item-lista>
                     <xsl:apply-templates select="node()" />
                 </item-lista>
@@ -1571,6 +1571,44 @@ describe('HTML to LMHT', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
+    it('https://github.com/DesignLiquido/lmht-js/issues/2', async () => {
+        const xmlString = `<!DOCTYPE html>
+            <html lang="pt-BR">
+                <body>
+                    <h1><a href="#">Delégua Blog</a></h1>
+                    <nav>
+                        <ul>
+                            <li><a href="#">Início</a></li>
+                            <li><a href="#">Sobre</a></li>
+                            <li><a href="#">Contato</a></li>
+                        </ul>
+                    </nav>
+                </body>
+            </html>
+        `;
+
+        const expectedOutString = `<lmht>`+
+            `<corpo>`+
+                `<título1><ligação destino="#">Delégua Blog</ligação></título1>`+
+                `<navegação>`+
+                    `<lista-simples>`+
+                        `<item-lista><ligação destino="#">Início</ligação></item-lista>`+
+                        `<item-lista><ligação destino="#">Sobre</ligação></item-lista>`+
+                        `<item-lista><ligação destino="#">Contato</ligação></item-lista>`+
+                    `</lista-simples>`+
+                `</navegação>`+
+            `</corpo>`+
+        `</lmht>`;
+
+        const xsltClass = new Xslt({ selfClosingTags: true });
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.equal(outXmlString, expectedOutString);
+    });
+
     it('https://github.com/DesignLiquido/lmht-js/issues/3', async () => {
         const xmlString = `<!DOCTYPE html>
             <html lang="pt-BR">
@@ -1625,5 +1663,5 @@ describe('HTML to LMHT', () => {
         const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
         assert.equal(outXmlString, expectedOutString);
-    })
+    });
 });

@@ -10,8 +10,8 @@ export class NodeTestPI implements NodeTest {
         this.target = target;
     }
 
-    evaluate(ctx: ExprContext) {
-        const node = ctx.nodeList[ctx.position];
+    evaluate(context: ExprContext) {
+        const node = context.nodeList[context.position];
         return new BooleanValue(
             node.nodeType == DOM_PROCESSING_INSTRUCTION_NODE && (!this.target || node.nodeName == this.target)
         );

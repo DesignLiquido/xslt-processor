@@ -328,13 +328,13 @@ export const xPathTokenRules: XPathTokenRule[] = [
 ];
 
 // Quantifiers that are used in the productions of the grammar.
-export const Q_01 = {
+export const Q_ZERO_OR_ONE = {
     label: '?'
 };
-export const Q_MM = {
+export const Q_ZERO_OR_MULTIPLE = {
     label: '*'
 };
-export const Q_1M = {
+export const Q_ONE_OR_MULTIPLE = {
     label: '+'
 };
 

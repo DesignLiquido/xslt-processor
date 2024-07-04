@@ -1,4 +1,4 @@
-This document is no longer maintained in favor of GitHub's release system, and just kept here for historical reasons.
+This document is no longer maintained in favor of [GitHub's release system](https://github.com/DesignLiquido/xslt-processor/releases), and just kept here for historical reasons.
 
 2018-03-20  Johannes Wilm <johannes@fiduswriter.org>
 

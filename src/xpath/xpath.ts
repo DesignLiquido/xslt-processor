@@ -56,9 +56,9 @@ import {
 import { Expression } from './expressions/expression';
 
 import {
-    Q_MM,
-    Q_01,
-    Q_1M,
+    Q_ZERO_OR_MULTIPLE,
+    Q_ZERO_OR_ONE,
+    Q_ONE_OR_MULTIPLE,
     xPathTokenRules,
     TOK_DIV,
     TOK_MOD,
@@ -135,7 +135,7 @@ export class XPath {
 
     // The productions of the grammar. Columns of the table:
     //
-    // - target nonterminal,
+    // - target non-terminal,
     // - pattern,
     // - precedence,
     // - semantic value factory
@@ -148,14 +148,14 @@ export class XPath {
     // and thus evaluates XPath expressions.
     //
     // The precedence is used to decide between reducing and shifting by
-    // comparing the precendence of the rule that is candidate for
+    // comparing the precedence of the rule that is candidate for
     // reducing with the precedence of the look ahead token. Precedence of
     // -1 means that the precedence of the tokens in the pattern is used
     // instead. TODO: It shouldn't be necessary to explicitly assign
     // precedences to rules.
 
     // DGF As it stands, these precedences are purely empirical; we're
-    // not sure they can be made to be consistent at all.
+    // not sure if they can be made to be consistent at all.
     xPathGrammarRules = [
         [XPathLocationPath, [XPathRelativeLocationPath], 18, this.passExpr],
         [XPathLocationPath, [XPathAbsoluteLocationPath], 18, this.passExpr],
@@ -194,7 +194,7 @@ export class XPath {
         [XPathFunctionCall, [TOK_QNAME, TOK_PARENO, TOK_PARENC], -1, this.makeFunctionCallExpr1],
         [
             XPathFunctionCall,
-            [TOK_QNAME, TOK_PARENO, XPathExpr, XPathArgumentRemainder, Q_MM, TOK_PARENC],
+            [TOK_QNAME, TOK_PARENO, XPathExpr, XPathArgumentRemainder, Q_ZERO_OR_MULTIPLE, TOK_PARENC],
             -1,
             this.makeFunctionCallExpr2
         ],
@@ -208,7 +208,7 @@ export class XPath {
         [XPathPathExpr, [XPathFilterExpr, TOK_SLASH, XPathRelativeLocationPath], 19, this.makePathExpr1],
         [XPathPathExpr, [XPathFilterExpr, TOK_DSLASH, XPathRelativeLocationPath], 19, this.makePathExpr2],
 
-        [XPathFilterExpr, [XPathPrimaryExpr, XPathPredicate, Q_MM], 31, this.makeFilterExpr],
+        [XPathFilterExpr, [XPathPrimaryExpr, XPathPredicate, Q_ZERO_OR_MULTIPLE], 31, this.makeFilterExpr],
 
         [XPathExpr, [XPathPrimaryExpr], 16, this.passExpr],
         [XPathExpr, [XPathUnionExpr], 16, this.passExpr],
@@ -356,7 +356,7 @@ export class XPath {
         return new NodeTestNC(ncname.value);
     }
 
-    makeNodeTestExpr3(qname: any) {
+    makeNodeTestExpr3(qname: TokenExpr) {
         return new NodeTestName(qname.value);
     }
 
@@ -385,12 +385,12 @@ export class XPath {
         return new NodeTestPI(target.value);
     }
 
-    makePredicateExpr(pareno: any, expr: any) {
-        return new PredicateExpr(expr);
+    makePredicateExpr(pareno: any, expression: any) {
+        return new PredicateExpr(expression);
     }
 
-    makePrimaryExpr(pareno: any, expr: any) {
-        return expr;
+    makePrimaryExpr(pareno: any, expression: any) {
+        return expression;
     }
 
     makeFunctionCallExpr1(name: any) {
@@ -406,11 +406,11 @@ export class XPath {
         return ret;
     }
 
-    makeArgumentExpr(comma: any, expr: any) {
-        return expr;
+    makeArgumentExpr(comma: any, expression: any) {
+        return expression;
     }
 
-    makeUnionExpr(expr1: any, pipe: any, expr2: any) {
+    makeUnionExpr(expr1: Expression, pipe: TokenExpr, expr2: Expression) {
         return new UnionExpr(expr1, expr2);
     }
 
@@ -567,7 +567,7 @@ export class XPath {
         }
     }
 
-    xPathMatchStack(stack: any, pattern: any) {
+    xPathMatchStack(stack: any[], pattern: any[]) {
         // NOTE(mesch): The stack matches for variable cardinality are
         // greedy but don't do backtracking. This would be an issue only
         // with rules of the form A* A, i.e. with an element with variable
@@ -575,40 +575,40 @@ export class XPath {
         // occur in the grammar at hand, all matches on the stack are
         // unambiguous.
 
-        const S = stack.length;
-        const P = pattern.length;
+        const stackLength = stack.length;
+        const patternLength = pattern.length;
         let p;
         let s;
         const match: any = [];
-        match.matchlength = 0;
+        match.matchLength = 0;
         let ds = 0;
-        for (p = P - 1, s = S - 1; p >= 0 && s >= 0; --p, s -= ds) {
+        for (p = patternLength - 1, s = stackLength - 1; p >= 0 && s >= 0; --p, s -= ds) {
             ds = 0;
             const qmatch: any = [];
-            if (pattern[p] == Q_MM) {
+            if (pattern[p] == Q_ZERO_OR_MULTIPLE) {
                 p -= 1;
                 match.push(qmatch);
                 while (s - ds >= 0 && stack[s - ds].tag == pattern[p]) {
                     qmatch.push(stack[s - ds]);
                     ds += 1;
-                    match.matchlength += 1;
+                    match.matchLength += 1;
                 }
-            } else if (pattern[p] == Q_01) {
+            } else if (pattern[p] == Q_ZERO_OR_ONE) {
                 p -= 1;
                 match.push(qmatch);
                 while (s - ds >= 0 && ds < 2 && stack[s - ds].tag == pattern[p]) {
                     qmatch.push(stack[s - ds]);
                     ds += 1;
-                    match.matchlength += 1;
+                    match.matchLength += 1;
                 }
-            } else if (pattern[p] == Q_1M) {
+            } else if (pattern[p] == Q_ONE_OR_MULTIPLE) {
                 p -= 1;
                 match.push(qmatch);
                 if (stack[s].tag == pattern[p]) {
                     while (s - ds >= 0 && stack[s - ds].tag == pattern[p]) {
                         qmatch.push(stack[s - ds]);
                         ds += 1;
-                        match.matchlength += 1;
+                        match.matchLength += 1;
                     }
                 } else {
                     return [];
@@ -616,7 +616,7 @@ export class XPath {
             } else if (stack[s].tag == pattern[p]) {
                 match.push(stack[s]);
                 ds += 1;
-                match.matchlength += 1;
+                match.matchLength += 1;
             } else {
                 return [];
             }
@@ -764,10 +764,10 @@ export class XPath {
             const pattern: any = rule[1];
 
             for (let j = pattern.length - 1; j >= 0; --j) {
-                if (pattern[j] == Q_1M) {
+                if (pattern[j] == Q_ONE_OR_MULTIPLE) {
                     push_(this.xPathRules, pattern[j - 1].key, rule);
                     break;
-                } else if (pattern[j] == Q_MM || pattern[j] == Q_01) {
+                } else if (pattern[j] == Q_ZERO_OR_MULTIPLE || pattern[j] == Q_ZERO_OR_ONE) {
                     push_(this.xPathRules, pattern[j - 1].key, rule);
                     --j;
                 } else {
@@ -924,8 +924,8 @@ export class XPath {
      * grammatical rules to them, "reducing" them to higher-level
      * tokens. Ultimately, any valid XPath should reduce to exactly one
      * "Expr" token.
-
-     * Reduce too early or too late and you'll have two tokens that can't reduce
+     *
+     * Reduce too early or too late, and you'll have two tokens that can't reduce
      * to single Expr. For example, you may hastily reduce a qname that
      * should name a function, incorrectly treating it as a tag name.
      * Or you may reduce too late, accidentally reducing the last part of the
@@ -940,11 +940,15 @@ export class XPath {
      *
      * Some tokens have left associativity, in which case we shift when they
      * have LOWER precedence than the candidate.
+     * @param stack The actual grammar rule stack.
+     * @param ahead The grammar rule ahead.
+     * @return `true` if a grammar rule candidate was applied. `false` otherwise.
+     * @private
      */
     private xPathReduce(
         stack: GrammarRuleCandidate[],
         ahead: GrammarRuleCandidate
-    ) {
+    ): boolean {
         let candidate: GrammarRuleCandidate = null;
 
         if (stack.length > 0) {
@@ -956,9 +960,8 @@ export class XPath {
             }
         }
 
-        let ret;
         if (candidate && (!ahead || candidate.prec > ahead.prec || (ahead.tag.left && candidate.prec >= ahead.prec))) {
-            for (let i = 0; i < candidate.match.matchlength; ++i) {
+            for (let i = 0; i < candidate.match.matchLength; ++i) {
                 stack.pop();
             }
 
@@ -968,12 +971,12 @@ export class XPath {
                 }`
             );
 
-            const matchExpression = mapExpr(candidate.match, (m) => m.expr);
+            const matchExpression = mapExpr(candidate.match, (m: GrammarRuleCandidate) => m.expr);
             this.xPathLog(`going to apply ${candidate.rule[3]}`);
             candidate.expr = candidate.rule[3].apply(this, matchExpression);
 
             stack.push(candidate);
-            ret = true;
+            return true;
         } else {
             if (ahead) {
                 this.xPathLog(
@@ -983,9 +986,9 @@ export class XPath {
                 );
                 stack.push(ahead);
             }
-            ret = false;
+
+            return false;
         }
-        return ret;
     }
 
     /**
