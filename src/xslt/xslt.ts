@@ -262,8 +262,10 @@ export class Xslt {
                     node.transformedNodeName = name;
 
                     domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+                    // The element becomes the output node of the source node.
+                    context.nodeList[context.position].outputNode = node;
                     const clonedContext = context.clone(undefined, [node], undefined, 0);
-                    await this.xsltChildNodes(clonedContext, template, node);
+                    await this.xsltChildNodes(clonedContext, template);
                     break;
                 case 'fallback':
                     throw new Error(`not implemented: ${template.localName}`);
@@ -353,7 +355,7 @@ export class Xslt {
                     node = domCreateTransformedTextNode(this.outputDocument, value);
                     node.siblingPosition = context.nodeList[context.position].siblingPosition;
 
-                    if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+                    if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
                         output.appendTransformedChild(node);
                     } else {
                         context.outputNodeList[context.outputPosition].appendTransformedChild(node);
@@ -471,7 +473,7 @@ export class Xslt {
         await this.xsltChildNodes(context, template, documentFragment);
         const value = xmlValue2(documentFragment);
 
-        if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+        if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
             domSetTransformedAttribute(output, name, value);
         } else {
             let sourceNode = context.nodeList[context.position];
@@ -507,15 +509,19 @@ export class Xslt {
 
             // If the parent transformation is something like `xsl:element`, we should
             // add a copy of the attribute to this element.
-            domSetTransformedAttribute(output, name, value);
+            domSetTransformedAttribute(outputNode, name, value);
+
+            if (sourceNode.nodeType === DOM_ATTRIBUTE_NODE) {
+                sourceNode.transformedNodeType = DOM_ATTRIBUTE_NODE;
+                sourceNode.transformedNodeName = name;
+                sourceNode.transformedNodeValue = value;
+            }
 
             // Some operations start by the tag attributes, and not by the tag itself.
             // When this is the case, the output node is not set yet, so
             // we add the transformed attributes into the original tag.
             if (parentSourceNode && parentSourceNode.outputNode) {
                 domSetTransformedAttribute(parentSourceNode.outputNode, name, value);
-            } else {
-                domSetTransformedAttribute(parentSourceNode, name, value);
             }
         }
     }
@@ -527,7 +533,7 @@ export class Xslt {
      * @param template The template.
      * @param output The output. Only used if there's no corresponding output node already defined.
      */
-    protected async xsltChoose(context: ExprContext, template: XNode, output: XNode) {
+    protected async xsltChoose(context: ExprContext, template: XNode, output?: XNode) {
         for (const childNode of template.childNodes) {
             if (childNode.nodeType !== DOM_ELEMENT_NODE) {
                 continue;
@@ -536,13 +542,11 @@ export class Xslt {
             if (this.isXsltElement(childNode, 'when')) {
                 const test = xmlGetAttribute(childNode, 'test');
                 if (this.xPath.xPathEval(test, context).booleanValue()) {
-                    const outputNode = context.outputNodeList[context.outputPosition] || output;
-                    await this.xsltChildNodes(context, childNode, outputNode);
+                    await this.xsltChildNodes(context, childNode, output);
                     break;
                 }
             } else if (this.isXsltElement(childNode, 'otherwise')) {
-                const outputNode = context.outputNodeList[context.outputPosition] || output;
-                await this.xsltChildNodes(context, childNode, outputNode);
+                await this.xsltChildNodes(context, childNode, output);
                 break;
             }
         }
@@ -740,9 +744,9 @@ export class Xslt {
 
         const nonAttributeChildren = template.childNodes.filter((n) => n.nodeType !== DOM_ATTRIBUTE_NODE);
         if (nonAttributeChildren.length > 0) {
-            const root = domCreateDocumentFragment(template.ownerDocument);
-            await this.xsltChildNodes(context, template, root);
-            value = new NodeSetValue([root]);
+            const fragment = domCreateDocumentFragment(template.ownerDocument);
+            await this.xsltChildNodes(context, template, fragment);
+            value = new NodeSetValue([fragment]);
         } else if (select) {
             value = this.xPath.xPathEval(select, context);
         } else {
@@ -785,7 +789,7 @@ export class Xslt {
      * @param output The output.
      */
     private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
-        if (output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+        if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
             let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
             domAppendTransformedChild(output, node);
         } else {
@@ -843,7 +847,16 @@ export class Xslt {
             newNode.transformedLocalName = template.localName;
 
             // The node can have transformed attributes from previous transformations.
-            const transformedAttributes = node.transformedChildNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
+            // Case 1: attributes that were created by a transformation without a source attribute.
+            const transformedChildNodes = node.transformedChildNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
+            for (const previouslyTransformedAttribute of transformedChildNodes) {
+                const name = previouslyTransformedAttribute.transformedNodeName;
+                const value = previouslyTransformedAttribute.transformedNodeValue;
+                domSetTransformedAttribute(newNode, name, value);
+            }
+
+            // Case 2: attributes that existed as a source attribute and were transformed.
+            const transformedAttributes = node.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE && n.transformedNodeName)
             for (const previouslyTransformedAttribute of transformedAttributes) {
                 const name = previouslyTransformedAttribute.transformedNodeName;
                 const value = previouslyTransformedAttribute.transformedNodeValue;
@@ -864,7 +877,7 @@ export class Xslt {
                 outputNode.transformedChildNodes.length - 1,
                 ++elementContext.outputDepth
             );
-            await this.xsltChildNodes(clonedContext, template, output);
+            await this.xsltChildNodes(clonedContext, template);
         } else {
             // This applies also to the DOCUMENT_NODE of the XSL stylesheet,
             // so we don't have to treat it specially.

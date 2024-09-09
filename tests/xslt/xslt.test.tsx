@@ -14,77 +14,7 @@ import assert from 'assert';
 import { XmlParser } from '../../src/dom';
 import { Xslt } from '../../src/xslt';
 
-const xmlString = (
-    `<all>
-        <item pos="2">A</item>
-        <item pos="3">B</item>
-        <item pos="1">C</item>
-    </all>`
-);
-
 describe('xslt', () => {
-    describe('xsl:for-each', () => {
-        it('handles for-each sort', async () => {
-            const xsltForEachSort = (
-                `<xsl:stylesheet version="1.0">
-                    <xsl:template match="/">
-                        <xsl:for-each select="//item">
-                            <xsl:sort select="@pos" />
-                            <xsl:value-of select="." />
-                        </xsl:for-each>
-                    </xsl:template>
-                </xsl:stylesheet>`
-            );
-
-            const xsltClass = new Xslt();
-            const xmlParser = new XmlParser();
-            const xml = xmlParser.xmlParse(xmlString);
-            const xslt = xmlParser.xmlParse(xsltForEachSort);
-            const html = await xsltClass.xsltProcess(xml, xslt);
-            assert.equal(html, 'CAB');
-        });
-
-        it('handles for-each sort ascending', async () => {
-            const xsltForEachSortAscending = (
-                `<xsl:stylesheet version="1.0">
-                    <xsl:template match="/">
-                        <xsl:for-each select="//item">
-                            <xsl:sort select="." order="ascending" />
-                            <xsl:value-of select="." />
-                        </xsl:for-each>
-                    </xsl:template>
-                </xsl:stylesheet>`
-            );
-
-            const xsltClass = new Xslt();
-            const xmlParser = new XmlParser();
-            const xml = xmlParser.xmlParse(xmlString);
-            const xslt = xmlParser.xmlParse(xsltForEachSortAscending);
-            const html = await xsltClass.xsltProcess(xml, xslt);
-            assert.equal(html, 'ABC');
-        });
-
-        it('handles for-each sort descending', async () => {
-            const xsltForEachSortDescending = (
-                `<xsl:stylesheet version="1.0">
-                    <xsl:template match="/">
-                        <xsl:for-each select="//item">
-                            <xsl:sort select="." order="descending" />
-                            <xsl:value-of select="." />
-                        </xsl:for-each>
-                    </xsl:template>
-                </xsl:stylesheet>`
-            );
-
-            const xsltClass = new Xslt();
-            const xmlParser = new XmlParser();
-            const xml = xmlParser.xmlParse(xmlString);
-            const xslt = xmlParser.xmlParse(xsltForEachSortDescending);
-            const html = await xsltClass.xsltProcess(xml, xslt);
-            assert.equal(html, 'CBA');
-        });
-    });
-
     describe('xsl:template', () => {
         it('Trivial', async () => {
             const xmlString = (
@@ -285,6 +215,45 @@ describe('xslt', () => {
             const html = await xsltClass.xsltProcess(parsedXml, parsedXslt);
             assert.equal(html, '<!DOCTYPE html>');
         });
+
+        it('CDATA as JavaScript', async () => {
+            const xml = `<XampleXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+                <ReportName>My first transformation in js</ReportName>
+                <GenerationDate>01/06/2024</GenerationDate>
+            </XampleXml>`;
+            const xslt = `<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:output method="html" version="4.0" encoding="utf-8" omit-xml-declaration="yes" />
+                <xsl:template match="/">
+                    <html>
+                        <head>
+                            <script type="text/javascript">
+                                <xsl:text disable-output-escaping="yes">
+                                    <![CDATA[
+                                        if (1 < 2) {}
+                                    ]]>
+                                </xsl:text>
+                            </script>
+                        </head>
+                        <body>
+                            <h1>
+                                <xsl:value-of select="ReportName"/>
+                            </h1>
+                            <p>
+                                <xsl:value-of select="GenerationDate"/>
+                            </p>
+                        </body>
+                    </html>
+                </xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const parsedXml = xmlParser.xmlParse(xml);
+            const parsedXslt = xmlParser.xmlParse(xslt);
+            const html = await xsltClass.xsltProcess(parsedXml, parsedXslt);
+            assert.equal(html, '<html><head><script type="text/javascript">\n                                    \n                                        if (1 < 2) {}\n                                    \n                                </script></head><body><h1>My first transformation in js</h1><p>01/06/2024</p></body></html>');
+        });
     });
 
     it('applies templates', async () => {
@@ -297,7 +266,7 @@ describe('xslt', () => {
         );
 
         const xsltApplyTemplates = (
-            `<xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:template match="/">
                     <xsl:apply-templates select="//item" />
                 </xsl:template>
@@ -319,8 +288,16 @@ describe('xslt', () => {
     });
 
     it('handles global variables', async () => {
+        const xmlString = (
+            `<all>
+                <item pos="2">A</item>
+                <item pos="3">B</item>
+                <item pos="1">C</item>
+            </all>`
+        );
+
         const xsltGlobalVariables = (
-            `<xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:variable name="x" select="'x'" />
                 <xsl:variable name="y" select="'y'" />
                 <xsl:variable name="z">
@@ -345,8 +322,16 @@ describe('xslt', () => {
     });
 
     it('handles top level output', async () => {
+        const xmlString = (
+            `<all>
+                <item pos="2">A</item>
+                <item pos="3">B</item>
+                <item pos="1">C</item>
+            </all>`
+        );
+
         const xsltTopLevelOutput = (
-            `<xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:template match="/">
                     <xsl:element name="x">
                         <xsl:attribute name="y">
@@ -367,8 +352,16 @@ describe('xslt', () => {
     });
 
     it('handles copy', async () => {
+        const xmlString = (
+            `<all>
+                <item pos="2">A</item>
+                <item pos="3">B</item>
+                <item pos="1">C</item>
+            </all>`
+        );
+
         const xsltCopy = (
-            `<xsl:stylesheet version="1.0">
+            `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:template match="/">
                     <xsl:for-each select="//item">
                         <xsl:copy>

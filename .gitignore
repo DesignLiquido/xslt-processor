@@ -8,3 +8,6 @@ node_modules/
 
 package-lock.json
 .history/
+
+# Strange bug with debugging a unit test causes a stop in `async_hooks`.
+test-without-jest.ts
