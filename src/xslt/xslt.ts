@@ -3,9 +3,6 @@
 // Copyright 2005 Google Inc.
 // All Rights Reserved
 //
-// TODO(mesch): add jsdoc comments. Use more coherent naming. Finish
-// remaining XSLT features.
-//
 // Original author: Steffen Meschkat <mesch@google.com>
 
 import fetch, { Headers, Request, Response } from 'node-fetch';
@@ -59,7 +56,7 @@ import { MatchResolver } from '../xpath/match-resolver';
  * <http://www.ecma-international.org/publications/standards/Ecma-262.htm>.
  *
  * The XSL processor API has one entry point, the function
- * xsltProcessContext(). It receives as arguments the starting point in the
+ * `xsltProcess()`. It receives as arguments the starting point in the
  * input document as an XPath expression context, the DOM root node of
  * the XSL-T stylesheet, and a DOM node that receives the output.
  *
@@ -292,7 +289,7 @@ export class Xslt {
                 case 'number':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'otherwise':
-                    throw `error if here: ${template.localName}`;
+                    throw new Error(`xsl:otherwise can't be used outside of xsl:choose.`);
                 case 'output':
                     this.outputMethod = xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name';
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
@@ -366,7 +363,7 @@ export class Xslt {
                     await this.xsltVariable(context, template, true);
                     break;
                 case 'when':
-                    throw new Error(`error if here: ${template.localName}`);
+                    throw new Error(`xsl:when can't be used outside of xsl:choose.`);
                 case 'with-param':
                     throw new Error(`error if here: ${template.localName}`);
                 default:
