@@ -5,7 +5,7 @@ export class NodeSetValue implements NodeValue {
     value: XNode[];
     type: string;
 
-    constructor(value: any) {
+    constructor(value: XNode[]) {
         this.value = value;
         this.type = 'node-set';
     }

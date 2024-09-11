@@ -150,19 +150,19 @@ export class Xslt {
         if (!this.isXsltElement(template)) {
             await this.xsltPassThrough(context, template, output);
         } else {
-            let name: any,
-                top: any,
+            let name: string,
+                top: XNode,
                 nameExpr: any,
-                node: any,
+                node: XNode,
                 select: any,
                 value: any,
-                nodes: any,
+                nodes: XNode[],
                 paramContext: any,
                 commentData: any,
                 commentNode: any,
                 test: any,
-                match: any,
-                text: any;
+                match: string,
+                text: string;
             switch (template.localName) {
                 case 'apply-imports':
                     throw new Error(`not implemented: ${template.localName}`);
@@ -281,7 +281,8 @@ export class Xslt {
                     await this.xsltInclude(context, template, output);
                     break;
                 case 'key':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.xsltKey(context, template);
+                    break;
                 case 'message':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'namespace-alias':
@@ -661,6 +662,50 @@ export class Xslt {
         const fetchResponse = await fetchTest.text();
         const includedXslt = this.xmlParser.xmlParse(fetchResponse);
         await this.xsltChildNodes(context, includedXslt.childNodes[0], output);
+    }
+
+    protected xsltKey(context: ExprContext, template: XNode) {
+        // `name`, `match`, and `use` are required.
+        const name: string = xmlGetAttribute(template, 'name');
+        const match: string = xmlGetAttribute(template, 'match'); 
+        const use: string = xmlGetAttribute(template, 'use'); 
+
+        if (!name || !match || !use) {
+            let errorMessage = '<xsl:key> missing required parameters: ';
+            if (!name) {
+                errorMessage += 'name, ';
+            }
+
+            if (!match) {
+                errorMessage += 'match, ';
+            }
+
+            if (!use) {
+                errorMessage += 'use, ';
+            }
+
+            errorMessage = errorMessage.slice(0, -2);
+            throw new Error(errorMessage);
+        }
+
+        let keyContext: ExprContext;
+        if (context.nodeList[context.position].nodeName === '#document') {
+            keyContext = context.clone(context.nodeList[context.position].childNodes);
+        } else {
+            keyContext = context;
+        }
+
+        const nodes = this.xsltMatch(match, keyContext);
+        if (!(name in context.keys)) {
+            context.keys[name] = {};
+        }
+
+        for (const node of nodes) {
+            const nodeContext = context.clone([node]);
+            const attribute = this.xPath.xPathEval(use, nodeContext);
+            const attributeValue = attribute.stringValue();
+            context.keys[name][attributeValue] = new NodeSetValue([node]);
+        }
     }
 
     /**

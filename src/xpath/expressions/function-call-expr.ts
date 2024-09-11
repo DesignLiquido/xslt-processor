@@ -32,7 +32,8 @@ import {
     ceiling,
     round,
     current,
-    formatNumber
+    formatNumber,
+    key
 } from '../functions';
 import { extCardinal, extIf, extJoin } from '../functions/non-standard';
 import { lowerCase, _replace, upperCase } from '../functions/standard-20';
@@ -56,6 +57,7 @@ export class FunctionCallExpr extends Expression {
         floor,
         'generate-id': generateId,
         id,
+        key,
         lang,
         last,
         'local-name': localName,

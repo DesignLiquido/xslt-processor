@@ -51,6 +51,7 @@ export class ExprContext {
     xsltVersion: '1.0' | '2.0' | '3.0';
 
     variables: { [name: string]: NodeValue };
+    keys: { [name: string]: { [key: string]: NodeValue } };
     knownNamespaces: { [alias: string]: string };
 
     caseInsensitive: any;
@@ -110,6 +111,7 @@ export class ExprContext {
         this.outputPosition = opt_outputPosition || 0;
 
         this.variables = opt_variables || {};
+        this.keys = opt_parent?.keys || {};
         this.knownNamespaces = opt_knownNamespaces || {};
 
         this.parent = opt_parent || null;
@@ -196,7 +198,7 @@ export class ExprContext {
         );
     }
 
-    setVariable(name?: any, value?: any) {
+    setVariable(name?: string, value?: NodeValue | string) {
         if (
             value instanceof StringValue ||
             value instanceof BooleanValue ||
@@ -206,11 +208,12 @@ export class ExprContext {
             this.variables[name] = value;
             return;
         }
+
         if ('true' === value) {
             this.variables[name] = new BooleanValue(true);
         } else if ('false' === value) {
             this.variables[name] = new BooleanValue(false);
-        } else if (TOK_NUMBER.re.test(value)) {
+        } else if (TOK_NUMBER.re.test(String(value))) {
             this.variables[name] = new NumberValue(value);
         } else {
             // DGF What if it's null?
