@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "lib": ["DOM"],
+        "outDir": "dist",
+        "module": "CommonJS",
+        "target": "ES2023",
+        "rootDir": "src",
+        "allowJs": true,
+        "sourceMap": true,
+        "declaration": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "preserveSymlinks": true
+    },
+    "exclude": [
+        "babel.config.js",
+        "jest.config.ts",
+        "rollup.config.js",
+        "coverage/**/*",
+        "demo/**/*",
+        "dist/**/*",
+        "interactive-tests/js/**/*",
+        "node_modules/**/*",
+        "tests/**/*"
+    ]
+}

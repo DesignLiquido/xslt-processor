@@ -20,10 +20,7 @@ describe('xsl:key', () => {
                 <html>
                     <body>
                         <xsl:for-each select="key('preg','050676')">
-                            <p>
-                                Id: <xsl:value-of select="@id"/><br />
-                                Name: <xsl:value-of select="@name"/>
-                            </p>
+                            <p>Name: <xsl:value-of select="@name"/></p>
                         </xsl:for-each>
                     </body>
                 </html>
@@ -36,6 +33,6 @@ describe('xsl:key', () => {
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
         const resultingXml = await xsltClass.xsltProcess(xml, xslt);
-        assert.ok(resultingXml);
+        assert.equal(resultingXml, '<html><body><p>Name: Tarzan</p></body></html>');
     });
 });
