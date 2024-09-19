@@ -16,7 +16,7 @@ describe('template-precedence', () => {
         const xsltString = `<?xml version="1.0"?>
           <xsl:stylesheet version="1.0">
             <xsl:template match="test">
-              <span> <xsl:value-of select="@name" /> </span>
+              <span><xsl:value-of select="@name" /></span>
             </xsl:template>
             <xsl:template match="test[@name='test1']">
               <span>another name</span>

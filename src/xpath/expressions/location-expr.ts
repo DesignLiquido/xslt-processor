@@ -19,7 +19,7 @@ export class LocationExpr extends Expression {
         this.xPath = xPath;
     }
 
-    appendStep(s) {
+    appendStep(s: StepExpr) {
         const combinedStep = this._combineSteps(this.steps[this.steps.length - 1], s);
         if (combinedStep) {
             this.steps[this.steps.length - 1] = combinedStep;
@@ -28,7 +28,7 @@ export class LocationExpr extends Expression {
         }
     }
 
-    prependStep(s) {
+    prependStep(s: StepExpr) {
         const combinedStep = this._combineSteps(s, this.steps[0]);
         if (combinedStep) {
             this.steps[0] = combinedStep;
@@ -38,7 +38,7 @@ export class LocationExpr extends Expression {
     }
 
     // DGF try to combine two steps into one step (perf enhancement)
-    _combineSteps(prevStep, nextStep) {
+    private _combineSteps(prevStep: any, nextStep: any) {
         if (!prevStep) return null;
         if (!nextStep) return null;
         const hasPredicates = prevStep.predicates && prevStep.predicates.length > 0;

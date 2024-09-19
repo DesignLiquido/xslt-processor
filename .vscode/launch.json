@@ -15,8 +15,11 @@
                 "--runInBand",
                 "--testTimeout=100000000"
             ],
-            "smartStep": true, 
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "smartStep": true,
+            "skipFiles": [
+                "<node_internals>/**",
+                "node_modules/**"
+            ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         },
@@ -31,6 +34,9 @@
             "args": [
                 "${file}"
             ],
+            "env": {
+                "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.debug.json"
+            },
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         }
