@@ -78,6 +78,7 @@ export class Xslt {
     outputMethod: 'xml' | 'html' | 'text' | 'name';
     outputOmitXmlDeclaration: string;
     version: string;
+    firstTemplateRan: boolean;
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -110,6 +111,7 @@ export class Xslt {
             digit: '#',
             patternSeparator: ';'
         };
+        this.firstTemplateRan = false;
     }
 
     /**
@@ -210,7 +212,8 @@ export class Xslt {
                     await this.xsltIf(context, template, output);
                     break;
                 case 'import':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltImport(context, template, output);
+                    break;
                 case 'include':
                     await this.xsltInclude(context, template, output);
                     break;
@@ -637,6 +640,40 @@ export class Xslt {
     }
 
     /**
+     * Implements `<xsl:import>`. For now the code is nearly identical to `<xsl:include>`, but there's
+     * no precedence evaluation implemented yet.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltImport(context: ExprContext, template: XNode, output?: XNode) {
+        if (this.firstTemplateRan) {
+            throw new Error('<xsl:import> should be the first child node of <xsl:stylesheet> or <xsl:transform>.');
+        }
+
+        // We need to test here whether `window.fetch` is available or not.
+        // If it is a browser environemnt, it should be.
+        // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
+        if (!global.globalThis.fetch) {
+            global.globalThis.fetch = fetch as any;
+            global.globalThis.Headers = Headers as any;
+            global.globalThis.Request = Request as any;
+            global.globalThis.Response = Response as any;
+        }
+
+        const hrefAttributeFind = template.childNodes.filter(n => n.nodeName === 'href');
+        if (hrefAttributeFind.length <= 0) {
+            throw new Error('<xsl:import> with no href attribute defined.');
+        }
+        const hrefAttribute = hrefAttributeFind[0];
+
+        const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);
+        const fetchResponse = await fetchTest.text();
+        const includedXslt = this.xmlParser.xmlParse(fetchResponse);
+        await this.xsltChildNodes(context, includedXslt.childNodes[0], output);
+    }
+
+    /**
      * Implements `xsl:include`.
      * @param context The Expression Context.
      * @param template The template.
@@ -765,6 +802,7 @@ export class Xslt {
         // in relative path, we force a 'self-and-siblings' axis.
         const nodes = this.xsltMatch(match, context, 'self-and-siblings');
         if (nodes.length > 0) {
+            this.firstTemplateRan = true;
             if (!context.inApplyTemplates) {
                 context.baseTemplateMatched = true;
             }
