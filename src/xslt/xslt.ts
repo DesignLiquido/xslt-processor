@@ -79,6 +79,7 @@ export class Xslt {
     outputOmitXmlDeclaration: string;
     version: string;
     firstTemplateRan: boolean;
+    stripSpace: string | undefined;
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -243,7 +244,8 @@ export class Xslt {
                     this.xsltSort(context, template);
                     break;
                 case 'strip-space':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.stripSpace = xmlGetAttribute(template, 'elements');
+                    break;
                 case 'stylesheet':
                 case 'transform':
                     await this.xsltTransformOrStylesheet(context, template, output);
