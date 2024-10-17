@@ -38,4 +38,28 @@ describe('xsl:apply-template', () => {
         assert.equal(outXmlString, expectedOutString);
         // assert.ok(outXmlString);
     });
+
+    it.skip('XSLT template with text on both sides', async () => {
+      const xmlString = `<root>
+        <test name="test1">This text lost</test>
+      </root>`;
+
+      const xsltString = `<?xml version="1.0"?>
+        <xsl:stylesheet version="1.0">
+          <xsl:template match="/">
+            <span>X<xsl:value-of select="test/@name" />Y</span>
+          </xsl:template>
+        </xsl:stylesheet>`;
+
+      const expectedOutString = `<span>Xtest1Y</span>`;
+
+      const xsltClass = new Xslt();
+      const xmlParser = new XmlParser();
+      const xml = xmlParser.xmlParse(xmlString);
+      const xslt = xmlParser.xmlParse(xsltString);
+
+      const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+      assert.equal(outXmlString, expectedOutString);
+  });
 });
