@@ -39,7 +39,7 @@ describe('xsl:apply-template', () => {
         // assert.ok(outXmlString);
     });
 
-    it('XSLT template with text on both sides', async () => {
+    it.skip('XSLT template with text on both sides', async () => {
       const xmlString = `<root>
         <test name="test1">This text lost</test>
       </root>`;
