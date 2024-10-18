@@ -39,19 +39,19 @@ describe('xsl:apply-template', () => {
         // assert.ok(outXmlString);
     });
 
-    it.skip('XSLT template with text on both sides', async () => {
+    it('XSLT template with text on both sides', async () => {
       const xmlString = `<root>
         <test name="test1">This text lost</test>
       </root>`;
 
       const xsltString = `<?xml version="1.0"?>
-        <xsl:stylesheet version="1.0">
+        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
           <xsl:template match="/">
-            <span>X<xsl:value-of select="test/@name" />Y</span>
+            <span>X<xsl:value-of select="//test/@name" />Y</span>
           </xsl:template>
         </xsl:stylesheet>`;
 
-      const expectedOutString = `<span>XY</span>`;
+      const expectedOutString = `<span>Xtest1Y</span>`;
 
       const xsltClass = new Xslt();
       const xmlParser = new XmlParser();
