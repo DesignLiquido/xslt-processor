@@ -51,7 +51,7 @@ describe('xsl:apply-template', () => {
           </xsl:template>
         </xsl:stylesheet>`;
 
-      const expectedOutString = `<span>Xtest1Y</span>`;
+      const expectedOutString = `<span>XY</span>`;
 
       const xsltClass = new Xslt();
       const xmlParser = new XmlParser();
