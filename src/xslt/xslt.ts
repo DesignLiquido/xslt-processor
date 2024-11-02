@@ -24,7 +24,7 @@ import {
     xmlGetAttribute,
     xmlTransformedText,
     xmlValue,
-    xmlValue2
+    xmlValueLegacyBehavior
 } from '../dom';
 import { ExprContext, XPath } from '../xpath';
 
@@ -366,7 +366,7 @@ export class Xslt {
 
         const documentFragment = domCreateDocumentFragment(this.outputDocument);
         await this.xsltChildNodes(context, template, documentFragment);
-        const value = xmlValue2(documentFragment);
+        const value = xmlValueLegacyBehavior(documentFragment);
 
         if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
             domSetTransformedAttribute(output, name, value);
