@@ -199,12 +199,38 @@ describe('xslt', () => {
     });
 
     describe('xsl:text', () => {
-        it('disable-output-escaping', async () => {
+        // Apparently, this is not how `disable-output-escaping` works. 
+        // By an initial research, `<!DOCTYPE html>` explicitly mentioned in 
+        // the XSLT gives an error like: 
+        // `Unable to generate the XML document using the provided XML/XSL input. 
+        // org.xml.sax.SAXParseException; lineNumber: 4; columnNumber: 70; 
+        // A DOCTYPE is not allowed in content.`
+        // All the examples of `disable-output-escaping` usage will point out
+        // the opposite: `&lt;!DOCTYPE html&gt;` will become `<!DOCTYPE html>`.
+        // This test will be kept here for historical purposes.
+        it.skip('disable-output-escaping', async () => {
             const xml = `<anything></anything>`;
             const xslt = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="html" indent="yes" />
                 <xsl:template match="/">
                     <xsl:text disable-output-escaping="yes"><!DOCTYPE html></xsl:text>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const parsedXml = xmlParser.xmlParse(xml);
+            const parsedXslt = xmlParser.xmlParse(xslt);
+            const html = await xsltClass.xsltProcess(parsedXml, parsedXslt);
+            assert.equal(html, '<!DOCTYPE html>');
+        });
+
+        it('disable-output-escaping, XML/HTML entities', async () => {
+            const xml = `<anything></anything>`;
+            const xslt = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="html" indent="yes" />
+                <xsl:template match="/">
+                    <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE html&gt;</xsl:text>
                 </xsl:template>
             </xsl:stylesheet>`;
 
