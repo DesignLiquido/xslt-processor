@@ -76,11 +76,11 @@
   },
   "overrides": {
     "node-fetch@release-2.x": {
-      "whatwg-url": "14.x"
+      "whatwg-url": "13.x"
     }
   },
   "resolutions": {
-    "whatwg-url": "14.x"
+    "whatwg-url": "13.x"
   },
   "copyFiles": [
     {
