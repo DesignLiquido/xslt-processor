@@ -74,6 +74,14 @@
     "he": "^1.2.0",
     "node-fetch": "release-2.x"
   },
+  "overrides": {
+    "node-fetch@release-2.x": {
+      "whatwg-url": "14.x"
+    }
+  },
+  "resolutions": {
+    "whatwg-url": "14.x"
+  },
   "copyFiles": [
     {
       "from": "LICENSE",
