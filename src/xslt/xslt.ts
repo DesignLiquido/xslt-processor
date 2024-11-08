@@ -5,8 +5,6 @@
 //
 // Original author: Steffen Meschkat <mesch@google.com>
 
-import fetch, { Headers, Request, Response } from 'node-fetch';
-
 import {
     XDocument,
     XNode,
@@ -647,6 +645,11 @@ export class Xslt {
      * @param output The output.
      */
     protected async xsltImport(context: ExprContext, template: XNode, output?: XNode) {
+        const [major, minor, patch] = process.versions.node.split('.').map(Number);
+        if (major <= 17 && minor < 5) {
+            throw new Error('Your Node.js version does not support `<xsl:import>`. If possible, please update your Node.js version to at least version 17.5.0.');
+        }
+
         if (this.firstTemplateRan) {
             throw new Error('<xsl:import> should be the first child node of <xsl:stylesheet> or <xsl:transform>.');
         }
@@ -665,6 +668,7 @@ export class Xslt {
         if (hrefAttributeFind.length <= 0) {
             throw new Error('<xsl:import> with no href attribute defined.');
         }
+
         const hrefAttribute = hrefAttributeFind[0];
 
         const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);
@@ -680,6 +684,11 @@ export class Xslt {
      * @param output The output.
      */
     protected async xsltInclude(context: ExprContext, template: XNode, output?: XNode) {
+        const [major, minor, patch] = process.versions.node.split('.').map(Number);
+        if (major <= 17 && minor < 5) {
+            throw new Error('Your Node.js version does not support `<xsl:include>`. If possible, please update your Node.js version to at least version 17.5.0.');
+        }
+
         // We need to test here whether `window.fetch` is available or not.
         // If it is a browser environemnt, it should be.
         // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
@@ -694,6 +703,7 @@ export class Xslt {
         if (hrefAttributeFind.length <= 0) {
             throw new Error('<xsl:include> with no href attribute defined.');
         }
+
         const hrefAttribute = hrefAttributeFind[0];
 
         const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);

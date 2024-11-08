@@ -48,6 +48,7 @@
     "@rollup/plugin-typescript": "^11.1.1",
     "@types/he": "^1.2.0",
     "@types/jest": "^29.5.12",
+    "@types/node": "^22.9.0",
     "@types/node-fetch": "^2.6.11",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
@@ -70,16 +71,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "he": "^1.2.0",
-    "node-fetch": "release-2.x"
-  },
-  "overrides": {
-    "node-fetch@release-2.x": {
-      "whatwg-url": "14.x"
-    }
-  },
-  "resolutions": {
-    "whatwg-url": "14.x"
+    "he": "^1.2.0"
   },
   "copyFiles": [
     {
