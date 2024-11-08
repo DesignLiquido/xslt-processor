@@ -123,6 +123,8 @@ const outXmlString = xslt.xsltProcess( // Not async.
 
 Version 3 received `<xsl:include>` which relies on Fetch API, which is asynchronous. Version 2 doesn't support `<xsl:include>`.
 
+If using Node.js older than version v17.5.0, please use version 3.2.3, that uses `node-fetch` package. Versions 3.3.0 onward require at least Node.js version v17.5.0, since they use native `fetch()` function.
+
 #### Version 1
 
 Until version 1.2.8, use like the example below:
