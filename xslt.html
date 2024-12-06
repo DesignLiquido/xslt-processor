@@ -12,12 +12,15 @@
       }
 
       window.test_xslt = function() {
-          const xml = globalThis.XsltProcessor.xmlParse(el('xml').value);
-          const xslt = globalThis.XsltProcessor.xmlParse(el('xslt').value);
+          const xmlParser = new globalThis.XsltProcessor.XmlParser();
+          const xml = xmlParser.xmlParse(el('xml').value);
+          const xslt = xmlParser.xmlParse(el('xslt').value);
           const xsltClass = new globalThis.XsltProcessor.Xslt();
-          const html = await xsltClass.xsltProcess(xml, xslt);
-          el('html').value = html;
-          el('htmldisplay').innerHTML = html;
+          xsltClass.xsltProcess(xml, xslt).then(html => {
+            el('html').value = html;
+            el('htmldisplay').innerHTML = html;
+          });
+          return false;
       }
 
       window.cleanxml = function() {
@@ -32,7 +35,7 @@
     </script>
   </head>
   <body onload="cleanxml()">
-    <form onsubmit="test_xslt();return false">
+    <form onsubmit="test_xslt()">
       <table>
         <tr>
           <td>
