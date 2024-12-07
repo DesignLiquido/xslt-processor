@@ -961,7 +961,6 @@ export class Xslt {
             } else {
                 let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
                 node.transformedParentNode = parentNode;
-                // context.nodeList[context.position].outputNode = node;
                 domAppendTransformedChild(parentNode, node);
             }
         }
@@ -991,9 +990,6 @@ export class Xslt {
                 node = context.nodeList[context.position];
             }
 
-            // const fragment = domCreateDocumentFragment(this.outputDocument);
-            // await this.xsltChildNodes(context, template, fragment);
-
             let newNode: XNode;
             if (node.outputNode === undefined || node.outputNode === null || context.outputDepth > 0) {
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
@@ -1007,7 +1003,6 @@ export class Xslt {
 
             newNode.transformedNodeName = template.nodeName;
             newNode.transformedLocalName = template.localName;
-            // newNode.transformedChildNodes = fragment.transformedChildNodes;
 
             const outputNode = context.outputNodeList[context.outputPosition];
             domAppendTransformedChild(outputNode, newNode);
@@ -1152,7 +1147,12 @@ export class Xslt {
         }
     }
 
-    // Test if the given element is an XSLT element, optionally the one with the given name
+    /**
+     * Test if the given element is an XSLT element, optionally the one with the given name.
+     * @param {XNode} element The element.
+     * @param {string} opt_wantedName The name for comparison.
+     * @returns True, if element is an XSL node. False otherwise.
+     */
     protected isXsltElement(element: XNode, opt_wantedName?: string) {
         if (opt_wantedName && element.localName != opt_wantedName) return false;
         if (element.namespaceUri) return element.namespaceUri === 'http://www.w3.org/1999/XSL/Transform';
