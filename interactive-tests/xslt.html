@@ -35,7 +35,7 @@
     </script>
   </head>
   <body onload="cleanxml()">
-    <form onsubmit="test_xslt()">
+    <form>
       <table>
         <tr>
           <td>
@@ -51,10 +51,10 @@
             <textarea id="xslt" cols="40" rows="10">
               <xsl:stylesheet>
                 <xsl:template match="/">
-                  <xsl:apply-templates select="page/message"/>
+                  <xsl:apply-templates select="/page/message"/>
                 </xsl:template>
 
-                <xsl:template match="page/message">
+                <xsl:template match="/page/message">
                   <div style="color:green">
                     <xsl:value-of select="."/>
                   </div>
@@ -65,7 +65,7 @@
         </tr>
         <tr>
           <td colspan="2">
-            <input type="submit" value="process"/>
+            <input type="button" value="process" onclick="test_xslt()"/>
           </td>
         </tr>
         <tr>
