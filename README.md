@@ -17,10 +17,14 @@ _A JavaScript XSLT processor without native library dependencies._
 
 ## How to
 
-Install xslt-processor using [npm](https://docs.npmjs.com/about-npm) or [yarn](https://yarnpkg.com):
+Install xslt-processor using [npm](https://docs.npmjs.com/about-npm), [ohpm](https://ohpm.openharmony.cn/#/en/home) or [yarn](https://yarnpkg.com):
 
 ```sh
 npm install xslt-processor
+```
+
+```sh
+ohpm install xslt-processor
 ```
 
 ```sh
@@ -221,3 +225,4 @@ HTML per se is not strict XML. Because of that, starting on version 2.0.0, this 
 - XSLT Specification: http://www.w3.org/TR/1999/REC-xslt-19991116
 - W3C DOM Level 3 Core Specification: http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
 - ECMAScript Language Specification: http://www.ecma-international.org/publications/standards/Ecma-262.htm
+- Arkts Language Specification: https://gitee.com/openharmony/arkcompiler_runtime_core/releases/download/ArkTS-spec-1.2.0-alpha-20250307/arktsspecification.pdf
