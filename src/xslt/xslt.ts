@@ -73,7 +73,7 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
-    outputMethod: 'xml' | 'html' | 'text' | 'name';
+    outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml';
     outputOmitXmlDeclaration: string;
     version: string;
     firstTemplateRan: boolean;
