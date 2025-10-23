@@ -23,6 +23,7 @@
         "dist/**/*",
         "interactive-tests/js/**/*",
         "node_modules/**/*",
+        "test-without-jest.*",
         "tests/**/*"
     ]
 }
