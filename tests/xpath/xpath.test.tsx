@@ -13,11 +13,11 @@
 //         Johannes Wilm <johannes@fiduswriter.org>
 import assert from 'assert';
 
-import { ExprContext, XPath } from '../../src/xpath';
+import { ExprContext, XPath } from '../../src/xpath-legacy';
 import { XmlParser, xmlValue } from '../../src/dom';
-import { BooleanValue } from '../../src/xpath/values/boolean-value';
-import { NumberValue } from '../../src/xpath/values/number-value';
-import { StringValue } from '../../src/xpath/values/string-value';
+import { BooleanValue } from '../../src/xpath-legacy/values/boolean-value';
+import { NumberValue } from '../../src/xpath-legacy/values/number-value';
+import { StringValue } from '../../src/xpath-legacy/values/string-value';
 
 const expr = [
     '@*',

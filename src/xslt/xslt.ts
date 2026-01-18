@@ -24,7 +24,7 @@ import {
     xmlValue,
     xmlValueLegacyBehavior
 } from '../dom';
-import { ExprContext, XPath } from '../xpath';
+import { ExprContext, XPath } from '../xpath-legacy';
 
 import {
     DOM_ATTRIBUTE_NODE,
@@ -36,10 +36,10 @@ import {
     DOM_TEXT_NODE
 } from '../constants';
 
-import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
+import { StringValue, NodeSetValue, NodeValue } from '../xpath-legacy/values';
 import { XsltOptions } from './xslt-options';
 import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
-import { MatchResolver } from '../xpath/match-resolver';
+import { MatchResolver } from '../xpath-legacy/match-resolver';
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
