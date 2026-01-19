@@ -40,6 +40,12 @@ import { StringValue, NodeSetValue, NodeValue } from '../xpath-legacy/values';
 import { XsltOptions } from './xslt-options';
 import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
 import { MatchResolver } from '../xpath-legacy/match-resolver';
+import {
+    collectAndExpandTemplates,
+    selectBestTemplate,
+    emitConflictWarning
+} from './functions';
+import { TemplatePriority } from './template-priority';
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
@@ -276,32 +282,6 @@ export class Xslt {
      * @protected
      */
     protected async xsltApplyTemplates(context: ExprContext, template: XNode, output?: XNode) {
-        const getAllTemplates = (top: XNode, template: XNode, mode: string | null) => {
-            let templates = [];
-            for (let element of top.childNodes.filter(
-                (c: XNode) => c.nodeType == DOM_ELEMENT_NODE && this.isXsltElement(c, 'template')
-            )) {
-                // TODO: Remember why this logic was here.
-                // In the past the idea was to avoid executing the same matcher repeatedly,
-                // but this proved to be a *terrible* idea some time later.
-                // Will keep this code for a few more versions, then remove it.
-                /* const templateAncestor = template.getAncestorByLocalName('template');
-                if (templateAncestor === undefined) {
-                    continue;
-                }
-
-                if (templateAncestor.id === element.id) {
-                    continue;
-                } */
-
-                if (!mode || element.getAttributeValue('mode') === mode) {
-                    templates.push(element);
-                }
-            }
-
-            return templates;
-        }
-
         const select = xmlGetAttribute(template, 'select');
         let nodes: XNode[] = [];
         if (select) {
@@ -318,11 +298,12 @@ export class Xslt {
         const mode: string | null = xmlGetAttribute(template, 'mode');
         const top = template.ownerDocument.documentElement;
 
-        const templates = getAllTemplates(top, template, mode);
+        // Collect all templates with their priority metadata
+        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath);
 
         const modifiedContext = context.clone(nodes);
-        // Process nodes in document order (outer loop), trying templates for each node (inner loop).
-        // This ensures nodes are processed in the correct order.
+        // Process nodes in document order, selecting the BEST matching template for each node.
+        // This is the XSLT 3.0 compliant behavior - only ONE template executes per node.
         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
             const currentNode = modifiedContext.nodeList[j];
 
@@ -337,19 +318,36 @@ export class Xslt {
                 );
                 this.commonLogicTextNode(textNodeContext, currentNode, output);
             } else {
-                // For non-text nodes, try each template
-                for (let i = 0; i < templates.length; ++i) {
-                    const clonedContext = modifiedContext.clone(
-                        [currentNode],
-                        undefined,
-                        0,
-                        undefined
-                    );
-                    clonedContext.inApplyTemplates = true;
-                    // The output depth should be restarted, since
-                    // another template is being applied from this point.
-                    clonedContext.outputDepth = 0;
-                    await this.xsltProcessContext(clonedContext, templates[i], output);
+                // For non-text nodes, select the BEST matching template based on priority
+                const clonedContext = modifiedContext.clone(
+                    [currentNode],
+                    undefined,
+                    0,
+                    undefined
+                );
+                clonedContext.inApplyTemplates = true;
+                // The output depth should be restarted, since
+                // another template is being applied from this point.
+                clonedContext.outputDepth = 0;
+
+                // Select the best template according to XSLT conflict resolution rules
+                const selection = selectBestTemplate(
+                    expandedTemplates,
+                    clonedContext,
+                    this.matchResolver,
+                    this.xPath
+                );
+
+                // Emit warning if there's a conflict
+                if (selection.hasConflict) {
+                    emitConflictWarning(selection, currentNode);
+                }
+
+                // Execute ONLY the selected template (not all matching templates)
+                // We directly execute the template children here, bypassing xsltTemplate's
+                // own matching logic since we've already determined this is the best match.
+                if (selection.selectedTemplate) {
+                    await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
                 }
             }
         }
@@ -844,7 +842,7 @@ export class Xslt {
      * validations.
      * @param context The Expression Context.
      * @param template The `<xsl:stylesheet>` or `<xsl:transform>` node.
-     * @param output The output. In general, a fragment that will be used by 
+     * @param output The output. In general, a fragment that will be used by
      *               the caller.
      */
     protected async xsltTransformOrStylesheet(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
@@ -867,7 +865,82 @@ export class Xslt {
             }
         }
 
-        await this.xsltChildNodes(context, template, output);
+        // Separate templates from other stylesheet children (output, variable, key, etc.)
+        const nonTemplates: XNode[] = [];
+        const templates: XNode[] = [];
+
+        for (const child of template.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(child, 'template')) {
+                templates.push(child);
+            } else {
+                nonTemplates.push(child);
+            }
+        }
+
+        // Process non-template children first (declarations like output, variable, key, etc.)
+        const contextClone = context.clone();
+        for (const child of nonTemplates) {
+            await this.xsltProcessContext(contextClone, child, output);
+        }
+
+        // Now select and execute the best matching template using priority rules
+        if (templates.length > 0) {
+            const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath);
+
+            // Find all (template, matchedNodes) pairs by testing each template's pattern
+            const matchCandidates: { priority: TemplatePriority; matchedNodes: XNode[] }[] = [];
+
+            for (const t of expandedTemplates) {
+                try {
+                    // For initial template selection, evaluate patterns from document root
+                    // without axis override to ensure consistent matching for all patterns
+                    const matchedNodes = this.xsltMatch(t.matchPattern, contextClone);
+                    if (matchedNodes.length > 0) {
+                        matchCandidates.push({ priority: t, matchedNodes });
+                    }
+                } catch (e) {
+                    // If pattern parsing fails, skip this template
+                    console.warn(`Failed to match pattern "${t.matchPattern}":`, e);
+                }
+            }
+
+            if (matchCandidates.length > 0) {
+                // Sort by: importPrecedence DESC, effectivePriority DESC, documentOrder DESC
+                matchCandidates.sort((a, b) => {
+                    if (a.priority.importPrecedence !== b.priority.importPrecedence) {
+                        return b.priority.importPrecedence - a.priority.importPrecedence;
+                    }
+                    if (a.priority.effectivePriority !== b.priority.effectivePriority) {
+                        return b.priority.effectivePriority - a.priority.effectivePriority;
+                    }
+                    return b.priority.documentOrder - a.priority.documentOrder;
+                });
+
+                // Detect conflicts
+                const winner = matchCandidates[0];
+                const conflicts = matchCandidates.filter(t =>
+                    t.priority.importPrecedence === winner.priority.importPrecedence &&
+                    t.priority.effectivePriority === winner.priority.effectivePriority
+                );
+
+                if (conflicts.length > 1) {
+                    const patterns = conflicts
+                        .map(t => `"${t.priority.matchPattern}" (priority: ${t.priority.effectivePriority})`)
+                        .join(', ');
+                    console.warn(
+                        `XSLT Warning: Ambiguous template match. ` +
+                        `Multiple templates match with equal priority: ${patterns}. ` +
+                        `Using the last one in document order.`
+                    );
+                }
+
+                // Execute ONLY the selected template
+                this.firstTemplateRan = true;
+                contextClone.baseTemplateMatched = true;
+                const templateContext = contextClone.clone(winner.matchedNodes, undefined, 0);
+                await this.xsltChildNodes(templateContext, winner.priority.template, output);
+            }
+        }
     }
 
     protected xsltValueOf(context: ExprContext, template: XNode, output?: XNode) {
