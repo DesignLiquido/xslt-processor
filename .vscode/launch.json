@@ -6,22 +6,89 @@
     "configurations": [
         {
             "name": "Unit tests",
-            "type": "node",
+            "type": "pwa-node",
             "request": "launch",
-            "runtimeArgs": [
-                "--inspect-brk",
-                "${workspaceRoot}/node_modules/jest/bin/jest.js",
-                // "include.test",
+            "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+            "args": [
                 "--runInBand",
+                "--no-cache",
                 "--testTimeout=100000000"
             ],
-            "smartStep": true,
+            "runtimeArgs": [
+                "--inspect-brk"
+            ],
+            "smartStep": false,
             "skipFiles": [
                 "<node_internals>/**",
+                "<node_internals>/internal/async_hooks.js",
+                "<node_internals>/internal/inspector_async_hook.js",
+                "<node_internals>/internal/async_hooks/**",
+                "**/async_hooks.js",
+                "**/inspector_async_hook.js",
+                "**/internal/async_hooks/**",
                 "node_modules/**"
             ],
+            "sourceMaps": true,
+            "autoAttachChildProcesses": false,
+            "disableOptimisticBPs": true,
+            "justMyCode": false,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js",
+                "!**/node_modules/**"
+            ],
+            "env": {
+                "NODE_OPTIONS": ""
+            }
+        },
+        {
+            "name": "Debug Jest Tests",
+            "type": "pwa-node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+            "args": [
+                "--runInBand",
+                "--no-cache",
+                "--testTimeout=100000000",
+                "${fileBasename}"
+            ],
+            "runtimeArgs": [
+                "--inspect-brk"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**",
+                "<node_internals>/internal/async_hooks.js",
+                "<node_internals>/internal/inspector_async_hook.js",
+                "<node_internals>/internal/async_hooks/**",
+                "**/async_hooks.js",
+                "**/inspector_async_hook.js",
+                "**/internal/async_hooks/**",
+                "node_modules/**"
+            ],
+            "smartStep": false,
+            "sourceMaps": true,
+            "autoAttachChildProcesses": false,
+            "disableOptimisticBPs": true,
+            "justMyCode": false,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js",
+                "!**/node_modules/**"
+            ],
+            "env": {
+                "NODE_OPTIONS": ""
+            }
         },
         {
             "name": "Launch TS file",

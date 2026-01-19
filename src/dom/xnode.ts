@@ -26,19 +26,6 @@ export class XNode {
 
     parentNode: XNode;
 
-    outputNode: XNode;
-    transformedNodeType: any;
-    transformedNodeName: string;
-    transformedNodeValue: any;
-    transformedFirstChild: XNode;
-    transformedLastChild: XNode;
-    transformedNextSibling: XNode;
-    transformedPreviousSibling: XNode;
-    transformedPrefix: any;
-    transformedLocalName: string;
-
-    transformedParentNode: XNode;
-
     visited: boolean;
     escape: boolean;
 
@@ -319,34 +306,6 @@ export class XNode {
         this.appendChild(newAttribute);
     }
 
-    setTransformedAttribute(name: string, value: any) {
-        const existingAttributes: XNode[] = [];
-        if (this.transformedFirstChild) {
-            let child = this.transformedFirstChild;
-            while (child) {
-                if (child.nodeType === DOM_ATTRIBUTE_NODE) {
-                    existingAttributes.push(child);
-                }
-                child = child.transformedNextSibling;
-            }
-        }
-        
-        for (let i = 0; i < existingAttributes.length; ++i) {
-            const transformedAttribute = existingAttributes[i];
-            if (transformedAttribute.nodeName === name) {
-                transformedAttribute.transformedNodeName = name;
-                transformedAttribute.transformedNodeValue = `${value}`;
-                return;
-            }
-        }
-
-        const newAttribute = XNode.create(DOM_ATTRIBUTE_NODE, name, value, this);
-        newAttribute.transformedNodeName = name;
-        newAttribute.transformedNodeValue = value;
-        newAttribute.parentNode = this;
-        this.appendChild(newAttribute);
-    }
-
     setAttributeNS(namespace: any, name: any, value: any) {
         const attributes = this.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
         for (let i = 0; i < attributes.length; ++i) {
@@ -555,5 +514,9 @@ export class XNode {
         }
 
         return this.parentNode.getAncestorById(id);
+    }
+
+    toString(): string {
+        return `${this.nodeType}, ${this.nodeName}, ${this.nodeValue}`;
     }
 }

@@ -1,0 +1,29 @@
+{
+    "debug.javascript.autoAttachFilter": "onlyWithFlag",
+    "debug.javascript.suggestPrettyPrinting": false,
+    "debug.javascript.usePreview": true,
+    "debug.javascript.skipFiles": [
+        "<node_internals>/**",
+        "<node_internals>/internal/async_hooks.js",
+        "<node_internals>/internal/inspector_async_hook.js",
+        "<node_internals>/internal/async_hooks/**",
+        "**/async_hooks.js",
+        "**/inspector_async_hook.js",
+        "**/internal/async_hooks/**"
+    ],
+    "jest.jestCommandLine": "npx jest",
+    "jest.autoRun": "off",
+    "jest.debugConfiguration": "Debug Jest Tests",
+    "jest.nodeEnv": {
+        "NODE_OPTIONS": ""
+    },
+    "debug.javascript.terminalOptions": {
+        "skipFiles": [
+            "<node_internals>/**",
+            "**/async_hooks.js",
+            "**/inspector_async_hook.js",
+            "**/internal/async_hooks/**"
+        ],
+        "smartStep": false
+    }
+}

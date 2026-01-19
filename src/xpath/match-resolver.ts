@@ -91,7 +91,7 @@ export class MatchResolver {
      * @returns The list of found nodes.
      */
     private absoluteXsltMatchByDocumentNode(expression: LocationExpr, context: ExprContext): XNode[] {
-        const clonedContext = context.clone([context.root], undefined, 0, undefined);
+        const clonedContext = context.clone([context.root], 0);
         const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
         const finalList: XNode[] = [];
 
@@ -115,7 +115,7 @@ export class MatchResolver {
         const firstChildOfRoot = context.root.childNodes.find((c: XNode) => c.nodeName !== '#dtd-section');
         if (!firstChildOfRoot) return [];
 
-        const clonedContext = context.clone([firstChildOfRoot], undefined, 0, undefined);
+        const clonedContext = context.clone([firstChildOfRoot], 0);
         const matchedNodes = expression.evaluate(clonedContext).nodeSetValue();
         const finalList: XNode[] = [];
 
