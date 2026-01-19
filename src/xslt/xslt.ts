@@ -321,22 +321,26 @@ export class Xslt {
         const templates = getAllTemplates(top, template, mode);
 
         const modifiedContext = context.clone(nodes);
-        for (let i = 0; i < templates.length; ++i) {
-            for (let j = 0; j < modifiedContext.contextSize(); ++j) {
-                // If the current node is text, there's no need to test all the templates
-                // against it. Just appending it to its parent is fine.
-                if (modifiedContext.nodeList[j].nodeType === DOM_TEXT_NODE) {
-                    const textNodeContext = context.clone(
-                        [modifiedContext.nodeList[j]],
-                        undefined,
-                        0,
-                        undefined
-                    );
-                    // TODO: verify if it is okay to pass the own text node as template.
-                    this.commonLogicTextNode(textNodeContext, modifiedContext.nodeList[j], output);
-                } else {
+        // Process nodes in document order (outer loop), trying templates for each node (inner loop).
+        // This ensures nodes are processed in the correct order.
+        for (let j = 0; j < modifiedContext.contextSize(); ++j) {
+            const currentNode = modifiedContext.nodeList[j];
+
+            // If the current node is text, there's no need to test all the templates
+            // against it. Just appending it to its parent is fine.
+            if (currentNode.nodeType === DOM_TEXT_NODE) {
+                const textNodeContext = context.clone(
+                    [currentNode],
+                    undefined,
+                    0,
+                    undefined
+                );
+                this.commonLogicTextNode(textNodeContext, currentNode, output);
+            } else {
+                // For non-text nodes, try each template
+                for (let i = 0; i < templates.length; ++i) {
                     const clonedContext = modifiedContext.clone(
-                        [modifiedContext.nodeList[j]],
+                        [currentNode],
                         undefined,
                         0,
                         undefined
