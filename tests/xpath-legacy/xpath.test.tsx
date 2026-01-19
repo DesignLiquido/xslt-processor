@@ -463,11 +463,11 @@ const doTestEvalDom = (xml, page, location, lat, latValue, lon, lonValue) => {
     const slashPageLocationAtLon = `/${page}/${location}/@${lon}`;
 
     const xmlParser = new XmlParser();
-    const ctx = new ExprContext([xmlParser.xmlParse(xml)], []);
+    const ctx = new ExprContext([xmlParser.xmlParse(xml)]);
     // DGF if we have access to an official DOMParser, compare output with that also
     let ctx1;
     if (typeof DOMParser != 'undefined') {
-        ctx1 = new ExprContext([new DOMParser().parseFromString(xml, 'text/xml') as any], []);
+        ctx1 = new ExprContext([new DOMParser().parseFromString(xml, 'text/xml') as any]);
     } else {
         ctx1 = ctx;
     }
@@ -537,7 +537,7 @@ describe('xpath', () => {
         );
 
         for (const e of numExpr) {
-            let ctx = new ExprContext([bodyEl], []);
+            let ctx = new ExprContext([bodyEl]);
             ctx.setCaseInsensitive(true);
             if (e[2]) {
                 for (const k in e[2] as any) {
@@ -610,7 +610,7 @@ describe('xpath', () => {
             ' <f></f>',
             '</page>'
         ].join('');
-        const context = new ExprContext([xmlParser.xmlParse(xml)], []);
+        const context = new ExprContext([xmlParser.xmlParse(xml)]);
 
         for (const axisTest of axisTests) {
             const result = xPath.xPathParse(axisTest[0] as any).evaluate(context);
@@ -626,7 +626,7 @@ describe('xpath', () => {
 
     it('can handle attribute asterisk', () => {
         const xPath = new XPath();
-        const ctx = new ExprContext([xmlParser.xmlParse('<x a="1" b="1"><y><z></z></y></x>')], []);
+        const ctx = new ExprContext([xmlParser.xmlParse('<x a="1" b="1"><y><z></z></y></x>')]);
         const expr = xPath.xPathParse('count(/x/@*)');
         assert.equal(2, expr.evaluate(ctx).numberValue());
     });
@@ -728,7 +728,7 @@ describe('xpath', () => {
         ];
 
         const parsedXML = xmlParser.xmlParse(xml);
-        const context = new ExprContext([parsedXML], []);
+        const context = new ExprContext([parsedXML]);
 
         for (const test of tests) {
             const expression = xPath.xPathParse(test[0] as any);

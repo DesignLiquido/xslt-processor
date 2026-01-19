@@ -256,7 +256,7 @@ function nodeMatchesPattern(
 
     // For element patterns, we need to check if the node would be selected by the pattern
     // Create a context with just this node
-    const nodeContext = context.clone([node], undefined, 0, undefined);
+    const nodeContext = context.clone([node], 0);
 
     // Try with 'self-and-siblings' axis - this works for patterns that don't start with *
     // because xPathParse will set the axis correctly
@@ -283,7 +283,7 @@ function nodeMatchesPattern(
     if (pattern.includes('[') || pattern.includes('/')) {
         try {
             // Evaluate pattern from document root with descendant-or-self axis
-            const rootContext = context.clone([context.root], undefined, 0, undefined);
+            const rootContext = context.clone([context.root], 0);
             const descendantPattern = pattern.startsWith('/') ? pattern : '//' + pattern;
             const expr = xPath.xPathParse(descendantPattern);
             const nodes = matchResolver.expressionMatch(expr, rootContext);

@@ -394,7 +394,7 @@ export class XPath {
                 node,
                 key: [] as { value: any; order: string }[]
             };
-            const clonedContext = context.clone([node], undefined, 0, undefined);
+            const clonedContext = context.clone([node], 0);
 
             for (const s of sort) {
                 const value = s.expr.evaluate(clonedContext);

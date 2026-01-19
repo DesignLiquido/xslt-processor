@@ -17,7 +17,7 @@ export class PathExpr extends Expression {
         let nodes1 = [];
         if (ctx.returnOnFirstMatch) {
             for (let i = 0; i < nodes.length; ++i) {
-                nodes1 = this.rel.evaluate(ctx.clone(nodes, undefined, i)).nodeSetValue();
+                nodes1 = this.rel.evaluate(ctx.clone(nodes, i)).nodeSetValue();
                 if (nodes1.length > 0) {
                     break;
                 }
@@ -26,7 +26,7 @@ export class PathExpr extends Expression {
         }
 
         for (let i = 0; i < nodes.length; ++i) {
-            const nodes0 = this.rel.evaluate(ctx.clone(nodes, undefined, i)).nodeSetValue();
+            const nodes0 = this.rel.evaluate(ctx.clone(nodes, i)).nodeSetValue();
             for (let ii = 0; ii < nodes0.length; ++ii) {
                 nodes1.push(nodes0[ii]);
             }

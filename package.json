@@ -9,7 +9,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "pre-build-setup": "rimraf ./demo && rimraf ./dist",
     "build": "yarn pre-build-setup && yarn cjs-build && yarn rollup-build && yarn copy-files-from-to",
     "cjs-build": "tsc",

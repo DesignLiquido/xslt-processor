@@ -45,9 +45,6 @@ import { NodeValue } from './values';
 export class ExprContext {
     position: number;
     nodeList: XNode[];
-    outputPosition: number;
-    outputNodeList: XNode[];
-    outputDepth: number;
     xsltVersion: '1.0' | '2.0' | '3.0';
 
     variables: { [name: string]: NodeValue };
@@ -78,9 +75,7 @@ export class ExprContext {
      * Notice that position starts at 0 at the outside interface;
      * inside XPath expressions this shows up as position()=1.
      * @param nodeList TODO
-     * @param outputNodeList TODO
      * @param opt_position TODO
-     * @param opt_outputPosition TODO
      * @param opt_parent TODO
      * @param opt_caseInsensitive TODO
      * @param opt_ignoreAttributesWithoutValue TODO
@@ -89,11 +84,8 @@ export class ExprContext {
      */
     constructor(
         nodeList: XNode[],
-        outputNodeList: XNode[],
         xsltVersion: '1.0' | '2.0' | '3.0' = '1.0',
         opt_position?: number,
-        opt_outputPosition?: number,
-        opt_outputDepth?: number,
         opt_decimalFormatSettings?: XsltDecimalFormatSettings,
         opt_variables?: { [name: string]: any },
         opt_knownNamespaces?: { [alias: string]: string },
@@ -104,11 +96,9 @@ export class ExprContext {
         opt_ignoreNonElementNodesForNTA?: any
     ) {
         this.nodeList = nodeList;
-        this.outputNodeList = outputNodeList;
         this.xsltVersion = xsltVersion;
 
         this.position = opt_position || 0;
-        this.outputPosition = opt_outputPosition || 0;
 
         this.variables = opt_variables || {};
         this.keys = opt_parent?.keys || {};
@@ -121,7 +111,6 @@ export class ExprContext {
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
         this.inApplyTemplates = false;
         this.baseTemplateMatched = false;
-        this.outputDepth = opt_outputDepth || 0;
 
         this.decimalFormatSettings = opt_decimalFormatSettings || {
             decimalSeparator: '.',
@@ -155,38 +144,14 @@ export class ExprContext {
      * different node, position, or node set. What is not passed is
      * inherited from the cloned context.
      * @param opt_nodeList TODO
-     * @param opt_outputNodeList TODO
      * @param opt_position TODO
-     * @param opt_outputPosition TODO
      * @returns TODO
      */
-    clone(opt_nodeList?: XNode[], opt_outputNodeList?: XNode[], opt_position?: number, opt_outputPosition?: number) {
+    clone(opt_nodeList?: XNode[], opt_position?: number) {
         return new ExprContext(
             opt_nodeList || this.nodeList,
-            opt_outputNodeList || this.outputNodeList,
             this.xsltVersion,
             typeof opt_position !== 'undefined' ? opt_position : this.position,
-            typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
-            this.outputDepth,
-            this.decimalFormatSettings,
-            this.variables,
-            this.knownNamespaces,
-            this,
-            this.caseInsensitive,
-            this.ignoreAttributesWithoutValue,
-            this.returnOnFirstMatch,
-            this.ignoreNonElementNodesForNTA
-        );
-    }
-
-    cloneByOutput(opt_outputNodeList?: XNode[], opt_outputPosition?: number, opt_outputDepth?: number) {
-        return new ExprContext(
-            this.nodeList,
-            opt_outputNodeList || this.outputNodeList,
-            this.xsltVersion,
-            this.position,
-            typeof opt_outputPosition !== 'undefined' ? opt_outputPosition : this.outputPosition,
-            typeof opt_outputDepth !== 'undefined' ? opt_outputDepth : this.outputDepth,
             this.decimalFormatSettings,
             this.variables,
             this.knownNamespaces,

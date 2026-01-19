@@ -285,7 +285,7 @@ export class StepExpr extends Expression {
             let nodeList0 = nodeList;
             nodeList = [];
             for (let i = 0; i < nodeList0.length; ++i) {
-                if (this.nodeTest.evaluate(context.clone(nodeList0, undefined, i)).booleanValue()) {
+                if (this.nodeTest.evaluate(context.clone(nodeList0, i)).booleanValue()) {
                     nodeList.push(nodeList0[i]);
                 }
             }
@@ -298,7 +298,7 @@ export class StepExpr extends Expression {
                 nodeList = [];
                 for (let ii = 0; ii < nodeList0.length; ++ii) {
                     let n = nodeList0[ii];
-                    if (this.predicate[i].evaluate(context.clone(nodeList0, undefined, ii)).booleanValue()) {
+                    if (this.predicate[i].evaluate(context.clone(nodeList0, ii)).booleanValue()) {
                         nodeList.push(n);
                     }
                 }

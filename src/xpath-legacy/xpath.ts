@@ -1009,7 +1009,7 @@ export class XPath {
                 node,
                 key: []
             };
-            const clonedContext = context.clone([node], undefined, 0, undefined);
+            const clonedContext = context.clone([node], 0);
 
             for (const s of sort) {
                 const value = s.expr.evaluate(clonedContext);
@@ -1077,7 +1077,7 @@ export class XPath {
 
     xPathStep(nodes: any[], steps: any[], step: any, input: XNode, context: ExprContext) {
         const s = steps[step];
-        const ctx2 = context.clone([input], undefined, 0, undefined);
+        const ctx2 = context.clone([input], 0);
 
         if (context.returnOnFirstMatch && !s.hasPositionalPredicate) {
             let nodeList = s.evaluate(ctx2).nodeSetValue();
@@ -1092,7 +1092,7 @@ export class XPath {
             const pLength = s.predicate.length;
             nodeListLoop: for (let i = 0; i < nLength; ++i) {
                 for (let j = 0; j < pLength; ++j) {
-                    if (!s.predicate[j].evaluate(context.clone(nodeList, undefined, i, undefined)).booleanValue()) {
+                    if (!s.predicate[j].evaluate(context.clone(nodeList, i)).booleanValue()) {
                         continue nodeListLoop;
                     }
                 }

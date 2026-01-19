@@ -27,7 +27,7 @@ export class FilterExpr extends Expression {
             nodes = [];
             for (let j = 0; j < nodes0.length; ++j) {
                 const n = nodes0[j];
-                if (this.predicate[i].evaluate(context.clone(nodes0, undefined, j)).booleanValue()) {
+                if (this.predicate[i].evaluate(context.clone(nodes0, j)).booleanValue()) {
                     nodes.push(n);
                 }
             }

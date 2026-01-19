@@ -10,7 +10,6 @@ import {
     XNode,
     XmlParser,
     domAppendChild,
-    domAppendTransformedChild,
     domCreateCDATASection,
     domCreateComment,
     domCreateDocumentFragment,
@@ -127,7 +126,7 @@ export class Xslt {
     async xsltProcess(xmlDoc: XDocument, stylesheet: XDocument) {
         const outputDocument = new XDocument();
         this.outputDocument = outputDocument;
-        const expressionContext = new ExprContext([xmlDoc], [outputDocument]);
+        const expressionContext = new ExprContext([xmlDoc]);
 
         if (this.options.parameters.length > 0) {
             for (const parameter of this.options.parameters) {
@@ -181,8 +180,7 @@ export class Xslt {
                     await this.xsltComment(context, template, output);
                     break;
                 case 'copy':
-                    const destinationCopyNode = output || context.outputNodeList[context.outputPosition];
-                    node = this.xsltCopy(destinationCopyNode, context.nodeList[context.position]);
+                    node = this.xsltCopy(output || this.outputDocument, context.nodeList[context.position]);
                     if (node) {
                         await this.xsltChildNodes(context, template, node);
                     }
@@ -190,7 +188,7 @@ export class Xslt {
                 case 'copy-of':
                     select = xmlGetAttribute(template, 'select');
                     value = this.xPath.xPathEval(select, context);
-                    const destinationNode = context.outputNodeList[context.outputPosition] || output;
+                    const destinationNode = output || this.outputDocument;
                     if (value.type === 'node-set') {
                         nodes = value.nodeSetValue();
                         for (let i = 0; i < nodes.length; ++i) {
@@ -312,23 +310,16 @@ export class Xslt {
             if (currentNode.nodeType === DOM_TEXT_NODE) {
                 const textNodeContext = context.clone(
                     [currentNode],
-                    undefined,
-                    0,
-                    undefined
+                    0
                 );
                 this.commonLogicTextNode(textNodeContext, currentNode, output);
             } else {
                 // For non-text nodes, select the BEST matching template based on priority
                 const clonedContext = modifiedContext.clone(
                     [currentNode],
-                    undefined,
-                    0,
-                    undefined
+                    0
                 );
                 clonedContext.inApplyTemplates = true;
-                // The output depth should be restarted, since
-                // another template is being applied from this point.
-                clonedContext.outputDepth = 0;
 
                 // Select the best template according to XSLT conflict resolution rules
                 const selection = selectBestTemplate(
@@ -382,7 +373,7 @@ export class Xslt {
                     sourceNode.nodeType,
                     sourceNode.nodeName,
                     sourceNode.nodeValue,
-                    context.outputNodeList[context.outputPosition],
+                    output || this.outputDocument,
                     sourceNode.namespaceUri
                 );
                 sourceNode.outputNode = outputNode;
@@ -397,7 +388,7 @@ export class Xslt {
                 const newRootNode = domCreateElement(this.outputDocument, sourceRootNode.nodeName);
                 newRootNode.transformedNodeName = sourceRootNode.nodeName;
                 newRootNode.transformedLocalName = sourceRootNode.localName;
-                domAppendTransformedChild(outputNode, newRootNode);
+                domAppendChild(outputNode, newRootNode);
                 outputNode = newRootNode;
                 parentSourceNode = newRootNode;
             }
@@ -486,19 +477,19 @@ export class Xslt {
             if (source.namespaceUri !== null && source.namespaceUri !== undefined) {
                 domSetTransformedAttribute(node, 'xmlns', source.namespaceUri);
             }
-            domAppendTransformedChild(destination, node);
+            domAppendChild(destination, node);
             return node;
         }
 
         if (source.nodeType == DOM_TEXT_NODE) {
             let node = domCreateTransformedTextNode(this.outputDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
+            domAppendChild(destination, node);
         } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
             let node = domCreateCDATASection(this.outputDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
+            domAppendChild(destination, node);
         } else if (source.nodeType == DOM_COMMENT_NODE) {
             let node = domCreateComment(this.outputDocument, source.nodeValue);
-            domAppendTransformedChild(destination, node);
+            domAppendChild(destination, node);
         } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
             domSetTransformedAttribute(destination, source.nodeName, source.nodeValue);
         }
@@ -517,7 +508,7 @@ export class Xslt {
         await this.xsltChildNodes(context, template, node);
         const commentData = xmlValue(node);
         const commentNode = domCreateComment(this.outputDocument, commentData);
-        const resolvedOutput = output || context.outputNodeList[context.outputPosition];
+        const resolvedOutput = output || this.outputDocument;
         resolvedOutput.appendChild(commentNode);
     }
 
@@ -589,10 +580,10 @@ export class Xslt {
 
         node.transformedNodeName = name;
 
-        domAppendTransformedChild(context.outputNodeList[context.outputPosition], node);
+        domAppendChild(this.outputDocument, node);
         // The element becomes the output node of the source node.
         context.nodeList[context.position].outputNode = node;
-        const clonedContext = context.clone(undefined, [node], undefined, 0);
+        const clonedContext = context.clone(undefined, 0);
         await this.xsltChildNodes(clonedContext, template);
     }
 
@@ -622,7 +613,7 @@ export class Xslt {
         }
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
-            await this.xsltChildNodes(sortContext.clone(sortContext.nodeList, undefined, i), template, output);
+            await this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output);
         }
     }
 
@@ -819,7 +810,7 @@ export class Xslt {
                 context.baseTemplateMatched = true;
             }
 
-            const templateContext = context.clone(nodes, undefined, 0);
+            const templateContext = context.clone(nodes, 0);
             await this.xsltChildNodes(templateContext, template, output);
         }
     }
@@ -833,8 +824,8 @@ export class Xslt {
         if (disableOutputEscaping.length > 0 && disableOutputEscaping[0].nodeValue === 'yes') {
             node.escape = false;
         }
-        const destinationTextNode = output || context.outputNodeList[context.outputPosition];
-        destinationTextNode.appendTransformedChild(node);
+        const destinationTextNode = output || this.outputDocument;
+        destinationTextNode.appendChild(node);
     }
 
     /**
@@ -937,7 +928,7 @@ export class Xslt {
                 // Execute ONLY the selected template
                 this.firstTemplateRan = true;
                 contextClone.baseTemplateMatched = true;
-                const templateContext = contextClone.clone(winner.matchedNodes, undefined, 0);
+                const templateContext = contextClone.clone(winner.matchedNodes, 0);
                 await this.xsltChildNodes(templateContext, winner.priority.template, output);
             }
         }
@@ -951,9 +942,9 @@ export class Xslt {
         node.siblingPosition = context.nodeList[context.position].siblingPosition;
 
         if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
-            output.appendTransformedChild(node);
+            output.appendChild(node);
         } else {
-            context.outputNodeList[context.outputPosition].appendTransformedChild(node);
+            this.outputDocument.appendChild(node);
         }
     }
 
@@ -1025,12 +1016,17 @@ export class Xslt {
     private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
         if (output && output.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
             let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
-            domAppendTransformedChild(output, node);
+            domAppendChild(output, node);
         } else {
-            const parentNode = context.outputNodeList[context.outputPosition];
-            const textNodeList = parentNode.transformedChildNodes.filter(
-                (n) => n.nodeType === DOM_TEXT_NODE
-            );
+            const parentNode = output || this.outputDocument;
+            const textNodeList = parentNode.transformedFirstChild ? [] : [];
+            if (parentNode.transformedFirstChild) {
+                let child = parentNode.transformedFirstChild;
+                while (child && child.nodeType === DOM_TEXT_NODE) {
+                    textNodeList.push(child);
+                    child = child.transformedNextSibling;
+                }
+            }
 
             if (textNodeList.length > 0) {
                 let node = textNodeList[0];
@@ -1038,7 +1034,7 @@ export class Xslt {
             } else {
                 let node = domCreateTransformedTextNode(this.outputDocument, template.nodeValue);
                 node.transformedParentNode = parentNode;
-                domAppendTransformedChild(parentNode, node);
+                domAppendChild(parentNode, node);
             }
         }
     }
@@ -1068,12 +1064,10 @@ export class Xslt {
             }
 
             let newNode: XNode;
-            if (node.outputNode === undefined || node.outputNode === null || context.outputDepth > 0) {
+            if (node.outputNode === undefined || node.outputNode === null) {
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
                 newNode.siblingPosition = node.siblingPosition;
-                if (context.outputDepth === 0) {
-                    node.outputNode = newNode;
-                }
+                node.outputNode = newNode;
             } else {
                 newNode = node.outputNode;
             }
@@ -1081,27 +1075,30 @@ export class Xslt {
             newNode.transformedNodeName = template.nodeName;
             newNode.transformedLocalName = template.localName;
 
-            const outputNode = context.outputNodeList[context.outputPosition];
-            domAppendTransformedChild(outputNode, newNode);
-            const clonedContext = elementContext.cloneByOutput(
-                outputNode.transformedChildNodes,
-                outputNode.transformedChildNodes.length - 1,
-                ++elementContext.outputDepth
-            );
-            await this.xsltChildNodes(clonedContext, template);
+            domAppendChild(output, newNode);
+            await this.xsltChildNodes(elementContext, template, newNode);
 
             // The node can have transformed attributes from previous transformations.
             // Case 1: attributes that were created by a transformation without a source attribute.
-            const transformedChildNodes = node.transformedChildNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
-            for (const previouslyTransformedAttribute of transformedChildNodes) {
+            let transformedAttributes: XNode[] = [];
+            if (node.transformedFirstChild) {
+                let child = node.transformedFirstChild;
+                while (child) {
+                    if (child.nodeType === DOM_ATTRIBUTE_NODE) {
+                        transformedAttributes.push(child);
+                    }
+                    child = child.transformedNextSibling;
+                }
+            }
+            for (const previouslyTransformedAttribute of transformedAttributes) {
                 const name = previouslyTransformedAttribute.transformedNodeName;
                 const value = previouslyTransformedAttribute.transformedNodeValue;
                 domSetTransformedAttribute(newNode, name, value);
             }
 
             // Case 2: attributes that existed as a source attribute and were transformed.
-            const transformedAttributes = node.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE && n.transformedNodeName)
-            for (const previouslyTransformedAttribute of transformedAttributes) {
+            const transformedChildAttributes = node.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE && n.transformedNodeName)
+            for (const previouslyTransformedAttribute of transformedChildAttributes) {
                 const name = previouslyTransformedAttribute.transformedNodeName;
                 const value = previouslyTransformedAttribute.transformedNodeValue;
                 domSetTransformedAttribute(newNode, name, value);
