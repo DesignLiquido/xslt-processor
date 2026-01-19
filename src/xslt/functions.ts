@@ -231,18 +231,67 @@ export function collectAndExpandTemplates(
 }
 
 /**
- * Check if a node matches a given pattern.
- * This creates a context where the node is in a "self-and-siblings" position
- * and evaluates if the pattern matches.
+ * Split a pattern string by the union operator '|', respecting brackets and quotes.
+ * For example: "@*|node()" -> ["@*", "node()"]
+ * But: "item[@id='a|b']" -> ["item[@id='a|b']"] (not split inside quotes)
+ *
+ * @param pattern The pattern string to split
+ * @returns Array of pattern alternatives
+ */
+function splitUnionPattern(pattern: string): string[] {
+    const alternatives: string[] = [];
+    let current = '';
+    let depth = 0; // Track bracket depth
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    for (let i = 0; i < pattern.length; i++) {
+        const char = pattern[i];
+
+        if (char === "'" && !inDoubleQuote) {
+            inSingleQuote = !inSingleQuote;
+            current += char;
+        } else if (char === '"' && !inSingleQuote) {
+            inDoubleQuote = !inDoubleQuote;
+            current += char;
+        } else if (!inSingleQuote && !inDoubleQuote) {
+            if (char === '[' || char === '(') {
+                depth++;
+                current += char;
+            } else if (char === ']' || char === ')') {
+                depth--;
+                current += char;
+            } else if (char === '|' && depth === 0) {
+                // Union operator at top level
+                alternatives.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        } else {
+            current += char;
+        }
+    }
+
+    // Don't forget the last alternative
+    if (current.trim()) {
+        alternatives.push(current.trim());
+    }
+
+    return alternatives;
+}
+
+/**
+ * Check if a node matches a single (non-union) pattern.
  *
  * @param node The node to test
- * @param pattern The match pattern string
+ * @param pattern The match pattern string (should not contain union operator at top level)
  * @param context The original context (for namespace/variable info)
  * @param matchResolver The match resolver
  * @param xPath The XPath instance
  * @returns true if the node matches the pattern
  */
-function nodeMatchesPattern(
+function nodeMatchesSinglePattern(
     node: XNode,
     pattern: string,
     context: ExprContext,
@@ -293,6 +342,38 @@ function nodeMatchesPattern(
             }
         } catch (e) {
             // Pattern parsing failed
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Check if a node matches a given pattern.
+ * This handles union patterns by splitting them and testing each alternative.
+ *
+ * @param node The node to test
+ * @param pattern The match pattern string
+ * @param context The original context (for namespace/variable info)
+ * @param matchResolver The match resolver
+ * @param xPath The XPath instance
+ * @returns true if the node matches the pattern
+ */
+function nodeMatchesPattern(
+    node: XNode,
+    pattern: string,
+    context: ExprContext,
+    matchResolver: MatchResolver,
+    xPath: XPath
+): boolean {
+    // Handle union patterns by splitting and testing each alternative
+    const alternatives = splitUnionPattern(pattern);
+
+    // If there are multiple alternatives, test each one
+    // Return true if ANY alternative matches
+    for (const alt of alternatives) {
+        if (nodeMatchesSinglePattern(node, alt, context, matchResolver, xPath)) {
+            return true;
         }
     }
 

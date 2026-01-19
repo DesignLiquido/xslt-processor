@@ -127,16 +127,12 @@ describe('XPath Functions', () => {
             });
         });
 
-        // TODO: This returns the following in other transformers:
-        // "Unable to generate the XML document using the provided XML/XSL input. Cannot create an attribute node (uid) whose parent is a document node. Most recent element start tag was output at line -1 of module *unknown*"
-        it.skip('generate-id, trivial', async () => {
+        it('generate-id, trivial', async () => {
             const xml = xmlParser.xmlParse(`<root></root>`);
             const xsltDefinition = xmlParser.xmlParse(
                 `<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-                    <xsl:template match="/">
-                        <xsl:attribute name="uid">
-                            <xsl:value-of select="generate-id(.)" />
-                        </xsl:attribute>
+                    <xsl:template match="root">
+                        <result uid="{generate-id(.)}"/>
                     </xsl:template>
                 </xsl:stylesheet>`
             );
@@ -145,10 +141,12 @@ describe('XPath Functions', () => {
 
             const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
-            assert.ok(outXmlString);
+            // Should produce something like: <result uid="A1234567890"/>
+            assert.ok(outXmlString.includes('<result uid="'));
+            assert.ok(outXmlString.includes('"/>'));
         });
 
-        it.skip('generate-id, complete', async () => {
+        it('generate-id, complete', async () => {
             const xsltDefinition = xmlParser.xmlParse(
                 `<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
                     <xsl:output method="xml" omit-xml-declaration="yes" />
@@ -200,9 +198,13 @@ describe('XPath Functions', () => {
 
             const outXmlString = await xsltClass.xsltProcess(xml, xsltDefinition);
 
-            // Uncomment below to see the results
-            // console.log(outXmlString);
-            assert.ok(!outXmlString);
+            // Verify uid attributes are added to chapter, sect1, sect2
+            assert.ok(outXmlString.includes('<chapter uid="'), 'chapter should have uid attribute');
+            assert.ok(outXmlString.includes('<sect1 uid="'), 'sect1 should have uid attribute');
+            assert.ok(outXmlString.includes('<sect2 uid="'), 'sect2 should have uid attribute');
+            // Verify content is preserved
+            assert.ok(outXmlString.includes('<para>'), 'para elements should be preserved');
+            assert.ok(outXmlString.includes('<figure>'), 'figure elements should be preserved');
         });
 
         it('translate', async () => {
