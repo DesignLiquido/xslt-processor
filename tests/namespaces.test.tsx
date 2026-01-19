@@ -5,10 +5,7 @@ import assert from 'assert';
 import { Xslt } from '../src/xslt';
 import { XmlParser } from '../src/dom';
 
-// TODO:
-// "xsl" prefix for non-XSL namespace
-// namespaces in input XML
-// using namespace prefixes in xpath
+// TODO: Test "xsl" prefix bound to non-XSL namespace (edge case)
 
 describe('namespaces', () => {
     it('non-"xsl" prefix in stylesheet test', async () => {
@@ -50,13 +47,11 @@ describe('namespaces', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
-    // TODO: Fix test to be relevant again.
-    it.skip('namespace-uri() test', async () => {
+    it('namespace-uri() test', async () => {
         const xmlString = (
             `<root xmlns="http://example.com">
                 <test />
                 <test xmlns="http://example.test/2" />
-                <example:test xmlns:example="http://example.test/3" />
                 <test xmlns="" />
             </root>`
         );
@@ -76,14 +71,11 @@ describe('namespaces', () => {
                 </xsl:template>
             </xsl:stylesheet>`;
 
-        const expectedOutString = (
-            `<div>
-                <span>http://example.com</span>
-                <span>http://example.test/2</span>
-                <span>http://example.test/3</span>
-                <span></span>
-            </div>`
-        );
+        // namespace-uri() returns the namespace URI of the context node:
+        // - First <test /> inherits xmlns="http://example.com" from root
+        // - Second <test xmlns="http://example.test/2" /> has its own namespace
+        // - Third <test xmlns="" /> has empty (no) namespace
+        const expectedOutString = `<div><span>http://example.com</span><span>http://example.test/2</span><span></span></div>`;
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();

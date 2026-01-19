@@ -195,6 +195,7 @@ export class Xslt {
                         }
                     } else {
                         let node = domCreateTextNode(this.outputDocument, value.stringValue());
+                        node.siblingPosition = destinationNode.childNodes.length;
                         domAppendChild(destinationNode, node);
                     }
                     break;
@@ -428,18 +429,23 @@ export class Xslt {
             if (source.namespaceUri !== null && source.namespaceUri !== undefined) {
                 domSetAttribute(node, 'xmlns', source.namespaceUri);
             }
+            // Set siblingPosition to preserve insertion order during serialization
+            node.siblingPosition = destination.childNodes.length;
             domAppendChild(destination, node);
             return node;
         }
 
         if (source.nodeType == DOM_TEXT_NODE) {
             let node = domCreateTextNode(this.outputDocument, source.nodeValue);
+            node.siblingPosition = destination.childNodes.length;
             domAppendChild(destination, node);
         } else if (source.nodeType == DOM_CDATA_SECTION_NODE) {
             let node = domCreateCDATASection(this.outputDocument, source.nodeValue);
+            node.siblingPosition = destination.childNodes.length;
             domAppendChild(destination, node);
         } else if (source.nodeType == DOM_COMMENT_NODE) {
             let node = domCreateComment(this.outputDocument, source.nodeValue);
+            node.siblingPosition = destination.childNodes.length;
             domAppendChild(destination, node);
         } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
             domSetAttribute(destination, source.nodeName, source.nodeValue);
@@ -877,13 +883,11 @@ export class Xslt {
         const attribute = this.xPath.xPathEval(select, context);
         const value = attribute.stringValue();
         const node = domCreateTextNode(this.outputDocument, value);
-        node.siblingPosition = context.nodeList[context.position].siblingPosition;
+        // Set siblingPosition to preserve insertion order during serialization
+        const targetOutput = output || this.outputDocument;
+        node.siblingPosition = targetOutput.childNodes.length;
 
-        if (output) {
-            output.appendChild(node);
-        } else {
-            this.outputDocument.appendChild(node);
-        }
+        targetOutput.appendChild(node);
     }
 
     /**
@@ -954,6 +958,8 @@ export class Xslt {
     private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
         if (output) {
             let node = domCreateTextNode(this.outputDocument, template.nodeValue);
+            // Set siblingPosition to preserve insertion order during serialization
+            node.siblingPosition = output.childNodes.length;
             domAppendChild(output, node);
         }
     }
