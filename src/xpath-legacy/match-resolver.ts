@@ -1,6 +1,13 @@
 import { XNode } from "../dom";
 import { ExprContext } from "./expr-context";
-import { LocationExpr, UnionExpr } from "./expressions";
+import {
+    LocationExpr,
+    UnionExpr,
+    FilterExpr,
+    PathExpr,
+    FunctionCallExpr,
+    VariableExpr
+} from "./expressions";
 import { Expression } from "./expressions/expression";
 
 /**
@@ -23,8 +30,24 @@ export class MatchResolver {
             return this.unionExpressionMatch(expression, context);
         }
 
-        // TODO: Other expressions
-        return [];
+        if (expression instanceof FilterExpr) {
+            return this.filterExpressionMatch(expression, context);
+        }
+
+        if (expression instanceof PathExpr) {
+            return this.pathExpressionMatch(expression, context);
+        }
+
+        if (expression instanceof FunctionCallExpr) {
+            return this.functionCallExpressionMatch(expression, context);
+        }
+
+        if (expression instanceof VariableExpr) {
+            return this.variableExpressionMatch(expression, context);
+        }
+
+        // For any other expression type, try to evaluate it and extract nodes
+        return this.genericExpressionMatch(expression, context);
     }
 
     /**
@@ -144,5 +167,154 @@ export class MatchResolver {
         }
 
         return nodes;
+    }
+
+    /**
+     * Resolves a `FilterExpr`.
+     * Filter expressions apply predicates to an expression result.
+     * For template matching, we evaluate the filter and check if the
+     * context node is in the result set.
+     * @param expression The Filter Expression.
+     * @param context The Expression Context.
+     * @returns Matching nodes from the context.
+     */
+    private filterExpressionMatch(expression: FilterExpr, context: ExprContext): XNode[] {
+        const clonedContext = context.clone();
+        const evaluatedNodes = expression.evaluate(clonedContext).nodeSetValue();
+        const finalList: XNode[] = [];
+
+        // Check if any of the context nodes are in the evaluated result
+        const contextNode = context.nodeList[context.position];
+        for (const node of evaluatedNodes) {
+            if (node.id === contextNode.id) {
+                finalList.push(node);
+                break;
+            }
+        }
+
+        return finalList;
+    }
+
+    /**
+     * Resolves a `PathExpr`.
+     * Path expressions combine a filter with a relative location path.
+     * Used for patterns like `key('items', @ref)/foo`.
+     * @param expression The Path Expression.
+     * @param context The Expression Context.
+     * @returns Matching nodes from the context.
+     */
+    private pathExpressionMatch(expression: PathExpr, context: ExprContext): XNode[] {
+        const clonedContext = context.clone();
+        const evaluatedNodes = expression.evaluate(clonedContext).nodeSetValue();
+        const finalList: XNode[] = [];
+
+        // Check if the context node is in the evaluated result
+        const contextNode = context.nodeList[context.position];
+        for (const node of evaluatedNodes) {
+            if (node.id === contextNode.id) {
+                finalList.push(node);
+                break;
+            }
+        }
+
+        return finalList;
+    }
+
+    /**
+     * Resolves a `FunctionCallExpr`.
+     * Function calls like `key()` or `id()` can return node-sets
+     * that are used for template matching.
+     * @param expression The Function Call Expression.
+     * @param context The Expression Context.
+     * @returns Matching nodes from the context.
+     */
+    private functionCallExpressionMatch(expression: FunctionCallExpr, context: ExprContext): XNode[] {
+        const clonedContext = context.clone();
+        const result = expression.evaluate(clonedContext);
+
+        // Only process if the result is a node-set
+        if (result.type !== 'node-set') {
+            return [];
+        }
+
+        const evaluatedNodes = result.nodeSetValue();
+        const finalList: XNode[] = [];
+
+        // Check if the context node is in the evaluated result
+        const contextNode = context.nodeList[context.position];
+        for (const node of evaluatedNodes) {
+            if (node.id === contextNode.id) {
+                finalList.push(node);
+                break;
+            }
+        }
+
+        return finalList;
+    }
+
+    /**
+     * Resolves a `VariableExpr`.
+     * Variable references that resolve to node-sets can be used
+     * for template matching.
+     * @param expression The Variable Expression.
+     * @param context The Expression Context.
+     * @returns Matching nodes from the context.
+     */
+    private variableExpressionMatch(expression: VariableExpr, context: ExprContext): XNode[] {
+        const result = expression.evaluate(context) as any;
+
+        // Only process if the result is a node-set
+        if (result.type !== 'node-set') {
+            return [];
+        }
+
+        const evaluatedNodes = result.nodeSetValue();
+        const finalList: XNode[] = [];
+
+        // Check if the context node is in the evaluated result
+        const contextNode = context.nodeList[context.position];
+        for (const node of evaluatedNodes) {
+            if (node.id === contextNode.id) {
+                finalList.push(node);
+                break;
+            }
+        }
+
+        return finalList;
+    }
+
+    /**
+     * Generic handler for any other expression type.
+     * Attempts to evaluate and extract nodes if the result is a node-set.
+     * @param expression The Expression.
+     * @param context The Expression Context.
+     * @returns Matching nodes from the context.
+     */
+    private genericExpressionMatch(expression: Expression, context: ExprContext): XNode[] {
+        try {
+            const clonedContext = context.clone();
+            const result = expression.evaluate(clonedContext);
+
+            // Only process if the result is a node-set
+            if (result && result.type === 'node-set') {
+                const evaluatedNodes = result.nodeSetValue();
+                const finalList: XNode[] = [];
+
+                const contextNode = context.nodeList[context.position];
+                for (const node of evaluatedNodes) {
+                    if (node.id === contextNode.id) {
+                        finalList.push(node);
+                        break;
+                    }
+                }
+
+                return finalList;
+            }
+        } catch (e) {
+            // If evaluation fails, return empty array
+            console.warn('MatchResolver: Failed to evaluate expression', e);
+        }
+
+        return [];
     }
 }
