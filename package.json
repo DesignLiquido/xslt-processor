@@ -88,6 +88,10 @@
       "to": "demo/xslt.html"
     },
     {
+      "from": "interactive-tests/xpath.html",
+      "to": "demo/xpath.html"
+    },
+    {
       "from": "dist/umd/xslt-processor.global.js",
       "to": "demo/js/xslt-processor.js"
     }

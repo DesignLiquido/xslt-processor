@@ -1,120 +1,379 @@
-<html>
-    <head>
-        <script type="application/javascript" src="js/xslt-processor.js"></script>
-        <script>
-            // Copyright 2023-2024 Design Liquido
-            // Copyright 2018 Johannes Wilm
-            // Copyright 2005 Google Inc.
-            // All Rights Reserved
-            //
-            // Tests for the XPath parser. To run the test, open the file from the
-            // file system. No server support is required.
-            //
-            //
-            // Author: Steffen Meschkat <mesch@google.com>
-            window.logging = true;
-            window.xpathdebug = true;
-
-            class Log {
-                constructor() {
-                    this.lines = [];
-                }
-
-                static write(s) {
-                    this.lines.push(globalThis.XsltProcessor.xmlEscapeText(s));
-                    this.show();
-                }
-
-                // Writes the given XML with every tag on a new line.
-                static writeXML(xml) {
-                    const s0 = xml.replace(/</g, '\n<');
-                    const s1 = global.XsltProcessor.xmlEscapeText(s0);
-                    const s2 = s1.replace(/\s*\n(\s|\n)*/g, '<br/>');
-                    this.lines.push(s2);
-                    this.show();
-                }
-
-                // Writes without any escaping
-                static writeRaw(s) {
-                    this.lines.push(s);
-                    this.show();
-                }
-
-                static clear() {
-                    const l = this.div();
-                    l.innerHTML = '';
-                    this.lines = [];
-                }
-
-                static show() {
-                    const l = this.div();
-                    l.innerHTML += `${this.lines.join('<br/>')}<br/>`;
-                    this.lines = [];
-                    l.scrollTop = l.scrollHeight;
-                }
-
-                static div() {
-                    let l = document.getElementById('log');
-                    if (!l) {
-                        l = document.createElement('div');
-                        l.id = 'log';
-                        l.style.position = 'absolute';
-                        l.style.right = '5px';
-                        l.style.top = '5px';
-                        l.style.width = '250px';
-                        l.style.height = '150px';
-                        l.style.overflow = 'auto';
-                        l.style.backgroundColor = '#f0f0f0';
-                        l.style.border = '1px solid gray';
-                        l.style.fontSize = '10px';
-                        l.style.padding = '5px';
-                        document.body.appendChild(l);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XPath Tester - Interactive Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        editor: {
+                            bg: '#1e1e1e',
+                            border: '#3c3c3c'
+                        }
                     }
-                    return l;
                 }
             }
+        }
+    </script>
+    <style>
+        .editor-container {
+            height: 350px;
+            border: 1px solid #3c3c3c;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+        .result-item {
+            transition: all 0.2s ease;
+        }
+        .result-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">XPath Tester</h1>
+            <p class="text-gray-400">Interactive XPath expression evaluation tool</p>
+        </header>
 
-            window.load_expr = () => {
-                const s = document.getElementById('s');
-                const expr = ['<xsl:stylesheet>'];
-                for (let i = 0; i < expr.length; ++i) {
-                    const o = new Option(expr[i].replace(/&gt;/, '>').replace(/&lt;/, '<'));
-                    s.options[s.options.length] = o;
+        <!-- XPath Input Section -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-medium text-gray-300">XPath Expression</label>
+                <span class="text-xs text-gray-500">Press Ctrl+Enter to evaluate</span>
+            </div>
+            <div class="flex gap-4">
+                <input
+                    type="text"
+                    id="xpath-input"
+                    class="flex-1 px-4 py-3 bg-editor-bg border border-editor-border rounded-lg text-white font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter XPath expression (e.g., //book/title)"
+                    value="//book/title"
+                />
+                <button
+                    id="evaluate-btn"
+                    onclick="evaluateXPath()"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Evaluate
+                </button>
+            </div>
+        </div>
+
+        <!-- Example Expressions -->
+        <div class="mb-6">
+            <label class="text-xs font-medium text-gray-500 mb-2 block">Quick Examples:</label>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="setXPath('//book')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book</button>
+                <button onclick="setXPath('//book/title')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book/title</button>
+                <button onclick="setXPath('//book[@category]')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book[@category]</button>
+                <button onclick="setXPath('//book[price>30]')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book[price>30]</button>
+                <button onclick="setXPath('//author/text()')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//author/text()</button>
+                <button onclick="setXPath('count(//book)')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">count(//book)</button>
+                <button onclick="setXPath('//book[1]')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book[1]</button>
+                <button onclick="setXPath('//book[last()]')" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-md transition-colors">//book[last()]</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- XML Input -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">XML Document</label>
+                    <span class="text-xs text-gray-500 font-mono">XML</span>
+                </div>
+                <div id="xml-editor" class="editor-container"></div>
+            </div>
+
+            <!-- Results -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">Results</label>
+                    <span id="result-count" class="text-xs text-gray-500"></span>
+                </div>
+                <div
+                    id="results"
+                    class="editor-container bg-gray-800 rounded-lg p-4 overflow-auto"
+                >
+                    <p class="text-gray-500 italic">Results will appear here...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-container" class="hidden mt-6">
+            <div class="bg-red-900/50 border border-red-500 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-semibold text-red-400">Error</span>
+                </div>
+                <pre id="error-message" class="text-red-300 text-sm whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-gray-700 text-center text-gray-500 text-sm">
+            <p>Powered by <a href="https://github.com/DesignLiquido/xslt-processor" class="text-blue-400 hover:text-blue-300">xslt-processor</a></p>
+        </footer>
+    </div>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+    <!-- XSLT Processor -->
+    <script src="js/xslt-processor.js"></script>
+
+    <script>
+        let xmlEditor;
+
+        const defaultXml = `<?xml version="1.0" encoding="UTF-8"?>
+<bookstore>
+    <book category="cooking">
+        <title lang="en">Everyday Italian</title>
+        <author>Giada De Laurentiis</author>
+        <year>2005</year>
+        <price>30.00</price>
+    </book>
+    <book category="children">
+        <title lang="en">Harry Potter</title>
+        <author>J.K. Rowling</author>
+        <year>2005</year>
+        <price>29.99</price>
+    </book>
+    <book category="web">
+        <title lang="en">XQuery Kick Start</title>
+        <author>James McGovern</author>
+        <author>Per Bothner</author>
+        <year>2003</year>
+        <price>49.99</price>
+    </book>
+    <book category="web">
+        <title lang="en">Learning XML</title>
+        <author>Erik T. Ray</author>
+        <year>2003</year>
+        <price>39.95</price>
+    </book>
+</bookstore>`;
+
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], function () {
+            monaco.editor.defineTheme('xpath-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: {
+                    'editor.background': '#1e1e1e',
                 }
-                s.selectedIndex = 0;
-            };
+            });
 
-            let log = new Log();
+            xmlEditor = monaco.editor.create(document.getElementById('xml-editor'), {
+                theme: 'xpath-dark',
+                value: defaultXml,
+                language: 'xml',
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                insertSpaces: true,
+                wordWrap: 'on',
+                padding: { top: 10 }
+            });
 
-            window.xpath_test = (form) => {
-                log.clear();
-                try {
-                    const i = form.cases.selectedIndex;
-                    const options = form.cases.options;
-
-                    const text = options[i].value;
-                    log.writeRaw(`<tt><b>${text}</b></tt>`);
-
-                    const expr = xpathParse(text, (message) => log.write(message));
-                    log.writeRaw(`<tt><b>${text}</b></tt>`);
-                    log.writeRaw(`<pre>${parseTree(expr, '')}</pre>`);
-
-                    options[i].selected = false;
-                    if (i < options.length - 1) {
-                        options[i + 1].selected = true;
-                    } else {
-                        options[0].selected = true;
-                    }
-                } catch (e) {
-                    log.write(`EXCEPTION ${e}`);
+            // Keyboard shortcut: Ctrl+Enter to evaluate
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    evaluateXPath();
                 }
-            };
-        </script>
-    </head>
-    <body onload="window.load_expr()">
-        <form onsubmit="window.xpath_test(this);return false" action="javascript:void(0)">
-            <select id="s" multiple="1" size="30" name="cases"></select>
-            <input type="submit" value="parse" align="top" />
-        </form>
-    </body>
+            });
+
+            // Enter key in input field
+            document.getElementById('xpath-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    evaluateXPath();
+                }
+            });
+        });
+
+        function setXPath(expr) {
+            document.getElementById('xpath-input').value = expr;
+            evaluateXPath();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function nodeToString(node) {
+            if (node.nodeType === 3) { // Text node
+                return node.nodeValue.trim();
+            }
+            if (node.nodeType === 2) { // Attribute node
+                return `${node.nodeName}="${node.nodeValue}"`;
+            }
+            if (node.nodeType === 1) { // Element node
+                const serializer = new XMLSerializer();
+                return serializer.serializeToString(node);
+            }
+            return String(node);
+        }
+
+        function formatXml(xml) {
+            // Simple XML formatting
+            let formatted = '';
+            let indent = '';
+            const lines = xml.replace(/>\s*</g, '>\n<').split('\n');
+
+            lines.forEach(line => {
+                if (line.match(/^<\/\w/)) {
+                    indent = indent.substring(2);
+                }
+                formatted += indent + line + '\n';
+                if (line.match(/^<\w[^>]*[^\/]>.*$/) && !line.match(/^<\w[^>]*>.*<\/\w+>/)) {
+                    indent += '  ';
+                }
+            });
+
+            return formatted.trim();
+        }
+
+        async function evaluateXPath() {
+            const btn = document.getElementById('evaluate-btn');
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            const resultsDiv = document.getElementById('results');
+            const resultCount = document.getElementById('result-count');
+            const xpathExpr = document.getElementById('xpath-input').value.trim();
+
+            // Reset error state
+            errorContainer.classList.add('hidden');
+            resultCount.textContent = '';
+
+            if (!xpathExpr) {
+                resultsDiv.innerHTML = '<p class="text-gray-500 italic">Enter an XPath expression</p>';
+                return;
+            }
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Evaluating...
+            `;
+
+            try {
+                const xmlParser = new globalThis.XsltProcessor.XmlParser();
+                const xmlDoc = xmlParser.xmlParse(xmlEditor.getValue());
+
+                // Use the browser's XPath evaluator for now
+                const result = xmlDoc.evaluate(
+                    xpathExpr,
+                    xmlDoc,
+                    null,
+                    XPathResult.ANY_TYPE,
+                    null
+                );
+
+                let html = '';
+                let count = 0;
+
+                switch (result.resultType) {
+                    case XPathResult.NUMBER_TYPE:
+                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                            <span class="text-blue-400 font-mono">Number:</span>
+                            <span class="text-green-400 font-mono ml-2">${result.numberValue}</span>
+                        </div>`;
+                        count = 1;
+                        break;
+
+                    case XPathResult.STRING_TYPE:
+                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                            <span class="text-blue-400 font-mono">String:</span>
+                            <span class="text-green-400 font-mono ml-2">"${escapeHtml(result.stringValue)}"</span>
+                        </div>`;
+                        count = 1;
+                        break;
+
+                    case XPathResult.BOOLEAN_TYPE:
+                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                            <span class="text-blue-400 font-mono">Boolean:</span>
+                            <span class="text-${result.booleanValue ? 'green' : 'red'}-400 font-mono ml-2">${result.booleanValue}</span>
+                        </div>`;
+                        count = 1;
+                        break;
+
+                    case XPathResult.UNORDERED_NODE_ITERATOR_TYPE:
+                    case XPathResult.ORDERED_NODE_ITERATOR_TYPE:
+                        let node;
+                        const nodes = [];
+                        while ((node = result.iterateNext()) !== null) {
+                            nodes.push(node);
+                        }
+                        count = nodes.length;
+
+                        if (nodes.length === 0) {
+                            html = '<p class="text-gray-500 italic">No matches found</p>';
+                        } else {
+                            html = nodes.map((n, i) => {
+                                const content = nodeToString(n);
+                                const formatted = n.nodeType === 1 ? formatXml(content) : content;
+                                return `<div class="result-item p-3 bg-gray-700/50 rounded-lg mb-2">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-blue-400 text-xs font-medium">Match ${i + 1}</span>
+                                        <span class="text-gray-500 text-xs">${n.nodeName}</span>
+                                    </div>
+                                    <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto">${escapeHtml(formatted)}</pre>
+                                </div>`;
+                            }).join('');
+                        }
+                        break;
+
+                    default:
+                        html = '<p class="text-gray-500 italic">Unknown result type</p>';
+                }
+
+                resultsDiv.innerHTML = html;
+                resultCount.textContent = `${count} result${count !== 1 ? 's' : ''}`;
+
+            } catch (error) {
+                errorContainer.classList.remove('hidden');
+                errorMessage.textContent = error.message || String(error);
+                resultsDiv.innerHTML = '<p class="text-red-500 italic">Evaluation failed</p>';
+                resultCount.textContent = '';
+            } finally {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Evaluate
+                `;
+            }
+        }
+    </script>
+</body>
 </html>

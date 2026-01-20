@@ -4,6 +4,7 @@
 coverage/
 demo/
 dist/
+interactive-tests/js/
 node_modules/
 
 package-lock.json
