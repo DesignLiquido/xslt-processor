@@ -8,7 +8,7 @@ import { XPathParser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
 import { XPathContext, XPathResult, createContext } from './lib/src/context';
 import { XPathNode } from './lib/src/node';
-import { ExprContext } from '../xpath-legacy/expr-context';
+import { ExprContext } from './expr-context';
 import { NodeValue, StringValue, NumberValue, BooleanValue, NodeSetValue } from './values';
 
 /**
@@ -61,8 +61,8 @@ export class Expression {
  * Location expression wrapper for XSLT pattern matching.
  */
 export class LocationExpr extends Expression {
-    absolute: boolean;
-    steps: any[];
+    declare absolute: boolean;
+    declare steps: any[];
 
     constructor(xpathExpression: XPathLocationPath, nodeConverter: NodeConverter) {
         super(xpathExpression, nodeConverter);

@@ -2,8 +2,10 @@
 // Match resolver that works with the new XPath implementation.
 
 import { XNode } from '../dom';
-import { ExprContext } from '../xpath-legacy/expr-context';
-import { Expression, LocationExpr, UnionExpr } from './xpath';
+import { ExprContext } from './expr-context';
+import { Expression } from './expressions/expression';
+import { LocationExpr } from './expressions/location-expr';
+import { UnionExpr } from './expressions/union-expr';
 
 /**
  * Class that resolves XPath expressions, returning nodes.

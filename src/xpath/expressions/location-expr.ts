@@ -3,7 +3,7 @@ import { NodeSetValue } from "../values/node-set-value";
 import { NodeTestAny } from "../node-tests/node-test-any";
 import { xPathAxis } from "../tokens";
 import { Expression } from "./expression";
-import { XPath } from "../xpath";
+import { XPath } from "../xpath-legacy-impl";
 import { XNode } from "../../dom";
 import { StepExpr } from "./step-expr";
 

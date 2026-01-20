@@ -1,12 +1,11 @@
 import { XNode } from "../dom/xnode";
 import { DOM_ELEMENT_NODE } from '../constants';
-import { ExprContext, XPath } from "../xpath-legacy";
-import { MatchResolver } from "../xpath-legacy/match-resolver";
+import { ExprContext, XPath, MatchResolver } from "../xpath";
 import { TemplatePriority } from "./template-priority";
 import { TemplateSelectionResult } from "./template-selection-result";
-import { NodeTestAny, NodeTestComment, NodeTestElementOrAttribute, NodeTestName, NodeTestNC, NodeTestPI, NodeTestText } from "../xpath-legacy/node-tests";
-import { LocationExpr, UnionExpr } from "../xpath-legacy/expressions";
-import { Expression } from "../xpath-legacy/expressions/expression";
+import { NodeTestAny, NodeTestComment, NodeTestElementOrAttribute, NodeTestName, NodeTestNC, NodeTestPI, NodeTestText } from "../xpath/node-tests";
+import { LocationExpr, UnionExpr } from "../xpath/expressions";
+import { Expression } from "../xpath/expressions/expression";
 
 /**
  * Calculate the default priority for a single step pattern.

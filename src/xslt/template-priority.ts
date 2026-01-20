@@ -4,10 +4,9 @@
 // See: https://www.w3.org/TR/xslt-30/#conflict
 
 import { XNode } from '../dom';
-import { ExprContext, XPath } from '../xpath-legacy';
-import { MatchResolver } from '../xpath-legacy/match-resolver';
-import { Expression } from '../xpath-legacy/expressions/expression';
-import { LocationExpr, UnionExpr } from '../xpath-legacy/expressions';
+import { ExprContext, XPath, MatchResolver } from '../xpath';
+import { Expression } from '../xpath/expressions/expression';
+import { LocationExpr, UnionExpr } from '../xpath/expressions';
 import {
     NodeTestAny,
     NodeTestComment,
@@ -16,7 +15,7 @@ import {
     NodeTestNC,
     NodeTestPI,
     NodeTestText
-} from '../xpath-legacy/node-tests';
+} from '../xpath/node-tests';
 
 /**
  * Represents priority metadata for a single template rule.

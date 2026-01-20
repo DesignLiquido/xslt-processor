@@ -5,7 +5,7 @@ import { NodeSetValue } from '../values/node-set-value';
 import { NodeTestAny } from '../node-tests/node-test-any';
 import { xPathAxis } from '../tokens';
 import { Expression } from './expression';
-import { XPath } from '../xpath';
+import { XPath } from '../xpath-legacy-impl';
 import { BinaryExpr } from './binary-expr';
 import { FunctionCallExpr } from './function-call-expr';
 import { NumberExpr } from './number-expr';

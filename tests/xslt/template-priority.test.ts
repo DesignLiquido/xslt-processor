@@ -2,7 +2,7 @@ import assert from 'assert';
 
 import { Xslt } from '../../src/xslt';
 import { XmlParser } from '../../src/dom';
-import { XPath } from '../../src/xpath-legacy';
+import { XPath } from '../../src/xpath';
 import { calculateDefaultPriority } from '../../src/xslt/functions';
 
 describe('Template Priority Calculation', () => {

@@ -5,9 +5,7 @@
 //
 // Debug stuff for the XPath parser. Also used by XSLT.
 import { XNode } from './dom';
-import {
-    ExprContext
-} from './xpath-legacy';
+import { ExprContext } from './xpath';
 import {
     BinaryExpr,
     FilterExpr,
@@ -22,9 +20,9 @@ import {
     UnaryMinusExpr,
     UnionExpr,
     VariableExpr
-} from './xpath-legacy/expressions';
-import { NodeTestAny, NodeTestElementOrAttribute, NodeTestText, NodeTestComment, NodeTestPI, NodeTestName, NodeTestNC } from './xpath-legacy/node-tests';
-import { StringValue, NumberValue, BooleanValue, NodeSetValue } from './xpath-legacy/values';
+} from './xpath/expressions';
+import { NodeTestAny, NodeTestElementOrAttribute, NodeTestText, NodeTestComment, NodeTestPI, NodeTestName, NodeTestNC } from './xpath/node-tests';
+import { StringValue, NumberValue, BooleanValue, NodeSetValue } from './xpath/values';
 
 export let parseTree = function (expr, indent) {
     let ret;

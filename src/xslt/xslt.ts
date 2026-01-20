@@ -22,7 +22,7 @@ import {
     xmlValue,
     xmlValueLegacyBehavior
 } from '../dom';
-import { ExprContext, XPath } from '../xpath-legacy';
+import { ExprContext, XPath, MatchResolver } from '../xpath';
 
 import {
     DOM_ATTRIBUTE_NODE,
@@ -34,10 +34,9 @@ import {
     DOM_TEXT_NODE
 } from '../constants';
 
-import { StringValue, NodeSetValue, NodeValue } from '../xpath-legacy/values';
+import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
 import { XsltOptions } from './xslt-options';
 import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
-import { MatchResolver } from '../xpath-legacy/match-resolver';
 import {
     collectAndExpandTemplates,
     selectBestTemplate,
