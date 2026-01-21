@@ -3,7 +3,7 @@ import assert from 'assert';
 import { XmlParser } from "../../src/dom";
 import { Xslt } from "../../src/xslt";
 
-describe.skip('xsl:include', () => {
+describe('xsl:include', () => {
     it('Trivial', async () => {
         const xmlSource = `<html></html>`;
 
