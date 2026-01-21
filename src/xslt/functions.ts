@@ -1,11 +1,9 @@
 import { XNode } from "../dom/xnode";
 import { DOM_ELEMENT_NODE } from '../constants';
-import { ExprContext, XPath, MatchResolver } from "../xpath";
+import { ExprContext, XPath, MatchResolver, Expression, LocationExpr, UnionExpr } from "../xpath";
 import { TemplatePriority } from "./template-priority";
 import { TemplateSelectionResult } from "./template-selection-result";
 import { NodeTestAny, NodeTestComment, NodeTestElementOrAttribute, NodeTestName, NodeTestNC, NodeTestPI, NodeTestText } from "../xpath/node-tests";
-import { LocationExpr, UnionExpr } from "../xpath/expressions";
-import { Expression } from "../xpath/expressions/expression";
 
 /**
  * Calculate the default priority for a single step pattern.
@@ -19,14 +17,47 @@ import { Expression } from "../xpath/expressions/expression";
  */
 function calculateStepPriority(step: any): number {
     const nodeTest = step.nodeTest;
-    const hasPredicates = step.predicate && step.predicate.length > 0;
+    const hasPredicates = (step.predicate && step.predicate.length > 0) ||
+                          (step.predicates && step.predicates.length > 0);
 
     // Predicates always result in 0.5
     if (hasPredicates) {
         return 0.5;
     }
 
-    // Determine priority based on node test type
+    // Handle new XPath implementation's object-based node tests
+    if (nodeTest && typeof nodeTest === 'object' && 'type' in nodeTest) {
+        switch (nodeTest.type) {
+            case 'wildcard':
+                // Check for namespace wildcard like "ns:*"
+                if (nodeTest.name && nodeTest.name.endsWith(':*')) {
+                    return -0.25;
+                }
+                // Regular wildcard * or @*
+                return -0.5;
+
+            case 'node-type':
+                // node(), text(), comment(), processing-instruction()
+                if (nodeTest.nodeType === 'processing-instruction' && nodeTest.name) {
+                    // processing-instruction('literal') has priority 0
+                    return 0;
+                }
+                return -0.5;
+
+            case 'processing-instruction':
+                // processing-instruction('literal') or processing-instruction()
+                return nodeTest.name ? 0 : -0.5;
+
+            case 'name':
+                // Qualified name like foo, ns:foo, @bar
+                return 0;
+
+            default:
+                return 0;
+        }
+    }
+
+    // Handle legacy class-based node tests (for backward compatibility)
     if (nodeTest instanceof NodeTestAny) {
         // node() - matches any node
         return -0.5;
@@ -71,6 +102,11 @@ function calculateStepPriority(step: any): number {
  */
 function calculateLocationPathPriority(expr: LocationExpr): number {
     if (!expr.steps || expr.steps.length === 0) {
+        // "/" alone (absolute path with no steps) matches the document root
+        // According to XSLT spec, this has priority -0.5
+        if (expr.absolute) {
+            return -0.5;
+        }
         return 0;
     }
 

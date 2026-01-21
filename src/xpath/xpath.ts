@@ -133,6 +133,7 @@ class NodeConverter {
             nodeList: nodeList,
             variables: this.convertVariables(exprContext),
             functions: this.createCustomFunctions(exprContext),
+            namespaces: exprContext.knownNamespaces,
         });
     }
 
@@ -292,7 +293,54 @@ class NodeConverter {
             return number.toLocaleString();
         };
 
+        // xml-to-json() function - XSLT 3.0 specific
+        functions['xml-to-json'] = (nodes: any) => {
+            // Check XSLT version - only supported in 3.0
+            if (exprContext.xsltVersion === '1.0') {
+                throw new Error('xml-to-json() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            }
+
+            // Handle node set or single node
+            const node = Array.isArray(nodes) ? nodes[0] : nodes;
+            if (!node) {
+                return '""';
+            }
+
+            // Convert XML node to JSON string
+            return this.xmlToJson(node);
+        };
+
         return functions;
+    }
+
+    /**
+     * Convert an XML node to a JSON string representation.
+     * This is a simplified implementation of XSLT 3.0's xml-to-json().
+     */
+    private xmlToJson(node: any): string {
+        if (!node) {
+            return '""';
+        }
+
+        // Text node - return the text content as a JSON string
+        if (node.nodeType === 3) { // TEXT_NODE
+            const text = node.nodeValue || '';
+            return JSON.stringify(text);
+        }
+
+        // Element node - get text content
+        if (node.nodeType === 1) { // ELEMENT_NODE
+            const textContent = this.getTextContent(node);
+            return JSON.stringify(textContent);
+        }
+
+        // Attribute node
+        if (node.nodeType === 2) { // ATTRIBUTE_NODE
+            return JSON.stringify(node.nodeValue || '');
+        }
+
+        // Default
+        return '""';
     }
 
     /**

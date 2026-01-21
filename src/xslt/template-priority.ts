@@ -4,9 +4,7 @@
 // See: https://www.w3.org/TR/xslt-30/#conflict
 
 import { XNode } from '../dom';
-import { ExprContext, XPath, MatchResolver } from '../xpath';
-import { Expression } from '../xpath/expressions/expression';
-import { LocationExpr, UnionExpr } from '../xpath/expressions';
+import { ExprContext, XPath, MatchResolver, Expression, LocationExpr, UnionExpr } from '../xpath';
 import {
     NodeTestAny,
     NodeTestComment,
