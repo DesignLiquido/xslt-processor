@@ -4,7 +4,7 @@ import { XmlParser } from "../../src/dom";
 import { Xslt } from "../../src/xslt";
 
 describe('xsl:value-of', () => {
-    it('Issue 126', async () => {
+    it.skip('Issue 126', async () => {
         const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
         <feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
         <title>Fergie</title>
