@@ -600,10 +600,6 @@ export class Xslt {
             throw new Error(`Your Node.js version does not support \`<${elementName}>\`. If possible, please update your Node.js version to at least version 17.5.0.`);
         }
 
-        if (isImport && this.firstTemplateRan) {
-            throw new Error('<xsl:import> should be the first child node of <xsl:stylesheet> or <xsl:transform>.');
-        }
-
         // We need to test here whether `window.fetch` is available or not.
         // If it is a browser environemnt, it should be.
         // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
@@ -796,6 +792,20 @@ export class Xslt {
                         context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
                     }
                     break;
+            }
+        }
+
+        // Validate that xsl:import elements are the first children (before any other elements)
+        let importsDone = false;
+        for (const child of template.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                if (this.isXsltElement(child, 'import')) {
+                    if (importsDone) {
+                        throw new Error('<xsl:import> should be the first child node of <xsl:stylesheet> or <xsl:transform>.');
+                    }
+                } else {
+                    importsDone = true;
+                }
             }
         }
 

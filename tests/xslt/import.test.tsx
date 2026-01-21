@@ -3,13 +3,13 @@ import assert from 'assert';
 import { XmlParser } from "../../src/dom";
 import { Xslt } from "../../src/xslt";
 
-describe.skip('xsl:import', () => {
+describe('xsl:import', () => {
     it('Trivial', async () => {
         const xmlSource = `<html></html>`;
 
         const xsltSource = `<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format">
-            <xsl:output method="html" indent="yes"/>
             <xsl:import href="https://raw.githubusercontent.com/DesignLiquido/xslt-processor/main/examples/head.xsl"/>
+            <xsl:output method="html" indent="yes"/>
         </xsl:stylesheet>`;
 
         const xsltClass = new Xslt();
@@ -20,7 +20,7 @@ describe.skip('xsl:import', () => {
         assert.equal(resultingXml, '<html><head><link rel="stylesheet" type="text/css" href="style.css"><title/></head><body><div id="container"><div id="header"><div id="menu"><ul><li><a href="#" class="active">Home</a></li><li><a href="#">about</a></li></ul></div></div></div></body></html>');
     });
 
-    it.skip('Not the first child of `<xsl:stylesheet>` or `<xsl:transform>`', async () => {
+    it('Not the first child of `<xsl:stylesheet>` or `<xsl:transform>`', async () => {
         const xmlSource = `<html></html>`;
 
         const xsltSource = `<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format">
