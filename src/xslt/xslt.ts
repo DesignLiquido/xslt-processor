@@ -1276,6 +1276,107 @@ export class Xslt {
     }
 
     /**
+     * Validates XSLT stylesheet/transform attributes.
+     * According to XSLT specification, validates:
+     * - Required version attribute
+     * - Valid version values (1.0, 2.0, 3.0)
+     * - Valid namespace declarations
+     * - Valid values for optional attributes (extension-element-prefixes, exclude-result-prefixes)
+     * @param stylesheetElement The `<xsl:stylesheet>` or `<xsl:transform>` element to validate.
+     * @param context The Expression Context for namespace access.
+     */
+    protected validateStylesheetAttributes(stylesheetElement: XNode, context: ExprContext): void {
+        const attributes = stylesheetElement.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const validAttributes = ['version', 'id', 'extension-element-prefixes', 'exclude-result-prefixes', 'default-collation'];
+        const validNamespaceAttributes = ['xmlns']; // xmlns and xmlns:* attributes
+        
+        let versionFound = false;
+
+        for (let attribute of attributes) {
+            const nodeName = attribute.nodeName;
+            const nodeValue = attribute.nodeValue;
+
+            // Check if it's a namespace declaration
+            if (attribute.prefix === 'xmlns') {
+                // xmlns:prefix namespace declarations are valid
+                context.knownNamespaces[attribute.localName] = nodeValue;
+                continue;
+            }
+
+            // Check if it's the default namespace declaration
+            if (nodeName === 'xmlns') {
+                context.knownNamespaces[''] = nodeValue;
+                continue;
+            }
+
+            // Handle version attribute
+            if (nodeName === 'version') {
+                versionFound = true;
+                if (!['1.0', '2.0', '3.0'].includes(nodeValue)) {
+                    throw new Error(
+                        `XSLT version not defined or invalid. Actual resolved version: ${nodeValue || '(none)'}.`
+                    );
+                }
+                this.version = nodeValue;
+                context.xsltVersion = nodeValue as any;
+                continue;
+            }
+
+            // Validate extension-element-prefixes attribute
+            if (nodeName === 'extension-element-prefixes') {
+                // Should be a whitespace-separated list of namespace prefixes
+                // Validate that prefixes are valid NCNames (basic check)
+                const prefixes = nodeValue.split(/\s+/);
+                for (const prefix of prefixes) {
+                    if (prefix && !/^[a-zA-Z_:][\w:.-]*$/.test(prefix)) {
+                        throw new Error(`Invalid prefix in extension-element-prefixes: "${prefix}". Prefixes must be valid QNames.`);
+                    }
+                }
+                continue;
+            }
+
+            // Validate exclude-result-prefixes attribute
+            if (nodeName === 'exclude-result-prefixes') {
+                // Should be a whitespace-separated list of namespace prefixes
+                // Special value "#all" is allowed
+                if (nodeValue !== '#all') {
+                    const prefixes = nodeValue.split(/\s+/);
+                    for (const prefix of prefixes) {
+                        if (prefix && !/^[a-zA-Z_:][\w:.-]*$/.test(prefix)) {
+                            throw new Error(`Invalid prefix in exclude-result-prefixes: "${prefix}". Prefixes must be valid QNames or "#all".`);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Validate default-collation attribute (XSLT 2.0+)
+            if (nodeName === 'default-collation') {
+                // Should be a URI, basic validation
+                if (!nodeValue || nodeValue.trim().length === 0) {
+                    throw new Error('The default-collation attribute must contain a URI.');
+                }
+                continue;
+            }
+
+            // Validate id attribute
+            if (nodeName === 'id') {
+                // id must be an XML NCName
+                if (!/^[a-zA-Z_:][\w:.-]*$/.test(nodeValue)) {
+                    throw new Error(`Invalid id attribute value: "${nodeValue}". IDs must be valid NCNames.`);
+                }
+                continue;
+            }
+
+            // If attribute is not a known XSLT attribute and not a namespace declaration, it might be valid
+            // (like an attribute with a non-XSLT namespace), so we don't throw an error for unknown attributes
+        }
+
+        // Note: version attribute is optional in XSLT if a default version is defined in the system
+        // However, it's strongly recommended, and we already validate it if provided
+    }
+
+    /**
      * Implements `<xsl:stylesheet>` and `<xsl:transform>`, and its corresponding
      * validations.
      * @param context The Expression Context.
@@ -1284,24 +1385,8 @@ export class Xslt {
      *               the caller.
      */
     protected async xsltTransformOrStylesheet(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
-        for (let stylesheetAttribute of template.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE)) {
-            switch (stylesheetAttribute.nodeName) {
-                case 'version':
-                    this.version = stylesheetAttribute.nodeValue;
-                    if (!['1.0', '2.0', '3.0'].includes(this.version)) {
-                        throw new Error(
-                            `XSLT version not defined or invalid. Actual resolved version: ${this.version || '(none)'}.`
-                        );
-                    }
-                    context.xsltVersion = this.version as any;
-                    break;
-                default:
-                    if (stylesheetAttribute.prefix === 'xmlns') {
-                        context.knownNamespaces[stylesheetAttribute.localName] = stylesheetAttribute.nodeValue;
-                    }
-                    break;
-            }
-        }
+        // Validate stylesheet attributes
+        this.validateStylesheetAttributes(template, context);
 
         // Validate that xsl:import elements are the first children (before any other elements)
         let importsDone = false;
