@@ -219,6 +219,54 @@ HTML per se is not strict XML. Because of that, starting on version 2.0.0, this 
 - Tags like `<hr>`, `<link>` and `<meta>` don't need to be closed. The output for these tags doesn't close them (adding a `/` before the tag closes, or a corresponding close tag);
   - This rule doesn't apply for XHTML, which is strict XML.
 
+### Whitespace Handling
+
+This library supports `xsl:strip-space` and `xsl:preserve-space` for controlling whitespace in the input document.
+
+#### `xsl:strip-space`
+
+Use `<xsl:strip-space>` to remove whitespace-only text nodes from specified elements in the input document:
+
+```xml
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <!-- Strip whitespace from all elements -->
+    <xsl:strip-space elements="*"/>
+
+    <!-- Or strip from specific elements -->
+    <xsl:strip-space elements="book chapter section"/>
+
+    <!-- ... templates ... -->
+</xsl:stylesheet>
+```
+
+The `elements` attribute accepts:
+- `*` - matches all elements
+- `name` - matches elements with the specified local name
+- `prefix:*` - matches all elements in a namespace
+- `prefix:name` - matches a specific element in a namespace
+- Multiple patterns separated by whitespace (e.g., `"book chapter section"`)
+
+#### `xsl:preserve-space`
+
+Use `<xsl:preserve-space>` to preserve whitespace in specific elements, overriding `xsl:strip-space`:
+
+```xml
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <!-- Preserve whitespace in pre and code elements -->
+    <xsl:preserve-space elements="pre code"/>
+
+    <!-- ... templates ... -->
+</xsl:stylesheet>
+```
+
+#### Precedence Rules
+
+1. `xml:space="preserve"` attribute on an element takes highest precedence
+2. `xsl:preserve-space` overrides `xsl:strip-space` for matching elements
+3. `xsl:strip-space` applies to remaining matches
+4. By default (no declarations), whitespace is preserved
+
 ## References
 
 - XPath Specification: http://www.w3.org/TR/1999/REC-xpath-19991116

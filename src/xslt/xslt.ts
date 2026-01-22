@@ -81,6 +81,19 @@ export class Xslt {
     version: string;
     firstTemplateRan: boolean;
 
+    /**
+     * List of element name patterns from xsl:strip-space declarations.
+     * Whitespace-only text nodes inside matching elements will be stripped.
+     */
+    stripSpacePatterns: string[];
+
+    /**
+     * List of element name patterns from xsl:preserve-space declarations.
+     * Whitespace-only text nodes inside matching elements will be preserved.
+     * preserve-space takes precedence over strip-space for conflicting patterns.
+     */
+    preserveSpacePatterns: string[];
+
     constructor(
         options: Partial<XsltOptions> = {
             cData: true,
@@ -100,6 +113,8 @@ export class Xslt {
         };
         this.outputMethod = 'xml';
         this.outputOmitXmlDeclaration = 'no';
+        this.stripSpacePatterns = [];
+        this.preserveSpacePatterns = [];
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -237,14 +252,16 @@ export class Xslt {
                     await this.xsltVariable(context, template, false);
                     break;
                 case 'preserve-space':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.xsltPreserveSpace(template);
+                    break;
                 case 'processing-instruction':
                     throw new Error(`not implemented: ${template.localName}`);
                 case 'sort':
                     this.xsltSort(context, template);
                     break;
                 case 'strip-space':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.xsltStripSpace(template);
+                    break;
                 case 'stylesheet':
                 case 'transform':
                     await this.xsltTransformOrStylesheet(context, template, output);
@@ -435,6 +452,10 @@ export class Xslt {
         }
 
         if (source.nodeType == DOM_TEXT_NODE) {
+            // Check if this whitespace-only text node should be stripped
+            if (this.shouldStripWhitespaceNode(source)) {
+                return null;
+            }
             let node = domCreateTextNode(this.outputDocument, source.nodeValue);
             node.siblingPosition = destination.childNodes.length;
             domAppendChild(destination, node);
@@ -723,6 +744,127 @@ export class Xslt {
     }
 
     /**
+     * Implements `xsl:strip-space`.
+     * Collects element name patterns for which whitespace-only text nodes should be stripped.
+     * @param template The `<xsl:strip-space>` node.
+     */
+    protected xsltStripSpace(template: XNode) {
+        const elements = xmlGetAttribute(template, 'elements');
+        if (elements) {
+            // Split on whitespace to get individual patterns (e.g., "* book" becomes ["*", "book"])
+            const patterns = elements.trim().split(/\s+/);
+            this.stripSpacePatterns.push(...patterns);
+        }
+    }
+
+    /**
+     * Implements `xsl:preserve-space`.
+     * Collects element name patterns for which whitespace-only text nodes should be preserved.
+     * preserve-space takes precedence over strip-space for matching elements.
+     * @param template The `<xsl:preserve-space>` node.
+     */
+    protected xsltPreserveSpace(template: XNode) {
+        const elements = xmlGetAttribute(template, 'elements');
+        if (elements) {
+            // Split on whitespace to get individual patterns (e.g., "pre code" becomes ["pre", "code"])
+            const patterns = elements.trim().split(/\s+/);
+            this.preserveSpacePatterns.push(...patterns);
+        }
+    }
+
+    /**
+     * Determines if a text node from the input document should be stripped.
+     * This applies xsl:strip-space and xsl:preserve-space rules to whitespace-only text nodes.
+     * @param textNode The text node to check.
+     * @returns True if the text node should be stripped (not included in output).
+     */
+    protected shouldStripWhitespaceNode(textNode: XNode): boolean {
+        // Only strip whitespace-only text nodes
+        if (!textNode.nodeValue || !textNode.nodeValue.match(/^\s*$/)) {
+            return false;
+        }
+
+        // If no strip-space patterns are defined, don't strip
+        if (this.stripSpacePatterns.length === 0) {
+            return false;
+        }
+
+        const parentElement = textNode.parentNode;
+        if (!parentElement || parentElement.nodeType !== DOM_ELEMENT_NODE) {
+            return false;
+        }
+
+        // Check for xml:space="preserve" on parent or ancestors (highest precedence)
+        let ancestor = parentElement;
+        while (ancestor && ancestor.nodeType === DOM_ELEMENT_NODE) {
+            const xmlspace = domGetAttributeValue(ancestor, 'xml:space');
+            if (xmlspace === 'preserve') {
+                return false;
+            }
+            if (xmlspace === 'default') {
+                break; // Continue to check strip-space/preserve-space rules
+            }
+            ancestor = ancestor.parentNode;
+        }
+
+        const parentName = parentElement.localName || parentElement.nodeName;
+
+        // Check preserve-space patterns first (they take precedence over strip-space)
+        for (const pattern of this.preserveSpacePatterns) {
+            if (this.matchesNamePattern(parentName, pattern, parentElement)) {
+                return false;
+            }
+        }
+
+        // Check strip-space patterns
+        for (const pattern of this.stripSpacePatterns) {
+            if (this.matchesNamePattern(parentName, pattern, parentElement)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Matches an element name against a strip-space/preserve-space pattern.
+     * Supports:
+     * - "*" matches any element
+     * - "prefix:*" matches any element in a namespace
+     * - "name" matches elements with that local name
+     * - "prefix:name" matches elements with that QName
+     * @param elementName The local name of the element.
+     * @param pattern The pattern to match against.
+     * @param element The element node (for namespace checking).
+     * @returns True if the element matches the pattern.
+     */
+    protected matchesNamePattern(elementName: string, pattern: string, element: XNode): boolean {
+        // Universal match
+        if (pattern === '*') {
+            return true;
+        }
+
+        // Handle patterns with namespace prefixes
+        if (pattern.includes(':')) {
+            const [prefix, localPart] = pattern.split(':');
+
+            // Check if element has a matching prefix
+            const elementPrefix = element.prefix || '';
+
+            if (localPart === '*') {
+                // prefix:* - match any element in that namespace
+                return elementPrefix === prefix;
+            } else {
+                // prefix:name - match specific element in namespace
+                return elementPrefix === prefix && elementName === localPart;
+            }
+        }
+
+        // Simple name match (no namespace prefix in pattern)
+        return elementName === pattern;
+    }
+
+    /**
      * Implements `xsl:template`.
      * @param context The Expression Context.
      * @param template The `<xsl:template>` node.
@@ -966,6 +1108,12 @@ export class Xslt {
      */
     private commonLogicTextNode(context: ExprContext, template: XNode, output: XNode) {
         if (output) {
+            // Check if this whitespace-only text node should be stripped based on
+            // xsl:strip-space and xsl:preserve-space declarations
+            if (this.shouldStripWhitespaceNode(template)) {
+                return;
+            }
+
             let node = domCreateTextNode(this.outputDocument, template.nodeValue);
             // Set siblingPosition to preserve insertion order during serialization
             node.siblingPosition = output.childNodes.length;
