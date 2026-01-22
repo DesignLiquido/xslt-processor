@@ -94,6 +94,12 @@ export class Xslt {
      */
     preserveSpacePatterns: string[];
 
+    /**
+     * Namespace aliases from xsl:namespace-alias declarations.
+     * Maps stylesheet namespace prefixes to result namespace prefixes.
+     */
+    namespaceAliases: Map<string, string>;
+
     constructor(
         options: Partial<XsltOptions> = {
             cData: true,
@@ -115,6 +121,7 @@ export class Xslt {
         this.outputOmitXmlDeclaration = 'no';
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
+        this.namespaceAliases = new Map();
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -237,13 +244,18 @@ export class Xslt {
                     this.xsltKey(context, template);
                     break;
                 case 'message':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltMessage(context, template);
+                    break;
                 case 'namespace-alias':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.xsltNamespaceAlias(template);
+                    break;
                 case 'number':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    this.xsltNumber(context, template, output);
+                    break;
                 case 'otherwise':
-                    throw new Error(`xsl:otherwise can't be used outside of xsl:choose.`);
+                    // xsl:otherwise is handled inside xsltChoose. If we reach here,
+                    // it means the element was used outside of xsl:choose.
+                    throw new Error(`<xsl:otherwise> must be a child of <xsl:choose>.`);
                 case 'output':
                     this.outputMethod = xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name';
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
@@ -279,9 +291,14 @@ export class Xslt {
                     await this.xsltVariable(context, template, true);
                     break;
                 case 'when':
-                    throw new Error(`xsl:when can't be used outside of xsl:choose.`);
+                    // xsl:when is handled inside xsltChoose. If we reach here,
+                    // it means the element was used outside of xsl:choose.
+                    throw new Error(`<xsl:when> must be a child of <xsl:choose>.`);
                 case 'with-param':
-                    throw new Error(`error if here: ${template.localName}`);
+                    // xsl:with-param is handled inside xsltWithParam called from
+                    // xsltCallTemplate and xsltApplyTemplates. If we reach here,
+                    // it means the element was used outside of those contexts.
+                    throw new Error(`<xsl:with-param> must be a child of <xsl:call-template> or <xsl:apply-templates>.`);
                 default:
                     throw new Error(`error if here: ${template.localName}`);
             }
@@ -712,6 +729,335 @@ export class Xslt {
             const attributeValue = attribute.stringValue();
             context.keys[name][attributeValue] = new NodeSetValue([node]);
         }
+    }
+
+    /**
+     * Implements `xsl:message`.
+     * Outputs a message to the console. If terminate="yes", throws an error to stop processing.
+     * @param context The Expression Context.
+     * @param template The `<xsl:message>` node.
+     */
+    protected async xsltMessage(context: ExprContext, template: XNode) {
+        // Build the message content by processing child nodes
+        const documentFragment = domCreateDocumentFragment(this.outputDocument);
+        await this.xsltChildNodes(context, template, documentFragment);
+        const messageText = xmlValue(documentFragment);
+
+        // Check the terminate attribute
+        const terminate = xmlGetAttribute(template, 'terminate') || 'no';
+
+        // Output the message to console
+        console.log(`[xsl:message] ${messageText}`);
+
+        // If terminate="yes", stop processing by throwing an error
+        if (terminate === 'yes') {
+            throw new Error(`xsl:message terminated: ${messageText}`);
+        }
+    }
+
+    /**
+     * Implements `xsl:namespace-alias`.
+     * Declares that a namespace URI in the stylesheet should be replaced by a different
+     * namespace URI in the output.
+     * @param template The `<xsl:namespace-alias>` node.
+     */
+    protected xsltNamespaceAlias(template: XNode) {
+        const stylesheetPrefix = xmlGetAttribute(template, 'stylesheet-prefix');
+        const resultPrefix = xmlGetAttribute(template, 'result-prefix');
+
+        if (!stylesheetPrefix || !resultPrefix) {
+            throw new Error('<xsl:namespace-alias> requires both stylesheet-prefix and result-prefix attributes.');
+        }
+
+        // Store the alias mapping
+        // "#default" represents the default namespace (no prefix)
+        this.namespaceAliases.set(stylesheetPrefix, resultPrefix);
+    }
+
+    /**
+     * Implements `xsl:number`.
+     * Inserts a formatted number into the result tree.
+     * @param context The Expression Context.
+     * @param template The `<xsl:number>` node.
+     * @param output The output node.
+     */
+    protected xsltNumber(context: ExprContext, template: XNode, output?: XNode) {
+        const value = xmlGetAttribute(template, 'value');
+        const level = xmlGetAttribute(template, 'level') || 'single';
+        const count = xmlGetAttribute(template, 'count');
+        const from = xmlGetAttribute(template, 'from');
+        const format = xmlGetAttribute(template, 'format') || '1';
+        const lang = xmlGetAttribute(template, 'lang');
+        const letterValue = xmlGetAttribute(template, 'letter-value');
+        const groupingSeparator = xmlGetAttribute(template, 'grouping-separator');
+        const groupingSize = xmlGetAttribute(template, 'grouping-size');
+
+        let number: number;
+
+        if (value) {
+            // If value attribute is present, evaluate it as an XPath expression
+            const result = this.xPath.xPathEval(value, context);
+            number = Math.round(result.numberValue());
+        } else {
+            // Otherwise, count nodes based on level, count, and from attributes
+            number = this.xsltNumberCount(context, level, count, from);
+        }
+
+        // Format the number
+        const formattedNumber = this.xsltFormatNumber(number, format, groupingSeparator, groupingSize);
+
+        // Create text node with the formatted number
+        const textNode = domCreateTextNode(this.outputDocument, formattedNumber);
+        const targetOutput = output || this.outputDocument;
+        textNode.siblingPosition = targetOutput.childNodes.length;
+        domAppendChild(targetOutput, textNode);
+    }
+
+    /**
+     * Counts nodes for xsl:number based on level, count, and from attributes.
+     * @param context The Expression Context.
+     * @param level The counting level: 'single', 'multiple', or 'any'.
+     * @param count Pattern to match nodes to count.
+     * @param from Pattern to start counting from.
+     * @returns The count value.
+     */
+    protected xsltNumberCount(context: ExprContext, level: string, count: string | null, from: string | null): number {
+        const currentNode = context.nodeList[context.position];
+
+        // Default count pattern matches nodes with the same name and type as current node
+        const countPattern = count || currentNode.nodeName;
+
+        switch (level) {
+            case 'single': {
+                // Count preceding siblings (plus 1 for self) that match the count pattern
+                let num = 1;
+                let sibling = currentNode.previousSibling;
+                while (sibling) {
+                    if (sibling.nodeType === currentNode.nodeType) {
+                        if (this.nodeMatchesPattern(sibling, countPattern)) {
+                            num++;
+                        }
+                    }
+                    sibling = sibling.previousSibling;
+                }
+                return num;
+            }
+            case 'multiple': {
+                // For multiple level, we'd return a sequence - simplified to single value here
+                // Full implementation would return array for hierarchical numbering
+                let num = 1;
+                let sibling = currentNode.previousSibling;
+                while (sibling) {
+                    if (sibling.nodeType === currentNode.nodeType) {
+                        if (this.nodeMatchesPattern(sibling, countPattern)) {
+                            num++;
+                        }
+                    }
+                    sibling = sibling.previousSibling;
+                }
+                return num;
+            }
+            case 'any': {
+                // Count all preceding nodes in document order that match
+                let num = 1;
+                const allNodes = this.getAllPrecedingNodes(currentNode);
+                for (const node of allNodes) {
+                    if (this.nodeMatchesPattern(node, countPattern)) {
+                        num++;
+                    }
+                }
+                return num;
+            }
+            default:
+                return 1;
+        }
+    }
+
+    /**
+     * Checks if a node matches a simple name pattern.
+     * @param node The node to check.
+     * @param pattern The pattern (node name) to match.
+     * @returns True if the node matches.
+     */
+    protected nodeMatchesPattern(node: XNode, pattern: string): boolean {
+        if (pattern === '*') {
+            return node.nodeType === DOM_ELEMENT_NODE;
+        }
+        return node.nodeName === pattern || node.localName === pattern;
+    }
+
+    /**
+     * Gets all nodes preceding the given node in document order.
+     * @param node The reference node.
+     * @returns Array of preceding nodes.
+     */
+    protected getAllPrecedingNodes(node: XNode): XNode[] {
+        const result: XNode[] = [];
+
+        // Get preceding siblings
+        let sibling = node.previousSibling;
+        while (sibling) {
+            result.push(sibling);
+            // Add descendants of preceding siblings
+            this.collectDescendants(sibling, result);
+            sibling = sibling.previousSibling;
+        }
+
+        // Get ancestors' preceding siblings
+        let parent = node.parentNode;
+        while (parent) {
+            let parentSibling = parent.previousSibling;
+            while (parentSibling) {
+                result.push(parentSibling);
+                this.collectDescendants(parentSibling, result);
+                parentSibling = parentSibling.previousSibling;
+            }
+            parent = parent.parentNode;
+        }
+
+        return result;
+    }
+
+    /**
+     * Collects all descendant nodes of a given node.
+     * @param node The parent node.
+     * @param result The array to collect into.
+     */
+    protected collectDescendants(node: XNode, result: XNode[]): void {
+        for (const child of node.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                result.push(child);
+                this.collectDescendants(child, result);
+            }
+        }
+    }
+
+    /**
+     * Formats a number according to the format string.
+     * @param number The number to format.
+     * @param format The format string (e.g., "1", "01", "a", "A", "i", "I").
+     * @param groupingSeparator Optional grouping separator.
+     * @param groupingSize Optional grouping size.
+     * @returns The formatted number string.
+     */
+    protected xsltFormatNumber(
+        number: number,
+        format: string,
+        groupingSeparator: string | null,
+        groupingSize: string | null
+    ): string {
+        // Handle different format tokens
+        const formatChar = format.charAt(0);
+
+        let result: string;
+
+        switch (formatChar) {
+            case '1':
+                result = number.toString();
+                // Handle zero-padding (e.g., "01" -> "01", "02", etc.)
+                if (format.length > 1 && format.match(/^0+1$/)) {
+                    const width = format.length;
+                    result = number.toString().padStart(width, '0');
+                }
+                break;
+            case 'a':
+                // Lowercase alphabetic: a, b, c, ..., z, aa, ab, ...
+                result = this.numberToAlpha(number, false);
+                break;
+            case 'A':
+                // Uppercase alphabetic: A, B, C, ..., Z, AA, AB, ...
+                result = this.numberToAlpha(number, true);
+                break;
+            case 'i':
+                // Lowercase Roman numerals
+                result = this.numberToRoman(number).toLowerCase();
+                break;
+            case 'I':
+                // Uppercase Roman numerals
+                result = this.numberToRoman(number);
+                break;
+            default:
+                result = number.toString();
+        }
+
+        // Apply grouping if specified
+        if (groupingSeparator && groupingSize) {
+            const size = parseInt(groupingSize, 10);
+            if (size > 0 && !isNaN(size)) {
+                result = this.applyGrouping(result, groupingSeparator, size);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Converts a number to alphabetic representation.
+     * @param number The number to convert.
+     * @param uppercase Whether to use uppercase letters.
+     * @returns The alphabetic representation.
+     */
+    protected numberToAlpha(number: number, uppercase: boolean): string {
+        if (number <= 0) return '';
+
+        let result = '';
+        while (number > 0) {
+            number--;
+            result = String.fromCharCode((number % 26) + (uppercase ? 65 : 97)) + result;
+            number = Math.floor(number / 26);
+        }
+        return result;
+    }
+
+    /**
+     * Converts a number to Roman numeral representation.
+     * @param number The number to convert.
+     * @returns The Roman numeral string.
+     */
+    protected numberToRoman(number: number): string {
+        if (number <= 0 || number > 3999) return number.toString();
+
+        const romanNumerals: [number, string][] = [
+            [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+            [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+            [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+        ];
+
+        let result = '';
+        for (const [value, numeral] of romanNumerals) {
+            while (number >= value) {
+                result += numeral;
+                number -= value;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Applies grouping separators to a numeric string.
+     * @param numStr The numeric string.
+     * @param separator The grouping separator.
+     * @param size The grouping size.
+     * @returns The grouped string.
+     */
+    protected applyGrouping(numStr: string, separator: string, size: number): string {
+        // Only apply to the integer part
+        const parts = numStr.split('.');
+        let intPart = parts[0];
+        const decPart = parts[1];
+
+        // Apply grouping from right to left
+        let result = '';
+        let count = 0;
+        for (let i = intPart.length - 1; i >= 0; i--) {
+            if (count > 0 && count % size === 0) {
+                result = separator + result;
+            }
+            result = intPart[i] + result;
+            count++;
+        }
+
+        return decPart ? result + '.' + decPart : result;
     }
 
     /**
