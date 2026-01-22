@@ -13,10 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2-beta
+    - uses: actions/checkout@v4
       with:
-        node-version: '20'
+        submodules: recursive
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
     - uses: ArtiomTr/jest-coverage-report-action@v2
       id: coverage
       with:
