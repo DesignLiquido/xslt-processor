@@ -449,3 +449,178 @@ export function xmlOwnerDocument(node: XNode): XDocument {
 
     return xmlOwnerDocument(node.ownerDocument);
 }
+
+/**
+ * Converts an XNode to a JSON-serializable object.
+ * Uses JSON.parse(JSON.stringify()) approach to filter out unwanted properties.
+ * @param node The node to convert.
+ * @returns A JSON-serializable object representation of the node.
+ */
+function nodeToJsonObject(node: XNode): any {
+    if (!node) {
+        return null;
+    }
+
+    const nodeType = node.nodeType;
+
+    // Handle text nodes
+    if (nodeType === DOM_TEXT_NODE || nodeType === DOM_CDATA_SECTION_NODE) {
+        const text = node.nodeValue ? node.nodeValue.trim() : '';
+        return text.length > 0 ? text : null;
+    }
+
+    // Handle comment nodes
+    if (nodeType === DOM_COMMENT_NODE) {
+        return null; // Skip comments in JSON output
+    }
+
+    // Handle document and document fragments
+    if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+        const children = node.childNodes || [];
+        const childObjects = [];
+        
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childObj = nodeToJsonObject(child);
+            if (childObj !== null) {
+                childObjects.push(childObj);
+            }
+        }
+
+        if (childObjects.length === 0) {
+            return null;
+        } else if (childObjects.length === 1) {
+            return childObjects[0];
+        } else {
+            return childObjects;
+        }
+    }
+
+    // Handle element nodes
+    if (nodeType === DOM_ELEMENT_NODE) {
+        const obj: any = {};
+        const element = node as any;
+        const hasAttributes = element.attributes && element.attributes.length > 0;
+        
+        // Add attributes with @ prefix
+        if (hasAttributes) {
+            for (let i = 0; i < element.attributes.length; i++) {
+                const attr = element.attributes[i];
+                obj['@' + attr.nodeName] = attr.nodeValue;
+            }
+        }
+
+        // Process child nodes
+        const children = element.childNodes || [];
+        let textContent = '';
+        let hasElementChildren = false;
+        const childElements: { [key: string]: any } = {};
+
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childType = child.nodeType;
+
+            if (childType === DOM_TEXT_NODE || childType === DOM_CDATA_SECTION_NODE) {
+                const text = child.nodeValue ? child.nodeValue.trim() : '';
+                if (text.length > 0) {
+                    textContent += text;
+                }
+            } else if (childType === DOM_ELEMENT_NODE) {
+                hasElementChildren = true;
+                const childElement = child as any;
+                const childName = childElement.localName || childElement.nodeName;
+                const childObj = nodeToJsonObject(child);
+
+                if (childObj !== null) {
+                    if (childElements[childName]) {
+                        // Multiple elements with same name - convert to array
+                        if (!Array.isArray(childElements[childName])) {
+                            childElements[childName] = [childElements[childName]];
+                        }
+                        childElements[childName].push(childObj);
+                    } else {
+                        childElements[childName] = childObj;
+                    }
+                }
+            }
+        }
+
+        // Add child elements to object
+        Object.assign(obj, childElements);
+
+        // Add text content if no element children and has text
+        if (!hasElementChildren && textContent.length > 0) {
+            if (!hasAttributes && Object.keys(childElements).length === 0) {
+                // Only text, no attributes or element children
+                return textContent;
+            } else {
+                // Has attributes and/or element children plus text
+                obj['#text'] = textContent;
+            }
+        }
+
+        // If completely empty (no attributes, no children, no text), return null
+        if (Object.keys(obj).length === 0) {
+            return null;
+        }
+
+        return obj;
+    }
+
+    return null;
+}
+
+/**
+ * Converts an XML document to a JSON string.
+ * The root element becomes the top-level object.
+ * Element attributes are prefixed with '@'.
+ * Text nodes become the '#text' property or the value itself.
+ * @param node The root node to convert.
+ * @returns A JSON string representation of the document.
+ */
+export function xmlToJson(node: XNode): string {
+    if (!node) {
+        return '{}';
+    }
+
+    // For document nodes, find the root element and wrap it
+    let rootElement: XNode = node;
+    if (node.nodeType === DOM_DOCUMENT_NODE || node.nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+        const children = node.childNodes || [];
+        for (let i = 0; i < children.length; i++) {
+            if (children[i].nodeType === DOM_ELEMENT_NODE) {
+                rootElement = children[i];
+                break;
+            }
+        }
+    }
+
+    // Convert the root element to JSON
+    const element = rootElement as any;
+    const rootName = element.localName || element.nodeName;
+    const jsonObj: any = {};
+    
+    // Build the root element object
+    const elementContent = nodeToJsonObject(rootElement);
+    
+    if (elementContent === null) {
+        // Empty root element
+        jsonObj[rootName] = {};
+    } else if (typeof elementContent === 'object' && !Array.isArray(elementContent)) {
+        // Object with properties/attributes
+        jsonObj[rootName] = elementContent;
+    } else {
+        // Simple text content
+        jsonObj[rootName] = elementContent;
+    }
+
+    // Use JSON.stringify to clean up the object and then JSON.parse and stringify again
+    // This ensures we only have plain properties without circular references
+    try {
+        const cleaned = JSON.parse(JSON.stringify(jsonObj));
+        return JSON.stringify(cleaned);
+    } catch (error) {
+        // Fallback if stringification fails
+        return JSON.stringify(jsonObj);
+    }
+}

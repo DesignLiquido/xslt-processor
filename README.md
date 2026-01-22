@@ -89,11 +89,56 @@ const xslt = new Xslt(options);
 - `cData` (`boolean`, default `true`): resolves CDATA elements in the output. Content under CDATA is resolved as text. This overrides `escape` for CDATA content.
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [HTML/XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). Can be overridden by `disable-output-escaping`, that also does the opposite, unescaping `&gt;` and `&lt;` by `<` and `>`, respectively.
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`.
+- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`.
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
     - `value`: the value.
+
+#### JSON Output Format
+
+When using `outputMethod: 'json'`, the XSLT processor will convert the resulting XML document to JSON format. This is useful for APIs and modern JavaScript applications.
+
+**Example:**
+
+```js
+const xslt = new Xslt({ outputMethod: 'json' });
+const xmlParser = new XmlParser();
+
+const xmlString = `<root>
+  <users>
+    <user>Alice</user>
+    <user>Bob</user>
+  </users>
+</root>`;
+
+const xsltString = `<?xml version="1.0"?>
+  <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+      <xsl:copy-of select="root"/>
+    </xsl:template>
+  </xsl:stylesheet>`;
+
+const result = await xslt.xsltProcess(
+  xmlParser.xmlParse(xmlString),
+  xmlParser.xmlParse(xsltString)
+);
+
+// result will be a JSON string:
+// {"root":{"users":{"user":["Alice","Bob"]}}}
+
+const parsed = JSON.parse(result);
+console.log(parsed.root.users.user); // ["Alice", "Bob"]
+```
+
+**JSON Structure Rules:**
+
+- Each element becomes a property in a JSON object
+- Text-only elements become string values
+- Elements with multiple children of the same name become arrays
+- Empty elements are omitted from the output
+- Attributes are prefixed with `@` (when present in the output)
+- Mixed text and element content uses the `#text` property for text nodes
 
 ### Direct use in browsers
 
