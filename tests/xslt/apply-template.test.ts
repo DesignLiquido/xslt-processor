@@ -20,8 +20,8 @@ describe('xsl:apply-template', () => {
             </xsl:template>
             <xsl:template match="/">
               <div>
-                <h2><xsl:value-of select="test/@name" /></h2>
-                <p><xsl:apply-templates select="test/node()" /></p>
+                <h2><xsl:value-of select="//test/@name" /></h2>
+                <p><xsl:apply-templates select="//test/node()" /></p>
               </div>
             </xsl:template>
           </xsl:stylesheet>`;

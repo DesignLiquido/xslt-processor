@@ -993,12 +993,9 @@ export class Xslt {
             case DOM_ELEMENT_NODE:
                 let node: XNode;
                 let elementContext = context;
-                if (context.nodeList[context.position].nodeName === '#document') {
-                    node = context.nodeList[context.position].childNodes.find((c) => c.nodeName !== '#dtd-section');
-                    elementContext = context.clone([node]);
-                } else {
-                    node = context.nodeList[context.position];
-                }
+                // Don't change context based on input document structure
+                // The context should remain as provided, unless explicitly changed by XSLT instructions
+                node = context.nodeList[context.position];
 
                 let newNode: XNode;
                 newNode = domCreateElement(this.outputDocument, template.nodeName);

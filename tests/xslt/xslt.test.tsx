@@ -240,10 +240,10 @@ describe('xslt', () => {
                         </head>
                         <body>
                             <h1>
-                                <xsl:value-of select="ReportName"/>
+                                <xsl:value-of select="//ReportName"/>
                             </h1>
                             <p>
-                                <xsl:value-of select="GenerationDate"/>
+                                <xsl:value-of select="//GenerationDate"/>
                             </p>
                         </body>
                     </html>
