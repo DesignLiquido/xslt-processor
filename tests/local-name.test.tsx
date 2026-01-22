@@ -45,7 +45,7 @@ describe('local-name', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
-    it.skip('local-name() with namespace test', async () => {
+    it('local-name() with namespace test', async () => {
         const xmlString = (
             `<xhtml:root xmlns:xhtml="http://www.w3.org/1999/xhtml">
                 <test name="test1" />

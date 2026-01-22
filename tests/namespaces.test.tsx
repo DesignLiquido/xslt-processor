@@ -89,7 +89,7 @@ describe('namespaces', () => {
         assert.equal(outXmlString, expectedOutString);
     });
 
-    it.skip('namespace per node', async () => {
+    it('namespace per node', async () => {
         const xmlString = `<?xml version="1.0" encoding="ISO-8859-1"?>
             <ClinicalDocument xmlns="http://testnamespace">
                 <test name="test1" />
