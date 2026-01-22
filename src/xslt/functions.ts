@@ -358,40 +358,49 @@ function nodeMatchesSinglePattern(
         return attrName === patternLocalName || node.nodeName === attrPattern;
     }
 
-    // For element patterns, we need to check if the node would be selected by the pattern
-    // Create a context with just this node
-    const nodeContext = context.clone([node], 0);
-
-    // Try with 'self-and-siblings' axis - this works for patterns that don't start with *
-    // because xPathParse will set the axis correctly
-    try {
-        const expr = xPath.xPathParse(pattern, 'self-and-siblings');
-        const nodes = matchResolver.expressionMatch(expr, nodeContext);
-
-        // Check if the current node is in the matched nodes
-        if (nodes.some(n => n.id === node.id)) {
-            return true;
-        }
-    } catch (e) {
-        // Pattern parsing failed, try alternative approach
-    }
-
     // For patterns starting with '*' (where axis override doesn't work),
     // check if the node passes the pattern test directly
     if (pattern === '*' && node.nodeType === DOM_ELEMENT_NODE) {
         return true;
     }
 
-    // For patterns with predicates like "item[@id='1']" or multi-step patterns,
-    // we need to evaluate from document root and check if node is in result
-    if (pattern.includes('[') || pattern.includes('/')) {
-        try {
-            // Evaluate pattern from document root with descendant-or-self axis
-            const rootContext = context.clone([context.root], 0);
-            const descendantPattern = pattern.startsWith('/') ? pattern : '//' + pattern;
-            const expr = xPath.xPathParse(descendantPattern);
-            const nodes = matchResolver.expressionMatch(expr, rootContext);
+    // For simple element name patterns first (like "section" or "div")
+    // Try matching by element name directly
+    if (!pattern.includes('/') && !pattern.includes('[') && !pattern.startsWith('@')) {
+        if (pattern === node.nodeName || pattern === node.localName) {
+            return true;
+        }
+    }
 
+    // For patterns with '/' (absolute or descendant paths) or '[' (predicates),
+    // we need to evaluate from document root and check if node is in result
+    if (pattern.includes('/') || pattern.includes('[')) {
+        try {
+            // Evaluate pattern from document root
+            // If pattern doesn't start with '/', add '//' to match anywhere in document
+            const evaluationPattern = pattern.startsWith('/') ? pattern : '//' + pattern;
+            const rootContext = context.clone([context.root], 0);
+            
+            // Use xPathEval for pattern evaluation (handles // patterns correctly)
+            const evalResult = xPath.xPathEval(evaluationPattern, rootContext);
+            const nodes = evalResult.nodeSetValue();
+
+            if (nodes.some(n => n.id === node.id)) {
+                return true;
+            }
+        } catch (e) {
+            // Pattern parsing failed, continue to next approach
+        }
+    }
+
+    // For simple element name patterns - try with 'self-and-siblings' axis override as fallback
+    if (!pattern.includes('/') && !pattern.includes('[') && !pattern.startsWith('@')) {
+        try {
+            const nodeContext = context.clone([node], 0);
+            const expr = xPath.xPathParse(pattern, 'self-and-siblings');
+            const nodes = matchResolver.expressionMatch(expr, nodeContext);
+
+            // Check if the current node is in the matched nodes
             if (nodes.some(n => n.id === node.id)) {
                 return true;
             }
