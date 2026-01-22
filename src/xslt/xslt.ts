@@ -20,6 +20,7 @@ import {
     xmlGetAttribute,
     xmlTransformedText,
     xmlToJson,
+    detectAdaptiveOutputFormat,
     xmlValue,
     xmlValueLegacyBehavior
 } from '../dom';
@@ -77,7 +78,7 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
-    outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json';
+    outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
     outputOmitXmlDeclaration: string;
     version: string;
     firstTemplateRan: boolean;
@@ -143,7 +144,7 @@ export class Xslt {
      * The exported entry point of the XSL-T processor.
      * @param xmlDoc The input document root, as DOM node.
      * @param stylesheet The stylesheet document root, as DOM node.
-     * @returns the processed document, as XML text in a string, or JSON string if outputMethod is 'json'.
+     * @returns the processed document, as XML text in a string, JSON string if outputMethod is 'json', or text if outputMethod is 'text' or 'adaptive' (with text content).
      */
     async xsltProcess(xmlDoc: XDocument, stylesheet: XDocument) {
         const outputDocument = new XDocument();
@@ -163,11 +164,17 @@ export class Xslt {
             return xmlToJson(outputDocument);
         }
 
+        // Handle adaptive output format
+        let outputMethod = this.outputMethod;
+        if (this.outputMethod === 'adaptive') {
+            outputMethod = detectAdaptiveOutputFormat(outputDocument);
+        }
+
         const transformedOutputXml: string = xmlTransformedText(outputDocument, {
             cData: this.options.cData,
             escape: this.options.escape,
             selfClosingTags: this.options.selfClosingTags,
-            outputMethod: this.outputMethod
+            outputMethod: outputMethod as 'xml' | 'html' | 'text' | 'xhtml'
         });
 
         return transformedOutputXml;

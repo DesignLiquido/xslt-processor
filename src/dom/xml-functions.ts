@@ -230,21 +230,31 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
             buffer.push(finalText);
         }
     } else if (nodeType === DOM_CDATA_SECTION_NODE) {
-        if (options.cData) {
+        if (options.outputMethod === 'text') {
+            // For text output, extract the raw content without CDATA markers
+            buffer.push(nodeValue);
+        } else if (options.cData) {
             buffer.push(xmlEscapeText(nodeValue));
         } else {
             buffer.push(`<![CDATA[${nodeValue}]]>`);
         }
     } else if (nodeType == DOM_COMMENT_NODE) {
-        buffer.push(`<!-- ${nodeValue} -->`);
+        if (options.outputMethod !== 'text') {
+            buffer.push(`<!-- ${nodeValue} -->`);
+        }
     } else if (nodeType == DOM_ELEMENT_NODE) {
-        // If node didn't have a transformed name, but its children
-        // had transformations, children should be present at output.
-        // This is called here "muted logic".
-        if (node.nodeName !== null && node.nodeName !== undefined) {
-            xmlElementLogicTrivial(node, buffer, options);
+        if (options.outputMethod === 'text') {
+            // For text output, only extract text content from elements
+            xmlElementLogicTextOnly(node, buffer, options);
         } else {
-            xmlElementLogicMuted(node, buffer, options);
+            // If node didn't have a transformed name, but its children
+            // had transformations, children should be present at output.
+            // This is called here "muted logic".
+            if (node.nodeName !== null && node.nodeName !== undefined) {
+                xmlElementLogicTrivial(node, buffer, options);
+            } else {
+                xmlElementLogicMuted(node, buffer, options);
+            }
         }
     } else if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
         let childNodes = node.firstChild ? [] : node.childNodes;
@@ -340,6 +350,29 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
  * @param cdata If using CDATA configuration.
  */
 function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions) {
+    let childNodes: XNode[] = [];
+    if (node.firstChild) {
+        let child = node.firstChild;
+        while (child) {
+            childNodes.push(child);
+            child = child.nextSibling;
+        }
+    } else {
+        childNodes = node.childNodes;
+    }
+    childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
+    for (let i = 0; i < childNodes.length; ++i) {
+        xmlTransformedTextRecursive(childNodes[i], buffer, options);
+    }
+}
+
+/**
+ * XML element output for text mode - extracts only text content without tags.
+ * @param node The XML node.
+ * @param buffer The output buffer.
+ * @param options XML output options.
+ */
+function xmlElementLogicTextOnly(node: XNode, buffer: string[], options: XmlOutputOptions) {
     let childNodes: XNode[] = [];
     if (node.firstChild) {
         let child = node.firstChild;
@@ -568,6 +601,59 @@ function nodeToJsonObject(node: XNode): any {
     }
 
     return null;
+}
+
+/**
+ * Detects the most appropriate output format for a node based on its structure.
+ * This implements XSLT 3.1 adaptive output behavior.
+ * @param node The node to analyze.
+ * @returns The detected output method: 'text' or 'xml'.
+ */
+export function detectAdaptiveOutputFormat(node: XNode): 'text' | 'xml' {
+    if (!node) {
+        return 'xml';
+    }
+
+    const nodeType = node.nodeType;
+
+    // If it's a document or fragment, check its children
+    if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
+        const children = node.childNodes || [];
+        let elementCount = 0;
+        let textCount = 0;
+        let hasSignificantText = false;
+
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                elementCount++;
+            } else if (child.nodeType === DOM_TEXT_NODE) {
+                const text = child.nodeValue ? child.nodeValue.trim() : '';
+                if (text.length > 0) {
+                    textCount++;
+                    hasSignificantText = true;
+                }
+            }
+        }
+
+        // If there's only text content and no elements, use text output
+        if (elementCount === 0 && hasSignificantText) {
+            return 'text';
+        }
+        // Otherwise, use XML output
+        return 'xml';
+    }
+
+    // If it's a single text node with content, use text output
+    if (nodeType === DOM_TEXT_NODE || nodeType === DOM_CDATA_SECTION_NODE) {
+        const text = node.nodeValue ? node.nodeValue.trim() : '';
+        if (text.length > 0) {
+            return 'text';
+        }
+    }
+
+    // For elements and other node types, use XML output
+    return 'xml';
 }
 
 /**
