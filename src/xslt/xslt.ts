@@ -19,6 +19,7 @@ import {
     domSetAttribute,
     xmlGetAttribute,
     xmlTransformedText,
+    xmlToJson,
     xmlValue,
     xmlValueLegacyBehavior
 } from '../dom';
@@ -76,7 +77,7 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
 
     outputDocument: XDocument;
-    outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml';
+    outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json';
     outputOmitXmlDeclaration: string;
     version: string;
     firstTemplateRan: boolean;
@@ -115,9 +116,10 @@ export class Xslt {
             cData: options.cData === true,
             escape: options.escape === true,
             selfClosingTags: options.selfClosingTags === true,
+            outputMethod: options.outputMethod,
             parameters: options.parameters || []
         };
-        this.outputMethod = 'xml';
+        this.outputMethod = options.outputMethod || 'xml';
         this.outputOmitXmlDeclaration = 'no';
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
@@ -141,7 +143,7 @@ export class Xslt {
      * The exported entry point of the XSL-T processor.
      * @param xmlDoc The input document root, as DOM node.
      * @param stylesheet The stylesheet document root, as DOM node.
-     * @returns the processed document, as XML text in a string.
+     * @returns the processed document, as XML text in a string, or JSON string if outputMethod is 'json'.
      */
     async xsltProcess(xmlDoc: XDocument, stylesheet: XDocument) {
         const outputDocument = new XDocument();
@@ -155,6 +157,12 @@ export class Xslt {
         }
 
         await this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
+
+        // Handle JSON output format
+        if (this.outputMethod === 'json') {
+            return xmlToJson(outputDocument);
+        }
+
         const transformedOutputXml: string = xmlTransformedText(outputDocument, {
             cData: this.options.cData,
             escape: this.options.escape,
