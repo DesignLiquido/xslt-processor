@@ -332,7 +332,12 @@ export class Xslt {
         // Collect all templates with their priority metadata
         const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath);
 
-        const modifiedContext = context.clone(nodes);
+        // Clone context and set any xsl:with-param parameters defined on
+        // the <xsl:apply-templates> element so they are visible to the
+        // templates executed for each selected node.
+        const paramContext = context.clone();
+        await this.xsltWithParam(paramContext, template);
+        const modifiedContext = paramContext.clone(nodes);
         // Process nodes in document order, selecting the BEST matching template for each node.
         // This is the XSLT 3.0 compliant behavior - only ONE template executes per node.
         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
