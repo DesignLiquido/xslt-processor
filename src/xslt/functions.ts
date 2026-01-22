@@ -338,6 +338,26 @@ function nodeMatchesSinglePattern(
         return node.nodeName === '#document';
     }
 
+    // Special case for attribute patterns like "@class", "@*", "@ns:name"
+    if (pattern.startsWith('@')) {
+        // Only attribute nodes (nodeType 2) can match attribute patterns
+        if (node.nodeType !== 2) {
+            return false;
+        }
+        const attrPattern = pattern.substring(1); // Remove '@'
+        if (attrPattern === '*') {
+            // @* matches any attribute
+            return true;
+        }
+        // Match by attribute name (considering local name for namespaced attributes)
+        const attrName = node.localName || node.nodeName;
+        // Handle namespaced patterns like "ns:name" - just compare local names
+        const patternLocalName = attrPattern.includes(':')
+            ? attrPattern.substring(attrPattern.indexOf(':') + 1)
+            : attrPattern;
+        return attrName === patternLocalName || node.nodeName === attrPattern;
+    }
+
     // For element patterns, we need to check if the node would be selected by the pattern
     // Create a context with just this node
     const nodeContext = context.clone([node], 0);
