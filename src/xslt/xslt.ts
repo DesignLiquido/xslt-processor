@@ -1326,6 +1326,8 @@ export class Xslt {
                 try {
                     // For initial template selection, evaluate patterns from document root
                     // without axis override to ensure consistent matching for all patterns
+                    // For initial template selection, evaluate patterns from document root
+                    // without axis override to ensure consistent matching for all patterns
                     const matchedNodes = this.xsltMatch(t.matchPattern, contextClone);
                     if (matchedNodes.length > 0) {
                         matchCandidates.push({ priority: t, matchedNodes });
@@ -1440,13 +1442,30 @@ export class Xslt {
 
     protected xsltValueOf(context: ExprContext, template: XNode, output?: XNode) {
         const select = xmlGetAttribute(template, 'select');
-        const attribute = this.xPath.xPathEval(select, context);
+        const current = context.nodeList[context.position];
+
+        // First try evaluating in the current context. If that returns an
+        // empty result and the current node is the document node, try again
+        // evaluating against the document element (fallback), which helps
+        // with some templates written to expect either form.
+        let attribute = this.xPath.xPathEval(select, context);
+        if (
+            current &&
+            current.nodeName === '#document' &&
+            (attribute.stringValue() === '' || (attribute instanceof NodeSetValue && attribute.nodeSetValue().length === 0))
+        ) {
+            const docChild = current.childNodes.find((c: XNode) => c.nodeName !== '#dtd-section');
+            if (docChild) {
+                const fallbackContext = context.clone([docChild], 0);
+                attribute = this.xPath.xPathEval(select, fallbackContext);
+            }
+        }
+
         const value = attribute.stringValue();
         const node = domCreateTextNode(this.outputDocument, value);
         // Set siblingPosition to preserve insertion order during serialization
         const targetOutput = output || this.outputDocument;
         node.siblingPosition = targetOutput.childNodes.length;
-
         targetOutput.appendChild(node);
     }
 
