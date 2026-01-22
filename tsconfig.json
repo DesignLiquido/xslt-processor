@@ -17,7 +17,7 @@
     "exclude": [
         "babel.config.js",
         "jest.config.ts",
-        "rollup.config.js",
+        "tsup.config.ts",
         "coverage/**/*",
         "demo/**/*",
         "dist/**/*",

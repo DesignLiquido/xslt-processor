@@ -4,6 +4,7 @@
 coverage/
 demo/
 dist/
+interactive-tests/js/
 node_modules/
 
 package-lock.json
@@ -11,3 +12,7 @@ package-lock.json
 
 # Strange bug with debugging a unit test causes a stop in `async_hooks`.
 test-without-jest.*
+
+# Claude
+CLAUDE.md
+.claude/

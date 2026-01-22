@@ -56,18 +56,9 @@ export function xmlValue(node: XNode, disallowBrowserSpecificOptimization: boole
                 }
             }
 
-            if (node.transformedChildNodes.length > 0) {
-                const transformedTextNodes = node.transformedChildNodes.filter(
-                    (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE
-                );
-                for (let i = 0; i < transformedTextNodes.length; ++i) {
-                    ret += xmlValue(transformedTextNodes[i]);
-                }
-            } else {
-                const textNodes = node.childNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
-                for (let i = 0; i < textNodes.length; ++i) {
-                    ret += xmlValue(textNodes[i]);
-                }
+            const textNodes = node.childNodes.filter((n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE);
+            for (let i = 0; i < textNodes.length; ++i) {
+                ret += xmlValue(textNodes[i]);
             }
 
             return ret;
@@ -113,9 +104,9 @@ export function xmlValueLegacyBehavior(node: XNode, disallowBrowserSpecificOptim
                 }
             }
 
-            const len = node.transformedChildNodes.length;
+            const len = node.childNodes.length;
             for (let i = 0; i < len; ++i) {
-                returnedXmlString += xmlValue(node.transformedChildNodes[i]);
+                returnedXmlString += xmlValue(node.childNodes[i]);
             }
 
             break;
@@ -230,12 +221,12 @@ export function xmlTransformedText(
  */
 function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptions) {
     if (node.visited) return;
-    const nodeType = node.transformedNodeType || node.nodeType;
-    const nodeValue = node.transformedNodeValue || node.nodeValue;
+    const nodeType = node.nodeType
+    const nodeValue = node.nodeValue;
     if (nodeType === DOM_TEXT_NODE) {
-        if (node.transformedNodeValue && node.transformedNodeValue.trim() !== '') {
+        if (node.nodeValue && node.nodeValue.trim() !== '') {
             const finalText =
-                node.escape && options.escape ? xmlEscapeText(node.transformedNodeValue): xmlUnescapeText(node.transformedNodeValue);
+                node.escape && options.escape ? xmlEscapeText(node.nodeValue): xmlUnescapeText(node.nodeValue);
             buffer.push(finalText);
         }
     } else if (nodeType === DOM_CDATA_SECTION_NODE) {
@@ -250,13 +241,20 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
         // If node didn't have a transformed name, but its children
         // had transformations, children should be present at output.
         // This is called here "muted logic".
-        if (node.transformedNodeName !== null && node.transformedNodeName !== undefined) {
+        if (node.nodeName !== null && node.nodeName !== undefined) {
             xmlElementLogicTrivial(node, buffer, options);
         } else {
             xmlElementLogicMuted(node, buffer, options);
         }
     } else if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
-        const childNodes = node.transformedChildNodes.concat(node.childNodes);
+        let childNodes = node.firstChild ? [] : node.childNodes;
+        if (node.firstChild) {
+            let child = node.firstChild;
+            while (child) {
+                childNodes.push(child);
+                child = child.nextSibling;
+            }
+        }
         childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
 
         for (let i = 0; i < childNodes.length; ++i) {
@@ -276,7 +274,16 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
 function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
-    let attributes = node.transformedChildNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
+    let attributes: XNode[] = [];
+    if (node.firstChild) {
+        let child = node.firstChild;
+        while (child) {
+            if (child.nodeType === DOM_ATTRIBUTE_NODE) {
+                attributes.push(child);
+            }
+            child = child.nextSibling;
+        }
+    }
     if (attributes.length === 0) {
         attributes = node.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
     }
@@ -287,12 +294,21 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
             continue;
         }
 
-        if (attribute.transformedNodeName && attribute.transformedNodeValue) {
-            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.transformedNodeValue)}"`);
+        if (attribute.nodeName && attribute.nodeValue) {
+            buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.nodeValue)}"`);
         }
     }
 
-    let childNodes = node.transformedChildNodes.filter((n) => n.nodeType !== DOM_ATTRIBUTE_NODE);
+    let childNodes: XNode[] = [];
+    if (node.firstChild) {
+        let child = node.firstChild;
+        while (child) {
+            if (child.nodeType !== DOM_ATTRIBUTE_NODE) {
+                childNodes.push(child);
+            }
+            child = child.nextSibling;
+        }
+    }
     if (childNodes.length === 0) {
         childNodes = node.childNodes.filter((n) => n.nodeType !== DOM_ATTRIBUTE_NODE);
     }
@@ -324,7 +340,16 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
  * @param cdata If using CDATA configuration.
  */
 function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions) {
-    let childNodes = node.transformedChildNodes.length > 0 ? node.transformedChildNodes : node.childNodes;
+    let childNodes: XNode[] = [];
+    if (node.firstChild) {
+        let child = node.firstChild;
+        while (child) {
+            childNodes.push(child);
+            child = child.nextSibling;
+        }
+    } else {
+        childNodes = node.childNodes;
+    }
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     for (let i = 0; i < childNodes.length; ++i) {
         xmlTransformedTextRecursive(childNodes[i], buffer, options);
@@ -338,9 +363,9 @@ function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOpti
  * @returns The full node name as a string.
  */
 function xmlFullNodeName(node: XNode): string {
-    const nodeName = node.transformedNodeName || node.nodeName;
-    if (node.transformedPrefix && nodeName.indexOf(`${node.transformedPrefix}:`) != 0) {
-        return `${node.transformedPrefix}:${nodeName}`;
+    const nodeName = node.nodeName;
+    if (node.prefix && nodeName.indexOf(`${node.prefix}:`) != 0) {
+        return `${node.prefix}:${nodeName}`;
     }
 
     return nodeName;

@@ -8,8 +8,8 @@ describe('xsl:import', () => {
         const xmlSource = `<html></html>`;
 
         const xsltSource = `<xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:fo="http://www.w3.org/1999/XSL/Format">
-            <xsl:output method="html" indent="yes"/>
             <xsl:import href="https://raw.githubusercontent.com/DesignLiquido/xslt-processor/main/examples/head.xsl"/>
+            <xsl:output method="html" indent="yes"/>
         </xsl:stylesheet>`;
 
         const xsltClass = new Xslt();
@@ -34,6 +34,6 @@ describe('xsl:import', () => {
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
-        assert.rejects(async () => await xsltClass.xsltProcess(xml, xslt));
+        await assert.rejects(async () => await xsltClass.xsltProcess(xml, xslt));
     });
 });

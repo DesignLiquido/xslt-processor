@@ -5,16 +5,10 @@ import { Xslt } from '../src/xslt';
 import { XmlParser } from '../src/dom';
 
 describe('Interactive Tests Examples', () => {
-    // TODO: Per https://github.com/DesignLiquido/xslt-processor/issues/116, while debugging
-    // this test, we've found that `<xsl:apply-templates>` with a `select` attribute +
-    // `<xsl:template>` does not work well for relative XPath (it works for absolute XPath). 
-    // The problem happens because the implementation calls the traditional `<xsl:template>`, 
-    // which it tries to re-select nodes that are already selected in the expression context by 
-    // `<xsl:apply-templates>`. Instead, it should "select the appropriate template", as mentioned
-    // at https://www.w3.org/TR/xslt-10/#section-Applying-Template-Rules and 
-    // https://learn.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/ms256184(v=vs.100), 
-    // and process each child by the selected template.
-    it.skip('Former xslt.html', async () => {
+    // Issue 116 (https://github.com/DesignLiquido/xslt-processor/issues/116) was fixed
+    // by the new XPath implementation. The issue was that `<xsl:apply-templates>` with
+    // a `select` attribute didn't work well with relative XPath patterns in templates.
+    it('Former xslt.html', async () => {
         const xmlString = (
             `<page>
                 <message>

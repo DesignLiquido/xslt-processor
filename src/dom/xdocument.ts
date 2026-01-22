@@ -47,12 +47,6 @@ export class XDocument extends XNode {
         return XNode.create(DOM_TEXT_NODE, '#text', value, this);
     }
 
-    createTransformedTextNode(value: any) {
-        const node = XNode.create(DOM_TEXT_NODE, '#text', value, this);
-        node.transformedNodeValue = value;
-        return node;
-    }
-
     createAttribute(name: any) {
         return XNode.create(DOM_ATTRIBUTE_NODE, name, null, this);
     }

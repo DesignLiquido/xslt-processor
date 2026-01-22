@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.debug.json",
+    "compilerOptions": {
+        "sourceMap": true,
+        "inlineSourceMap": false,
+        "inlineSources": true,
+        "module": "CommonJS",
+        "target": "ES2020",
+        "lib": ["ES2020", "DOM"],
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true
+    },
+    "include": [
+        "src/**/*",
+        "tests/**/*"
+    ]
+}

@@ -13,7 +13,15 @@ export default async (): Promise<Config.InitialOptions> => ({
     detectOpenHandles: true,
     preset: 'ts-jest',
     transform: {
-        '^.+\\.(ts|tsx)?$': 'ts-jest',
-        '^.+\\.(js|jsx)$': 'babel-jest'
+        '^.+\\.(ts|tsx)?$': ['ts-jest', {
+            isolatedModules: false,
+            tsconfig: 'tsconfig.jest.json',
+            diagnostics: {
+                warnOnly: true
+            }
+        }],
+        '^.+\\.(js|jsx)$': ['babel-jest', {
+            sourceMaps: true
+        }]
     }
 });

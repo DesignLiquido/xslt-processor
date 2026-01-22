@@ -5,7 +5,40 @@ import { Xslt } from '../src/xslt';
 import { XmlParser } from '../src/dom';
 
 describe('root-element', () => {
-    it('select root element test', async () => {
+    it('select root element test, simple', async () => {
+        const xmlString = (
+            `<root>
+                <test name="test1" />
+            </root>`
+        );
+
+        const xsltString =
+            `<?xml version="1.0"?>
+            <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                    <xsl:template match="test">
+                        <span>
+                            <xsl:value-of select="@name" />
+                        </span>
+                    </xsl:template>
+                    <xsl:template match="/root">
+                        <div>
+                            <xsl:apply-templates select="test" />
+                        </div>
+                    </xsl:template>
+                </xsl:stylesheet>`;
+
+        const expectedOutString = `<div><span>test1</span></div>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.equal(outXmlString, expectedOutString);
+    });
+
+    it('select root element test, four elements', async () => {
         const xmlString = (
             `<root>
                 <test name="test1" />
