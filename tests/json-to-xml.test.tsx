@@ -23,7 +23,30 @@ describe('json-to-xml', () => {
         await assert.rejects(
             async () => await xsltClass.xsltProcess(xml, xslt),
             {
-                message: /json-to-xml\(\) is not supported in XSLT 1\.0/
+                message: /json-to-xml\(\) is only supported in XSLT 3\.0/
+            }
+        );
+    });
+
+    it('json-to-xml() should throw error in XSLT 2.0', async () => {
+        const xmlString = `<root/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+          <xsl:stylesheet version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:template match="/">
+              <result><xsl:value-of select="json-to-xml('&quot;test&quot;')"/></result>
+            </xsl:template>
+          </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        await assert.rejects(
+            async () => await xsltClass.xsltProcess(xml, xslt),
+            {
+                message: /json-to-xml\(\) is only supported in XSLT 3\.0/
             }
         );
     });

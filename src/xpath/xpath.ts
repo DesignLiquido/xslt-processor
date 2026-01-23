@@ -298,8 +298,8 @@ class NodeConverter {
         // xml-to-json() function - XSLT 3.0 specific
         functions['xml-to-json'] = (nodes: any) => {
             // Check XSLT version - only supported in 3.0
-            if (exprContext.xsltVersion === '1.0') {
-                throw new Error('xml-to-json() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            if (exprContext.xsltVersion !== '3.0') {
+                throw new Error('xml-to-json() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
             }
 
             // Handle node set or single node
@@ -315,8 +315,8 @@ class NodeConverter {
         // json-to-xml() function - XSLT 3.0 specific
         functions['json-to-xml'] = (jsonText: any) => {
             // Check XSLT version - only supported in 3.0
-            if (exprContext.xsltVersion === '1.0') {
-                throw new Error('json-to-xml() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            if (exprContext.xsltVersion !== '3.0') {
+                throw new Error('json-to-xml() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
             }
 
             // Handle node set or single value
