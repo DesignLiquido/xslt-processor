@@ -285,7 +285,7 @@ export class XmlParser {
             } else if (!tag && char === '<') {
                 let text = xml.slice(start, i);
                 if (text && parent !== root) {
-                    domAppendChild(parent, domCreateTextNode(xmlDocument, text));
+                    domAppendChild(parent, domCreateTextNode(xmlDocument, he.decode(text)));
                 }
                 if (xml.slice(i + 1, i + 4) === '!--') {
                     let endTagIndex = xml.slice(i + 4).indexOf('-->');

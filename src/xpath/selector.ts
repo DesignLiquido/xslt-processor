@@ -43,7 +43,7 @@ export class XPathSelector {
             nodeType: this.getNodeType(node),
             nodeName: node.nodeName || '#document',
             localName: node.localName || node.nodeName,
-            namespaceURI: node.namespaceUri || null,
+            namespaceUri: node.namespaceUri || null,
             textContent: node.nodeValue,
             parentNode: null, // Não converter para evitar ciclos
             childNodes: [], // Será preenchido depois
@@ -99,7 +99,7 @@ export class XPathSelector {
             text: xpathNode.textContent,
             value: xpathNode.textContent,
             localName: xpathNode.localName,
-            namespaceURI: xpathNode.namespaceURI,
+            namespaceUri: xpathNode.namespaceUri,
             parentNode: xpathNode.parentNode ? this.convertFromXPathNode(xpathNode.parentNode) : undefined,
             children: xpathNode.childNodes ? Array.from(xpathNode.childNodes).map(child => this.convertFromXPathNode(child)) : undefined,
             attributes: xpathNode.attributes ? Array.from(xpathNode.attributes).map(attr => this.convertFromXPathNode(attr)) : undefined,
