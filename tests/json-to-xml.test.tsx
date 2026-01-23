@@ -346,8 +346,29 @@ describe('json-to-xml', () => {
         const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
-        // Should convert property name to valid XML element (prefixed with underscore)
-        assert(outXmlString.includes('prop') || outXmlString.includes('_'));
+        // Parse the output to verify element name and content
+        const outputDoc = xmlParser.xmlParse(outXmlString);
+        const resultElement = outputDoc.getElementsByTagName('result')[0];
+        assert(resultElement, 'Result element should exist');
+        
+        // json-to-xml creates a <root> element containing the JSON properties
+        const rootElement = resultElement.getElementsByTagName('root')[0] as Element;
+        assert(rootElement, 'Root element from json-to-xml should exist');
+        
+        // Get the property element (should be the sanitized property name)
+        const propertyElement = rootElement.firstChild as Element;
+        assert(propertyElement, 'Property element should exist');
+        
+        const elementName = propertyElement.nodeName;
+        // Element name should start with a letter or underscore (not a digit)
+        assert(/^[a-zA-Z_]/.test(elementName), `Element name '${elementName}' should start with letter or underscore`);
+        // Element name should contain 'prop' (the original property name part)
+        assert(elementName.includes('prop'), `Element name '${elementName}' should contain 'prop'`);
+        
+        // Get the text content from the first child text node
+        const textNode = propertyElement.firstChild;
+        assert(textNode, 'Text node should exist');
+        assert.strictEqual(textNode.nodeValue, 'value', 'Element should contain the correct value');
     });
 
     it('json-to-xml() should handle empty and whitespace JSON strings', async () => {
