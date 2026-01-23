@@ -1,4 +1,4 @@
-import he from 'he';
+import { htmlEntityDecode } from './html-entity-decoder';
 import {
     domCreateElement,
     domSetAttribute,
@@ -130,7 +130,7 @@ export class XmlParser {
 
                         let attribute;
                         while ((attribute = this.XML10_ATTRIBUTE_REGEXP.exec(text))) {
-                            const val = he.decode(attribute[5] || attribute[7] || '');
+                            const val = htmlEntityDecode(attribute[5] || attribute[7] || '');
                             domSetAttribute(node, attribute[1], val);
                         }
 
@@ -246,7 +246,7 @@ export class XmlParser {
 
                     let attribute;
                     while ((attribute = regexAttribute.exec(text))) {
-                        const val = he.decode(attribute[5] || attribute[7] || '');
+                        const val = htmlEntityDecode(attribute[5] || attribute[7] || '');
                         domSetAttribute(node, attribute[1], val);
                     }
 
@@ -285,7 +285,7 @@ export class XmlParser {
             } else if (!tag && char === '<') {
                 let text = xml.slice(start, i);
                 if (text && parent !== root) {
-                    domAppendChild(parent, domCreateTextNode(xmlDocument, he.decode(text)));
+                    domAppendChild(parent, domCreateTextNode(xmlDocument, htmlEntityDecode(text)));
                 }
                 if (xml.slice(i + 1, i + 4) === '!--') {
                     let endTagIndex = xml.slice(i + 4).indexOf('-->');

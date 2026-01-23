@@ -1,4 +1,4 @@
-import he from 'he';
+import { htmlEntityDecode } from './html-entity-decoder';
 
 import {
     DOM_ATTRIBUTE_NODE,
@@ -446,7 +446,7 @@ function xmlEscapeAttr(s: string): string {
 
 /**
  * Wrapper function to access attribute values of template element
- * nodes. Currently this calls he.decode because in some DOM
+ * nodes. Currently this calls htmlEntityDecode because in some DOM
  * implementations the return value of node.getAttributeValue()
  * contains unresolved XML entities, although the DOM spec requires
  * that entity references are resolved by the DOM.
@@ -460,7 +460,7 @@ export function xmlGetAttribute(node: XNode, name: string): string {
     // application.
     const value = domGetAttributeValue(node, name);
     if (value) {
-        return he.decode(value);
+        return htmlEntityDecode(value);
     }
 
     return value;

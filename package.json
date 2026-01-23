@@ -50,7 +50,6 @@
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
     "@babel/preset-typescript": "^7.22.5",
-    "@types/he": "^1.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.9.0",
     "@types/node-fetch": "^2.6.11",
@@ -72,7 +71,6 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "he": "^1.2.0"
   },
   "copyFiles": [
     {
@@ -93,7 +91,7 @@
     },
     {
       "from": "dist/umd/xslt-processor.global.js",
-      "to": "demo/js/xslt-processor.js"
+      "to": "demo/js/xslt-processor.global.js"
     }
   ]
 }

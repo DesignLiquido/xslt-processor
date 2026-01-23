@@ -21,5 +21,9 @@ export default defineConfig([
         sourcemap: true,
         minify: true,
         target: 'es2015',
+        banner: {
+            js: `/** @type {any} */`
+        },
+        shims: true,
     },
 ]);
