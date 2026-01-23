@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 
-// Copyright 2023-2024 Design Liquido
+// Copyright 2023-2026 Design Liquido
 // Tests for XSLT stylesheet/transform element validation
 
 import assert from 'assert';
