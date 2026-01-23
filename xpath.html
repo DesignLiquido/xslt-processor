@@ -339,12 +339,17 @@
             `;
 
             try {
-                const xmlParser = new globalThis.XsltProcessor.XmlParser();
+                // Check if XsltProcessor is loaded
+                if (typeof XsltProcessor === 'undefined') {
+                    throw new Error('XSLT Processor library not loaded. Please refresh the page.');
+                }
+
+                const xmlParser = new XsltProcessor.XmlParser();
                 const xmlDoc = xmlParser.xmlParse(xmlEditor.getValue());
 
                 // Use the XPath class from the bundle
-                const xPath = new globalThis.XsltProcessor.XPath();
-                const exprContext = new globalThis.XsltProcessor.ExprContext([xmlDoc]);
+                const xPath = new XsltProcessor.XPath();
+                const exprContext = new XsltProcessor.ExprContext([xmlDoc]);
                 const result = xPath.xPathEval(xpathExpr, exprContext);
 
                 let html = '';
