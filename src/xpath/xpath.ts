@@ -206,7 +206,7 @@ class NodeConverter {
         if (!xpathNode) return null;
         
         // Check if this is already an XNode (from native parsing)
-        if (xpathNode.constructor && xpathNode.constructor.name === 'XNode') {
+        if (xpathNode instanceof XNode) {
             return xpathNode as unknown as XNode;
         }
         
