@@ -352,12 +352,13 @@ describe('json-to-xml', () => {
         assert(resultElement, 'Result element should exist');
         
         // json-to-xml creates a <root> element containing the JSON properties
-        const rootElement = resultElement.getElementsByTagName('root')[0] as Element;
+        const rootElement = resultElement.getElementsByTagName('root')[0];
         assert(rootElement, 'Root element from json-to-xml should exist');
         
         // Get the property element (should be the sanitized property name)
-        const propertyElement = rootElement.firstChild as Element;
+        const propertyElement = rootElement.firstChild;
         assert(propertyElement, 'Property element should exist');
+        assert.strictEqual(propertyElement.nodeType, 1, 'Property should be an element node');
         
         const elementName = propertyElement.nodeName;
         // Element name should start with a letter or underscore (not a digit)
@@ -368,6 +369,7 @@ describe('json-to-xml', () => {
         // Get the text content from the first child text node
         const textNode = propertyElement.firstChild;
         assert(textNode, 'Text node should exist');
+        assert.strictEqual(textNode.nodeType, 3, 'First child should be a text node');
         assert.strictEqual(textNode.nodeValue, 'value', 'Element should contain the correct value');
     });
 
