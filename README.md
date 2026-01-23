@@ -147,7 +147,7 @@ console.log(parsed.root.users.user); // ["Alice", "Bob"]
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@latest/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@latest/umd/xslt-processor.global.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
