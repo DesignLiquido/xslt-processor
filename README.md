@@ -62,13 +62,15 @@ const xslt = new Xslt();
 const xPath = xslt.xPath;
 ```
 
-Or ou can import it like this:
+Or you can import it like this:
 
 ```js
 import { XPath } from 'xslt-processor'
 
 const xPath = new XPath();
 ```
+
+`XPath` class is an external dependency, [living in its own repository](https://github.com/DesignLiquido/xpath). 
 
 If you write pre-2015 JS code, make adjustments as needed.
 
@@ -145,75 +147,10 @@ console.log(parsed.root.users.user); // ["Alice", "Bob"]
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@3.0.0/umd/xslt-processor.js"></script>
+<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@latest/umd/xslt-processor.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
-
-### Breaking Changes
-
-#### Version 2
-
-Until version 2.3.1, use like the example below:
-
-```js
-import { Xslt, XmlParser } from 'xslt-processor'
-
-// xmlString: string of xml file contents
-// xsltString: string of xslt file contents
-// outXmlString: output xml string.
-const xslt = new Xslt();
-const xmlParser = new XmlParser();
-const outXmlString = xslt.xsltProcess( // Not async.
-	xmlParser.xmlParse(xmlString),
-	xmlParser.xmlParse(xsltString)
-);
-```
-
-Version 3 received `<xsl:include>` which relies on Fetch API, which is asynchronous. Version 2 doesn't support `<xsl:include>`.
-
-If using Node.js older than version v17.5.0, please use version 3.2.3, that uses `node-fetch` package. Versions 3.3.0 onward require at least Node.js version v17.5.0, since they use native `fetch()` function.
-
-#### Version 1
-
-Until version 1.2.8, use like the example below:
-
-```js
-import { Xslt, xmlParse } from 'xslt-processor'
-
-// xmlString: string of xml file contents
-// xsltString: string of xslt file contents
-// outXmlString: output xml string.
-const xslt = new Xslt();
-const outXmlString = xslt.xsltProcess(
-	xmlParse(xmlString),
-	xmlParse(xsltString)
-);
-```
-
-#### Version 0
-
-Until version 0.11.7, use like the example below:
-
-```js
-import { xsltProcess, xmlParse } from 'xslt-processor'
-
-// xmlString: string of xml file contents
-// xsltString: string of xslt file contents
-// outXmlString: output xml string.
-const outXmlString = xsltProcess(
-	xmlParse(xmlString),
-	xmlParse(xsltString)
-);
-```
-
-and to access the XPath parser:
-
-```js
-import { xpathParse } from 'xslt-processor'
-```
-
-These functions are part of `Xslt` and `XPath` classes, respectively, at version 1.x onward.
 
 ## Introduction
 
@@ -311,6 +248,71 @@ Use `<xsl:preserve-space>` to preserve whitespace in specific elements, overridi
 2. `xsl:preserve-space` overrides `xsl:strip-space` for matching elements
 3. `xsl:strip-space` applies to remaining matches
 4. By default (no declarations), whitespace is preserved
+
+### Breaking Changes
+
+#### Version 2
+
+Until version 2.3.1, use like the example below:
+
+```js
+import { Xslt, XmlParser } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const xslt = new Xslt();
+const xmlParser = new XmlParser();
+const outXmlString = xslt.xsltProcess( // Not async.
+	xmlParser.xmlParse(xmlString),
+	xmlParser.xmlParse(xsltString)
+);
+```
+
+Version 3 received `<xsl:include>` which relies on Fetch API, which is asynchronous. Version 2 doesn't support `<xsl:include>`.
+
+If using Node.js older than version v17.5.0, please use version 3.2.3, that uses `node-fetch` package. Versions 3.3.0 onward require at least Node.js version v17.5.0, since they use native `fetch()` function.
+
+#### Version 1
+
+Until version 1.2.8, use like the example below:
+
+```js
+import { Xslt, xmlParse } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const xslt = new Xslt();
+const outXmlString = xslt.xsltProcess(
+	xmlParse(xmlString),
+	xmlParse(xsltString)
+);
+```
+
+#### Version 0
+
+Until version 0.11.7, use like the example below:
+
+```js
+import { xsltProcess, xmlParse } from 'xslt-processor'
+
+// xmlString: string of xml file contents
+// xsltString: string of xslt file contents
+// outXmlString: output xml string.
+const outXmlString = xsltProcess(
+	xmlParse(xmlString),
+	xmlParse(xsltString)
+);
+```
+
+and to access the XPath parser:
+
+```js
+import { xpathParse } from 'xslt-processor'
+```
+
+These functions are part of `Xslt` and `XPath` classes, respectively, at version 1.x onward.
 
 ## References
 

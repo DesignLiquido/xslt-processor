@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Design Liquido
+// Copyright 2023-2026 Design Liquido
 // XPath implementation exports
 
 // Main XPath class

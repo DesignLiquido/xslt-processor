@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 
-// Copyright 2023-2024 Design Liquido
+// Copyright 2023-2026 Design Liquido
 // Copyright 2018 Johannes Wilm
 // Copyright 2006, Google Inc.
 // All Rights Reserved.

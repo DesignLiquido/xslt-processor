@@ -1,4 +1,4 @@
-// Copyright 2023-2024 Design Liquido
+// Copyright 2023-2026 Design Liquido
 // XPath adapter that uses the new lexer/parser implementation
 // while maintaining backward compatibility with the existing XSLT API.
 
@@ -8,6 +8,7 @@ import { XPathParser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
 import { XPathContext, XPathResult, createContext } from './lib/src/context';
 import { XPathNode } from './lib/src/node';
+import { JsonToXmlConverter } from './lib/src/expressions/json-to-xml-converter';
 import { ExprContext } from './expr-context';
 import { NodeValue, StringValue, NumberValue, BooleanValue, NodeSetValue } from './values';
 
@@ -134,6 +135,7 @@ class NodeConverter {
             variables: this.convertVariables(exprContext),
             functions: this.createCustomFunctions(exprContext),
             namespaces: exprContext.knownNamespaces,
+            xsltVersion: exprContext.xsltVersion,
         });
     }
 
@@ -202,8 +204,14 @@ class NodeConverter {
      */
     xPathNodeToXNode(xpathNode: XPathNode): XNode | null {
         if (!xpathNode) return null;
-        // The nodes are already XNodes, just cast back
-        return xpathNode as unknown as XNode;
+        
+        // Check if this is already an XNode (from native parsing)
+        if (xpathNode instanceof XNode) {
+            return xpathNode as unknown as XNode;
+        }
+        
+        // Otherwise, convert XPathNode interface (from json-to-xml or xpath/lib) to XNode
+        return this.convertXPathNodeToXNode(xpathNode);
     }
 
     /**
@@ -304,7 +312,105 @@ class NodeConverter {
             return this.xmlToJson(node);
         };
 
+        // json-to-xml() function - XSLT 3.0 specific
+        functions['json-to-xml'] = (jsonText: any) => {
+            // Check XSLT version - only supported in 3.0
+            if (exprContext.xsltVersion === '1.0') {
+                throw new Error('json-to-xml() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            }
+
+            // Handle node set or single value
+            const jsonStr = Array.isArray(jsonText) ? jsonText[0] : jsonText;
+            if (!jsonStr) {
+                return null;
+            }
+
+            // Convert JSON string to XML document node using xpath lib converter
+            const converter = new JsonToXmlConverter();
+            const xpathNode = converter.convert(String(jsonStr));
+            
+            if (!xpathNode) {
+                return null;
+            }
+
+            // Get owner document from context
+            const ownerDoc = exprContext.nodeList && exprContext.nodeList.length > 0 
+                ? exprContext.nodeList[0].ownerDocument 
+                : null;
+
+            // Convert XPathNode interface tree to actual XNode objects
+            const convertedNode = this.convertXPathNodeToXNode(xpathNode, ownerDoc);
+            
+            // Return as array for consistency with xpath processor
+            return convertedNode ? [convertedNode] : null;
+        };
+
         return functions;
+    }
+
+    /**
+     * Convert an XPathNode interface tree to actual XNode objects.
+     * This is needed to convert json-to-xml() output to XSLT-compatible nodes.
+     */
+    private convertXPathNodeToXNode(xpathNode: XPathNode, ownerDoc?: any): XNode | null {
+        if (!xpathNode) {
+            return null;
+        }
+
+        const { XNode: XNodeClass } = require('../dom');
+        const { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE } = require('../constants');
+
+        let node: XNode;
+
+        if (xpathNode.nodeType === DOM_DOCUMENT_NODE) {
+            // For document nodes, extract and return the root element
+            if (xpathNode.childNodes && xpathNode.childNodes.length > 0) {
+                const rootChild = xpathNode.childNodes[0] as any;
+                node = this.convertXPathNodeToXNode(rootChild, ownerDoc);
+                return node;
+            }
+            return null;
+        } else if (xpathNode.nodeType === DOM_TEXT_NODE) {
+            // Create a text node
+            const textContent = xpathNode.textContent || '';
+            node = new XNodeClass(
+                DOM_TEXT_NODE,
+                '#text',
+                textContent,
+                ownerDoc
+            );
+        } else {
+            // Element node (DOM_ELEMENT_NODE)
+            node = new XNodeClass(
+                DOM_ELEMENT_NODE,
+                xpathNode.nodeName || 'element',
+                '',
+                ownerDoc
+            );
+
+            // Copy namespace URI if present
+            if (xpathNode.namespaceUri) {
+                node.namespaceUri = xpathNode.namespaceUri;
+            }
+
+            // Recursively convert child nodes
+            if (xpathNode.childNodes && xpathNode.childNodes.length > 0) {
+                for (let i = 0; i < xpathNode.childNodes.length; i++) {
+                    const childXPathNode = xpathNode.childNodes[i] as any;
+                    const childXNode = this.convertXPathNodeToXNode(childXPathNode, ownerDoc);
+                    if (childXNode) {
+                        childXNode.parentNode = node;
+                        node.childNodes.push(childXNode);
+                    }
+                }
+                if (node.childNodes.length > 0) {
+                    node.firstChild = node.childNodes[0];
+                    node.lastChild = node.childNodes[node.childNodes.length - 1];
+                }
+            }
+        }
+
+        return node;
     }
 
     /**
