@@ -221,10 +221,15 @@
             `;
 
             try {
-                const xmlParser = new globalThis.XsltProcessor.XmlParser();
+                // Check if XsltProcessor is loaded
+                if (typeof XsltProcessor === 'undefined') {
+                    throw new Error('XSLT Processor library not loaded. Please refresh the page.');
+                }
+
+                const xmlParser = new XsltProcessor.XmlParser();
                 const xml = xmlParser.xmlParse(xmlEditor.getValue());
                 const xslt = xmlParser.xmlParse(xsltEditor.getValue());
-                const xsltClass = new globalThis.XsltProcessor.Xslt();
+                const xsltClass = new XsltProcessor.Xslt();
 
                 const html = await xsltClass.xsltProcess(xml, xslt);
 
