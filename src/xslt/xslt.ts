@@ -1450,18 +1450,27 @@ export class Xslt {
             }
 
             if (matchCandidates.length > 0) {
-                // Sort by: importPrecedence DESC, effectivePriority DESC, documentOrder DESC
-                matchCandidates.sort((a, b) => {
-                    if (a.priority.importPrecedence !== b.priority.importPrecedence) {
-                        return b.priority.importPrecedence - a.priority.importPrecedence;
-                    }
-                    if (a.priority.effectivePriority !== b.priority.effectivePriority) {
-                        return b.priority.effectivePriority - a.priority.effectivePriority;
-                    }
-                    return b.priority.documentOrder - a.priority.documentOrder;
-                });
+                // First, check if "/" pattern matches - it's the document entry point and should be preferred
+                const rootPatternMatch = matchCandidates.find(c => c.priority.matchPattern === '/');
+                let winner: { priority: TemplatePriority; matchedNodes: XNode[] };
+                
+                if (rootPatternMatch) {
+                    // Use the root template as entry point
+                    winner = rootPatternMatch;
+                } else {
+                    // Sort by: importPrecedence DESC, effectivePriority DESC, documentOrder DESC
+                    matchCandidates.sort((a, b) => {
+                        if (a.priority.importPrecedence !== b.priority.importPrecedence) {
+                            return b.priority.importPrecedence - a.priority.importPrecedence;
+                        }
+                        if (a.priority.effectivePriority !== b.priority.effectivePriority) {
+                            return b.priority.effectivePriority - a.priority.effectivePriority;
+                        }
+                        return b.priority.documentOrder - a.priority.documentOrder;
+                    });
+                    winner = matchCandidates[0];
+                }
 
-                const winner: { priority: TemplatePriority; matchedNodes: XNode[] } = matchCandidates[0];
                 // Detect conflicts
                 const conflicts = matchCandidates.filter(t =>
                     t.priority.importPrecedence === winner.priority.importPrecedence &&
