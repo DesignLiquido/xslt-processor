@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSLT Processor - Interactive Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        editor: {
+                            bg: '#1e1e1e',
+                            border: '#3c3c3c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .editor-container {
+            height: 300px;
+            border: 1px solid #3c3c3c;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+        .output-editor {
+            height: 350px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">XSLT Processor</h1>
+            <p class="text-gray-400">Interactive XSLT transformation testing tool</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- XML Input -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">XML Input</label>
+                    <span class="text-xs text-gray-500 font-mono">XML</span>
+                </div>
+                <div id="xml-editor" class="editor-container"></div>
+            </div>
+
+            <!-- XSLT Input -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">XSLT Stylesheet</label>
+                    <span class="text-xs text-gray-500 font-mono">XML</span>
+                </div>
+                <div id="xslt-editor" class="editor-container"></div>
+            </div>
+        </div>
+
+        <!-- Transform Button -->
+        <div class="flex justify-center mb-6">
+            <button
+                id="transform-btn"
+                onclick="transformXslt()"
+                class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Transform
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- HTML Output -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">HTML Output</label>
+                    <span class="text-xs text-gray-500 font-mono">HTML</span>
+                </div>
+                <div id="html-editor" class="editor-container output-editor"></div>
+            </div>
+
+            <!-- Rendered Preview -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-300">Rendered Preview</label>
+                    <span class="text-xs text-gray-500">Live</span>
+                </div>
+                <div
+                    id="preview"
+                    class="output-editor bg-white text-gray-900 rounded-md p-4 overflow-auto border border-gray-600"
+                >
+                    <p class="text-gray-400 italic">Output will appear here...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-container" class="hidden mt-6">
+            <div class="bg-red-900/50 border border-red-500 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-semibold text-red-400">Error</span>
+                </div>
+                <pre id="error-message" class="text-red-300 text-sm whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-gray-700 text-center text-gray-500 text-sm">
+            <p>Powered by <a href="https://github.com/DesignLiquido/xslt-processor" class="text-blue-400 hover:text-blue-300">xslt-processor</a></p>
+        </footer>
+    </div>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+    <!-- XSLT Processor -->
+    <script src="js/xslt-processor.global.js"></script>
+
+    <script>
+        let xmlEditor, xsltEditor, htmlEditor;
+
+        const defaultXml = `<page>
+    <message>Hello World.</message>
+</page>`;
+
+        const defaultXslt = `<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+        <xsl:apply-templates select="/page/message"/>
+    </xsl:template>
+
+    <xsl:template match="/page/message">
+        <div style="color: green; font-size: 24px;">
+            <xsl:value-of select="."/>
+        </div>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], function () {
+            // Define editor theme
+            monaco.editor.defineTheme('xslt-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: {
+                    'editor.background': '#1e1e1e',
+                }
+            });
+
+            const commonOptions = {
+                theme: 'xslt-dark',
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                insertSpaces: true,
+                wordWrap: 'on',
+                padding: { top: 10 }
+            };
+
+            xmlEditor = monaco.editor.create(document.getElementById('xml-editor'), {
+                ...commonOptions,
+                value: defaultXml,
+                language: 'xml'
+            });
+
+            xsltEditor = monaco.editor.create(document.getElementById('xslt-editor'), {
+                ...commonOptions,
+                value: defaultXslt,
+                language: 'xml'
+            });
+
+            htmlEditor = monaco.editor.create(document.getElementById('html-editor'), {
+                ...commonOptions,
+                value: '',
+                language: 'html',
+                readOnly: true
+            });
+
+            // Keyboard shortcut: Ctrl+Enter to transform
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    transformXslt();
+                }
+            });
+        });
+
+        async function transformXslt() {
+            const btn = document.getElementById('transform-btn');
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            const preview = document.getElementById('preview');
+
+            // Reset error state
+            errorContainer.classList.add('hidden');
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+
+            try {
+                const xmlParser = new globalThis.XsltProcessor.XmlParser();
+                const xml = xmlParser.xmlParse(xmlEditor.getValue());
+                const xslt = xmlParser.xmlParse(xsltEditor.getValue());
+                const xsltClass = new globalThis.XsltProcessor.Xslt();
+
+                const html = await xsltClass.xsltProcess(xml, xslt);
+
+                htmlEditor.setValue(html);
+                preview.innerHTML = html;
+            } catch (error) {
+                errorContainer.classList.remove('hidden');
+                errorMessage.textContent = error.message || String(error);
+                preview.innerHTML = '<p class="text-red-500 italic">Transformation failed</p>';
+            } finally {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Transform
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
