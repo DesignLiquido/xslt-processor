@@ -232,10 +232,64 @@
                 return `${node.nodeName}="${node.nodeValue}"`;
             }
             if (node.nodeType === 1) { // Element node
-                const serializer = new XMLSerializer();
-                return serializer.serializeToString(node);
+                // Custom serialization for XNode objects
+                return serializeXNode(node);
             }
             return String(node);
+        }
+
+        function serializeXNode(node) {
+            if (!node) return '';
+            
+            // Text node
+            if (node.nodeType === 3) {
+                return escapeHtml(node.nodeValue || '');
+            }
+            
+            // Element node
+            if (node.nodeType === 1) {
+                let xml = `<${node.nodeName}`;
+                
+                // Add attributes
+                if (node.childNodes) {
+                    for (const child of node.childNodes) {
+                        if (child.nodeType === 2) { // Attribute node
+                            xml += ` ${child.nodeName}="${escapeHtml(child.nodeValue || '')}"`;
+                        }
+                    }
+                }
+                
+                // Check if there are element/text children (not just attributes)
+                const hasElementChildren = node.childNodes && node.childNodes.some(n => n.nodeType === 1 || n.nodeType === 3);
+                
+                if (!hasElementChildren) {
+                    xml += '/>';
+                } else {
+                    xml += '>';
+                    if (node.childNodes) {
+                        for (const child of node.childNodes) {
+                            if (child.nodeType === 1 || child.nodeType === 3) { // Element or text node
+                                xml += serializeXNode(child);
+                            }
+                        }
+                    }
+                    xml += `</${node.nodeName}>`;
+                }
+                
+                return xml;
+            }
+            
+            // Comment node
+            if (node.nodeType === 8) {
+                return `<!--${escapeHtml(node.nodeValue || '')}-->`;
+            }
+            
+            // CDATA section
+            if (node.nodeType === 4) {
+                return `<![CDATA[${node.nodeValue || ''}]]>`;
+            }
+            
+            return '';
         }
 
         function formatXml(xml) {
@@ -288,71 +342,54 @@
                 const xmlParser = new globalThis.XsltProcessor.XmlParser();
                 const xmlDoc = xmlParser.xmlParse(xmlEditor.getValue());
 
-                // Use the browser's XPath evaluator for now
-                const result = xmlDoc.evaluate(
-                    xpathExpr,
-                    xmlDoc,
-                    null,
-                    XPathResult.ANY_TYPE,
-                    null
-                );
+                // Use the XPath class from the bundle
+                const xPath = new globalThis.XsltProcessor.XPath();
+                const exprContext = new globalThis.XsltProcessor.ExprContext([xmlDoc]);
+                const result = xPath.xPathEval(xpathExpr, exprContext);
 
                 let html = '';
                 let count = 0;
 
-                switch (result.resultType) {
-                    case XPathResult.NUMBER_TYPE:
-                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
-                            <span class="text-blue-400 font-mono">Number:</span>
-                            <span class="text-green-400 font-mono ml-2">${result.numberValue}</span>
-                        </div>`;
-                        count = 1;
-                        break;
+                // Check the type of result
+                if (result.type === 'number') {
+                    html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                        <span class="text-blue-400 font-mono">Number:</span>
+                        <span class="text-green-400 font-mono ml-2">${result.numberValue()}</span>
+                    </div>`;
+                    count = 1;
+                } else if (result.type === 'string') {
+                    html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                        <span class="text-blue-400 font-mono">String:</span>
+                        <span class="text-green-400 font-mono ml-2">"${escapeHtml(result.stringValue())}"</span>
+                    </div>`;
+                    count = 1;
+                } else if (result.type === 'boolean') {
+                    html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
+                        <span class="text-blue-400 font-mono">Boolean:</span>
+                        <span class="text-${result.booleanValue() ? 'green' : 'red'}-400 font-mono ml-2">${result.booleanValue()}</span>
+                    </div>`;
+                    count = 1;
+                } else if (result.type === 'node-set') {
+                    const nodes = result.nodeSetValue();
+                    count = nodes.length;
 
-                    case XPathResult.STRING_TYPE:
-                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
-                            <span class="text-blue-400 font-mono">String:</span>
-                            <span class="text-green-400 font-mono ml-2">"${escapeHtml(result.stringValue)}"</span>
-                        </div>`;
-                        count = 1;
-                        break;
-
-                    case XPathResult.BOOLEAN_TYPE:
-                        html = `<div class="result-item p-3 bg-gray-700/50 rounded-lg">
-                            <span class="text-blue-400 font-mono">Boolean:</span>
-                            <span class="text-${result.booleanValue ? 'green' : 'red'}-400 font-mono ml-2">${result.booleanValue}</span>
-                        </div>`;
-                        count = 1;
-                        break;
-
-                    case XPathResult.UNORDERED_NODE_ITERATOR_TYPE:
-                    case XPathResult.ORDERED_NODE_ITERATOR_TYPE:
-                        let node;
-                        const nodes = [];
-                        while ((node = result.iterateNext()) !== null) {
-                            nodes.push(node);
-                        }
-                        count = nodes.length;
-
-                        if (nodes.length === 0) {
-                            html = '<p class="text-gray-500 italic">No matches found</p>';
-                        } else {
-                            html = nodes.map((n, i) => {
-                                const content = nodeToString(n);
-                                const formatted = n.nodeType === 1 ? formatXml(content) : content;
-                                return `<div class="result-item p-3 bg-gray-700/50 rounded-lg mb-2">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="text-blue-400 text-xs font-medium">Match ${i + 1}</span>
-                                        <span class="text-gray-500 text-xs">${n.nodeName}</span>
-                                    </div>
-                                    <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto">${escapeHtml(formatted)}</pre>
-                                </div>`;
-                            }).join('');
-                        }
-                        break;
-
-                    default:
-                        html = '<p class="text-gray-500 italic">Unknown result type</p>';
+                    if (nodes.length === 0) {
+                        html = '<p class="text-gray-500 italic">No matches found</p>';
+                    } else {
+                        html = nodes.map((n, i) => {
+                            const content = nodeToString(n);
+                            const formatted = n.nodeType === 1 ? formatXml(content) : content;
+                            return `<div class="result-item p-3 bg-gray-700/50 rounded-lg mb-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-blue-400 text-xs font-medium">Match ${i + 1}</span>
+                                    <span class="text-gray-500 text-xs">${n.nodeName}</span>
+                                </div>
+                                <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-x-auto">${escapeHtml(formatted)}</pre>
+                            </div>`;
+                        }).join('');
+                    }
+                } else {
+                    html = '<p class="text-gray-500 italic">Unknown result type</p>';
                 }
 
                 resultsDiv.innerHTML = html;
