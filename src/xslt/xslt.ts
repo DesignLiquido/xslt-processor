@@ -357,10 +357,14 @@ export class Xslt {
         // This is the XSLT 3.0 compliant behavior - only ONE template executes per node.
         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
             const currentNode = modifiedContext.nodeList[j];
-
             // If the current node is text, there's no need to test all the templates
             // against it. Just appending it to its parent is fine.
             if (currentNode.nodeType === DOM_TEXT_NODE) {
+                // Check if this whitespace-only text node should be stripped
+                if (!this.xsltPassText(currentNode)) {
+                    // Skip whitespace-only text nodes in apply-templates
+                    continue;
+                }
                 const textNodeContext = context.clone(
                     [currentNode],
                     0
@@ -1265,6 +1269,8 @@ export class Xslt {
     protected xsltText(context: ExprContext, template: XNode, output?: XNode) {
         const text = xmlValue(template);
         const node = domCreateTextNode(this.outputDocument, text);
+        // Mark this node as coming from xsl:text so it won't be trimmed during serialization
+        node.fromXslText = true;
         const disableOutputEscaping = template.childNodes.filter(
             (a) => a.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'disable-output-escaping'
         );
@@ -1272,6 +1278,8 @@ export class Xslt {
             node.escape = false;
         }
         const destinationTextNode = output || this.outputDocument;
+        // Set siblingPosition to preserve insertion order during serialization
+        node.siblingPosition = destinationTextNode.childNodes.length;
         destinationTextNode.appendChild(node);
     }
 
@@ -1431,8 +1439,6 @@ export class Xslt {
                 try {
                     // For initial template selection, evaluate patterns from document root
                     // without axis override to ensure consistent matching for all patterns
-                    // For initial template selection, evaluate patterns from document root
-                    // without axis override to ensure consistent matching for all patterns
                     const matchedNodes = this.xsltMatch(t.matchPattern, contextClone);
                     if (matchedNodes.length > 0) {
                         matchCandidates.push({ priority: t, matchedNodes });
@@ -1444,19 +1450,28 @@ export class Xslt {
             }
 
             if (matchCandidates.length > 0) {
-                // Sort by: importPrecedence DESC, effectivePriority DESC, documentOrder DESC
-                matchCandidates.sort((a, b) => {
-                    if (a.priority.importPrecedence !== b.priority.importPrecedence) {
-                        return b.priority.importPrecedence - a.priority.importPrecedence;
-                    }
-                    if (a.priority.effectivePriority !== b.priority.effectivePriority) {
-                        return b.priority.effectivePriority - a.priority.effectivePriority;
-                    }
-                    return b.priority.documentOrder - a.priority.documentOrder;
-                });
+                // First, check if "/" pattern matches - it's the document entry point and should be preferred
+                const rootPatternMatch = matchCandidates.find(c => c.priority.matchPattern === '/');
+                let winner: { priority: TemplatePriority; matchedNodes: XNode[] };
+                
+                if (rootPatternMatch) {
+                    // Use the root template as entry point
+                    winner = rootPatternMatch;
+                } else {
+                    // Sort by: importPrecedence DESC, effectivePriority DESC, documentOrder DESC
+                    matchCandidates.sort((a, b) => {
+                        if (a.priority.importPrecedence !== b.priority.importPrecedence) {
+                            return b.priority.importPrecedence - a.priority.importPrecedence;
+                        }
+                        if (a.priority.effectivePriority !== b.priority.effectivePriority) {
+                            return b.priority.effectivePriority - a.priority.effectivePriority;
+                        }
+                        return b.priority.documentOrder - a.priority.documentOrder;
+                    });
+                    winner = matchCandidates[0];
+                }
 
                 // Detect conflicts
-                const winner = matchCandidates[0];
                 const conflicts = matchCandidates.filter(t =>
                     t.priority.importPrecedence === winner.priority.importPrecedence &&
                     t.priority.effectivePriority === winner.priority.effectivePriority
@@ -1625,7 +1640,13 @@ export class Xslt {
         // siblings of the children.
         const contextClone = context.clone();
         for (let i = 0; i < template.childNodes.length; ++i) {
-            await this.xsltProcessContext(contextClone, template.childNodes[i], output);
+            const child = template.childNodes[i];
+            // Skip attribute nodes - they are stored in childNodes but should not be
+            // processed as template content. Attributes belong to the element itself.
+            if (child.nodeType === DOM_ATTRIBUTE_NODE) {
+                continue;
+            }
+            await this.xsltProcessContext(contextClone, child, output);
         }
     }
 

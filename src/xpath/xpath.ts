@@ -149,13 +149,7 @@ class NodeConverter {
         const adapted = node as any;
 
         // Add XPathNode-compatible properties if not present
-        if (!('namespaceURI' in adapted)) {
-            Object.defineProperty(adapted, 'namespaceURI', {
-                get() { return this.namespaceUri; },
-                enumerable: true,
-                configurable: true
-            });
-        }
+        // namespaceUri is now the standard property in XPathNode interface
 
         if (!('textContent' in adapted)) {
             Object.defineProperty(adapted, 'textContent', {

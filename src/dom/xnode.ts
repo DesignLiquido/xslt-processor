@@ -28,6 +28,7 @@ export class XNode {
 
     visited: boolean;
     escape: boolean;
+    fromXslText: boolean;
 
     static _unusedXNodes: any[] = [];
 
@@ -36,6 +37,7 @@ export class XNode {
         this.childNodes = [];
         this.visited = false;
         this.escape = true;
+        this.fromXslText = false;
         this.siblingPosition = -1;
 
         this.init(type, name, opt_value, opt_owner, opt_namespace);

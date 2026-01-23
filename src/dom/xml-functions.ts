@@ -224,7 +224,10 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
     const nodeType = node.nodeType
     const nodeValue = node.nodeValue;
     if (nodeType === DOM_TEXT_NODE) {
-        if (node.nodeValue && node.nodeValue.trim() !== '') {
+        // For text nodes created by xsl:text, don't trim whitespace
+        // For other text nodes, skip whitespace-only ones
+        const isFromXslText = node.fromXslText === true;
+        if (node.nodeValue && (isFromXslText || node.nodeValue.trim() !== '')) {
             const finalText =
                 node.escape && options.escape ? xmlEscapeText(node.nodeValue): xmlUnescapeText(node.nodeValue);
             buffer.push(finalText);
