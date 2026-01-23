@@ -3,7 +3,6 @@
 // while maintaining backward compatibility with the existing XSLT API.
 
 import { XNode } from '../dom';
-import { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE } from '../constants';
 import { XPathLexer } from './lib/src/lexer';
 import { XPathParser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
@@ -299,8 +298,8 @@ class NodeConverter {
         // xml-to-json() function - XSLT 3.0 specific
         functions['xml-to-json'] = (nodes: any) => {
             // Check XSLT version - only supported in 3.0
-            if (exprContext.xsltVersion === '1.0') {
-                throw new Error('xml-to-json() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            if (exprContext.xsltVersion !== '3.0') {
+                throw new Error('xml-to-json() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
             }
 
             // Handle node set or single node
@@ -316,14 +315,14 @@ class NodeConverter {
         // json-to-xml() function - XSLT 3.0 specific
         functions['json-to-xml'] = (jsonText: any) => {
             // Check XSLT version - only supported in 3.0
-            if (exprContext.xsltVersion === '1.0') {
-                throw new Error('json-to-xml() is not supported in XSLT 1.0. Use version="3.0" in your stylesheet.');
+            if (exprContext.xsltVersion !== '3.0') {
+                throw new Error('json-to-xml() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
             }
 
             // Handle node set or single value
             const jsonStr = Array.isArray(jsonText) ? jsonText[0] : jsonText;
             if (!jsonStr) {
-                return [];
+                return null;
             }
 
             // Convert JSON string to XML document node using xpath lib converter
@@ -331,7 +330,7 @@ class NodeConverter {
             const xpathNode = converter.convert(String(jsonStr));
             
             if (!xpathNode) {
-                return [];
+                return null;
             }
 
             // Get owner document from context
@@ -343,7 +342,7 @@ class NodeConverter {
             const convertedNode = this.convertXPathNodeToXNode(xpathNode, ownerDoc);
             
             // Return as array for consistency with xpath processor
-            return convertedNode ? [convertedNode] : [];
+            return convertedNode ? [convertedNode] : null;
         };
 
         return functions;
@@ -358,6 +357,9 @@ class NodeConverter {
             return null;
         }
 
+        const { XNode: XNodeClass } = require('../dom');
+        const { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE } = require('../constants');
+
         let node: XNode;
 
         if (xpathNode.nodeType === DOM_DOCUMENT_NODE) {
@@ -371,7 +373,7 @@ class NodeConverter {
         } else if (xpathNode.nodeType === DOM_TEXT_NODE) {
             // Create a text node
             const textContent = xpathNode.textContent || '';
-            node = new XNode(
+            node = new XNodeClass(
                 DOM_TEXT_NODE,
                 '#text',
                 textContent,
@@ -379,7 +381,7 @@ class NodeConverter {
             );
         } else {
             // Element node (DOM_ELEMENT_NODE)
-            node = new XNode(
+            node = new XNodeClass(
                 DOM_ELEMENT_NODE,
                 xpathNode.nodeName || 'element',
                 '',
