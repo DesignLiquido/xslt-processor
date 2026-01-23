@@ -323,7 +323,7 @@ class NodeConverter {
             // Handle node set or single value
             const jsonStr = Array.isArray(jsonText) ? jsonText[0] : jsonText;
             if (!jsonStr) {
-                return null;
+                return [];
             }
 
             // Convert JSON string to XML document node using xpath lib converter
@@ -331,7 +331,7 @@ class NodeConverter {
             const xpathNode = converter.convert(String(jsonStr));
             
             if (!xpathNode) {
-                return null;
+                return [];
             }
 
             // Get owner document from context
@@ -343,7 +343,7 @@ class NodeConverter {
             const convertedNode = this.convertXPathNodeToXNode(xpathNode, ownerDoc);
             
             // Return as array for consistency with xpath processor
-            return convertedNode ? [convertedNode] : null;
+            return convertedNode ? [convertedNode] : [];
         };
 
         return functions;
