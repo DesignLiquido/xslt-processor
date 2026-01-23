@@ -2,7 +2,8 @@
 import assert from 'assert';
 
 import { Xslt } from '../src/xslt';
-import { XmlParser } from '../src/dom';
+import { XmlParser, xmlText } from '../src/dom';
+import { DOM_TEXT_NODE } from '../src/constants';
 
 describe('json-to-xml', () => {
     it('json-to-xml() should throw error in XSLT 1.0', async () => {
@@ -69,8 +70,29 @@ describe('json-to-xml', () => {
         const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = await xsltClass.xsltProcess(xml, xslt);
 
-        // Should contain a root element with text content "hello"
-        assert(outXmlString.includes('hello'));
+        // Parse the output and verify DOM structure
+        const outXml = xmlParser.xmlParse(outXmlString);
+        assert(outXml.documentElement, 'Should have a document element');
+        assert.equal(outXml.documentElement.nodeName, 'result', 'Root element should be <result>');
+        
+        // The json-to-xml function should create a child element containing the string value
+        const child = outXml.documentElement.firstChild;
+        assert(child, 'Should have a child element');
+        
+        // Get the text content from the child node (could be a text node or an element with text)
+        let textContent = '';
+        if (child.nodeType === DOM_TEXT_NODE) {
+            textContent = child.nodeValue;
+        } else {
+            // If it's an element, get its text content
+            for (let c = child.firstChild; c; c = c.nextSibling) {
+                if (c.nodeType === DOM_TEXT_NODE) {
+                    textContent += c.nodeValue;
+                }
+            }
+        }
+        
+        assert.equal(textContent, 'hello', 'Text content should be "hello"');
     });
 
     it('json-to-xml() should convert simple number JSON', async () => {
