@@ -2,7 +2,7 @@
 import assert from 'assert';
 
 import { Xslt } from '../src/xslt';
-import { XmlParser, xmlText } from '../src/dom';
+import { XmlParser } from '../src/dom';
 import { DOM_TEXT_NODE } from '../src/constants';
 
 describe('json-to-xml', () => {
@@ -79,19 +79,19 @@ describe('json-to-xml', () => {
         const child = outXml.documentElement.firstChild;
         assert(child, 'Should have a child element');
         
-        // Get the text content from the child node (could be a text node or an element with text)
-        let textContent = '';
-        if (child.nodeType === DOM_TEXT_NODE) {
-            textContent = child.nodeValue;
-        } else {
-            // If it's an element, get its text content
-            for (let c = child.firstChild; c; c = c.nextSibling) {
-                if (c.nodeType === DOM_TEXT_NODE) {
-                    textContent += c.nodeValue;
-                }
+        // Extract text content by traversing text nodes
+        const extractTextContent = (node: any): string => {
+            if (node.nodeType === DOM_TEXT_NODE) {
+                return node.nodeValue || '';
             }
-        }
+            let text = '';
+            for (let c = node.firstChild; c; c = c.nextSibling) {
+                text += extractTextContent(c);
+            }
+            return text;
+        };
         
+        const textContent = extractTextContent(child);
         assert.equal(textContent, 'hello', 'Text content should be "hello"');
     });
 
