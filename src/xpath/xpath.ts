@@ -3,6 +3,7 @@
 // while maintaining backward compatibility with the existing XSLT API.
 
 import { XNode } from '../dom';
+import { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE } from '../constants';
 import { XPathLexer } from './lib/src/lexer';
 import { XPathParser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
@@ -357,9 +358,6 @@ class NodeConverter {
             return null;
         }
 
-        const { XNode: XNodeClass } = require('../dom');
-        const { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE } = require('../constants');
-
         let node: XNode;
 
         if (xpathNode.nodeType === DOM_DOCUMENT_NODE) {
@@ -373,7 +371,7 @@ class NodeConverter {
         } else if (xpathNode.nodeType === DOM_TEXT_NODE) {
             // Create a text node
             const textContent = xpathNode.textContent || '';
-            node = new XNodeClass(
+            node = new XNode(
                 DOM_TEXT_NODE,
                 '#text',
                 textContent,
@@ -381,7 +379,7 @@ class NodeConverter {
             );
         } else {
             // Element node (DOM_ELEMENT_NODE)
-            node = new XNodeClass(
+            node = new XNode(
                 DOM_ELEMENT_NODE,
                 xpathNode.nodeName || 'element',
                 '',
