@@ -15,6 +15,12 @@ _A JavaScript XSLT processor without native library dependencies._
     <img src="https://img.shields.io/github/license/DesignLiquido/xslt-processor" />
   </p>
 
+## Interactive Demos
+
+Try the XSLT and XPath processors directly in your browser:
+
+**[🚀 Visit Interactive Demos](https://designliquido.github.io/xslt-processor/)**
+
 ## How to
 
 Install xslt-processor using [npm](https://docs.npmjs.com/about-npm), [ohpm](https://ohpm.openharmony.cn/#/en/home) or [yarn](https://yarnpkg.com):

@@ -21,7 +21,7 @@
     "pre-build-setup": "rimraf ./dist",
     "build": "yarn pre-build-setup && tsup && yarn copy-files-from-to",
     "lint": "eslint src/**/*",
-    "deploy": "yarn build && git add interactive-tests -f && git commit -m \"chore: update interactive tests\" && git push"
+    "deploy": "yarn build && git subtree push --prefix interactive-tests origin gh-pages"
   },
   "repository": {
     "type": "git",
