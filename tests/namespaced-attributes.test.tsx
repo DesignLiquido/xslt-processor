@@ -1,5 +1,4 @@
-/* eslint-disable no-console */
-/* eslint-disable no-undef */
+/* eslint-env mocha */
 import assert from 'assert';
 
 import { Xslt } from '../src/xslt';
