@@ -18,9 +18,10 @@
   },
   "scripts": {
     "test": "jest --coverage",
-    "pre-build-setup": "rimraf ./demo && rimraf ./dist",
+    "pre-build-setup": "rimraf ./dist",
     "build": "yarn pre-build-setup && tsup && yarn copy-files-from-to",
-    "lint": "eslint src/**/*"
+    "lint": "eslint src/**/*",
+    "deploy": "yarn build && git add interactive-tests -f && git commit -m \"chore: update interactive tests\" && git push"
   },
   "repository": {
     "type": "git",
@@ -82,16 +83,8 @@
       "to": "dist/README.md"
     },
     {
-      "from": "interactive-tests/xslt.html",
-      "to": "demo/xslt.html"
-    },
-    {
-      "from": "interactive-tests/xpath.html",
-      "to": "demo/xpath.html"
-    },
-    {
       "from": "dist/umd/xslt-processor.global.js",
-      "to": "demo/js/xslt-processor.global.js"
+      "to": "interactive-tests/js/xslt-processor.global.js"
     }
   ]
 }

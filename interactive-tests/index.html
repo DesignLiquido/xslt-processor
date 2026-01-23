@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSLT Processor - Interactive Demos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <div class="min-h-screen flex items-center justify-center py-12 px-4">
+        <div class="max-w-2xl w-full">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl font-bold text-white mb-4">XSLT Processor</h1>
+                <p class="text-xl text-gray-300 mb-2">JavaScript XSLT & XPath Processor</p>
+                <p class="text-gray-400">Interactive demonstration tools</p>
+            </div>
+
+            <!-- Demo Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- XSLT Demo -->
+                <a href="xslt.html" class="group">
+                    <div class="bg-gray-800 rounded-lg shadow-lg p-8 hover:shadow-2xl hover:bg-gray-700 transition-all duration-300 h-full flex flex-col justify-center">
+                        <div class="text-4xl mb-4">🔄</div>
+                        <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">XSLT Transformer</h2>
+                        <p class="text-gray-400 mb-4">Transform XML documents using XSLT stylesheets. Test your transformations in real-time with syntax highlighting and formatted output.</p>
+                        <div class="text-blue-400 font-semibold flex items-center group-hover:translate-x-2 transition-transform">
+                            Open Demo
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- XPath Demo -->
+                <a href="xpath.html" class="group">
+                    <div class="bg-gray-800 rounded-lg shadow-lg p-8 hover:shadow-2xl hover:bg-gray-700 transition-all duration-300 h-full flex flex-col justify-center">
+                        <div class="text-4xl mb-4">🔍</div>
+                        <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">XPath Tester</h2>
+                        <p class="text-gray-400 mb-4">Evaluate XPath expressions against XML documents. Explore nodes, test predicates, and understand XPath query results with detailed output.</p>
+                        <div class="text-blue-400 font-semibold flex items-center group-hover:translate-x-2 transition-transform">
+                            Open Demo
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-2xl font-bold text-white mb-6">Features</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-white font-semibold">XSLT 1.0 & 2.0</h3>
+                            <p class="text-gray-400 text-sm">Full XSLT stylesheet support</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-white font-semibold">XPath Support</h3>
+                            <p class="text-gray-400 text-sm">Complete XPath 1.0 implementation</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-white font-semibold">Browser Ready</h3>
+                            <p class="text-gray-400 text-sm">Works in all modern browsers</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-white font-semibold">No Dependencies</h3>
+                            <p class="text-gray-400 text-sm">Lightweight and self-contained</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-gray-400">
+                <p class="mb-2">XSLT Processor v4.4.0</p>
+                <p class="text-sm">
+                    <a href="https://github.com/DesignLiquido/xslt-processor" class="text-blue-400 hover:text-blue-300">View on GitHub</a>
+                    •
+                    <a href="https://github.com/DesignLiquido/xslt-processor#readme" class="text-blue-400 hover:text-blue-300">Documentation</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
