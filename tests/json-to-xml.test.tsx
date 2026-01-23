@@ -3,17 +3,18 @@ import assert from 'assert';
 
 import { Xslt } from '../src/xslt';
 import { XmlParser } from '../src/dom';
+import { DOM_TEXT_NODE } from '../src/constants';
 
 // Helper function to get text content from an element
 // XNode doesn't have textContent property, so we need to get it from child text nodes
 function getTextContent(element: any): string {
     if (!element) return '';
-    if (element.nodeType === 3) { // Text node
+    if (element.nodeType === DOM_TEXT_NODE) { // Text node
         return element.nodeValue || '';
     }
     if (element.childNodes && element.childNodes.length > 0) {
         return element.childNodes
-            .filter((node: any) => node.nodeType === 3) // Only text nodes
+            .filter((node: any) => node.nodeType === DOM_TEXT_NODE) // Only text nodes
             .map((node: any) => node.nodeValue || '')
             .join('');
     }
@@ -230,6 +231,7 @@ describe('json-to-xml', () => {
         
         // Verify parent-child relationship
         const nameParent = nameElements[0].parentNode;
+        assert(nameParent, 'Name element should have a parent');
         assert.strictEqual(nameParent.nodeName, 'person', 'Name element should be child of person element');
     });
 
@@ -314,8 +316,12 @@ describe('json-to-xml', () => {
         assert.strictEqual(getTextContent(idElements[1]), '2', 'Second id element should contain "2"');
         
         // Verify parent-child relationship
-        assert.strictEqual(idElements[0].parentNode.nodeName, 'item', 'First id should be child of item element');
-        assert.strictEqual(idElements[1].parentNode.nodeName, 'item', 'Second id should be child of item element');
+        const firstIdParent = idElements[0].parentNode;
+        const secondIdParent = idElements[1].parentNode;
+        assert(firstIdParent, 'First id element should have a parent');
+        assert(secondIdParent, 'Second id element should have a parent');
+        assert.strictEqual(firstIdParent.nodeName, 'item', 'First id should be child of item element');
+        assert.strictEqual(secondIdParent.nodeName, 'item', 'Second id should be child of item element');
     });
 
     it('json-to-xml() should convert empty array', async () => {
@@ -373,7 +379,9 @@ describe('json-to-xml', () => {
         assert.strictEqual(getTextContent(itemElements[0]), '1', 'First item should contain "1"');
         
         // Verify parent-child relationship
-        assert.strictEqual(itemElements[0].parentNode.nodeName, 'items', 'Item elements should be children of items element');
+        const firstItemParent = itemElements[0].parentNode;
+        assert(firstItemParent, 'First item element should have a parent');
+        assert.strictEqual(firstItemParent.nodeName, 'items', 'Item elements should be children of items element');
     });
 
     it('json-to-xml() should sanitize property names starting with numbers', async () => {
@@ -404,6 +412,7 @@ describe('json-to-xml', () => {
         const rootElement = rootElements[0];
         assert(rootElement.childNodes.length > 0, 'Root should have child elements');
         const firstChild = rootElement.childNodes[0];
+        assert(firstChild, 'Root should have a first child');
         assert.strictEqual(getTextContent(firstChild), 'value', 'Sanitized property element should contain "value"');
         
         // Property name should start with underscore or letter (not a number)
