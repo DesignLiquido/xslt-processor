@@ -110,6 +110,12 @@ export class Xslt {
      */
     supportedExtensions: Set<string>;
 
+    /**
+     * Map of attribute sets defined in the stylesheet.
+     * Keys are attribute set names, values are arrays of xsl:attribute nodes.
+     */
+    attributeSets: Map<string, XNode[]>;
+
     constructor(
         options: Partial<XsltOptions> = {
             cData: true,
@@ -134,6 +140,7 @@ export class Xslt {
         this.preserveSpacePatterns = [];
         this.namespaceAliases = new Map();
         this.supportedExtensions = new Set(['http://www.w3.org/1999/XSL/Transform']);
+        this.attributeSets = new Map();
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -223,7 +230,9 @@ export class Xslt {
                     await this.xsltAttribute(context, template, output);
                     break;
                 case 'attribute-set':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    // attribute-set declarations are processed during stylesheet initialization
+                    // in collectAttributeSets(). This case is skipped.
+                    break;
                 case 'call-template':
                     await this.xsltCallTemplate(context, template, output);
                     break;
@@ -662,6 +671,12 @@ export class Xslt {
         const nameExpr = xmlGetAttribute(template, 'name');
         const name = this.xsltAttributeValue(nameExpr, context);
         const node = domCreateElement(this.outputDocument, name);
+
+        // Apply attribute sets first (they can be overridden by child attributes)
+        const useAttributeSets = xmlGetAttribute(template, 'use-attribute-sets');
+        if (useAttributeSets) {
+            await this.applyAttributeSets(context, node, useAttributeSets);
+        }
 
         // node.transformedNodeName = name;
 
@@ -1460,6 +1475,9 @@ export class Xslt {
      *               the caller.
      */
     protected async xsltTransformOrStylesheet(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        // Collect attribute sets from stylesheet at the beginning
+        this.collectAttributeSets(template);
+
         // Validate stylesheet attributes
         this.validateStylesheetAttributes(template, context);
 
@@ -1771,9 +1789,22 @@ export class Xslt {
                 newNode.siblingPosition = node.siblingPosition;
 
                 domAppendChild(output || this.outputDocument, newNode);
+
+                // Apply attribute sets from use-attribute-sets attribute on literal elements
+                const useAttributeSetsAttr = template.childNodes.find(
+                    (a: XNode) =>
+                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'use-attribute-sets'
+                );
+                if (useAttributeSetsAttr) {
+                    await this.applyAttributeSets(elementContext, newNode, useAttributeSetsAttr.nodeValue);
+                }
+
                 await this.xsltChildNodes(elementContext, template, newNode);
 
-                const templateAttributes = template.childNodes.filter((a: XNode) => a?.nodeType === DOM_ATTRIBUTE_NODE);
+                const templateAttributes = template.childNodes.filter(
+                    (a: XNode) =>
+                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName !== 'use-attribute-sets'
+                );
                 for (const attribute of templateAttributes) {
                     const name = attribute.nodeName;
                     const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
@@ -1889,6 +1920,102 @@ export class Xslt {
             if (childNode.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'with-param')) {
                 await this.xsltVariable(context, childNode, true);
             }
+        }
+    }
+
+    /**
+     * Collect all attribute set definitions from the stylesheet.
+     * Called at stylesheet initialization time.
+     * @param stylesheetElement The stylesheet or transform element.
+     */
+    private collectAttributeSets(stylesheetElement: XNode) {
+        for (const child of stylesheetElement.childNodes) {
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child, 'attribute-set')
+            ) {
+                const name = xmlGetAttribute(child, 'name');
+                const attributes = child.childNodes.filter(
+                    (n: XNode) =>
+                        n.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(n, 'attribute')
+                );
+
+                if (name) {
+                    this.attributeSets.set(name, attributes);
+                }
+            }
+        }
+    }
+
+    /**
+     * Apply one or more attribute sets to an element.
+     * Parses space-separated attribute set names and applies them.
+     * @param context The Expression Context.
+     * @param element The element to apply attributes to.
+     * @param setNames Space-separated attribute set names.
+     */
+    protected async applyAttributeSets(
+        context: ExprContext,
+        element: XNode,
+        setNames: string
+    ) {
+        if (!setNames || !setNames.trim()) {
+            return;
+        }
+
+        // Parse space-separated set names
+        const names = setNames.trim().split(/\s+/);
+        const processedSets = new Set<string>();
+
+        for (const name of names) {
+            await this.applyAttributeSet(context, element, name, processedSets);
+        }
+    }
+
+    /**
+     * Apply a single attribute set to an element.
+     * Handles recursive attribute sets with cycle detection.
+     * @param context The Expression Context.
+     * @param element The element to apply attributes to.
+     * @param setName The name of the attribute set to apply.
+     * @param processedSets Set of already-processed attribute set names (for cycle detection).
+     */
+    private async applyAttributeSet(
+        context: ExprContext,
+        element: XNode,
+        setName: string,
+        processedSets: Set<string>
+    ) {
+        // Prevent infinite recursion
+        if (processedSets.has(setName)) {
+            return;
+        }
+        processedSets.add(setName);
+
+        const attributeNodes = this.attributeSets.get(setName);
+        if (!attributeNodes) {
+            // Silently ignore missing attribute set (spec allows)
+            return;
+        }
+
+        // Apply attributes from this set
+        for (const attrNode of attributeNodes) {
+            // First, apply any nested attribute sets referenced by this attribute
+            const nestedSets = xmlGetAttribute(attrNode, 'use-attribute-sets');
+            if (nestedSets) {
+                await this.applyAttributeSets(context, element, nestedSets);
+            }
+
+            // Now apply the attribute itself
+            const nameExpr = xmlGetAttribute(attrNode, 'name');
+            const name = this.xsltAttributeValue(nameExpr, context);
+
+            // Evaluate the attribute value by processing child nodes
+            const documentFragment = domCreateDocumentFragment(this.outputDocument);
+            await this.xsltChildNodes(context, attrNode, documentFragment);
+            const value = xmlValueLegacyBehavior(documentFragment);
+
+            domSetAttribute(element, name, value);
         }
     }
 

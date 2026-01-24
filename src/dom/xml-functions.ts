@@ -317,7 +317,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
             continue;
         }
 
-        if (attribute.nodeName && attribute.nodeValue) {
+        if (attribute.nodeName && attribute.nodeValue !== null && attribute.nodeValue !== undefined) {
             buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.nodeValue)}"`);
         }
     }

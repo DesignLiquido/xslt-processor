@@ -9,7 +9,6 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 ### Elements that throw "not implemented" errors:
 
 - **`<xsl:apply-imports>`** - Allows template to pass control to an imported template with same name (Section 5.6, 6)
-- **`<xsl:attribute-set>`** - Ability to apply multiple attribute-set declarations at once is not complete (Section 7.1.4)
 
 ### Partially Implemented or Incomplete Elements:
 
@@ -521,11 +520,11 @@ The following features need verification of complete specification compliance:
 ## Statistics
 
 ### XSLT 1.0 Coverage:
-- **Implemented XSLT Elements**: ~27+ out of 35+ elements in spec
-- **Not Implemented XSLT Elements**: 2 (apply-imports, attribute-set completeness)
+- **Implemented XSLT Elements**: ~28+ out of 35+ elements in spec
+- **Not Implemented XSLT Elements**: 1 (apply-imports)
 - **Partially Implemented**: ~5
 - **Implemented XPath Core Functions**: ~20+
-- **XSLT Additional Functions**: 2-3 fully, 4-5 partially
+- **XSLT Additional Functions**: 3-4 fully, 4-5 partially
 - **Missing XSLT Additional Functions**: 7-8
 
 ### XSLT 2.0 Coverage:
