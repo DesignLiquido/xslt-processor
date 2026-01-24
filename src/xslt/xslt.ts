@@ -14,6 +14,7 @@ import {
     domCreateComment,
     domCreateDocumentFragment,
     domCreateElement,
+    domCreateProcessingInstruction,
     domCreateTextNode,
     domGetAttributeValue,
     domSetAttribute,
@@ -282,7 +283,8 @@ export class Xslt {
                     this.xsltPreserveSpace(template);
                     break;
                 case 'processing-instruction':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltProcessingInstruction(context, template, output);
+                    break;
                 case 'sort':
                     this.xsltSort(context, template);
                     break;
@@ -528,6 +530,51 @@ export class Xslt {
         const commentNode = domCreateComment(this.outputDocument, commentData);
         const resolvedOutput = output || this.outputDocument;
         resolvedOutput.appendChild(commentNode);
+    }
+
+    /**
+     * Implements `xsl:processing-instruction`.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output. Only used if there's no corresponding output node already defined.
+     */
+    protected async xsltProcessingInstruction(context: ExprContext, template: XNode, output?: XNode) {
+        // Get the target name (required)
+        const nameExpr = xmlGetAttribute(template, 'name');
+        if (!nameExpr) {
+            throw new Error('<xsl:processing-instruction> requires a "name" attribute');
+        }
+
+        // Evaluate name as attribute value template
+        const target = this.xsltAttributeValue(nameExpr, context);
+
+        if (!target) {
+            throw new Error('<xsl:processing-instruction> target name cannot be empty');
+        }
+
+        if (target.toLowerCase() === 'xml') {
+            throw new Error('Processing instruction target cannot be "xml"');
+        }
+
+        // Validate target name format (no spaces, valid XML NCName for PI target)
+        // PI targets must match: [a-zA-Z_:][a-zA-Z0-9_:.-]*
+        if (!/^[a-zA-Z_][a-zA-Z0-9_:.-]*$/.test(target)) {
+            throw new Error(`Invalid processing instruction target: "${target}"`);
+        }
+
+        // Process child nodes to get PI data content
+        const documentFragment = domCreateDocumentFragment(this.outputDocument);
+        await this.xsltChildNodes(context, template, documentFragment);
+
+        // Extract text content from fragment
+        const data = xmlValue(documentFragment);
+
+        // Create processing instruction node
+        const pi = domCreateProcessingInstruction(this.outputDocument, target, data);
+
+        // Add to output
+        const resolvedOutput = output || this.outputDocument;
+        domAppendChild(resolvedOutput, pi);
     }
 
     /**

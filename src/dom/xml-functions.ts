@@ -8,6 +8,7 @@ import {
     DOM_DOCUMENT_NODE,
     DOM_DOCUMENT_TYPE_NODE,
     DOM_ELEMENT_NODE,
+    DOM_PROCESSING_INSTRUCTION_NODE,
     DOM_TEXT_NODE
 } from '../constants';
 import { domGetAttributeValue } from './functions';
@@ -244,6 +245,15 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
     } else if (nodeType == DOM_COMMENT_NODE) {
         if (options.outputMethod !== 'text') {
             buffer.push(`<!-- ${nodeValue} -->`);
+        }
+    } else if (nodeType === DOM_PROCESSING_INSTRUCTION_NODE) {
+        if (options.outputMethod !== 'text') {
+            // Processing instruction: <?target data?>
+            if (nodeValue && nodeValue.trim()) {
+                buffer.push(`<?${node.nodeName} ${nodeValue}?>`);
+            } else {
+                buffer.push(`<?${node.nodeName}?>`);
+            }
         }
     } else if (nodeType == DOM_ELEMENT_NODE) {
         if (options.outputMethod === 'text') {

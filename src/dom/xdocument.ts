@@ -6,6 +6,7 @@ import {
     DOM_DOCUMENT_NODE,
     DOM_DOCUMENT_TYPE_NODE,
     DOM_ELEMENT_NODE,
+    DOM_PROCESSING_INSTRUCTION_NODE,
     DOM_TEXT_NODE
 } from '../constants';
 import { XNode } from './xnode';
@@ -19,12 +20,6 @@ export class XDocument extends XNode {
         super(DOM_DOCUMENT_NODE, '#document', null, null);
         this.documentElement = null;
     }
-
-    // TODO: Do we still need this?
-    /* clear() {
-        XNode.recycle(this.documentElement);
-        this.documentElement = null;
-    } */
 
     appendChild(node: any) {
         super.appendChild(node);
@@ -65,5 +60,9 @@ export class XDocument extends XNode {
 
     createDTDSection(data: any) {
         return XNode.create(DOM_DOCUMENT_TYPE_NODE, '#dtd-section', data, this);
+    }
+
+    createProcessingInstruction(target: string, data: any) {
+        return XNode.create(DOM_PROCESSING_INSTRUCTION_NODE, target, data, this);
     }
 }

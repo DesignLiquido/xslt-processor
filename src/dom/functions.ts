@@ -43,4 +43,8 @@ export function domCreateDTDSection(doc: XDocument, data: any) {
     return doc.createDTDSection(data);
 }
 
+export function domCreateProcessingInstruction(doc: XDocument, target: string, data: any) {
+    return doc.createProcessingInstruction(target, data);
+}
+
 //XDocument.prototype = new XNode(DOM_DOCUMENT_NODE, '#document');
