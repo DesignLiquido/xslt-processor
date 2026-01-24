@@ -103,6 +103,13 @@ export class Xslt {
      */
     namespaceAliases: Map<string, string>;
 
+    /**
+     * Set of supported extension element namespaces.
+     * Processors can register custom extension namespaces here.
+     * Currently only XSLT namespace is auto-registered.
+     */
+    supportedExtensions: Set<string>;
+
     constructor(
         options: Partial<XsltOptions> = {
             cData: true,
@@ -126,6 +133,7 @@ export class Xslt {
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
         this.namespaceAliases = new Map();
+        this.supportedExtensions = new Set(['http://www.w3.org/1999/XSL/Transform']);
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -189,7 +197,17 @@ export class Xslt {
      */
     protected async xsltProcessContext(context: ExprContext, template: XNode, output?: XNode) {
         if (!this.isXsltElement(template)) {
-            await this.xsltPassThrough(context, template, output);
+            // Check if this is an unsupported extension element
+            if (
+                template.nodeType === DOM_ELEMENT_NODE &&
+                !this.isExtensionElementSupported(template)
+            ) {
+                // This is an extension element - handle with fallback support
+                await this.xsltExtensionElement(context, template, output);
+            } else {
+                // Regular literal result element
+                await this.xsltPassThrough(context, template, output);
+            }
         } else {
             let node: XNode,
                 select: any,
@@ -243,7 +261,9 @@ export class Xslt {
                     await this.xsltElement(context, template, output);
                     break;
                 case 'fallback':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    throw new Error(
+                        '<xsl:fallback> must be a direct child of an extension element'
+                    );
                 case 'for-each':
                     await this.xsltForEach(context, template, output);
                     break;
@@ -1869,6 +1889,68 @@ export class Xslt {
             if (childNode.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'with-param')) {
                 await this.xsltVariable(context, childNode, true);
             }
+        }
+    }
+
+    /**
+     * Test if an element is a supported extension.
+     * Returns false for unrecognized elements in non-XSLT namespaces.
+     * @param node The element to test.
+     * @returns True if the element is supported, false if it's an unrecognized extension.
+     */
+    protected isExtensionElementSupported(node: XNode): boolean {
+        if (node.nodeType !== DOM_ELEMENT_NODE) {
+            return true; // Non-elements are always supported
+        }
+
+        if (!node.namespaceUri) {
+            return true; // Non-namespace elements are supported
+        }
+
+        // Check if in supported extensions registry
+        return this.supportedExtensions.has(node.namespaceUri);
+    }
+
+    /**
+     * Get the fallback element from an extension element if it exists.
+     * Searches for the first direct xsl:fallback child.
+     * @param node The extension element.
+     * @returns The fallback element, or null if not found.
+     */
+    protected getFallbackElement(node: XNode): XNode | null {
+        for (const child of node.childNodes) {
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child, 'fallback')
+            ) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Process an extension element with fallback support.
+     * If a fallback is defined, executes it; otherwise treats element as literal.
+     * @param context The Expression Context.
+     * @param element The extension element.
+     * @param output The output node.
+     */
+    protected async xsltExtensionElement(
+        context: ExprContext,
+        element: XNode,
+        output?: XNode
+    ) {
+        // Check if there's a fallback
+        const fallback = this.getFallbackElement(element);
+
+        if (fallback) {
+            // Execute fallback content
+            await this.xsltChildNodes(context, fallback, output);
+        } else {
+            // No fallback: treat as literal result element
+            // (Copy the element and its content to output)
+            await this.xsltPassThrough(context, element, output);
         }
     }
 

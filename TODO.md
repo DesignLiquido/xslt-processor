@@ -10,7 +10,6 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 
 - **`<xsl:apply-imports>`** - Allows template to pass control to an imported template with same name (Section 5.6, 6)
 - **`<xsl:attribute-set>`** - Ability to apply multiple attribute-set declarations at once is not complete (Section 7.1.4)
-- **`<xsl:fallback>`** - Fallback behavior for extension elements not implemented (Section 15)
 
 ### Partially Implemented or Incomplete Elements:
 
@@ -522,8 +521,8 @@ The following features need verification of complete specification compliance:
 ## Statistics
 
 ### XSLT 1.0 Coverage:
-- **Implemented XSLT Elements**: ~26+ out of 35+ elements in spec
-- **Not Implemented XSLT Elements**: 3 (apply-imports, attribute-set completeness, fallback)
+- **Implemented XSLT Elements**: ~27+ out of 35+ elements in spec
+- **Not Implemented XSLT Elements**: 2 (apply-imports, attribute-set completeness)
 - **Partially Implemented**: ~5
 - **Implemented XPath Core Functions**: ~20+
 - **XSLT Additional Functions**: 2-3 fully, 4-5 partially
@@ -543,7 +542,7 @@ The following features need verification of complete specification compliance:
   - **Not Implemented**: Most enhancements
 
 ### Summary:
-- **XSLT 1.0**: ~74% functional (26+/35+ elements, 2-3 additional functions) ✓ NOW INCLUDES PROCESSING-INSTRUCTION
+- **XSLT 1.0**: ~77% functional (27+/35+ elements) ✓ NOW INCLUDES PROCESSING-INSTRUCTION AND FALLBACK
 - **XSLT 2.0**: ~5% functional (mostly not implemented as separate layer)
 - **XSLT 3.0**: <1% functional (major features require significant new architecture)
 
