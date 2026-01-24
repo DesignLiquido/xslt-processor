@@ -224,7 +224,8 @@ function isTemplate(node: XNode): boolean {
 export function collectAndExpandTemplates(
     stylesheetElement: XNode,
     mode: string | null,
-    xPath: XPath
+    xPath: XPath,
+    templateSourceMap?: Map<XNode, { importDepth: number; href: string; order: number }>
 ): TemplatePriority[] {
     const templates: TemplatePriority[] = [];
     let docOrder = 0;
@@ -251,12 +252,16 @@ export function collectAndExpandTemplates(
             ? explicitPriority
             : defaultPriority;
 
+        // Get import precedence from template source map (higher depth = lower precedence)
+        const metadata = templateSourceMap?.get(child);
+        const importPrecedence = metadata ? -metadata.importDepth : 0;  // Negative so main stylesheet has highest precedence
+
         templates.push({
             template: child,
             explicitPriority: explicitPriority !== null && !isNaN(explicitPriority) ? explicitPriority : null,
             defaultPriority,
             effectivePriority,
-            importPrecedence: 0, // TODO: Set properly when xsl:import is fully implemented
+            importPrecedence,
             documentOrder: docOrder++,
             matchPattern: match
         });

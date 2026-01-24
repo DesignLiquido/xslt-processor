@@ -6,10 +6,6 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 
 ## Unimplemented XSLT Elements (Section 2-7, B)
 
-### Elements that throw "not implemented" errors:
-
-- **`<xsl:apply-imports>`** - Allows template to pass control to an imported template with same name (Section 5.6, 6)
-
 ### Partially Implemented or Incomplete Elements:
 
 - **`<xsl:import>`** - Basic support exists but template precedence rules may not be fully correct (Section 2.6.2, 5.5)

@@ -48,6 +48,34 @@ import {
 import { TemplatePriority } from './template-priority';
 
 /**
+ * Metadata about a stylesheet in the import hierarchy.
+ * Used to track template precedence for apply-imports.
+ */
+interface StylesheetMetadata {
+    /** Import depth: 0 = main stylesheet, 1+ = imported stylesheets */
+    importDepth: number;
+    /** Source URI/href of the stylesheet */
+    href: string;
+    /** Order in which stylesheet was encountered (for stable sorting) */
+    order: number;
+}
+
+/**
+ * Context information about a currently executing template.
+ * Used by apply-imports to find the next lower-precedence template.
+ */
+interface CurrentTemplateContext {
+    /** The template XNode being executed */
+    template: XNode;
+    /** Import depth of the stylesheet containing this template */
+    stylesheetDepth: number;
+    /** Mode of the template (null for default mode) */
+    mode: string | null;
+    /** Match pattern of the template */
+    match: string | null;
+}
+
+/**
  * The main class for XSL-T processing. The implementation is NOT
  * complete; some xsl element are left out.
  *
@@ -115,6 +143,30 @@ export class Xslt {
      * Keys are attribute set names, values are arrays of xsl:attribute nodes.
      */
     attributeSets: Map<string, XNode[]>;
+
+    /**
+     * Stack of stylesheet metadata for tracking import hierarchy.
+     * Used by apply-imports to find templates from imported stylesheets.
+     */
+    private styleSheetStack: StylesheetMetadata[] = [];
+
+    /**
+     * Map of imported stylesheet HREFs to their parsed XNodes.
+     * Prevents duplicate imports and allows precedence tracking.
+     */
+    private importedStylesheets: Map<string, XNode> = new Map();
+
+    /**
+     * Map templates to the stylesheet they came from.
+     * Enables apply-imports to find templates by import precedence.
+     */
+    private templateSourceMap: Map<XNode, StylesheetMetadata> = new Map();
+
+    /**
+     * Stack of currently executing templates with their metadata.
+     * Used by apply-imports to determine which template called it.
+     */
+    private currentTemplateStack: CurrentTemplateContext[] = [];
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -222,7 +274,8 @@ export class Xslt {
                 nodes: XNode[];
             switch (template.localName) {
                 case 'apply-imports':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltApplyImports(context, template, output);
+                    break;
                 case 'apply-templates':
                     await this.xsltApplyTemplates(context, template, output);
                     break;
@@ -376,7 +429,7 @@ export class Xslt {
         const top = template.ownerDocument.documentElement;
 
         // Collect all templates with their priority metadata
-        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath);
+        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath, this.templateSourceMap);
 
         // Clone context and set any xsl:with-param parameters defined on
         // the <xsl:apply-templates> element so they are visible to the
@@ -426,9 +479,98 @@ export class Xslt {
                 // We directly execute the template children here, bypassing xsltTemplate's
                 // own matching logic since we've already determined this is the best match.
                 if (selection.selectedTemplate) {
+                    // Track the executing template for apply-imports
+                    const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+                    const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+                    const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
+                    
+                    this.currentTemplateStack.push({
+                        template: selection.selectedTemplate,
+                        stylesheetDepth: metadata?.importDepth ?? 0,
+                        mode: modeAttr || mode,
+                        match: matchPattern
+                    });
+                    
                     await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
+                    
+                    this.currentTemplateStack.pop();
                 }
             }
+        }
+    }
+
+    /**
+     * Implements `xsl:apply-imports`.
+     * Applies templates from imported stylesheets with the same match pattern and mode.
+     * This enables template overriding where a template in an importing stylesheet
+     * can call the overridden template from the imported stylesheet.
+     * @param context The Expression Context.
+     * @param template The apply-imports template node.
+     * @param output The output node.
+     */
+    protected async xsltApplyImports(context: ExprContext, template: XNode, output?: XNode) {
+        // Check if we're within a template execution
+        if (this.currentTemplateStack.length === 0) {
+            throw new Error('<xsl:apply-imports> can only be used within a template');
+        }
+        
+        // Get the current executing template's context
+        const currentTemplateContext = this.currentTemplateStack[this.currentTemplateStack.length - 1];
+        const {
+            stylesheetDepth: currentDepth,
+            mode: currentMode,
+            match: currentMatch
+        } = currentTemplateContext;
+        
+        // Get current node
+        const currentNode = context.nodeList[context.position];
+        
+        // Collect templates from imported stylesheets (higher import depth = lower precedence)
+        // We only want templates with importPrecedence LESS than current template (from imported stylesheets)
+        const top = template.ownerDocument.documentElement;
+        const allTemplates = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
+        
+        // Filter to only templates from imported stylesheets (depth > currentDepth)
+        const importedTemplates = allTemplates.filter(t => {
+            const metadata = this.templateSourceMap.get(t.template);
+            return metadata && metadata.importDepth > currentDepth;
+        });
+        
+        if (importedTemplates.length === 0) {
+            // No imported templates found, silently do nothing (per spec)
+            return;
+        }
+        
+        // Create a context for the current node to use with template selection
+        const nodeContext = context.clone([currentNode], 0);
+        
+        // Select best matching template from imported stylesheets
+        const selection = selectBestTemplate(importedTemplates, nodeContext, this.matchResolver, this.xPath);
+        
+        if (!selection.selectedTemplate) {
+            // No matching template in imported stylesheets
+            return;
+        }
+        
+        // Clone context and apply any with-param parameters from the apply-imports element
+        const importedContext = context.clone();
+        await this.xsltWithParam(importedContext, template);
+        
+        // Execute the imported template
+        // Need to track this as the new current template
+        const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+        if (metadata) {
+            const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+            this.currentTemplateStack.push({
+                template: selection.selectedTemplate,
+                stylesheetDepth: metadata.importDepth,
+                mode: currentMode,
+                match: matchPattern
+            });
+            
+            await this.xsltChildNodes(importedContext, selection.selectedTemplate, output);
+            
+            this.currentTemplateStack.pop();
         }
     }
 
@@ -760,11 +902,41 @@ export class Xslt {
         }
 
         const hrefAttribute = hrefAttributeFind[0];
+        const href = hrefAttribute.nodeValue;
 
-        const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);
+        // Check if we've already imported this stylesheet
+        if (this.importedStylesheets.has(href)) {
+            // Already imported, skip to avoid duplicate processing
+            return;
+        }
+
+        const fetchTest = await global.globalThis.fetch(href);
         const fetchResponse = await fetchTest.text();
         const includedXslt = this.xmlParser.xmlParse(fetchResponse);
-        await this.xsltChildNodes(context, includedXslt.childNodes[0], output);
+        
+        // Track stylesheet metadata for apply-imports
+        const currentDepth = this.styleSheetStack.length > 0 
+            ? this.styleSheetStack[this.styleSheetStack.length - 1].importDepth 
+            : 0;
+        
+        const metadata: StylesheetMetadata = {
+            importDepth: isImport ? currentDepth + 1 : currentDepth,  // Includes are same depth, imports are deeper
+            href: href,
+            order: this.importedStylesheets.size
+        };
+        
+        this.styleSheetStack.push(metadata);
+        this.importedStylesheets.set(href, includedXslt);
+        
+        // Map all templates in this stylesheet to their metadata
+        const stylesheetRoot = includedXslt.childNodes[0];
+        if (stylesheetRoot) {
+            this.mapTemplatesFromStylesheet(stylesheetRoot, metadata);
+        }
+        
+        await this.xsltChildNodes(context, stylesheetRoot, output);
+        
+        this.styleSheetStack.pop();
     }
 
     /**
@@ -1475,6 +1647,14 @@ export class Xslt {
      *               the caller.
      */
     protected async xsltTransformOrStylesheet(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        // Map templates from the main stylesheet (depth 0)
+        const mainStylesheetMetadata: StylesheetMetadata = {
+            importDepth: 0,
+            href: '(main stylesheet)',
+            order: 0
+        };
+        this.mapTemplatesFromStylesheet(template, mainStylesheetMetadata);
+        
         // Collect attribute sets from stylesheet at the beginning
         this.collectAttributeSets(template);
 
@@ -1515,7 +1695,7 @@ export class Xslt {
 
         // Now select and execute the best matching template using priority rules
         if (templates.length > 0) {
-            const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath);
+            const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath, this.templateSourceMap);
 
             // Find all (template, matchedNodes) pairs by testing each template's pattern
             const matchCandidates: { priority: TemplatePriority; matchedNodes: XNode[] }[] = [];
@@ -1577,7 +1757,22 @@ export class Xslt {
                 this.firstTemplateRan = true;
                 contextClone.baseTemplateMatched = true;
                 const templateContext = contextClone.clone(winner.matchedNodes, 0);
+                
+                // Track this template execution for apply-imports
+                const metadata = this.templateSourceMap.get(winner.priority.template);
+                const matchPattern = xmlGetAttribute(winner.priority.template, 'match');
+                const modeAttr = xmlGetAttribute(winner.priority.template, 'mode');
+                
+                this.currentTemplateStack.push({
+                    template: winner.priority.template,
+                    stylesheetDepth: metadata?.importDepth ?? 0,
+                    mode: modeAttr || null,
+                    match: matchPattern
+                });
+                
                 await this.xsltChildNodes(templateContext, winner.priority.template, output);
+                
+                this.currentTemplateStack.pop();
             } else {
                 // No template matched the root element.
                 // Apply the default XSLT behavior: process child nodes
@@ -1606,7 +1801,22 @@ export class Xslt {
                                 if (selection.selectedTemplate) {
                                     const templateContext = clonedContext.clone([currentNode], 0);
                                     templateContext.inApplyTemplates = true;
+                                    
+                                    // Track this template execution for apply-imports
+                                    const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+                                    const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+                                    const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
+                                    
+                                    this.currentTemplateStack.push({
+                                        template: selection.selectedTemplate,
+                                        stylesheetDepth: metadata?.importDepth ?? 0,
+                                        mode: modeAttr || null,
+                                        match: matchPattern
+                                    });
+                                    
                                     await this.xsltChildNodes(templateContext, selection.selectedTemplate, output);
+                                    
+                                    this.currentTemplateStack.pop();
                                 } else {
                                     // If no template matches this child, recursively process its children
                                     if (currentNode.childNodes && currentNode.childNodes.length > 0) {
@@ -1630,7 +1840,22 @@ export class Xslt {
                                                     if (grandchildSelection.selectedTemplate) {
                                                         const grandchildTemplateContext = grandchildClonedContext.clone([grandchildNode], 0);
                                                         grandchildTemplateContext.inApplyTemplates = true;
+                                                        
+                                                        // Track this template execution for apply-imports
+                                                        const metadata = this.templateSourceMap.get(grandchildSelection.selectedTemplate);
+                                                        const matchPattern = xmlGetAttribute(grandchildSelection.selectedTemplate, 'match');
+                                                        const modeAttr = xmlGetAttribute(grandchildSelection.selectedTemplate, 'mode');
+                                                        
+                                                        this.currentTemplateStack.push({
+                                                            template: grandchildSelection.selectedTemplate,
+                                                            stylesheetDepth: metadata?.importDepth ?? 0,
+                                                            mode: modeAttr || null,
+                                                            match: matchPattern
+                                                        });
+                                                        
                                                         await this.xsltChildNodes(grandchildTemplateContext, grandchildSelection.selectedTemplate, output);
+                                                        
+                                                        this.currentTemplateStack.pop();
                                                     }
                                                 }
                                             }
@@ -1919,6 +2144,26 @@ export class Xslt {
         for (const childNode of template.childNodes) {
             if (childNode.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'with-param')) {
                 await this.xsltVariable(context, childNode, true);
+            }
+        }
+    }
+
+    /**
+     * Recursively map all template nodes in a stylesheet to their metadata.
+     * Used to track which stylesheet each template comes from for apply-imports.
+     * @param stylesheetElement The stylesheet or transform element (or any parent element).
+     * @param metadata The metadata for this stylesheet.
+     */
+    private mapTemplatesFromStylesheet(stylesheetElement: XNode, metadata: StylesheetMetadata) {
+        for (const child of stylesheetElement.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                if (this.isXsltElement(child, 'template')) {
+                    // Map this template to its stylesheet metadata
+                    this.templateSourceMap.set(child, metadata);
+                } else if (this.isXsltElement(child, 'stylesheet') || this.isXsltElement(child, 'transform')) {
+                    // Recursively process nested stylesheets
+                    this.mapTemplatesFromStylesheet(child, metadata);
+                }
             }
         }
     }
