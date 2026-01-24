@@ -14,6 +14,7 @@ import {
     domCreateComment,
     domCreateDocumentFragment,
     domCreateElement,
+    domCreateProcessingInstruction,
     domCreateTextNode,
     domGetAttributeValue,
     domSetAttribute,
@@ -45,6 +46,34 @@ import {
     emitConflictWarning
 } from './functions';
 import { TemplatePriority } from './template-priority';
+
+/**
+ * Metadata about a stylesheet in the import hierarchy.
+ * Used to track template precedence for apply-imports.
+ */
+interface StylesheetMetadata {
+    /** Import depth: 0 = main stylesheet, 1+ = imported stylesheets */
+    importDepth: number;
+    /** Source URI/href of the stylesheet */
+    href: string;
+    /** Order in which stylesheet was encountered (for stable sorting) */
+    order: number;
+}
+
+/**
+ * Context information about a currently executing template.
+ * Used by apply-imports to find the next lower-precedence template.
+ */
+interface CurrentTemplateContext {
+    /** The template XNode being executed */
+    template: XNode;
+    /** Import depth of the stylesheet containing this template */
+    stylesheetDepth: number;
+    /** Mode of the template (null for default mode) */
+    mode: string | null;
+    /** Match pattern of the template */
+    match: string | null;
+}
 
 /**
  * The main class for XSL-T processing. The implementation is NOT
@@ -102,6 +131,43 @@ export class Xslt {
      */
     namespaceAliases: Map<string, string>;
 
+    /**
+     * Set of supported extension element namespaces.
+     * Processors can register custom extension namespaces here.
+     * Currently only XSLT namespace is auto-registered.
+     */
+    supportedExtensions: Set<string>;
+
+    /**
+     * Map of attribute sets defined in the stylesheet.
+     * Keys are attribute set names, values are arrays of xsl:attribute nodes.
+     */
+    attributeSets: Map<string, XNode[]>;
+
+    /**
+     * Stack of stylesheet metadata for tracking import hierarchy.
+     * Used by apply-imports to find templates from imported stylesheets.
+     */
+    private styleSheetStack: StylesheetMetadata[] = [];
+
+    /**
+     * Map of imported stylesheet HREFs to their parsed XNodes.
+     * Prevents duplicate imports and allows precedence tracking.
+     */
+    private importedStylesheets: Map<string, XNode> = new Map();
+
+    /**
+     * Map templates to the stylesheet they came from.
+     * Enables apply-imports to find templates by import precedence.
+     */
+    private templateSourceMap: Map<XNode, StylesheetMetadata> = new Map();
+
+    /**
+     * Stack of currently executing templates with their metadata.
+     * Used by apply-imports to determine which template called it.
+     */
+    private currentTemplateStack: CurrentTemplateContext[] = [];
+
     constructor(
         options: Partial<XsltOptions> = {
             cData: true,
@@ -125,6 +191,8 @@ export class Xslt {
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
         this.namespaceAliases = new Map();
+        this.supportedExtensions = new Set(['http://www.w3.org/1999/XSL/Transform']);
+        this.attributeSets = new Map();
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -188,7 +256,17 @@ export class Xslt {
      */
     protected async xsltProcessContext(context: ExprContext, template: XNode, output?: XNode) {
         if (!this.isXsltElement(template)) {
-            await this.xsltPassThrough(context, template, output);
+            // Check if this is an unsupported extension element
+            if (
+                template.nodeType === DOM_ELEMENT_NODE &&
+                !this.isExtensionElementSupported(template)
+            ) {
+                // This is an extension element - handle with fallback support
+                await this.xsltExtensionElement(context, template, output);
+            } else {
+                // Regular literal result element
+                await this.xsltPassThrough(context, template, output);
+            }
         } else {
             let node: XNode,
                 select: any,
@@ -196,7 +274,8 @@ export class Xslt {
                 nodes: XNode[];
             switch (template.localName) {
                 case 'apply-imports':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltApplyImports(context, template, output);
+                    break;
                 case 'apply-templates':
                     await this.xsltApplyTemplates(context, template, output);
                     break;
@@ -204,7 +283,9 @@ export class Xslt {
                     await this.xsltAttribute(context, template, output);
                     break;
                 case 'attribute-set':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    // attribute-set declarations are processed during stylesheet initialization
+                    // in collectAttributeSets(). This case is skipped.
+                    break;
                 case 'call-template':
                     await this.xsltCallTemplate(context, template, output);
                     break;
@@ -242,7 +323,22 @@ export class Xslt {
                     await this.xsltElement(context, template, output);
                     break;
                 case 'fallback':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    // Allow fallback only when its parent is an extension element
+                    const parent = template.parentNode;
+                    const isExtensionParent =
+                        parent &&
+                        parent.nodeType === DOM_ELEMENT_NODE &&
+                        !this.isExtensionElementSupported(parent);
+
+                    if (!isExtensionParent) {
+                        throw new Error(
+                            '<xsl:fallback> must be a direct child of an extension element'
+                        );
+                    }
+
+                    // Execute the fallback's children in the current context/output
+                    await this.xsltChildNodes(context, template, output);
+                    break;
                 case 'for-each':
                     await this.xsltForEach(context, template, output);
                     break;
@@ -282,7 +378,8 @@ export class Xslt {
                     this.xsltPreserveSpace(template);
                     break;
                 case 'processing-instruction':
-                    throw new Error(`not implemented: ${template.localName}`);
+                    await this.xsltProcessingInstruction(context, template, output);
+                    break;
                 case 'sort':
                     this.xsltSort(context, template);
                     break;
@@ -345,7 +442,7 @@ export class Xslt {
         const top = template.ownerDocument.documentElement;
 
         // Collect all templates with their priority metadata
-        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath);
+        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath, this.templateSourceMap);
 
         // Clone context and set any xsl:with-param parameters defined on
         // the <xsl:apply-templates> element so they are visible to the
@@ -395,9 +492,99 @@ export class Xslt {
                 // We directly execute the template children here, bypassing xsltTemplate's
                 // own matching logic since we've already determined this is the best match.
                 if (selection.selectedTemplate) {
-                    await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
+                    // Track the executing template for apply-imports
+                    const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+                    const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+                    const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
+                    
+                    this.currentTemplateStack.push({
+                        template: selection.selectedTemplate,
+                        stylesheetDepth: metadata?.importDepth ?? 0,
+                        mode: modeAttr || mode,
+                        match: matchPattern
+                    });
+                    
+                    try {
+                        await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
+                    } finally {
+                        this.currentTemplateStack.pop();
+                    }
                 }
             }
+        }
+    }
+
+    /**
+     * Implements `xsl:apply-imports`.
+     * Applies templates from imported stylesheets with the same match pattern and mode.
+     * This enables template overriding where a template in an importing stylesheet
+     * can call the overridden template from the imported stylesheet.
+     * @param context The Expression Context.
+     * @param template The apply-imports template node.
+     * @param output The output node.
+     */
+    protected async xsltApplyImports(context: ExprContext, template: XNode, output?: XNode) {
+        // Check if we're within a template execution
+        if (this.currentTemplateStack.length === 0) {
+            throw new Error('<xsl:apply-imports> can only be used within a template');
+        }
+        
+        // Get the current executing template's context
+        const currentTemplateContext = this.currentTemplateStack[this.currentTemplateStack.length - 1];
+        const {
+            stylesheetDepth: currentDepth,
+            mode: currentMode
+        } = currentTemplateContext;
+        
+        // Get current node
+        const currentNode = context.nodeList[context.position];
+        
+        // Collect templates from imported stylesheets (higher import depth = lower precedence)
+        // We only want templates with importPrecedence LESS than current template (from imported stylesheets)
+        const top = template.ownerDocument.documentElement;
+        const allTemplates = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
+        
+        // Filter to only templates from imported stylesheets (depth > currentDepth)
+        const importedTemplates = allTemplates.filter(t => {
+            const metadata = this.templateSourceMap.get(t.template);
+            return metadata && metadata.importDepth > currentDepth;
+        });
+        
+        if (importedTemplates.length === 0) {
+            // No imported templates found, silently do nothing (per spec)
+            return;
+        }
+        
+        // Create a context for the current node to use with template selection
+        const nodeContext = context.clone([currentNode], 0);
+        
+        // Select best matching template from imported stylesheets
+        const selection = selectBestTemplate(importedTemplates, nodeContext, this.matchResolver, this.xPath);
+        
+        if (!selection.selectedTemplate) {
+            // No matching template in imported stylesheets
+            return;
+        }
+        
+        // Clone context and apply any with-param parameters from the apply-imports element
+        const importedContext = context.clone();
+        await this.xsltWithParam(importedContext, template);
+        
+        // Execute the imported template
+        // Need to track this as the new current template
+        const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+        if (metadata) {
+            const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+            this.currentTemplateStack.push({
+                template: selection.selectedTemplate,
+                stylesheetDepth: metadata.importDepth,
+                mode: currentMode,
+                match: matchPattern
+            });
+            
+            await this.xsltChildNodes(importedContext, selection.selectedTemplate, output);
+            
+            this.currentTemplateStack.pop();
         }
     }
 
@@ -531,6 +718,51 @@ export class Xslt {
     }
 
     /**
+     * Implements `xsl:processing-instruction`.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output. Only used if there's no corresponding output node already defined.
+     */
+    protected async xsltProcessingInstruction(context: ExprContext, template: XNode, output?: XNode) {
+        // Get the target name (required)
+        const nameExpr = xmlGetAttribute(template, 'name');
+        if (!nameExpr) {
+            throw new Error('<xsl:processing-instruction> requires a "name" attribute');
+        }
+
+        // Evaluate name as attribute value template
+        const target = this.xsltAttributeValue(nameExpr, context);
+
+        if (!target) {
+            throw new Error('<xsl:processing-instruction> target name cannot be empty');
+        }
+
+        if (target.toLowerCase() === 'xml') {
+            throw new Error('Processing instruction target cannot be "xml"');
+        }
+
+        // Validate target name format (no spaces, valid XML NCName for PI target)
+        // PI targets must match: [a-zA-Z_:][a-zA-Z0-9_:.-]*
+        if (!/^[a-zA-Z_][a-zA-Z0-9_:.-]*$/.test(target)) {
+            throw new Error(`Invalid processing instruction target: "${target}"`);
+        }
+
+        // Process child nodes to get PI data content
+        const documentFragment = domCreateDocumentFragment(this.outputDocument);
+        await this.xsltChildNodes(context, template, documentFragment);
+
+        // Extract text content from fragment
+        const data = xmlValue(documentFragment);
+
+        // Create processing instruction node
+        const pi = domCreateProcessingInstruction(this.outputDocument, target, data);
+
+        // Add to output
+        const resolvedOutput = output || this.outputDocument;
+        domAppendChild(resolvedOutput, pi);
+    }
+
+    /**
      * Implements `xsl:copy-of` for node-set values of the select
      * expression. Recurses down the source node tree, which is part of
      * the input document.
@@ -595,6 +827,12 @@ export class Xslt {
         const nameExpr = xmlGetAttribute(template, 'name');
         const name = this.xsltAttributeValue(nameExpr, context);
         const node = domCreateElement(this.outputDocument, name);
+
+        // Apply attribute sets first (they can be overridden by child attributes)
+        const useAttributeSets = xmlGetAttribute(template, 'use-attribute-sets');
+        if (useAttributeSets) {
+            await this.applyAttributeSets(context, node, useAttributeSets);
+        }
 
         // node.transformedNodeName = name;
 
@@ -678,11 +916,41 @@ export class Xslt {
         }
 
         const hrefAttribute = hrefAttributeFind[0];
+        const href = hrefAttribute.nodeValue;
 
-        const fetchTest = await global.globalThis.fetch(hrefAttribute.nodeValue);
+        // Check if we've already imported this stylesheet
+        if (this.importedStylesheets.has(href)) {
+            // Already imported, skip to avoid duplicate processing
+            return;
+        }
+
+        const fetchTest = await global.globalThis.fetch(href);
         const fetchResponse = await fetchTest.text();
         const includedXslt = this.xmlParser.xmlParse(fetchResponse);
-        await this.xsltChildNodes(context, includedXslt.childNodes[0], output);
+        
+        // Track stylesheet metadata for apply-imports
+        const currentDepth = this.styleSheetStack.length > 0 
+            ? this.styleSheetStack[this.styleSheetStack.length - 1].importDepth 
+            : 0;
+        
+        const metadata: StylesheetMetadata = {
+            importDepth: isImport ? currentDepth + 1 : currentDepth,  // Includes are same depth, imports are deeper
+            href: href,
+            order: this.importedStylesheets.size
+        };
+        
+        this.styleSheetStack.push(metadata);
+        this.importedStylesheets.set(href, includedXslt);
+        
+        // Map all templates in this stylesheet to their metadata
+        const stylesheetRoot = includedXslt.childNodes[0];
+        if (stylesheetRoot) {
+            this.mapTemplatesFromStylesheet(stylesheetRoot, metadata);
+        }
+        
+        await this.xsltChildNodes(context, stylesheetRoot, output);
+        
+        this.styleSheetStack.pop();
     }
 
     /**
@@ -1393,6 +1661,17 @@ export class Xslt {
      *               the caller.
      */
     protected async xsltTransformOrStylesheet(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        // Map templates from the main stylesheet (depth 0)
+        const mainStylesheetMetadata: StylesheetMetadata = {
+            importDepth: 0,
+            href: '(main stylesheet)',
+            order: 0
+        };
+        this.mapTemplatesFromStylesheet(template, mainStylesheetMetadata);
+        
+        // Collect attribute sets from stylesheet at the beginning
+        this.collectAttributeSets(template);
+
         // Validate stylesheet attributes
         this.validateStylesheetAttributes(template, context);
 
@@ -1430,7 +1709,7 @@ export class Xslt {
 
         // Now select and execute the best matching template using priority rules
         if (templates.length > 0) {
-            const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath);
+            const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath, this.templateSourceMap);
 
             // Find all (template, matchedNodes) pairs by testing each template's pattern
             const matchCandidates: { priority: TemplatePriority; matchedNodes: XNode[] }[] = [];
@@ -1492,7 +1771,22 @@ export class Xslt {
                 this.firstTemplateRan = true;
                 contextClone.baseTemplateMatched = true;
                 const templateContext = contextClone.clone(winner.matchedNodes, 0);
+                
+                // Track this template execution for apply-imports
+                const metadata = this.templateSourceMap.get(winner.priority.template);
+                const matchPattern = xmlGetAttribute(winner.priority.template, 'match');
+                const modeAttr = xmlGetAttribute(winner.priority.template, 'mode');
+                
+                this.currentTemplateStack.push({
+                    template: winner.priority.template,
+                    stylesheetDepth: metadata?.importDepth ?? 0,
+                    mode: modeAttr || null,
+                    match: matchPattern
+                });
+                
                 await this.xsltChildNodes(templateContext, winner.priority.template, output);
+                
+                this.currentTemplateStack.pop();
             } else {
                 // No template matched the root element.
                 // Apply the default XSLT behavior: process child nodes
@@ -1521,7 +1815,22 @@ export class Xslt {
                                 if (selection.selectedTemplate) {
                                     const templateContext = clonedContext.clone([currentNode], 0);
                                     templateContext.inApplyTemplates = true;
+                                    
+                                    // Track this template execution for apply-imports
+                                    const metadata = this.templateSourceMap.get(selection.selectedTemplate);
+                                    const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+                                    const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
+                                    
+                                    this.currentTemplateStack.push({
+                                        template: selection.selectedTemplate,
+                                        stylesheetDepth: metadata?.importDepth ?? 0,
+                                        mode: modeAttr || null,
+                                        match: matchPattern
+                                    });
+                                    
                                     await this.xsltChildNodes(templateContext, selection.selectedTemplate, output);
+                                    
+                                    this.currentTemplateStack.pop();
                                 } else {
                                     // If no template matches this child, recursively process its children
                                     if (currentNode.childNodes && currentNode.childNodes.length > 0) {
@@ -1545,7 +1854,22 @@ export class Xslt {
                                                     if (grandchildSelection.selectedTemplate) {
                                                         const grandchildTemplateContext = grandchildClonedContext.clone([grandchildNode], 0);
                                                         grandchildTemplateContext.inApplyTemplates = true;
+                                                        
+                                                        // Track this template execution for apply-imports
+                                                        const metadata = this.templateSourceMap.get(grandchildSelection.selectedTemplate);
+                                                        const matchPattern = xmlGetAttribute(grandchildSelection.selectedTemplate, 'match');
+                                                        const modeAttr = xmlGetAttribute(grandchildSelection.selectedTemplate, 'mode');
+                                                        
+                                                        this.currentTemplateStack.push({
+                                                            template: grandchildSelection.selectedTemplate,
+                                                            stylesheetDepth: metadata?.importDepth ?? 0,
+                                                            mode: modeAttr || null,
+                                                            match: matchPattern
+                                                        });
+                                                        
                                                         await this.xsltChildNodes(grandchildTemplateContext, grandchildSelection.selectedTemplate, output);
+                                                        
+                                                        this.currentTemplateStack.pop();
                                                     }
                                                 }
                                             }
@@ -1704,9 +2028,22 @@ export class Xslt {
                 newNode.siblingPosition = node.siblingPosition;
 
                 domAppendChild(output || this.outputDocument, newNode);
+
+                // Apply attribute sets from use-attribute-sets attribute on literal elements
+                const useAttributeSetsAttr = template.childNodes.find(
+                    (a: XNode) =>
+                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'use-attribute-sets'
+                );
+                if (useAttributeSetsAttr) {
+                    await this.applyAttributeSets(elementContext, newNode, useAttributeSetsAttr.nodeValue);
+                }
+
                 await this.xsltChildNodes(elementContext, template, newNode);
 
-                const templateAttributes = template.childNodes.filter((a: XNode) => a?.nodeType === DOM_ATTRIBUTE_NODE);
+                const templateAttributes = template.childNodes.filter(
+                    (a: XNode) =>
+                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName !== 'use-attribute-sets'
+                );
                 for (const attribute of templateAttributes) {
                     const name = attribute.nodeName;
                     const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
@@ -1822,6 +2159,214 @@ export class Xslt {
             if (childNode.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(childNode, 'with-param')) {
                 await this.xsltVariable(context, childNode, true);
             }
+        }
+    }
+
+    /**
+     * Recursively map all template nodes in a stylesheet to their metadata.
+     * Used to track which stylesheet each template comes from for apply-imports.
+     * @param stylesheetElement The stylesheet or transform element (or any parent element).
+     * @param metadata The metadata for this stylesheet.
+     */
+    private mapTemplatesFromStylesheet(stylesheetElement: XNode, metadata: StylesheetMetadata) {
+        for (const child of stylesheetElement.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                if (this.isXsltElement(child, 'template')) {
+                    // Map this template to its stylesheet metadata
+                    this.templateSourceMap.set(child, metadata);
+                } else if (this.isXsltElement(child, 'stylesheet') || this.isXsltElement(child, 'transform')) {
+                    // Recursively process nested stylesheets
+                    this.mapTemplatesFromStylesheet(child, metadata);
+                }
+            }
+        }
+    }
+
+    /**
+     * Collect all attribute set definitions from the stylesheet.
+     * Called at stylesheet initialization time.
+     * @param stylesheetElement The stylesheet or transform element.
+     */
+    private collectAttributeSets(stylesheetElement: XNode) {
+        for (const child of stylesheetElement.childNodes) {
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child, 'attribute-set')
+            ) {
+                const name = xmlGetAttribute(child, 'name');
+                const attributes = child.childNodes.filter(
+                    (n: XNode) =>
+                        n.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(n, 'attribute')
+                );
+
+                if (name) {
+                    const existing = this.attributeSets.get(name);
+                    if (existing && existing.length) {
+                        // Merge attributes from multiple xsl:attribute-set declarations with the same name.
+                        this.attributeSets.set(name, [...existing, ...attributes]);
+                    } else {
+                        this.attributeSets.set(name, attributes);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Apply one or more attribute sets to an element.
+     * Parses space-separated attribute set names and applies them.
+     * @param context The Expression Context.
+     * @param element The element to apply attributes to.
+     * @param setNames Space-separated attribute set names.
+     */
+    protected async applyAttributeSets(
+        context: ExprContext,
+        element: XNode,
+        setNames: string
+    ) {
+        if (!setNames || !setNames.trim()) {
+            return;
+        }
+
+        // Parse space-separated set names
+        const names = setNames.trim().split(/\s+/);
+        const processedSets = new Set<string>();
+
+        for (const name of names) {
+            await this.applyAttributeSet(context, element, name, processedSets);
+        }
+    }
+
+    /**
+     * Apply a single attribute set to an element.
+     * Handles recursive attribute sets with cycle detection.
+     * @param context The Expression Context.
+     * @param element The element to apply attributes to.
+     * @param setName The name of the attribute set to apply.
+     * @param processedSets Set of already-processed attribute set names (for cycle detection).
+     */
+    private async applyAttributeSet(
+        context: ExprContext,
+        element: XNode,
+        setName: string,
+        processedSets: Set<string>
+    ) {
+        // Prevent infinite recursion
+        if (processedSets.has(setName)) {
+            return;
+        }
+        processedSets.add(setName);
+
+        const attributeNodes = this.attributeSets.get(setName);
+        if (!attributeNodes) {
+            // Silently ignore missing attribute set (spec allows)
+            return;
+        }
+
+        // Apply attributes from this set
+        for (const attrNode of attributeNodes) {
+            // First, apply any nested attribute sets referenced by the owning attribute-set
+            let nestedSets: string | null = null;
+            const ownerNode = (attrNode as any).parentNode as XNode | null;
+            if (ownerNode) {
+                nestedSets = xmlGetAttribute(ownerNode, 'use-attribute-sets');
+            }
+            if (nestedSets) {
+                // XSLT allows a whitespace-separated list of attribute-set names
+                for (const nestedName of nestedSets.trim().split(/\s+/)) {
+                    if (nestedName) {
+                        await this.applyAttributeSet(context, element, nestedName, processedSets);
+                    }
+                }
+            }
+
+            // Now apply the attribute itself
+            const nameExpr = xmlGetAttribute(attrNode, 'name');
+            const name = this.xsltAttributeValue(nameExpr, context);
+
+            // Evaluate the attribute value by processing child nodes
+            const documentFragment = domCreateDocumentFragment(this.outputDocument);
+            await this.xsltChildNodes(context, attrNode, documentFragment);
+            const value = xmlValueLegacyBehavior(documentFragment);
+
+            domSetAttribute(element, name, value);
+        }
+    }
+
+    /**
+     * Test if an element is a supported extension.
+     * Returns false for unrecognized elements in non-XSLT namespaces.
+     * @param node The element to test.
+     * @returns True if the element is supported, false if it's an unrecognized extension.
+     */
+    protected isExtensionElementSupported(node: XNode): boolean {
+        if (node.nodeType !== DOM_ELEMENT_NODE) {
+            // Only elements can be extension elements; everything else is always supported.
+            return true;
+        }
+
+        const namespaceUri = node.namespaceUri;
+
+        if (!namespaceUri) {
+            // Unqualified elements (no namespace) are treated as literal result elements.
+            return true;
+        }
+
+        // Elements in the XSLT namespace are XSLT instructions, not extension elements.
+        if (this.isXsltElement(node)) {
+            return true;
+        }
+
+        // Namespaced, non-XSLT elements are considered extension elements. If the
+        // namespace is not in the supported set, mark as unsupported so fallback can run.
+        if (!this.supportedExtensions.has(namespaceUri)) {
+            return false;
+        }
+
+        // The element is in a supported extension namespace.
+        return true;
+    }
+
+    /**
+     * Get the fallback element from an extension element if it exists.
+     * Searches for the first direct xsl:fallback child.
+     * @param node The extension element.
+     * @returns The fallback element, or null if not found.
+     */
+    protected getFallbackElement(node: XNode): XNode | null {
+        for (const child of node.childNodes) {
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child, 'fallback')
+            ) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Process an extension element with fallback support.
+     * If a fallback is defined, executes it; otherwise treats element as literal.
+     * @param context The Expression Context.
+     * @param element The extension element.
+     * @param output The output node.
+     */
+    protected async xsltExtensionElement(
+        context: ExprContext,
+        element: XNode,
+        output?: XNode
+    ) {
+        // Check if there's a fallback
+        const fallback = this.getFallbackElement(element);
+
+        if (fallback) {
+            // Execute fallback content
+            await this.xsltChildNodes(context, fallback, output);
+        } else {
+            // No fallback: treat as literal result element
+            // (Copy the element and its content to output)
+            await this.xsltPassThrough(context, element, output);
         }
     }
 
