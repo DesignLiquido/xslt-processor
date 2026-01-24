@@ -323,9 +323,22 @@ export class Xslt {
                     await this.xsltElement(context, template, output);
                     break;
                 case 'fallback':
-                    throw new Error(
-                        '<xsl:fallback> must be a direct child of an extension element'
-                    );
+                    // Allow fallback only when its parent is an extension element
+                    const parent = template.parentNode;
+                    const isExtensionParent =
+                        parent &&
+                        parent.nodeType === DOM_ELEMENT_NODE &&
+                        !this.isExtensionElementSupported(parent);
+
+                    if (!isExtensionParent) {
+                        throw new Error(
+                            '<xsl:fallback> must be a direct child of an extension element'
+                        );
+                    }
+
+                    // Execute the fallback's children in the current context/output
+                    await this.xsltChildNodes(context, template, output);
+                    break;
                 case 'for-each':
                     await this.xsltForEach(context, template, output);
                     break;
@@ -2295,7 +2308,7 @@ export class Xslt {
         const namespaceUri = node.namespaceUri;
 
         if (!namespaceUri) {
-            // Unqualified elements (no namespace) are never treated as extension elements.
+            // Unqualified elements (no namespace) are treated as literal result elements.
             return true;
         }
 
@@ -2304,21 +2317,14 @@ export class Xslt {
             return true;
         }
 
-        // At this point we have a namespaced, non-XSLT element.
-        // In XSLT, only elements whose prefix appears in extension-element-prefixes
-        // (resolved to namespace URIs) are treated as extension elements. We assume
-        // that `supportedExtensions` contains exactly those extension namespaces.
-        //
-        // If the namespace is *not* in the extension-element set, this is a literal
-        // result element and must be treated as supported.
+        // Namespaced, non-XSLT elements are considered extension elements. If the
+        // namespace is not in the supported set, mark as unsupported so fallback can run.
         if (!this.supportedExtensions.has(namespaceUri)) {
-            return true;
+            return false;
         }
 
-        // The element is in an extension namespace. This implementation does not
-        // provide a concrete handler for that extension, so treat it as an
-        // unsupported extension element and let callers apply xsl:fallback.
-        return false;
+        // The element is in a supported extension namespace.
+        return true;
     }
 
     /**
