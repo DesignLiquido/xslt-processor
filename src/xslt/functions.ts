@@ -252,9 +252,18 @@ export function collectAndExpandTemplates(
             ? explicitPriority
             : defaultPriority;
 
-        // Get import precedence from template source map (higher depth = lower precedence)
+        // Get import precedence from template source map.
+        // XSLT import precedence depends first on import depth (shallower = higher),
+        // and then on import order among stylesheets imported at the same depth
+        // (later imports have higher precedence).
         const metadata = templateSourceMap?.get(child);
-        const importPrecedence = metadata ? -metadata.importDepth : 0;  // Negative so main stylesheet has highest precedence
+        let importPrecedence = 0;
+        if (metadata) {
+            const DEPTH_WEIGHT = Number.MAX_SAFE_INTEGER / 2;
+            const depthComponent = -metadata.importDepth * DEPTH_WEIGHT; // Negative so main stylesheet has highest precedence
+            const orderComponent = (metadata as any).order ?? 0;
+            importPrecedence = depthComponent + orderComponent;
+        }
 
         templates.push({
             template: child,

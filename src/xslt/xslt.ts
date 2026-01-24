@@ -491,9 +491,11 @@ export class Xslt {
                         match: matchPattern
                     });
                     
-                    await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
-                    
-                    this.currentTemplateStack.pop();
+                    try {
+                        await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
+                    } finally {
+                        this.currentTemplateStack.pop();
+                    }
                 }
             }
         }
@@ -518,8 +520,7 @@ export class Xslt {
         const currentTemplateContext = this.currentTemplateStack[this.currentTemplateStack.length - 1];
         const {
             stylesheetDepth: currentDepth,
-            mode: currentMode,
-            match: currentMatch
+            mode: currentMode
         } = currentTemplateContext;
         
         // Get current node
@@ -2186,7 +2187,13 @@ export class Xslt {
                 );
 
                 if (name) {
-                    this.attributeSets.set(name, attributes);
+                    const existing = this.attributeSets.get(name);
+                    if (existing && existing.length) {
+                        // Merge attributes from multiple xsl:attribute-set declarations with the same name.
+                        this.attributeSets.set(name, [...existing, ...attributes]);
+                    } else {
+                        this.attributeSets.set(name, attributes);
+                    }
                 }
             }
         }
@@ -2245,10 +2252,19 @@ export class Xslt {
 
         // Apply attributes from this set
         for (const attrNode of attributeNodes) {
-            // First, apply any nested attribute sets referenced by this attribute
-            const nestedSets = xmlGetAttribute(attrNode, 'use-attribute-sets');
+            // First, apply any nested attribute sets referenced by the owning attribute-set
+            let nestedSets: string | null = null;
+            const ownerNode = (attrNode as any).parentNode as XNode | null;
+            if (ownerNode) {
+                nestedSets = xmlGetAttribute(ownerNode, 'use-attribute-sets');
+            }
             if (nestedSets) {
-                await this.applyAttributeSets(context, element, nestedSets);
+                // XSLT allows a whitespace-separated list of attribute-set names
+                for (const nestedName of nestedSets.trim().split(/\s+/)) {
+                    if (nestedName) {
+                        await this.applyAttributeSet(context, element, nestedName, processedSets);
+                    }
+                }
             }
 
             // Now apply the attribute itself
@@ -2272,15 +2288,37 @@ export class Xslt {
      */
     protected isExtensionElementSupported(node: XNode): boolean {
         if (node.nodeType !== DOM_ELEMENT_NODE) {
-            return true; // Non-elements are always supported
+            // Only elements can be extension elements; everything else is always supported.
+            return true;
         }
 
-        if (!node.namespaceUri) {
-            return true; // Non-namespace elements are supported
+        const namespaceUri = node.namespaceUri;
+
+        if (!namespaceUri) {
+            // Unqualified elements (no namespace) are never treated as extension elements.
+            return true;
         }
 
-        // Check if in supported extensions registry
-        return this.supportedExtensions.has(node.namespaceUri);
+        // Elements in the XSLT namespace are XSLT instructions, not extension elements.
+        if (this.isXsltElement(node)) {
+            return true;
+        }
+
+        // At this point we have a namespaced, non-XSLT element.
+        // In XSLT, only elements whose prefix appears in extension-element-prefixes
+        // (resolved to namespace URIs) are treated as extension elements. We assume
+        // that `supportedExtensions` contains exactly those extension namespaces.
+        //
+        // If the namespace is *not* in the extension-element set, this is a literal
+        // result element and must be treated as supported.
+        if (!this.supportedExtensions.has(namespaceUri)) {
+            return true;
+        }
+
+        // The element is in an extension namespace. This implementation does not
+        // provide a concrete handler for that extension, so treat it as an
+        // unsupported extension element and let callers apply xsl:fallback.
+        return false;
     }
 
     /**
