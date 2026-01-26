@@ -3,13 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XSLT Processor - Interactive Test</title>
+    <title>XSLT Processor - Interactive Test | Design Liquido</title>
+
+    <!-- Design Liquido Branding Meta Tags -->
+    <meta name="description" content="Interactive XSLT transformation testing tool by Design Liquido">
+    <meta property="og:title" content="XSLT Processor - Interactive Test">
+    <meta property="og:description" content="Interactive XSLT transformation testing tool by Design Liquido">
+    <meta property="og:image" content="https://designliquido.github.io/imagens/logo-og.png">
+    <meta property="og:url" content="https://designliquido.github.io/">
+    <meta property="og:site_name" content="Design Liquido">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://designliquido.github.io/imagens/logo.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RD4Q6L45K6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-RD4Q6L45K6');
+    </script>
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
                     colors: {
                         editor: {
                             bg: '#1e1e1e',
@@ -21,6 +50,31 @@
         }
     </script>
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        }
+        .glass-effect {
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        .glow {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+        }
+        .dark .glow {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+        }
         .editor-container {
             height: 300px;
             border: 1px solid #3c3c3c;
@@ -32,12 +86,28 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
+<body class="gradient-bg text-gray-100 min-h-screen">
+    <!-- Theme Toggle -->
+    <button onclick="toggleTheme()" class="theme-toggle p-2 rounded-lg bg-white/10 glass-effect hover:bg-white/20 transition-colors">
+        <svg id="theme-icon-light" class="w-6 h-6 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="theme-icon-dark" class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Header -->
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">XSLT Processor</h1>
-            <p class="text-gray-400">Interactive XSLT transformation testing tool</p>
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <a href="index.html" class="text-gray-300 hover:text-white text-sm mb-2 inline-block">&larr; Back to Demos</a>
+                <h1 class="text-3xl font-bold text-white mb-2">XSLT Processor</h1>
+                <p class="text-gray-300">Interactive XSLT transformation testing tool</p>
+            </div>
+            <a href="https://designliquido.github.io/" target="_blank">
+                <img src="https://designliquido.github.io/imagens/logo.png" alt="Design Liquido" class="h-12 hover:opacity-80 transition-opacity">
+            </a>
         </header>
 
         <!-- Input Section -->
@@ -116,7 +186,10 @@
         </div>
 
         <!-- Footer -->
-        <footer class="mt-12 pt-6 border-t border-gray-700 text-center text-gray-500 text-sm">
+        <footer class="mt-12 pt-6 border-t border-white/20 text-center text-gray-300 text-sm">
+            <p class="mb-2">
+                <a href="https://designliquido.github.io/" target="_blank" class="text-white hover:text-blue-300 font-semibold">Design Liquido</a>
+            </p>
             <p>Powered by <a href="https://github.com/DesignLiquido/xslt-processor" class="text-blue-400 hover:text-blue-300">xslt-processor</a></p>
         </footer>
     </div>

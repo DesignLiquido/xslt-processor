@@ -3,20 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XSLT Processor - Interactive Demos</title>
+    <title>XSLT Processor - Interactive Demos | Design Liquido</title>
+
+    <!-- Design Liquido Branding Meta Tags -->
+    <meta name="description" content="Interactive XSLT and XPath demonstration tools by Design Liquido">
+    <meta property="og:title" content="XSLT Processor - Interactive Demos">
+    <meta property="og:description" content="Interactive XSLT and XPath demonstration tools by Design Liquido">
+    <meta property="og:image" content="https://designliquido.github.io/imagens/logo-og.png">
+    <meta property="og:url" content="https://designliquido.github.io/">
+    <meta property="og:site_name" content="Design Liquido">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://designliquido.github.io/imagens/logo.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RD4Q6L45K6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-RD4Q6L45K6');
+    </script>
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        }
+        .glass-effect {
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .glow {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+        }
+        .dark .glow {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+        }
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
         }
     </style>
 </head>
-<body class="bg-gray-900">
+<body class="gradient-bg">
+    <!-- Theme Toggle -->
+    <button onclick="toggleTheme()" class="theme-toggle p-2 rounded-lg bg-white/10 glass-effect hover:bg-white/20 transition-colors">
+        <svg id="theme-icon-light" class="w-6 h-6 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="theme-icon-dark" class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
     <div class="min-h-screen flex items-center justify-center py-12 px-4">
         <div class="max-w-2xl w-full">
             <!-- Header -->
             <div class="text-center mb-12">
+                <a href="https://designliquido.github.io/" target="_blank" class="inline-block mb-6">
+                    <img src="https://designliquido.github.io/imagens/logo.png" alt="Design Liquido" class="h-16 mx-auto hover:opacity-80 transition-opacity">
+                </a>
                 <h1 class="text-5xl font-bold text-white mb-4">XSLT Processor</h1>
                 <p class="text-xl text-gray-300 mb-2">JavaScript XSLT & XPath Processor</p>
                 <p class="text-gray-400">Interactive demonstration tools</p>
@@ -26,7 +107,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- XSLT Demo -->
                 <a href="xslt.html" class="group">
-                    <div class="bg-gray-800 rounded-lg shadow-lg p-8 hover:shadow-2xl hover:bg-gray-700 transition-all duration-300 h-full flex flex-col justify-center">
+                    <div class="bg-white/10 glass-effect rounded-lg shadow-lg p-8 hover-lift glow h-full flex flex-col justify-center">
                         <div class="text-4xl mb-4">🔄</div>
                         <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">XSLT Transformer</h2>
                         <p class="text-gray-400 mb-4">Transform XML documents using XSLT stylesheets. Test your transformations in real-time with syntax highlighting and formatted output.</p>
@@ -41,7 +122,7 @@
 
                 <!-- XPath Demo -->
                 <a href="xpath.html" class="group">
-                    <div class="bg-gray-800 rounded-lg shadow-lg p-8 hover:shadow-2xl hover:bg-gray-700 transition-all duration-300 h-full flex flex-col justify-center">
+                    <div class="bg-white/10 glass-effect rounded-lg shadow-lg p-8 hover-lift glow h-full flex flex-col justify-center">
                         <div class="text-4xl mb-4">🔍</div>
                         <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">XPath Tester</h2>
                         <p class="text-gray-400 mb-4">Evaluate XPath expressions against XML documents. Explore nodes, test predicates, and understand XPath query results with detailed output.</p>
@@ -56,7 +137,7 @@
             </div>
 
             <!-- Features -->
-            <div class="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
+            <div class="bg-white/10 glass-effect rounded-lg shadow-lg p-8 mb-8">
                 <h2 class="text-2xl font-bold text-white mb-6">Features</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="flex items-start">
@@ -99,9 +180,12 @@
             </div>
 
             <!-- Footer -->
-            <div class="text-center text-gray-400">
-                <p class="mb-2">XSLT Processor v4.4.0</p>
-                <p class="text-sm">
+            <div class="text-center text-gray-300">
+                <div class="mb-4">
+                    <a href="https://designliquido.github.io/" target="_blank" class="text-white hover:text-blue-300 font-semibold">Design Liquido</a>
+                </div>
+                <p class="mb-2 text-gray-400">XSLT Processor v4.6.0</p>
+                <p class="text-sm text-gray-400">
                     <a href="https://github.com/DesignLiquido/xslt-processor" class="text-blue-400 hover:text-blue-300">View on GitHub</a>
                     •
                     <a href="https://github.com/DesignLiquido/xslt-processor#readme" class="text-blue-400 hover:text-blue-300">Documentation</a>
@@ -109,5 +193,30 @@
             </div>
         </div>
     </div>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+        }
+
+        function updateThemeIcon(isDark) {
+            document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
+            document.getElementById('theme-icon-dark').classList.toggle('hidden', isDark);
+        }
+
+        // Initialize theme from localStorage
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const isDark = savedTheme === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIcon(isDark);
+        })();
+    </script>
 </body>
 </html>
