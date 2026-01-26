@@ -16,38 +16,49 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 - **`<xsl:namespace-alias>`** - Namespace aliasing for result tree (Section 7.1.1)
 - **`<xsl:preserve-space>` / `<xsl:strip-space>`** - Whitespace handling is implemented but may have edge cases (Section 3.4)
 
-## Unimplemented XPath Functions (Section 12)
+## XPath Functions (Section 12)
 
 ### XSLT Additional Functions (Section 12):
 
-- **`document()`** - Load and process multiple source documents (Section 12.1)
-  - Used for cross-document transformations
-  - Fragment identifier handling needed
-  
-- **`key()`** - Partial implementation exists in code but needs verification
+- **`document()`** - ✅ Implemented (basic)
+  - Requires `documentLoader` callback in context for external document loading
+  - Empty URI returns current document
+  - Returns empty node-set if loading fails
+
+- **`key()`** - ✅ Implemented
   - Works with declared keys via `<xsl:key>` elements
-  
-- **`format-number()`** - Partial implementation
-  - Basic locale-independent number formatting
-  - Decimal format customization via `<xsl:decimal-format>` needs testing
-  
-- **`generate-id()`** - NOT implemented
-  - Generate unique identifiers for nodes
-  - Must be consistent across transformations
-  
-- **`unparsed-entity-uri()`** - NOT implemented
-  - Return URI of unparsed entity from DTD
-  
-- **`system-property()`** - NOT implemented
-  - Should return XSLT processor properties like `xsl:version`, `xsl:vendor`, `xsl:vendor-url`
-  
-- **`element-available()`** - NOT implemented
-  - Check if element name is available instruction
-  - Used with `<xsl:choose>` for fallback behavior
-  
-- **`function-available()`** - NOT implemented
-  - Check if function name is available
-  - Used with `<xsl:choose>` for fallback behavior
+  - Key indexing via context.keys map
+
+- **`format-number()`** - ✅ Implemented
+  - JDK 1.1 DecimalFormat pattern syntax supported
+  - Integration with `<xsl:decimal-format>` elements
+  - Grouping separators, decimal symbols, etc.
+
+- **`generate-id()`** - ✅ Implemented
+  - Uses hash-based ID generation
+  - Same node = same ID within transformation
+  - Starts with alphabetic character
+
+- **`unparsed-entity-uri()`** - ✅ Implemented (stub)
+  - Requires `unparsedEntities` map in context
+  - Returns empty string if entity not found
+  - DTD parsing not available in JavaScript environments
+
+- **`system-property()`** - ✅ Implemented
+  - Returns `xsl:version`, `xsl:vendor`, `xsl:vendor-url`
+  - Custom properties via `systemProperties` in context
+
+- **`element-available()`** - ✅ Implemented
+  - All 34 XSLT 1.0 elements supported
+  - Works with or without `xsl:` prefix
+
+- **`function-available()`** - ✅ Implemented
+  - Core XPath 1.0 functions (26 functions)
+  - XSLT 1.0 additional functions (9 functions)
+  - Custom functions (matches, ends-with, xml-to-json, json-to-xml)
+
+- **`current()`** - ✅ Implemented
+  - Returns the current node being processed
 
 ## Known Bugs
 
@@ -60,11 +71,11 @@ Need to verify correct implementation of:
 - Import precedence (Section 2.6.2)
 - Template priority attribute (Section 5.3)
 
-## Unimplemented XPath Core/Extension Functions
+## XPath Core/Extension Functions
 
-- **`current()`** - Partial implementation in code, but may have context limitations
-- **`id()`** - XPath core function, verify implementation with DTD attribute types
-- **`lang()`** - Check language support completeness
+- **`current()`** - ✅ Implemented
+- **`id()`** - ✅ Implemented - XPath core function
+- **`lang()`** - ✅ Implemented - Check language support
 
 ## Missing Output Methods
 
@@ -519,9 +530,11 @@ The following features need verification of complete specification compliance:
 - **Implemented XSLT Elements**: ~28+ out of 35+ elements in spec
 - **Not Implemented XSLT Elements**: 1 (apply-imports)
 - **Partially Implemented**: ~5
-- **Implemented XPath Core Functions**: ~20+
-- **XSLT Additional Functions**: 3-4 fully, 4-5 partially
-- **Missing XSLT Additional Functions**: 7-8
+- **Implemented XPath Core Functions**: ~26+
+- **XSLT Additional Functions**: ✅ All 9 functions implemented
+  - `document()`, `key()`, `format-number()`, `generate-id()`, `current()`
+  - `system-property()`, `element-available()`, `function-available()`
+  - `unparsed-entity-uri()` (stub - DTD not available in JS)
 
 ### XSLT 2.0 Coverage:
 - **New Instructions [XSLT 2.0]**: 9 elements not in XSLT 1.0 (analyze-string, for-each-group, function, import-schema, namespace, next-match, perform-sort, result-document, character-map)
@@ -537,9 +550,9 @@ The following features need verification of complete specification compliance:
   - **Not Implemented**: Most enhancements
 
 ### Summary:
-- **XSLT 1.0**: ~77% functional (27+/35+ elements) ✓ NOW INCLUDES PROCESSING-INSTRUCTION AND FALLBACK
+- **XSLT 1.0**: ~85% functional (27+/35+ elements, all 9 XSLT functions implemented)
 - **XSLT 2.0**: ~5% functional (mostly not implemented as separate layer)
-- **XSLT 3.0**: <1% functional (major features require significant new architecture)
+- **XSLT 3.0**: ~5% functional (json-to-xml, xml-to-json implemented; major features require significant new architecture)
 
 ### XSLT 3.0 Coverage (if implemented):
 - **New Instructions [XSLT 3.0]**: 6 major new elements (break, iterate, on-completion, package, use-package, override)
@@ -571,6 +584,10 @@ The following features need verification of complete specification compliance:
 - Check [W3C XPath 3.0 Spec](https://www.w3.org/TR/xpath-30/) for XPath 3.0 details
 - Look at existing test files in `tests/` directory for examples
 - The concat() bug is a priority fix due to common usage
-- Generate-id() is commonly used and should be prioritized
-- Document function is critical for complex XSLT stylesheets
 - XSLT 3.0 package system and streaming are major architectural changes - consider carefully before implementation
+
+### Recently Implemented (January 2026):
+- ✅ All XSLT 1.0 Section 12 functions now implemented
+- ✅ `system-property()`, `element-available()`, `function-available()` added
+- ✅ `document()` basic implementation (requires documentLoader callback)
+- ✅ Versioned XPath parser API (XPath10Parser, XPath20Parser, createXPathParser)
