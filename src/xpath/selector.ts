@@ -1,17 +1,18 @@
 import { XPathLexer } from './lib/src/lexer';
-import { XPathParser } from './lib/src/parser';
+import { XPath10Parser } from './lib/src/parser';
 import { createContext } from './lib/src/context';
 import { XPathNode } from './lib/src/node';
 import { XNode } from '../dom';
 
 export class XPathSelector {
     private lexer: XPathLexer;
-    private parser: XPathParser;
+    private parser: XPath10Parser;
     private nodeCache: WeakMap<XNode, XPathNode> = new WeakMap();
 
     constructor() {
-        this.lexer = new XPathLexer();
-        this.parser = new XPathParser();
+        // Use XPath 1.0 for backward compatibility
+        this.lexer = new XPathLexer('1.0');
+        this.parser = new XPath10Parser();
     }
 
     public select(expression: string, contextNode: XNode): XNode[] {

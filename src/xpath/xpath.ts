@@ -4,7 +4,7 @@
 
 import { XNode } from '../dom';
 import { XPathLexer } from './lib/src/lexer';
-import { XPathParser } from './lib/src/parser';
+import { XPath10Parser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
 import { XPathContext, XPathResult, createContext } from './lib/src/context';
 import { XPathNode } from './lib/src/node';
@@ -483,13 +483,14 @@ class NodeConverter {
  */
 export class XPath {
     private lexer: XPathLexer;
-    private parser: XPathParser;
+    private parser: XPath10Parser;
     private nodeConverter: NodeConverter;
     private parseCache: Map<string, Expression> = new Map();
 
     constructor() {
-        this.lexer = new XPathLexer();
-        this.parser = new XPathParser();
+        // Use XPath 1.0 for backward compatibility with XSLT 1.0
+        this.lexer = new XPathLexer('1.0');
+        this.parser = new XPath10Parser();
         this.nodeConverter = new NodeConverter();
     }
 
