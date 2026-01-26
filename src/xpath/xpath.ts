@@ -352,6 +352,151 @@ class NodeConverter {
             return convertedNode ? [convertedNode] : [];
         };
 
+        // system-property() function - XSLT specific (Section 12.4)
+        // Signature: system-property(context, propertyName)
+        functions['system-property'] = (_context: XPathContext, propertyName: any) => {
+            const propName = String(propertyName);
+
+            // Required system properties per XSLT 1.0 spec
+            const systemProperties: Record<string, string> = {
+                'xsl:version': exprContext.xsltVersion || '1.0',
+                'xsl:vendor': 'Design Liquido',
+                'xsl:vendor-url': 'https://github.com/DesignLiquido/xslt-processor'
+            };
+
+            // Check custom system properties from context
+            if (exprContext.systemProperties && exprContext.systemProperties[propName]) {
+                return exprContext.systemProperties[propName];
+            }
+
+            return systemProperties[propName] || '';
+        };
+
+        // element-available() function - XSLT specific (Section 15)
+        // Signature: element-available(context, elementName)
+        functions['element-available'] = (_context: XPathContext, elementName: any) => {
+            const name = String(elementName);
+
+            // List of supported XSLT 1.0 elements
+            const xsltElements = [
+                'xsl:apply-imports',
+                'xsl:apply-templates',
+                'xsl:attribute',
+                'xsl:attribute-set',
+                'xsl:call-template',
+                'xsl:choose',
+                'xsl:comment',
+                'xsl:copy',
+                'xsl:copy-of',
+                'xsl:decimal-format',
+                'xsl:element',
+                'xsl:fallback',
+                'xsl:for-each',
+                'xsl:if',
+                'xsl:import',
+                'xsl:include',
+                'xsl:key',
+                'xsl:message',
+                'xsl:namespace-alias',
+                'xsl:number',
+                'xsl:otherwise',
+                'xsl:output',
+                'xsl:param',
+                'xsl:preserve-space',
+                'xsl:processing-instruction',
+                'xsl:sort',
+                'xsl:strip-space',
+                'xsl:stylesheet',
+                'xsl:template',
+                'xsl:text',
+                'xsl:transform',
+                'xsl:value-of',
+                'xsl:variable',
+                'xsl:when',
+                'xsl:with-param'
+            ];
+
+            // Handle with or without prefix
+            const normalizedName = name.startsWith('xsl:') ? name : `xsl:${name}`;
+            return xsltElements.includes(normalizedName) || xsltElements.includes(name);
+        };
+
+        // function-available() function - XSLT specific (Section 15)
+        // Signature: function-available(context, functionName)
+        functions['function-available'] = (_context: XPathContext, functionName: any) => {
+            const name = String(functionName);
+
+            // Core XPath 1.0 functions
+            const xpathCoreFunctions = [
+                'boolean', 'ceiling', 'concat', 'contains', 'count',
+                'false', 'floor', 'id', 'lang', 'last', 'local-name',
+                'name', 'namespace-uri', 'normalize-space', 'not', 'number',
+                'position', 'round', 'starts-with', 'string', 'string-length',
+                'substring', 'substring-after', 'substring-before', 'sum',
+                'translate', 'true'
+            ];
+
+            // XSLT 1.0 additional functions
+            const xsltFunctions = [
+                'current', 'document', 'element-available', 'format-number',
+                'function-available', 'generate-id', 'key', 'system-property',
+                'unparsed-entity-uri'
+            ];
+
+            // Additional functions supported by this processor
+            const additionalFunctions = [
+                'matches', 'ends-with', 'xml-to-json', 'json-to-xml'
+            ];
+
+            const allFunctions = [...xpathCoreFunctions, ...xsltFunctions, ...additionalFunctions];
+            return allFunctions.includes(name);
+        };
+
+        // document() function - XSLT specific (Section 12.1)
+        // Signature: document(context, uriOrNodeSet, baseNode?)
+        // Note: This is a basic implementation. Full implementation requires document loading.
+        functions['document'] = (_context: XPathContext, uriOrNodeSet: any, _baseNode?: any) => {
+            // If a document loader is provided in context, use it
+            if (exprContext.documentLoader) {
+                const uri = Array.isArray(uriOrNodeSet)
+                    ? (uriOrNodeSet[0]?.textContent || String(uriOrNodeSet[0] || ''))
+                    : String(uriOrNodeSet || '');
+
+                if (!uri) {
+                    // Empty string returns the current document
+                    return exprContext.root ? [this.adaptXNode(exprContext.root)] : [];
+                }
+
+                try {
+                    const doc = exprContext.documentLoader(uri);
+                    if (doc) {
+                        return [this.adaptXNode(doc)];
+                    }
+                } catch (e) {
+                    // Document loading failed, return empty node-set
+                    console.warn(`document() failed to load: ${uri}`, e);
+                }
+            }
+
+            // Return empty node-set if no document loader or loading failed
+            return [];
+        };
+
+        // unparsed-entity-uri() function - XSLT specific (Section 12.4)
+        // Signature: unparsed-entity-uri(context, entityName)
+        // Note: This requires DTD parsing support which is not commonly available in JavaScript
+        functions['unparsed-entity-uri'] = (_context: XPathContext, entityName: any) => {
+            const name = String(entityName);
+
+            // Check if unparsed entities are provided in context
+            if (exprContext.unparsedEntities && exprContext.unparsedEntities[name]) {
+                return exprContext.unparsedEntities[name];
+            }
+
+            // Return empty string if entity not found (per XSLT spec)
+            return '';
+        };
+
         return functions;
     }
 

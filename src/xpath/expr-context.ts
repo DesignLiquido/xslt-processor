@@ -51,6 +51,24 @@ export class ExprContext {
     keys: { [name: string]: { [key: string]: NodeValue } };
     knownNamespaces: { [alias: string]: string };
 
+    /**
+     * Custom system properties for system-property() function.
+     * Overrides the default properties (xsl:version, xsl:vendor, xsl:vendor-url).
+     */
+    systemProperties?: { [name: string]: string };
+
+    /**
+     * Document loader function for the document() function.
+     * Takes a URI and returns an XNode document, or null if loading fails.
+     */
+    documentLoader?: (uri: string) => XNode | null;
+
+    /**
+     * Unparsed entity URIs for the unparsed-entity-uri() function.
+     * Maps entity names to their URIs (from DTD declarations).
+     */
+    unparsedEntities?: { [name: string]: string };
+
     caseInsensitive: any;
     ignoreAttributesWithoutValue: any;
     returnOnFirstMatch: any;
