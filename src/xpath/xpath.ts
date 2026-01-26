@@ -268,12 +268,15 @@ class NodeConverter {
 
     /**
      * Create custom functions for XPath context (like key(), document(), etc.).
+     * Note: Custom functions receive the XPathContext as their first argument,
+     * followed by the evaluated function arguments.
      */
     private createCustomFunctions(exprContext: ExprContext): Record<string, (...args: any[]) => any> {
         const functions: Record<string, (...args: any[]) => any> = {};
 
         // key() function - XSLT specific
-        functions['key'] = (keyName: string, keyValue: string) => {
+        // Signature: key(context, keyName, keyValue)
+        functions['key'] = (_context: XPathContext, keyName: string, keyValue: string) => {
             const keyDef = exprContext.keys?.[keyName];
             if (keyDef && keyDef[keyValue]) {
                 const nodeSetValue = keyDef[keyValue];
@@ -283,20 +286,23 @@ class NodeConverter {
         };
 
         // current() function - XSLT specific
-        functions['current'] = () => {
+        // Signature: current(context)
+        functions['current'] = (_context: XPathContext) => {
             const currentNode = exprContext.nodeList[exprContext.position];
             return [this.adaptXNode(currentNode)];
         };
 
         // format-number() function - XSLT specific
-        functions['format-number'] = (number: number, format: string, decimalFormatName?: string) => {
+        // Signature: format-number(context, number, format, decimalFormatName?)
+        functions['format-number'] = (_context: XPathContext, number: number, format: string, decimalFormatName?: string) => {
             const settings = exprContext.decimalFormatSettings;
             // Basic implementation - can be expanded
             return number.toLocaleString();
         };
 
         // xml-to-json() function - XSLT 3.0 specific
-        functions['xml-to-json'] = (nodes: any) => {
+        // Signature: xml-to-json(context, nodes)
+        functions['xml-to-json'] = (_context: XPathContext, nodes: any) => {
             // Check XSLT version - only supported in 3.0
             if (exprContext.xsltVersion !== '3.0') {
                 throw new Error('xml-to-json() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
@@ -313,7 +319,8 @@ class NodeConverter {
         };
 
         // json-to-xml() function - XSLT 3.0 specific
-        functions['json-to-xml'] = (jsonText: any) => {
+        // Signature: json-to-xml(context, jsonText)
+        functions['json-to-xml'] = (_context: XPathContext, jsonText: any) => {
             // Check XSLT version - only supported in 3.0
             if (exprContext.xsltVersion !== '3.0') {
                 throw new Error('json-to-xml() is only supported in XSLT 3.0. Use version="3.0" in your stylesheet.');
