@@ -79,6 +79,33 @@ describe('Template Priority Calculation', () => {
             const priority = calculateDefaultPriority('/', xPath);
             assert.strictEqual(priority, -0.5);
         });
+
+        it('should give priority -0.25 for namespace wildcard ns:*', () => {
+            // Per XSLT spec: "NCName:*" has priority -0.25
+            const priority = calculateDefaultPriority('ns:*', xPath);
+            assert.strictEqual(priority, -0.25);
+        });
+
+        it('should give priority 0 for processing-instruction with literal', () => {
+            // Per XSLT spec: "processing-instruction('name')" has priority 0
+            const priority = calculateDefaultPriority("processing-instruction('xml')", xPath);
+            assert.strictEqual(priority, 0);
+        });
+
+        it('should give priority 0.5 for patterns with predicates', () => {
+            const priority = calculateDefaultPriority('item[@type="book"]', xPath);
+            assert.strictEqual(priority, 0.5);
+        });
+
+        it('should give priority 0.5 for child axis patterns', () => {
+            const priority = calculateDefaultPriority('parent/child', xPath);
+            assert.strictEqual(priority, 0.5);
+        });
+
+        it('should give priority 0.5 for ancestor patterns', () => {
+            const priority = calculateDefaultPriority('ancestor::div', xPath);
+            assert.strictEqual(priority, 0.5);
+        });
     });
 });
 
@@ -264,6 +291,102 @@ describe('Template Conflict Resolution', () => {
             const result = await xsltClass.xsltProcess(xml, xslt);
             // -0.25 > -0.5, so EXPLICIT-NEG wins
             assert.strictEqual(result, 'EXPLICIT-NEG');
+        });
+    });
+
+    describe('Union patterns', () => {
+        it('should calculate priority for highest priority alternative in union pattern', async () => {
+            const xmlString = `<chapter><title>Test</title></chapter>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:apply-templates select="chapter/title"/>
+                    </xsl:template>
+                    <xsl:template match="title|*">UNION</xsl:template>
+                    <xsl:template match="chapter/title">PATH</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // chapter/title has priority 0.5, title|* uses 0 (highest from title, not -0.5 from *)
+            // PATH should win because 0.5 > 0
+            assert.strictEqual(result, 'PATH');
+        });
+    });
+
+    describe('Mode-based template selection', () => {
+        it('should only match templates with matching mode', async () => {
+            const xmlString = `<doc><item>content</item></doc>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="doc">
+                        <result>
+                            <normal><xsl:apply-templates select="item"/></normal>
+                            <special><xsl:apply-templates select="item" mode="special"/></special>
+                        </result>
+                    </xsl:template>
+                    <xsl:template match="item">NORMAL</xsl:template>
+                    <xsl:template match="item" mode="special">SPECIAL</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, '<result><normal>NORMAL</normal><special>SPECIAL</special></result>');
+        });
+    });
+
+    describe('Attribute patterns', () => {
+        it('should handle attribute wildcard @* correctly', async () => {
+            const xmlString = `<item id="123" name="test"/>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item">
+                        <result><xsl:apply-templates select="@*"/></result>
+                    </xsl:template>
+                    <xsl:template match="@*">[ATTR]</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // Should match both @id and @name with @*
+            assert.strictEqual(result, '<result>[ATTR][ATTR]</result>');
+        });
+
+        it('should prefer specific attribute over wildcard', async () => {
+            const xmlString = `<item id="123"/>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item">
+                        <result><xsl:apply-templates select="@id"/></result>
+                    </xsl:template>
+                    <xsl:template match="@*">[ANY]</xsl:template>
+                    <xsl:template match="@id">[ID]</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // @id (priority 0) should win over @* (priority -0.5)
+            assert.strictEqual(result, '<result>[ID]</result>');
         });
     });
 });

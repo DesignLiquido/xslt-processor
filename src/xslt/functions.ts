@@ -46,7 +46,8 @@ function calculateStepPriority(step: any): number {
 
             case 'processing-instruction':
                 // processing-instruction('literal') or processing-instruction()
-                return nodeTest.name ? 0 : -0.5;
+                // The target is stored in nodeTest.target or nodeTest.name
+                return (nodeTest.target || nodeTest.name) ? 0 : -0.5;
 
             case 'name':
                 // Qualified name like foo, ns:foo, @bar
@@ -115,8 +116,19 @@ function calculateLocationPathPriority(expr: LocationExpr): number {
         return 0.5;
     }
 
-    // Single step - calculate based on the step's node test
-    return calculateStepPriority(expr.steps[0]);
+    // Single step - check for explicit axis (other than child/attribute)
+    const step = expr.steps[0];
+    const axis = step.axis;
+
+    // If the pattern uses an explicit axis other than the default (child/attribute),
+    // it's considered a more complex pattern with priority 0.5
+    // Default axes are: child (for elements) and attribute (for @)
+    if (axis && axis !== 'child' && axis !== 'attribute' && axis !== 'self-and-siblings') {
+        return 0.5;
+    }
+
+    // Single step with default axis - calculate based on the step's node test
+    return calculateStepPriority(step);
 }
 
 /**
@@ -158,7 +170,8 @@ function calculateDefaultPriorityFromExpression(expr: Expression, xPath: XPath):
  */
 export function calculateDefaultPriority(pattern: string, xPath: XPath): number {
     try {
-        const expr = xPath.xPathParse(pattern, 'self-and-siblings');
+        // Parse without axis override to preserve original axis for priority calculation
+        const expr = xPath.xPathParse(pattern);
         return calculateDefaultPriorityFromExpression(expr, xPath);
     } catch (e) {
         // If parsing fails, return default priority 0
