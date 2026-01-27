@@ -2,7 +2,7 @@
 // XPath adapter that uses the new lexer/parser implementation
 // while maintaining backward compatibility with the existing XSLT API.
 
-import { XNode } from '../dom';
+import { XNode, xmlValue } from '../dom';
 import { XPathLexer } from './lib/src/lexer';
 import { XPath10Parser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
@@ -574,25 +574,10 @@ class NodeConverter {
             return '""';
         }
 
-        // Text node - return the text content as a JSON string
-        if (node.nodeType === 3) { // TEXT_NODE
-            const text = node.nodeValue || '';
-            return JSON.stringify(text);
-        }
-
-        // Element node - get text content
-        if (node.nodeType === 1) { // ELEMENT_NODE
-            const textContent = this.getTextContent(node);
-            return JSON.stringify(textContent);
-        }
-
-        // Attribute node
-        if (node.nodeType === 2) { // ATTRIBUTE_NODE
-            return JSON.stringify(node.nodeValue || '');
-        }
-
-        // Default
-        return '""';
+        // Use the well-tested xmlValue function which handles all node types correctly
+        // Pass true to disable browser-specific optimizations since we're in Node.js
+        const textContent = xmlValue(node as XNode, true);
+        return JSON.stringify(textContent);
     }
 
     /**

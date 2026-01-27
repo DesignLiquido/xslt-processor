@@ -3,7 +3,7 @@ import assert from 'assert';
 import { Xslt } from '../../src/xslt';
 import { XmlParser } from '../../src/dom';
 import { XPath } from '../../src/xpath';
-import { calculateDefaultPriority } from '../../src/xslt/functions';
+import { calculateDefaultPriority, collectAndExpandTemplates } from '../../src/xslt/functions';
 
 describe('Template Priority Calculation', () => {
     let xPath: XPath;
@@ -388,5 +388,526 @@ describe('Template Conflict Resolution', () => {
             // @id (priority 0) should win over @* (priority -0.5)
             assert.strictEqual(result, '<result>[ID]</result>');
         });
+    });
+
+    describe('Union pattern expansion (XSLT 1.0 Section 5.3)', () => {
+        it('should expand union patterns into separate template rules', async () => {
+            // Per XSLT 1.0 Section 5.3: "If a template rule contains a pattern that is a union
+            // of multiple alternatives, then the rule is equivalent to a set of template rules,
+            // one for each alternative."
+            const xmlString = `<root><foo>Foo</foo><bar>Bar</bar></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <result><xsl:apply-templates select="root/*"/></result>
+                    </xsl:template>
+                    <xsl:template match="foo|bar">[UNION]</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // Both foo and bar should match the union pattern
+            assert.strictEqual(result, '<result>[UNION][UNION]</result>');
+        });
+
+        it('should use correct priority for each union alternative', async () => {
+            // Union pattern "item|*" has alternatives with different priorities:
+            // - "item" has priority 0
+            // - "*" has priority -0.5
+            // When matching an <item>, the "item" alternative (priority 0) should be used
+            const xmlString = `<root><item>Test</item></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <result><xsl:apply-templates select="root/item"/></result>
+                    </xsl:template>
+                    <xsl:template match="item|*">UNION</xsl:template>
+                    <xsl:template match="item" priority="-0.1">SPECIFIC-LOW</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // "item|*" when matching <item> uses priority 0 (from "item" alternative)
+            // SPECIFIC-LOW has priority -0.1
+            // So UNION wins (0 > -0.1)
+            assert.strictEqual(result, '<result>UNION</result>');
+        });
+
+        it('should handle union with path patterns correctly', async () => {
+            const xmlString = `<root><chapter><title>Test</title></chapter></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <xsl:apply-templates select="root/chapter/title"/>
+                    </xsl:template>
+                    <xsl:template match="title|chapter">NAME-MATCH</xsl:template>
+                    <xsl:template match="root/chapter/title">PATH-MATCH</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // "title|chapter" when matching <title> uses priority 0 (from "title")
+            // "root/chapter/title" has priority 0.5 (multi-step)
+            // PATH-MATCH wins (0.5 > 0)
+            assert.strictEqual(result, 'PATH-MATCH');
+        });
+
+        it('should handle union with predicates - each alternative has its own priority', async () => {
+            const xmlString = `<root><item id="1">First</item></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <result><xsl:apply-templates select="root/item[@id='1']"/></result>
+                    </xsl:template>
+                    <xsl:template match="item[@id='1']|other">PREDICATE-UNION</xsl:template>
+                    <xsl:template match="item">SIMPLE-NAME</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // "item[@id='1']|other" when matching item[@id='1'] uses priority 0.5 (predicate)
+            // "item" has priority 0
+            // PREDICATE-UNION wins (0.5 > 0)
+            assert.strictEqual(result, '<result>PREDICATE-UNION</result>');
+        });
+    });
+
+    describe('Template conflict resolution edge cases', () => {
+        it('should select last template when multiple templates have identical priority', async () => {
+            // This tests XSLT 1.0 Section 5.5 behavior for conflicts
+            const xmlString = `<item>content</item>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item">FIRST</xsl:template>
+                    <xsl:template match="item">MIDDLE</xsl:template>
+                    <xsl:template match="item">LAST</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // All have same priority (0), last in document order wins
+            assert.strictEqual(result, 'LAST');
+        });
+
+        it('should handle mixed explicit and default priorities correctly', async () => {
+            const xmlString = `<item>content</item>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item" priority="1">EXPLICIT-HIGH</xsl:template>
+                    <xsl:template match="item">DEFAULT</xsl:template>
+                    <xsl:template match="item" priority="0.5">EXPLICIT-MEDIUM</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // EXPLICIT-HIGH (priority 1) wins
+            assert.strictEqual(result, 'EXPLICIT-HIGH');
+        });
+
+        it('should handle fractional explicit priorities', async () => {
+            const xmlString = `<item>content</item>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item" priority="0.75">THREE-QUARTERS</xsl:template>
+                    <xsl:template match="item" priority="0.5">HALF</xsl:template>
+                    <xsl:template match="item" priority="0.25">QUARTER</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // 0.75 > 0.5 > 0.25
+            assert.strictEqual(result, 'THREE-QUARTERS');
+        });
+
+        it('should handle very large explicit priorities', async () => {
+            const xmlString = `<item>content</item>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item" priority="1000000">MILLION</xsl:template>
+                    <xsl:template match="item" priority="999999">LESS-THAN-MILLION</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, 'MILLION');
+        });
+    });
+
+    describe('Node type pattern priorities', () => {
+        it('should give text() priority -0.5', async () => {
+            const xmlString = `<root>text content</root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="root">
+                        <result><xsl:apply-templates select="text()"/></result>
+                    </xsl:template>
+                    <xsl:template match="text()">[TEXT]</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, '<result>[TEXT]</result>');
+        });
+
+        it('should give comment() priority -0.5', async () => {
+            const xmlString = `<root><!-- a comment --></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="root">
+                        <result><xsl:apply-templates select="comment()"/></result>
+                    </xsl:template>
+                    <xsl:template match="comment()">[COMMENT]</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, '<result>[COMMENT]</result>');
+        });
+
+        it('should give node() priority -0.5', async () => {
+            const xmlString = `<root><item>content</item></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="root">
+                        <result><xsl:apply-templates select="node()"/></result>
+                    </xsl:template>
+                    <xsl:template match="item">ITEM</xsl:template>
+                    <xsl:template match="node()" priority="-1">NODE</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // "item" (priority 0) wins over "node()" (priority -1, explicit)
+            assert.strictEqual(result, '<result>ITEM</result>');
+        });
+    });
+
+    describe('Descendant pattern priorities', () => {
+        it('should give //element priority 0.5', async () => {
+            const xmlString = `<root><nested><item>Test</item></nested></root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <result><xsl:apply-templates select="//item"/></result>
+                    </xsl:template>
+                    <xsl:template match="//item">DESCENDANT</xsl:template>
+                    <xsl:template match="item">SIMPLE</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            // "//item" has priority 0.5, "item" has priority 0
+            // DESCENDANT wins
+            assert.strictEqual(result, '<result>DESCENDANT</result>');
+        });
+    });
+
+    describe('Root pattern handling', () => {
+        it('should match root pattern / correctly', async () => {
+            const xmlString = `<root>content</root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">ROOT-MATCHED</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, 'ROOT-MATCHED');
+        });
+
+        it('should prefer element pattern over root pattern for elements', async () => {
+            // Root "/" matches the document node, not elements
+            const xmlString = `<root>content</root>`;
+
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="/">
+                        <doc><xsl:apply-templates select="*"/></doc>
+                    </xsl:template>
+                    <xsl:template match="root">ELEMENT</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+            assert.strictEqual(result, '<doc>ELEMENT</doc>');
+        });
+    });
+});
+
+describe('Template Collection and Expansion', () => {
+    let xPath: XPath;
+    let xmlParser: XmlParser;
+
+    beforeEach(() => {
+        xPath = new XPath();
+        xmlParser = new XmlParser();
+    });
+
+    describe('collectAndExpandTemplates', () => {
+        it('should expand union patterns into separate template entries', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="foo|bar|baz">CONTENT</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            // Should have 3 entries (one for each alternative in the union)
+            assert.strictEqual(templates.length, 3);
+            assert.strictEqual(templates[0].matchPattern, 'foo');
+            assert.strictEqual(templates[1].matchPattern, 'bar');
+            assert.strictEqual(templates[2].matchPattern, 'baz');
+
+            // All should reference the same template node
+            assert.strictEqual(templates[0].template, templates[1].template);
+            assert.strictEqual(templates[1].template, templates[2].template);
+        });
+
+        it('should calculate individual priorities for each union alternative', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item|*|chapter/title">CONTENT</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            assert.strictEqual(templates.length, 3);
+
+            // "item" has priority 0 (simple name)
+            assert.strictEqual(templates[0].matchPattern, 'item');
+            assert.strictEqual(templates[0].defaultPriority, 0);
+
+            // "*" has priority -0.5 (wildcard)
+            assert.strictEqual(templates[1].matchPattern, '*');
+            assert.strictEqual(templates[1].defaultPriority, -0.5);
+
+            // "chapter/title" has priority 0.5 (multi-step)
+            assert.strictEqual(templates[2].matchPattern, 'chapter/title');
+            assert.strictEqual(templates[2].defaultPriority, 0.5);
+        });
+
+        it('should use explicit priority for all union alternatives', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="foo|*" priority="5">CONTENT</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            assert.strictEqual(templates.length, 2);
+
+            // Both alternatives should have explicit priority 5
+            assert.strictEqual(templates[0].explicitPriority, 5);
+            assert.strictEqual(templates[0].effectivePriority, 5);
+            assert.strictEqual(templates[1].explicitPriority, 5);
+            assert.strictEqual(templates[1].effectivePriority, 5);
+        });
+
+        it('should not expand non-union patterns', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item[@id='a|b']">CONTENT</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            // Should NOT split on | inside quotes
+            assert.strictEqual(templates.length, 1);
+            assert.strictEqual(templates[0].matchPattern, "item[@id='a|b']");
+        });
+
+        it('should filter templates by mode', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item">DEFAULT-MODE</xsl:template>
+                    <xsl:template match="item" mode="special">SPECIAL-MODE</xsl:template>
+                    <xsl:template match="item" mode="other">OTHER-MODE</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            // Default mode should only get templates without mode
+            const defaultTemplates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+            assert.strictEqual(defaultTemplates.length, 1);
+            assert.strictEqual(defaultTemplates[0].template.getAttributeValue('mode'), null);
+
+            // Special mode should get special template
+            const specialTemplates = collectAndExpandTemplates(xslt.documentElement, 'special', xPath);
+            assert.strictEqual(specialTemplates.length, 1);
+            assert.strictEqual(specialTemplates[0].template.getAttributeValue('mode'), 'special');
+        });
+
+        it('should skip named templates (no match attribute)', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="item">MATCHING</xsl:template>
+                    <xsl:template name="myTemplate">NAMED</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            // Should only get the matching template, not the named one
+            assert.strictEqual(templates.length, 1);
+            assert.strictEqual(templates[0].matchPattern, 'item');
+        });
+
+        it('should assign incrementing document order', () => {
+            const xsltString = `<?xml version="1.0"?>
+                <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                    <xsl:template match="first">1</xsl:template>
+                    <xsl:template match="second">2</xsl:template>
+                    <xsl:template match="third|fourth">3-4</xsl:template>
+                </xsl:stylesheet>`;
+
+            const xslt = xmlParser.xmlParse(xsltString);
+            const templates = collectAndExpandTemplates(xslt.documentElement, null, xPath);
+
+            assert.strictEqual(templates.length, 4);
+            assert.strictEqual(templates[0].documentOrder, 0);
+            assert.strictEqual(templates[1].documentOrder, 1);
+            assert.strictEqual(templates[2].documentOrder, 2);  // third
+            assert.strictEqual(templates[3].documentOrder, 3);  // fourth
+        });
+    });
+});
+
+describe('Conflict Detection Behavior', () => {
+    it('should emit warning to console.warn when templates conflict', async () => {
+        const xmlString = `<item>content</item>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="item">FIRST</xsl:template>
+                <xsl:template match="item">SECOND</xsl:template>
+            </xsl:stylesheet>`;
+
+        // Capture console.warn calls
+        const warnings: string[] = [];
+        const originalWarn = console.warn;
+        console.warn = (...args: any[]) => {
+            warnings.push(args.join(' '));
+        };
+
+        try {
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            await xsltClass.xsltProcess(xml, xslt);
+
+            // Check that a warning was emitted
+            const conflictWarning = warnings.find(w => w.includes('Ambiguous template match'));
+            assert.ok(conflictWarning, 'Expected conflict warning to be emitted');
+            assert.ok(conflictWarning.includes('item'), 'Warning should mention the conflicting pattern');
+        } finally {
+            console.warn = originalWarn;
+        }
+    });
+
+    it('should NOT emit warning when templates have different priorities', async () => {
+        const xmlString = `<item>content</item>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="item" priority="1">HIGH</xsl:template>
+                <xsl:template match="item" priority="0">LOW</xsl:template>
+            </xsl:stylesheet>`;
+
+        const warnings: string[] = [];
+        const originalWarn = console.warn;
+        console.warn = (...args: any[]) => {
+            warnings.push(args.join(' '));
+        };
+
+        try {
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            const result = await xsltClass.xsltProcess(xml, xslt);
+
+            // No conflict warning should be emitted
+            const conflictWarning = warnings.find(w => w.includes('Ambiguous template match'));
+            assert.strictEqual(conflictWarning, undefined, 'No conflict warning should be emitted');
+            assert.strictEqual(result, 'HIGH');
+        } finally {
+            console.warn = originalWarn;
+        }
     });
 });

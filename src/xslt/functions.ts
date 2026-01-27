@@ -227,7 +227,37 @@ function isTemplate(node: XNode): boolean {
 }
 
 /**
+ * Calculate priority for a single pattern alternative (non-union).
+ * This is used when expanding union patterns into separate template entries.
+ *
+ * @param pattern Single pattern alternative (should not contain '|' at top level)
+ * @param xPath XPath instance for parsing
+ * @returns The default priority for this single pattern
+ */
+function calculateSinglePatternPriority(pattern: string, xPath: XPath): number {
+    try {
+        const expr = xPath.xPathParse(pattern);
+        // Use the same logic as calculateDefaultPriorityFromExpression but
+        // this should not encounter unions since we've already split them
+        if (expr instanceof LocationExpr) {
+            return calculateLocationPathPriority(expr);
+        }
+        // For other expressions, use 0.5 as they represent complex patterns
+        return 0.5;
+    } catch (e) {
+        return 0;
+    }
+}
+
+/**
  * Collect all templates from the stylesheet with their priority metadata.
+ *
+ * Per XSLT 1.0 Section 5.3: "If a template rule contains a pattern that is a union
+ * of multiple alternatives, then the rule is equivalent to a set of template rules,
+ * one for each alternative."
+ *
+ * This function expands union patterns (like "foo|bar") into separate template
+ * entries, each with the priority of its specific alternative.
  *
  * @param stylesheetElement The root element of the stylesheet (xsl:stylesheet or xsl:transform)
  * @param mode The mode to filter templates by (null for default mode)
@@ -260,10 +290,6 @@ export function collectAndExpandTemplates(
 
         const priorityAttr = child.getAttributeValue('priority');
         const explicitPriority = priorityAttr ? parseFloat(priorityAttr) : null;
-        const defaultPriority = calculateDefaultPriority(match, xPath);
-        const effectivePriority = explicitPriority !== null && !isNaN(explicitPriority)
-            ? explicitPriority
-            : defaultPriority;
 
         // Get import precedence from template source map.
         // XSLT import precedence depends first on import depth (shallower = higher),
@@ -278,15 +304,27 @@ export function collectAndExpandTemplates(
             importPrecedence = depthComponent + orderComponent;
         }
 
-        templates.push({
-            template: child,
-            explicitPriority: explicitPriority !== null && !isNaN(explicitPriority) ? explicitPriority : null,
-            defaultPriority,
-            effectivePriority,
-            importPrecedence,
-            documentOrder: docOrder++,
-            matchPattern: match
-        });
+        // Per XSLT 1.0 Section 5.3, expand union patterns into separate entries
+        // Each alternative gets its own priority calculation
+        const alternatives = splitUnionPattern(match);
+
+        for (const alternative of alternatives) {
+            // Calculate default priority for this specific alternative
+            const defaultPriority = calculateSinglePatternPriority(alternative, xPath);
+            const effectivePriority = explicitPriority !== null && !isNaN(explicitPriority)
+                ? explicitPriority
+                : defaultPriority;
+
+            templates.push({
+                template: child,
+                explicitPriority: explicitPriority !== null && !isNaN(explicitPriority) ? explicitPriority : null,
+                defaultPriority,
+                effectivePriority,
+                importPrecedence,
+                documentOrder: docOrder++,
+                matchPattern: alternative  // Use the individual alternative, not the full union
+            });
+        }
     }
 
     return templates;

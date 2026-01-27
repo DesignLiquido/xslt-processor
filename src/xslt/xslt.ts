@@ -454,19 +454,48 @@ export class Xslt {
         // This is the XSLT 3.0 compliant behavior - only ONE template executes per node.
         for (let j = 0; j < modifiedContext.contextSize(); ++j) {
             const currentNode = modifiedContext.nodeList[j];
-            // If the current node is text, there's no need to test all the templates
-            // against it. Just appending it to its parent is fine.
+            // Handle text nodes - check for templates matching text() first (per XSLT 1.0 spec)
             if (currentNode.nodeType === DOM_TEXT_NODE) {
                 // Check if this whitespace-only text node should be stripped
                 if (!this.xsltPassText(currentNode)) {
                     // Skip whitespace-only text nodes in apply-templates
                     continue;
                 }
-                const textNodeContext = context.clone(
-                    [currentNode],
-                    0
+
+                // Check if there's a template matching text() nodes
+                const textNodeContext = paramContext.clone([currentNode], 0);
+                textNodeContext.inApplyTemplates = true;
+
+                const textSelection = selectBestTemplate(
+                    expandedTemplates,
+                    textNodeContext,
+                    this.matchResolver,
+                    this.xPath
                 );
-                this.commonLogicTextNode(textNodeContext, currentNode, output);
+
+                if (textSelection.selectedTemplate) {
+                    // Execute the matching template for this text node
+                    const metadata = this.templateSourceMap.get(textSelection.selectedTemplate);
+                    const matchPattern = xmlGetAttribute(textSelection.selectedTemplate, 'match');
+                    const modeAttr = xmlGetAttribute(textSelection.selectedTemplate, 'mode');
+
+                    this.currentTemplateStack.push({
+                        template: textSelection.selectedTemplate,
+                        stylesheetDepth: metadata?.importDepth ?? 0,
+                        mode: modeAttr || mode,
+                        match: matchPattern
+                    });
+
+                    try {
+                        await this.xsltChildNodes(textNodeContext, textSelection.selectedTemplate, output);
+                    } finally {
+                        this.currentTemplateStack.pop();
+                    }
+                } else {
+                    // No matching template - use built-in behavior (copy text)
+                    const oldTextNodeContext = context.clone([currentNode], 0);
+                    this.commonLogicTextNode(oldTextNodeContext, currentNode, output);
+                }
             } else {
                 // For non-text nodes, select the BEST matching template based on priority
                 const clonedContext = modifiedContext.clone(
