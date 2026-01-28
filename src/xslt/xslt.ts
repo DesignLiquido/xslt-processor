@@ -34,6 +34,7 @@ import {
     DOM_DOCUMENT_FRAGMENT_NODE,
     DOM_DOCUMENT_NODE,
     DOM_ELEMENT_NODE,
+    DOM_PROCESSING_INSTRUCTION_NODE,
     DOM_TEXT_NODE
 } from '../constants';
 
@@ -1166,19 +1167,19 @@ export class Xslt {
         const groupingSeparator = xmlGetAttribute(template, 'grouping-separator');
         const groupingSize = xmlGetAttribute(template, 'grouping-size');
 
-        let number: number;
+        let numbers: number[];
 
         if (value) {
             // If value attribute is present, evaluate it as an XPath expression
             const result = this.xPath.xPathEval(value, context);
-            number = Math.round(result.numberValue());
+            numbers = [Math.round(result.numberValue())];
         } else {
             // Otherwise, count nodes based on level, count, and from attributes
-            number = this.xsltNumberCount(context, level, count, from);
+            numbers = this.xsltNumberCount(context, level, count, from);
         }
 
-        // Format the number
-        const formattedNumber = this.xsltFormatNumber(number, format, groupingSeparator, groupingSize);
+        // Format the numbers (handles both single and multiple levels)
+        const formattedNumber = this.xsltFormatNumbers(numbers, format, groupingSeparator, groupingSize);
 
         // Create text node with the formatted number
         const textNode = domCreateTextNode(this.outputDocument, formattedNumber);
@@ -1192,10 +1193,10 @@ export class Xslt {
      * @param context The Expression Context.
      * @param level The counting level: 'single', 'multiple', or 'any'.
      * @param count Pattern to match nodes to count.
-     * @param from Pattern to start counting from.
-     * @returns The count value.
+     * @param from Pattern to define counting boundary.
+     * @returns Array of count values (single element for 'single'/'any', multiple for 'multiple').
      */
-    protected xsltNumberCount(context: ExprContext, level: string, count: string | null, from: string | null): number {
+    protected xsltNumberCount(context: ExprContext, level: string, count: string | null, from: string | null): number[] {
         const currentNode = context.nodeList[context.position];
 
         // Default count pattern matches nodes with the same name and type as current node
@@ -1203,59 +1204,124 @@ export class Xslt {
 
         switch (level) {
             case 'single': {
-                // Count preceding siblings (plus 1 for self) that match the count pattern
-                let num = 1;
-                let sibling = currentNode.previousSibling;
-                while (sibling) {
-                    if (sibling.nodeType === currentNode.nodeType) {
-                        if (this.nodeMatchesPattern(sibling, countPattern)) {
-                            num++;
+                // Find the first ancestor-or-self that matches count pattern
+                // If from is specified, stop at the from boundary
+                let node: XNode | null = currentNode;
+                while (node) {
+                    if (this.nodeMatchesPattern(node, countPattern)) {
+                        // Count preceding siblings (plus 1 for self) that match
+                        let num = 1;
+                        let sibling = node.previousSibling;
+                        while (sibling) {
+                            if (this.nodeMatchesPattern(sibling, countPattern)) {
+                                num++;
+                            }
+                            sibling = sibling.previousSibling;
                         }
+                        return [num];
                     }
-                    sibling = sibling.previousSibling;
+                    // Check if we've hit the from boundary
+                    if (from && this.nodeMatchesPattern(node, from)) {
+                        break;
+                    }
+                    node = node.parentNode;
                 }
-                return num;
+                return [0];
             }
             case 'multiple': {
-                // For multiple level, we'd return a sequence - simplified to single value here
-                // Full implementation would return array for hierarchical numbering
-                let num = 1;
-                let sibling = currentNode.previousSibling;
-                while (sibling) {
-                    if (sibling.nodeType === currentNode.nodeType) {
+                // Build hierarchical number by walking up ancestor chain
+                // Each level counts position among siblings matching count pattern
+                const numbers: number[] = [];
+                let node: XNode | null = currentNode;
+
+                // First, collect all ancestors matching count pattern (up to from boundary)
+                const matchingAncestors: XNode[] = [];
+                while (node) {
+                    if (this.nodeMatchesPattern(node, countPattern)) {
+                        matchingAncestors.push(node);
+                    }
+                    // Check if we've hit the from boundary
+                    if (from && this.nodeMatchesPattern(node, from)) {
+                        break;
+                    }
+                    node = node.parentNode;
+                }
+
+                // Process from outermost to innermost (reverse order)
+                for (let i = matchingAncestors.length - 1; i >= 0; i--) {
+                    const ancestor = matchingAncestors[i];
+                    let num = 1;
+                    let sibling = ancestor.previousSibling;
+                    while (sibling) {
                         if (this.nodeMatchesPattern(sibling, countPattern)) {
                             num++;
                         }
+                        sibling = sibling.previousSibling;
                     }
-                    sibling = sibling.previousSibling;
+                    numbers.push(num);
                 }
-                return num;
+
+                return numbers.length > 0 ? numbers : [0];
             }
             case 'any': {
                 // Count all preceding nodes in document order that match
-                let num = 1;
-                const allNodes = this.getAllPrecedingNodes(currentNode);
+                // If from is specified, only count nodes after the from boundary
+                let num = 0;
+                const allNodes = this.getAllPrecedingNodes(currentNode, from);
+
+                // Count self if it matches
+                if (this.nodeMatchesPattern(currentNode, countPattern)) {
+                    num = 1;
+                }
+
                 for (const node of allNodes) {
                     if (this.nodeMatchesPattern(node, countPattern)) {
                         num++;
                     }
                 }
-                return num;
+                return [num];
             }
             default:
-                return 1;
+                return [1];
         }
     }
 
     /**
-     * Checks if a node matches a simple name pattern.
+     * Checks if a node matches a pattern (supports simple names and union patterns).
      * @param node The node to check.
-     * @param pattern The pattern (node name) to match.
+     * @param pattern The pattern (node name, wildcard, or union like "a|b|c").
      * @returns True if the node matches.
      */
     protected nodeMatchesPattern(node: XNode, pattern: string): boolean {
+        // Handle union patterns (e.g., "chapter|section|para")
+        if (pattern.includes('|')) {
+            const alternatives = pattern.split('|').map(p => p.trim());
+            return alternatives.some(alt => this.nodeMatchesSinglePattern(node, alt));
+        }
+        return this.nodeMatchesSinglePattern(node, pattern);
+    }
+
+    /**
+     * Checks if a node matches a single (non-union) pattern.
+     * @param node The node to check.
+     * @param pattern The pattern (node name or wildcard).
+     * @returns True if the node matches.
+     */
+    protected nodeMatchesSinglePattern(node: XNode, pattern: string): boolean {
         if (pattern === '*') {
             return node.nodeType === DOM_ELEMENT_NODE;
+        }
+        if (pattern === 'node()') {
+            return true;
+        }
+        if (pattern === 'text()') {
+            return node.nodeType === DOM_TEXT_NODE;
+        }
+        if (pattern === 'comment()') {
+            return node.nodeType === DOM_COMMENT_NODE;
+        }
+        if (pattern.startsWith('processing-instruction')) {
+            return node.nodeType === DOM_PROCESSING_INSTRUCTION_NODE;
         }
         return node.nodeName === pattern || node.localName === pattern;
     }
@@ -1263,14 +1329,21 @@ export class Xslt {
     /**
      * Gets all nodes preceding the given node in document order.
      * @param node The reference node.
+     * @param fromPattern Optional pattern to define counting boundary.
      * @returns Array of preceding nodes.
      */
-    protected getAllPrecedingNodes(node: XNode): XNode[] {
+    protected getAllPrecedingNodes(node: XNode, fromPattern: string | null = null): XNode[] {
         const result: XNode[] = [];
 
         // Get preceding siblings
         let sibling = node.previousSibling;
         while (sibling) {
+            // Check if we've hit the from boundary
+            if (fromPattern && this.nodeMatchesPattern(sibling, fromPattern)) {
+                // Include descendants after the from boundary element
+                this.collectDescendants(sibling, result);
+                return result;
+            }
             result.push(sibling);
             // Add descendants of preceding siblings
             this.collectDescendants(sibling, result);
@@ -1280,8 +1353,18 @@ export class Xslt {
         // Get ancestors' preceding siblings
         let parent = node.parentNode;
         while (parent) {
+            // Check if parent matches from pattern (stop here)
+            if (fromPattern && this.nodeMatchesPattern(parent, fromPattern)) {
+                return result;
+            }
+
             let parentSibling = parent.previousSibling;
             while (parentSibling) {
+                // Check if we've hit the from boundary
+                if (fromPattern && this.nodeMatchesPattern(parentSibling, fromPattern)) {
+                    this.collectDescendants(parentSibling, result);
+                    return result;
+                }
                 result.push(parentSibling);
                 this.collectDescendants(parentSibling, result);
                 parentSibling = parentSibling.previousSibling;
@@ -1304,6 +1387,107 @@ export class Xslt {
                 this.collectDescendants(child, result);
             }
         }
+    }
+
+    /**
+     * Formats an array of numbers according to the format string.
+     * For level="multiple", numbers like [1, 2, 3] with format "1.1.1" produce "1.2.3".
+     * @param numbers The numbers to format.
+     * @param format The format string (e.g., "1", "1.1", "1.a.i").
+     * @param groupingSeparator Optional grouping separator.
+     * @param groupingSize Optional grouping size.
+     * @returns The formatted number string.
+     */
+    protected xsltFormatNumbers(
+        numbers: number[],
+        format: string,
+        groupingSeparator: string | null,
+        groupingSize: string | null
+    ): string {
+        if (numbers.length === 0) return '0';
+
+        // Parse the format string to extract format tokens and separators
+        // Format like "1.a.i" has tokens ["1", "a", "i"] with separator "."
+        const { tokens, separators } = this.parseFormatString(format);
+
+        const formattedParts: string[] = [];
+        for (let i = 0; i < numbers.length; i++) {
+            // Use corresponding token, or last token if we run out
+            const tokenIndex = Math.min(i, tokens.length - 1);
+            const token = tokens[tokenIndex] || '1';
+            const formatted = this.xsltFormatNumber(numbers[i], token, groupingSeparator, groupingSize);
+            formattedParts.push(formatted);
+        }
+
+        // Join with separators
+        if (formattedParts.length === 1) {
+            return formattedParts[0];
+        }
+
+        let result = formattedParts[0];
+        for (let i = 1; i < formattedParts.length; i++) {
+            // Use corresponding separator, or last separator if we run out
+            const sepIndex = Math.min(i - 1, separators.length - 1);
+            const sep = separators.length > 0 ? separators[sepIndex] : '.';
+            result += sep + formattedParts[i];
+        }
+
+        return result;
+    }
+
+    /**
+     * Parses a format string into tokens and separators.
+     * E.g., "1.a.i" -> tokens: ["1", "a", "i"], separators: [".", "."]
+     * @param format The format string.
+     * @returns Object with tokens and separators arrays.
+     */
+    protected parseFormatString(format: string): { tokens: string[]; separators: string[] } {
+        const tokens: string[] = [];
+        const separators: string[] = [];
+
+        // Format tokens are: 1, 01, 001, a, A, i, I, or sequences like 0001
+        // Everything else is a separator
+        const tokenRegex = /^(0*1|[aAiI])/;
+        let remaining = format;
+        let lastWasToken = false;
+
+        while (remaining.length > 0) {
+            const match = remaining.match(tokenRegex);
+            if (match) {
+                tokens.push(match[1]);
+                remaining = remaining.substring(match[1].length);
+                lastWasToken = true;
+            } else {
+                // This character is a separator
+                if (lastWasToken && tokens.length > 0) {
+                    // Find separator until next token or end
+                    let sepEnd = 1;
+                    while (sepEnd < remaining.length && !remaining.substring(sepEnd).match(tokenRegex)) {
+                        sepEnd++;
+                    }
+                    separators.push(remaining.substring(0, sepEnd));
+                    remaining = remaining.substring(sepEnd);
+                } else {
+                    // Leading separator or continuation - skip one char
+                    remaining = remaining.substring(1);
+                }
+                lastWasToken = false;
+            }
+        }
+
+        // Default to "1" if no tokens found
+        if (tokens.length === 0) {
+            tokens.push('1');
+        }
+
+        // Default separator is "."
+        if (separators.length === 0 && tokens.length > 1) {
+            for (let i = 1; i < tokens.length; i++) {
+                separators.push('.');
+            }
+        }
+
+        return { tokens, separators };
     }
 
     /**

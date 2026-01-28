@@ -400,31 +400,26 @@ Create a detailed compliance matrix mapping:
 
 This section documents specific edge cases that are known to be incomplete or untested.
 
-### 1. xsl:number Formatting (Phase 2.1) - PARTIALLY COMPLETE
+### 1. xsl:number Formatting (Phase 2.1) - ✅ COMPLETED
 
-**What's Implemented**:
+**All Features Now Implemented**:
 | Feature | Status | Details |
 |---------|--------|---------|
 | `value` attribute | ✅ Implemented | XPath expressions supported |
-| `format="1"` (decimal) | ✅ Implemented | Default format |
+| `format="1"` (decimal) | ✅ Implemented | Default format, zero-padding (01, 001) |
 | `format="A"` (uppercase alpha) | ✅ Implemented | A, B, ..., Z, AA, AB, ... |
 | `format="a"` (lowercase alpha) | ✅ Implemented | a, b, ..., z, aa, ab, ... |
 | `format="I"` (uppercase Roman) | ✅ Implemented | I, II, III, IV, ... |
 | `format="i"` (lowercase Roman) | ✅ Implemented | i, ii, iii, iv, ... |
 | `level="single"` | ✅ Implemented | Counts preceding siblings |
+| `level="multiple"` | ✅ Implemented | Hierarchical numbering (1.2.3) |
+| `level="any"` | ✅ Implemented | Document-wide counting |
+| `from` pattern | ✅ Implemented | Counting boundary for all levels |
+| `grouping-separator` | ✅ Implemented | Number grouping (1,000,000) |
+| `grouping-size` | ✅ Implemented | Grouping chunk size |
+| Mixed format tokens | ✅ Implemented | Formats like "1.a.i" |
 
-**What's Missing**:
-| Feature | Status | Reason |
-|---------|--------|--------|
-| `level="multiple"` | ❌ Not implemented | Requires walking ancestor axis and building number sequence |
-| `level="any"` | ❌ Not implemented | Requires counting all preceding nodes in document order |
-| `from` pattern | ❌ Not implemented | Requires ancestor search to reset counting |
-| `grouping-separator` | ❌ Not implemented | Requires number formatting with separators |
-| `grouping-size` | ❌ Not implemented | Requires chunking digits |
-
-**Test Coverage**: 6 tests in `message-number-namespace.test.ts` verify implemented features.
-
-**Complexity**: Medium. Remaining features are less commonly used.
+**Test Coverage**: 12 tests in `message-number-namespace.test.ts` verify all features.
 
 ### 2. xsl:import Complex Hierarchies (Phase 2.2) - PARTIALLY SOLVED
 
@@ -575,7 +570,7 @@ Complete list of XSLT 1.0 elements with implementation status:
 | 17 | `xsl:key` | ✅ | Fully implemented |
 | 18 | `xsl:message` | ✅ | Tested: basic, dynamic content, terminate |
 | 19 | `xsl:namespace-alias` | ✅ | Basic implementation, #default untested |
-| 20 | `xsl:number` | ⚠️ | value ✅, format A/a/I/i ✅, level=single ✅, level=multiple/any ❌, from ❌, grouping ❌ |
+| 20 | `xsl:number` | ✅ | All features: value, format, level (single/multiple/any), from, grouping |
 | 21 | `xsl:otherwise` | ✅ | Fully implemented |
 | 22 | `xsl:output` | ✅ | Fully implemented |
 | 23 | `xsl:param` | ✅ | Fully implemented |

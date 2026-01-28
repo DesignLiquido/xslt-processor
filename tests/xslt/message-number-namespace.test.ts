@@ -250,6 +250,170 @@ describe('xsl:number', () => {
         assert.ok(outXmlString.includes('2. second'));
         assert.ok(outXmlString.includes('3. third'));
     });
+
+    it('Number with level="multiple" for hierarchical numbering', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<book>
+    <chapter>
+        <section>
+            <para>First para in 1.1</para>
+            <para>Second para in 1.1</para>
+        </section>
+        <section>
+            <para>First para in 1.2</para>
+        </section>
+    </chapter>
+    <chapter>
+        <section>
+            <para>First para in 2.1</para>
+        </section>
+    </chapter>
+</book>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:template match="book">
+        <result><xsl:apply-templates select="//para"/></result>
+    </xsl:template>
+    <xsl:template match="para">
+        <p><xsl:number level="multiple" count="chapter|section|para" format="1.1.1"/>: <xsl:value-of select="."/></p>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        // Should produce hierarchical numbers like 1.1.1, 1.1.2, 1.2.1, 2.1.1
+        assert.ok(outXmlString.includes('1.1.1'), 'Should have 1.1.1');
+        assert.ok(outXmlString.includes('1.1.2'), 'Should have 1.1.2');
+        assert.ok(outXmlString.includes('1.2.1'), 'Should have 1.2.1');
+        assert.ok(outXmlString.includes('2.1.1'), 'Should have 2.1.1');
+    });
+
+    it('Number with level="any" counts all matching preceding nodes', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<doc>
+    <chapter><para>Para 1</para><para>Para 2</para></chapter>
+    <chapter><para>Para 3</para></chapter>
+    <chapter><para>Para 4</para><para>Para 5</para></chapter>
+</doc>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:template match="doc">
+        <result><xsl:apply-templates select="//para"/></result>
+    </xsl:template>
+    <xsl:template match="para">
+        <p><xsl:number level="any" count="para"/>: <xsl:value-of select="."/></p>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        // Should count all paras in document order: 1, 2, 3, 4, 5
+        assert.ok(outXmlString.includes('>1:'), 'Should have para 1');
+        assert.ok(outXmlString.includes('>2:'), 'Should have para 2');
+        assert.ok(outXmlString.includes('>3:'), 'Should have para 3');
+        assert.ok(outXmlString.includes('>4:'), 'Should have para 4');
+        assert.ok(outXmlString.includes('>5:'), 'Should have para 5');
+    });
+
+    it('Number with from pattern resets counting', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<doc>
+    <chapter><para>A</para><para>B</para></chapter>
+    <chapter><para>C</para><para>D</para></chapter>
+</doc>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:template match="doc">
+        <result><xsl:apply-templates select="//para"/></result>
+    </xsl:template>
+    <xsl:template match="para">
+        <p><xsl:number level="any" count="para" from="chapter"/>: <xsl:value-of select="."/></p>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        // With from="chapter", counting resets at each chapter: 1, 2, 1, 2
+        assert.ok(outXmlString.includes('>1: A'), 'First para in ch1 should be 1');
+        assert.ok(outXmlString.includes('>2: B'), 'Second para in ch1 should be 2');
+        assert.ok(outXmlString.includes('>1: C'), 'First para in ch2 should be 1');
+        assert.ok(outXmlString.includes('>2: D'), 'Second para in ch2 should be 2');
+    });
+
+    it('Number with grouping-separator and grouping-size', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<root><item>test</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+        <result>
+            <n1><xsl:number value="1000" grouping-separator="," grouping-size="3"/></n1>
+            <n2><xsl:number value="1000000" grouping-separator="," grouping-size="3"/></n2>
+            <n3><xsl:number value="12345678" grouping-separator=" " grouping-size="3"/></n3>
+        </result>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.ok(outXmlString.includes('1,000'), 'Should format 1000 as 1,000');
+        assert.ok(outXmlString.includes('1,000,000'), 'Should format 1000000 as 1,000,000');
+        assert.ok(outXmlString.includes('12 345 678'), 'Should format 12345678 with spaces');
+    });
+
+    it('Number with mixed format tokens (1.a.i)', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<book>
+    <chapter>
+        <section>
+            <subsection>Content</subsection>
+        </section>
+    </chapter>
+</book>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:template match="book">
+        <result><xsl:apply-templates select="//subsection"/></result>
+    </xsl:template>
+    <xsl:template match="subsection">
+        <item><xsl:number level="multiple" count="chapter|section|subsection" format="1.a.i"/></item>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        // Should format as "1.a.i" (chapter 1, section a, subsection i)
+        assert.ok(outXmlString.includes('1.a.i'), 'Should have mixed format 1.a.i');
+    });
 });
 
 describe('xsl:namespace-alias', () => {
