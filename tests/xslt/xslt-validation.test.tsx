@@ -64,7 +64,9 @@ describe('xslt-validation', () => {
             assert.strictEqual(xsltClass.version, '3.0');
         });
 
-        it('should reject invalid version attribute', async () => {
+        it('should enter forwards-compatible mode for unknown version (2.5)', async () => {
+            // Per XSLT 1.0 Section 2.5, versions > 1.0 that aren't explicitly supported
+            // should enter forwards-compatible processing mode
             const xmlString = `<root/>`;
             const xsltString = `<xsl:stylesheet version="2.5" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:template match="/">
@@ -77,13 +79,39 @@ describe('xslt-validation', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            // Should throw an error
+            // Suppress warning for test
+            const originalWarn = console.warn;
+            console.warn = () => {};
+
+            try {
+                // Should NOT throw - should enter forwards-compatible mode
+                await xsltClass.xsltProcess(xml, xslt);
+                assert.strictEqual(xsltClass.forwardsCompatible, true);
+                assert.strictEqual(xsltClass.version, '2.5');
+            } finally {
+                console.warn = originalWarn;
+            }
+        });
+
+        it('should reject truly invalid version (non-numeric)', async () => {
+            const xmlString = `<root/>`;
+            const xsltString = `<xsl:stylesheet version="invalid" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <output />
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            // Should throw an error for non-numeric version
             try {
                 await xsltClass.xsltProcess(xml, xslt);
                 assert.fail('Should have thrown an error for invalid version');
             } catch (e: any) {
                 assert(e.message.includes('XSLT version not defined or invalid'));
-                assert(e.message.includes('2.5'));
             }
         });
 
@@ -321,7 +349,9 @@ describe('xslt-validation', () => {
     });
 
     describe('Multiple validations', () => {
-        it('should combine version and id validation', async () => {
+        it('should catch id validation error even with unknown version (forwards-compatible)', async () => {
+            // Per XSLT 1.0 Section 2.5, version "1.5" enters forwards-compatible mode
+            // but id validation still happens and should catch the invalid id
             const xmlString = `<root/>`;
             const xsltString = `<xsl:stylesheet version="1.5" id="123invalid" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:template match="/">
@@ -334,13 +364,42 @@ describe('xslt-validation', () => {
             const xml = xmlParser.xmlParse(xmlString);
             const xslt = xmlParser.xmlParse(xsltString);
 
-            // Should throw error (first validation failure is version)
+            // Suppress forwards-compatible warning
+            const originalWarn = console.warn;
+            console.warn = () => {};
+
+            try {
+                // Should throw error for invalid id (version 1.5 enters FC mode, id is still validated)
+                await xsltClass.xsltProcess(xml, xslt);
+                assert.fail('Should have thrown validation error');
+            } catch (e: any) {
+                // Should catch on invalid id
+                assert(e.message.includes('Invalid id attribute'));
+            } finally {
+                console.warn = originalWarn;
+            }
+        });
+
+        it('should throw version error for truly invalid version before checking id', async () => {
+            const xmlString = `<root/>`;
+            const xsltString = `<xsl:stylesheet version="-1" id="123invalid" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <output />
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+
+            // Should throw error for invalid version first
             try {
                 await xsltClass.xsltProcess(xml, xslt);
                 assert.fail('Should have thrown validation error');
             } catch (e: any) {
                 // Should catch on version (first validation in order)
-                assert(e.message.includes('XSLT version'));
+                assert(e.message.includes('XSLT version not defined or invalid'));
             }
         });
     });

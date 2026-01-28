@@ -113,6 +113,16 @@ export class Xslt {
     firstTemplateRan: boolean;
 
     /**
+     * Forwards-compatible processing mode (XSLT 1.0 Section 2.5).
+     * When true, the processor is running a stylesheet with version > 1.0.
+     * In this mode:
+     * - Unknown top-level elements are silently ignored
+     * - Unknown XSLT instructions use xsl:fallback if available, otherwise are ignored
+     * - Unknown attributes on XSLT elements are ignored
+     */
+    forwardsCompatible: boolean;
+
+    /**
      * List of element name patterns from xsl:strip-space declarations.
      * Whitespace-only text nodes inside matching elements will be stripped.
      */
@@ -206,6 +216,7 @@ export class Xslt {
             patternSeparator: ';'
         };
         this.firstTemplateRan = false;
+        this.forwardsCompatible = false;
     }
 
     /**
@@ -412,9 +423,51 @@ export class Xslt {
                     // it means the element was used outside of those contexts.
                     throw new Error(`<xsl:with-param> must be a child of <xsl:call-template> or <xsl:apply-templates>.`);
                 default:
-                    throw new Error(`error if here: ${template.localName}`);
+                    // Unknown XSLT element - handle according to forwards-compatible mode (Section 2.5)
+                    await this.xsltUnknownInstruction(context, template, output);
             }
         }
+    }
+
+    /**
+     * Handle unknown XSLT instructions per XSLT 1.0 Section 2.5 (Forwards-Compatible Processing).
+     *
+     * In forwards-compatible mode (version > 1.0):
+     * - If the instruction has an xsl:fallback child, execute the fallback
+     * - Otherwise, the instruction is silently ignored
+     *
+     * In strict mode (version = 1.0):
+     * - Unknown instructions are an error
+     *
+     * @param context The Expression Context
+     * @param template The unknown XSLT instruction element
+     * @param output The output node
+     */
+    protected async xsltUnknownInstruction(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        const elementName = `xsl:${template.localName}`;
+
+        if (this.forwardsCompatible) {
+            // Forwards-compatible mode: look for xsl:fallback child
+            const fallback = this.getFallbackElement(template);
+
+            if (fallback) {
+                // Execute the fallback content
+                await this.xsltChildNodes(context, fallback, output);
+            }
+            // If no fallback, silently ignore the unknown instruction
+            // (Per XSLT 1.0 Section 2.5: "if the instruction element...does not have
+            // an xsl:fallback child element, then the XSLT element is instantiated
+            // by instantiating each of its children that is in the XSLT namespace")
+            return;
+        }
+
+        // Strict mode: unknown instruction is an error
+        throw new Error(
+            `Unknown XSLT instruction: <${elementName}>. ` +
+            `This element is not supported in XSLT 1.0. ` +
+            `If this is a future XSLT version feature, use version="2.0" or higher ` +
+            `to enable forwards-compatible processing mode.`
+        );
     }
 
     /**
@@ -1614,16 +1667,35 @@ export class Xslt {
                 continue;
             }
 
-            // Handle version attribute
+            // Handle version attribute (XSLT 1.0 Section 2.5)
             if (nodeName === 'version') {
                 versionFound = true;
-                if (!['1.0', '2.0', '3.0'].includes(nodeValue)) {
+
+                // Parse version as a number for comparison
+                const versionNum = parseFloat(nodeValue);
+
+                if (isNaN(versionNum) || versionNum <= 0) {
                     throw new Error(
                         `XSLT version not defined or invalid. Actual resolved version: ${nodeValue || '(none)'}.`
                     );
                 }
-                this.version = nodeValue;
-                context.xsltVersion = nodeValue as any;
+
+                // XSLT 1.0 Section 2.5: Forwards-Compatible Processing
+                // If the version is greater than what we support (1.0), enter forwards-compatible mode
+                // This allows stylesheets written for future versions to be processed with graceful fallback
+                if (versionNum > 1.0 && !['2.0', '3.0'].includes(nodeValue)) {
+                    this.forwardsCompatible = true;
+                    // Treat as 1.0 for processing but remember original version
+                    this.version = nodeValue;
+                    context.xsltVersion = '1.0';
+                    console.warn(
+                        `XSLT Warning: Stylesheet version "${nodeValue}" is not directly supported. ` +
+                        `Entering forwards-compatible processing mode (XSLT 1.0 Section 2.5).`
+                    );
+                } else {
+                    this.version = nodeValue;
+                    context.xsltVersion = nodeValue as any;
+                }
                 continue;
             }
 
