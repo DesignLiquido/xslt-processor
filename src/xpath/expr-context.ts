@@ -82,6 +82,24 @@ export class ExprContext {
     baseTemplateMatched: boolean;
 
     /**
+     * Regex groups from xsl:analyze-string for regex-group() function.
+     * Index 0 is the full match, 1+ are captured groups.
+     */
+    regexGroups?: string[];
+
+    /**
+     * Current group from xsl:for-each-group for current-group() function.
+     * Contains the nodes/items in the current group being processed.
+     */
+    currentGroup?: XNode[];
+
+    /**
+     * Current grouping key from xsl:for-each-group for current-grouping-key() function.
+     * Contains the key value of the current group being processed.
+     */
+    currentGroupingKey?: any;
+
+    /**
      * Constructor -- gets the node, its position, the node set it
      * belongs to, and a parent context as arguments. The parent context
      * is used to implement scoping rules for variables: if a variable
@@ -214,6 +232,24 @@ export class ExprContext {
         }
 
         return null;
+    }
+
+    /**
+     * Gets a regex group from xsl:analyze-string context.
+     * Searches up the parent chain for regexGroups.
+     * @param index Group index (0 = full match, 1+ = captured groups)
+     * @returns The group value or empty string if not found
+     */
+    getRegexGroup(index: number): string {
+        if (this.regexGroups && index >= 0 && index < this.regexGroups.length) {
+            return this.regexGroups[index] ?? '';
+        }
+
+        if (this.parent) {
+            return this.parent.getRegexGroup(index);
+        }
+
+        return '';
     }
 
     setNode(position: number) {

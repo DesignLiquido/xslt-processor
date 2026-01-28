@@ -291,6 +291,9 @@ export class Xslt {
                 case 'apply-templates':
                     await this.xsltApplyTemplates(context, template, output);
                     break;
+                case 'analyze-string':
+                    await this.xsltAnalyzeString(context, template, output);
+                    break;
                 case 'attribute':
                     await this.xsltAttribute(context, template, output);
                     break;
@@ -354,6 +357,9 @@ export class Xslt {
                 case 'for-each':
                     await this.xsltForEach(context, template, output);
                     break;
+                case 'for-each-group':
+                    await this.xsltForEachGroup(context, template, output);
+                    break;
                 case 'if':
                     await this.xsltIf(context, template, output);
                     break;
@@ -366,12 +372,18 @@ export class Xslt {
                 case 'key':
                     this.xsltKey(context, template);
                     break;
+                case 'matching-substring':
+                    // xsl:matching-substring is handled inside xsltAnalyzeString.
+                    throw new Error(`<xsl:matching-substring> must be a child of <xsl:analyze-string>.`);
                 case 'message':
                     await this.xsltMessage(context, template);
                     break;
                 case 'namespace-alias':
                     this.xsltNamespaceAlias(template);
                     break;
+                case 'non-matching-substring':
+                    // xsl:non-matching-substring is handled inside xsltAnalyzeString.
+                    throw new Error(`<xsl:non-matching-substring> must be a child of <xsl:analyze-string>.`);
                 case 'number':
                     this.xsltNumber(context, template, output);
                     break;
@@ -957,6 +969,213 @@ export class Xslt {
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             await this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output);
         }
+    }
+
+    /**
+     * Implements `xsl:for-each-group` (XSLT 2.0).
+     *
+     * Groups items from the select expression and processes each group.
+     * Supports group-by and group-adjacent grouping methods.
+     *
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltForEachGroup(context: ExprContext, template: XNode, output?: XNode) {
+        const select = xmlGetAttribute(template, 'select');
+        const groupBy = xmlGetAttribute(template, 'group-by');
+        const groupAdjacent = xmlGetAttribute(template, 'group-adjacent');
+        const groupStartingWith = xmlGetAttribute(template, 'group-starting-with');
+        const groupEndingWith = xmlGetAttribute(template, 'group-ending-with');
+
+        if (!select) {
+            throw new Error('<xsl:for-each-group> requires a select attribute.');
+        }
+
+        // Check that exactly one grouping method is specified
+        const groupingMethods = [groupBy, groupAdjacent, groupStartingWith, groupEndingWith].filter(m => m);
+        if (groupingMethods.length === 0) {
+            throw new Error('<xsl:for-each-group> requires one of: group-by, group-adjacent, group-starting-with, or group-ending-with.');
+        }
+        if (groupingMethods.length > 1) {
+            throw new Error('<xsl:for-each-group> can only have one grouping method.');
+        }
+
+        // Get the items to group
+        const items = this.xPath.xPathEval(select, context).nodeSetValue();
+        if (items.length === 0) {
+            return;
+        }
+
+        // Build groups based on the grouping method
+        let groups: { key: any; items: XNode[] }[];
+
+        if (groupBy) {
+            groups = this.groupByKey(items, groupBy, context);
+        } else if (groupAdjacent) {
+            groups = this.groupAdjacent(items, groupAdjacent, context);
+        } else if (groupStartingWith) {
+            groups = this.groupStartingWith(items, groupStartingWith, context);
+        } else if (groupEndingWith) {
+            groups = this.groupEndingWith(items, groupEndingWith, context);
+        } else {
+            return; // Should not reach here
+        }
+
+        // Process each group
+        for (let i = 0; i < groups.length; i++) {
+            const group = groups[i];
+            // Create context with first item of group as context node
+            const groupContext = context.clone(group.items, 0);
+            // Set current group and grouping key for current-group() and current-grouping-key() functions
+            groupContext.currentGroup = group.items;
+            groupContext.currentGroupingKey = group.key;
+
+            await this.xsltChildNodes(groupContext, template, output);
+        }
+    }
+
+    /**
+     * Group items by a computed key value.
+     * Items with the same key are placed in the same group.
+     */
+    private groupByKey(items: XNode[], keyExpr: string, context: ExprContext): { key: any; items: XNode[] }[] {
+        const groupMap = new Map<string, { key: any; items: XNode[] }>();
+        const groupOrder: string[] = []; // Maintain insertion order
+
+        for (const item of items) {
+            const itemContext = context.clone([item], 0);
+            const keyValue = this.xPath.xPathEval(keyExpr, itemContext);
+            const keyString = keyValue.stringValue();
+
+            if (!groupMap.has(keyString)) {
+                groupMap.set(keyString, { key: keyString, items: [] });
+                groupOrder.push(keyString);
+            }
+            groupMap.get(keyString)!.items.push(item);
+        }
+
+        // Return groups in order of first occurrence
+        return groupOrder.map(key => groupMap.get(key)!);
+    }
+
+    /**
+     * Group adjacent items with the same key.
+     * A new group starts when the key changes.
+     */
+    private groupAdjacent(items: XNode[], keyExpr: string, context: ExprContext): { key: any; items: XNode[] }[] {
+        const groups: { key: any; items: XNode[] }[] = [];
+        let currentKey: string | null = null;
+        let currentGroup: XNode[] = [];
+
+        for (const item of items) {
+            const itemContext = context.clone([item], 0);
+            const keyValue = this.xPath.xPathEval(keyExpr, itemContext);
+            const keyString = keyValue.stringValue();
+
+            if (currentKey === null || keyString !== currentKey) {
+                // Start a new group
+                if (currentGroup.length > 0) {
+                    groups.push({ key: currentKey, items: currentGroup });
+                }
+                currentKey = keyString;
+                currentGroup = [item];
+            } else {
+                // Add to current group
+                currentGroup.push(item);
+            }
+        }
+
+        // Don't forget the last group
+        if (currentGroup.length > 0) {
+            groups.push({ key: currentKey, items: currentGroup });
+        }
+
+        return groups;
+    }
+
+    /**
+     * Convert an XSLT pattern to a self:: expression for matching against the current node.
+     * For example, "h1" becomes "self::h1", "section[@type]" becomes "self::section[@type]".
+     */
+    private patternToSelfExpression(pattern: string): string {
+        // If it already uses an axis or is a complex expression, wrap it appropriately
+        if (pattern.includes('::') || pattern.startsWith('/') || pattern.startsWith('(')) {
+            // Already has an axis or is an absolute/complex path
+            return pattern;
+        }
+        // For simple patterns like "h1" or "section", prepend self::
+        return `self::${pattern}`;
+    }
+
+    /**
+     * Group items starting with items that match a pattern.
+     * A new group starts when an item matches the pattern.
+     */
+    private groupStartingWith(items: XNode[], pattern: string, context: ExprContext): { key: any; items: XNode[] }[] {
+        const groups: { key: any; items: XNode[] }[] = [];
+        let currentGroup: XNode[] = [];
+        let groupIndex = 0;
+        // Convert pattern to self:: expression for proper matching
+        const selfPattern = this.patternToSelfExpression(pattern);
+
+        for (const item of items) {
+            const itemContext = context.clone([item], 0);
+            // Check if item matches the pattern
+            const matches = this.xPath.xPathEval(selfPattern, itemContext).booleanValue();
+
+            if (matches && currentGroup.length > 0) {
+                // Start a new group (save previous)
+                groups.push({ key: groupIndex++, items: currentGroup });
+                currentGroup = [item];
+            } else if (matches && currentGroup.length === 0) {
+                // First item starts a new group
+                currentGroup = [item];
+            } else {
+                // Add to current group
+                currentGroup.push(item);
+            }
+        }
+
+        // Don't forget the last group
+        if (currentGroup.length > 0) {
+            groups.push({ key: groupIndex, items: currentGroup });
+        }
+
+        return groups;
+    }
+
+    /**
+     * Group items ending with items that match a pattern.
+     * A group ends when an item matches the pattern.
+     */
+    private groupEndingWith(items: XNode[], pattern: string, context: ExprContext): { key: any; items: XNode[] }[] {
+        const groups: { key: any; items: XNode[] }[] = [];
+        let currentGroup: XNode[] = [];
+        let groupIndex = 0;
+        // Convert pattern to self:: expression for proper matching
+        const selfPattern = this.patternToSelfExpression(pattern);
+
+        for (const item of items) {
+            currentGroup.push(item);
+
+            const itemContext = context.clone([item], 0);
+            // Check if item matches the pattern (ends the group)
+            const matches = this.xPath.xPathEval(selfPattern, itemContext).booleanValue();
+
+            if (matches) {
+                // End the current group
+                groups.push({ key: groupIndex++, items: currentGroup });
+                currentGroup = [];
+            }
+        }
+
+        // Don't forget the last group (if it didn't end with a match)
+        if (currentGroup.length > 0) {
+            groups.push({ key: groupIndex, items: currentGroup });
+        }
+
+        return groups;
     }
 
     /**
@@ -2236,6 +2455,129 @@ export class Xslt {
             // No select attribute - process child content
             await this.xsltChildNodes(context, template, output);
         }
+    }
+
+    /**
+     * Implements `xsl:analyze-string` (XSLT 2.0).
+     *
+     * Processes a string using a regular expression, with separate handling
+     * for matching and non-matching substrings.
+     *
+     * @param context The expression context.
+     * @param template The xsl:analyze-string element.
+     * @param output The output node.
+     */
+    protected async xsltAnalyzeString(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        const selectAttr = xmlGetAttribute(template, 'select');
+        const regexAttr = xmlGetAttribute(template, 'regex');
+        const flagsAttr = xmlGetAttribute(template, 'flags') || '';
+
+        if (!selectAttr) {
+            throw new Error('<xsl:analyze-string> requires a select attribute.');
+        }
+        if (!regexAttr) {
+            throw new Error('<xsl:analyze-string> requires a regex attribute.');
+        }
+
+        // Evaluate the select expression to get the string to analyze
+        const inputValue = this.xPath.xPathEval(selectAttr, context);
+        const inputString = inputValue.stringValue();
+
+        // Find xsl:matching-substring and xsl:non-matching-substring children
+        let matchingSubstring: XNode | null = null;
+        let nonMatchingSubstring: XNode | null = null;
+
+        for (const child of template.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(child)) {
+                if (child.localName === 'matching-substring') {
+                    matchingSubstring = child;
+                } else if (child.localName === 'non-matching-substring') {
+                    nonMatchingSubstring = child;
+                } else if (child.localName === 'fallback') {
+                    // xsl:fallback is allowed but ignored in XSLT 2.0 processors
+                    continue;
+                }
+            }
+        }
+
+        // Build the regex with flags
+        let jsFlags = 'g'; // Always use global for analyze-string
+        for (const flag of flagsAttr) {
+            switch (flag) {
+                case 'i': jsFlags += 'i'; break;
+                case 'm': jsFlags += 'm'; break;
+                case 's': jsFlags += 's'; break;
+                // 'x' (extended) would need special handling - skip for now
+            }
+        }
+
+        let regex: RegExp;
+        try {
+            regex = new RegExp(regexAttr, jsFlags);
+        } catch (e) {
+            throw new Error(`Invalid regular expression in xsl:analyze-string: ${regexAttr}`);
+        }
+
+        // Process the string, alternating between matches and non-matches
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        while ((match = regex.exec(inputString)) !== null) {
+            const matchStart = match.index;
+            const matchEnd = matchStart + match[0].length;
+
+            // Process non-matching substring before this match
+            if (matchStart > lastIndex && nonMatchingSubstring) {
+                const nonMatchText = inputString.substring(lastIndex, matchStart);
+                await this.processAnalyzeStringContent(context, nonMatchingSubstring, output, nonMatchText, null);
+            }
+
+            // Process matching substring
+            if (matchingSubstring) {
+                // match array: [fullMatch, group1, group2, ...]
+                const groups = match.slice(0); // Copy the match array
+                await this.processAnalyzeStringContent(context, matchingSubstring, output, match[0], groups);
+            }
+
+            lastIndex = matchEnd;
+
+            // Prevent infinite loop on zero-length matches
+            if (match[0].length === 0) {
+                regex.lastIndex++;
+            }
+        }
+
+        // Process any remaining non-matching substring after the last match
+        if (lastIndex < inputString.length && nonMatchingSubstring) {
+            const nonMatchText = inputString.substring(lastIndex);
+            await this.processAnalyzeStringContent(context, nonMatchingSubstring, output, nonMatchText, null);
+        }
+    }
+
+    /**
+     * Helper method to process xsl:matching-substring or xsl:non-matching-substring content.
+     * Sets up the context with the current text and regex groups.
+     */
+    private async processAnalyzeStringContent(
+        context: ExprContext,
+        template: XNode,
+        output: XNode | undefined,
+        currentText: string,
+        regexGroups: string[] | null
+    ): Promise<void> {
+        // Create a text node to represent the current string being processed
+        const textNode = domCreateTextNode(this.outputDocument, currentText);
+
+        // Clone context with the text node as the context node
+        const childContext = context.clone([textNode], 0);
+
+        // Set regex groups on the context for regex-group() function
+        if (regexGroups) {
+            childContext.regexGroups = regexGroups;
+        }
+
+        // Process the child content of matching-substring or non-matching-substring
+        await this.xsltChildNodes(childContext, template, output);
     }
 
     /**

@@ -128,6 +128,28 @@ class NodeConverter {
         // Convert all nodes in the node list (needed for 'self-and-siblings' axis)
         const nodeList = exprContext.nodeList.map(node => this.adaptXNode(node));
 
+        // Build extensions object to pass through XSLT-specific context data
+        const extensions: Record<string, any> = {};
+
+        // Search up the parent chain for XSLT-specific context data
+        // (since xsltChildNodes clones context, we need to look up the chain)
+        let ctx: ExprContext | undefined = exprContext;
+        while (ctx) {
+            // Pass through regex groups for xsl:analyze-string / regex-group() function
+            if (!extensions.regexGroups && ctx.regexGroups) {
+                extensions.regexGroups = ctx.regexGroups;
+            }
+            // Pass through current group for xsl:for-each-group / current-group() function
+            if (!extensions.currentGroup && ctx.currentGroup) {
+                extensions.currentGroup = ctx.currentGroup;
+            }
+            // Pass through current grouping key for xsl:for-each-group / current-grouping-key() function
+            if (!extensions.currentGroupingKey && ctx.currentGroupingKey !== undefined) {
+                extensions.currentGroupingKey = ctx.currentGroupingKey;
+            }
+            ctx = ctx.parent;
+        }
+
         return createContext(xpathNode, {
             position: exprContext.position + 1, // XPath is 1-based
             size: exprContext.nodeList.length,
@@ -136,6 +158,7 @@ class NodeConverter {
             functions: this.createCustomFunctions(exprContext),
             namespaces: exprContext.knownNamespaces,
             xsltVersion: exprContext.xsltVersion,
+            extensions: Object.keys(extensions).length > 0 ? extensions : undefined,
         });
     }
 
