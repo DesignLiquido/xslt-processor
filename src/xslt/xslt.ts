@@ -392,6 +392,9 @@ export class Xslt {
                 case 'processing-instruction':
                     await this.xsltProcessingInstruction(context, template, output);
                     break;
+                case 'sequence':
+                    await this.xsltSequence(context, template, output);
+                    break;
                 case 'sort':
                     this.xsltSort(context, template);
                     break;
@@ -2196,6 +2199,43 @@ export class Xslt {
         const targetOutput = output || this.outputDocument;
         node.siblingPosition = targetOutput.childNodes.length;
         targetOutput.appendChild(node);
+    }
+
+    /**
+     * Implements `xsl:sequence` (XSLT 2.0).
+     *
+     * Constructs a sequence by evaluating the select expression or processing
+     * child content. Unlike xsl:copy-of, xsl:sequence returns nodes by reference
+     * and can return atomic values.
+     *
+     * @param context The expression context.
+     * @param template The xsl:sequence element.
+     * @param output The output node.
+     */
+    protected async xsltSequence(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        const select = xmlGetAttribute(template, 'select');
+        const destinationNode = output || this.outputDocument;
+
+        if (select) {
+            // Evaluate the select expression
+            const result: any = this.xPath.xPathEval(select, context);
+
+            if (result.type === 'node-set') {
+                // For node sequences, output each node
+                const nodes = result.nodeSetValue();
+                for (const node of nodes) {
+                    this.xsltCopyOf(destinationNode, node);
+                }
+            } else {
+                // For atomic values (string, number, boolean), output as text
+                const textNode = domCreateTextNode(this.outputDocument, result.stringValue());
+                textNode.siblingPosition = destinationNode.childNodes.length;
+                domAppendChild(destinationNode, textNode);
+            }
+        } else {
+            // No select attribute - process child content
+            await this.xsltChildNodes(context, template, output);
+        }
     }
 
     /**
