@@ -334,6 +334,9 @@ export class Xslt {
                 case 'decimal-format':
                     this.xsltDecimalFormat(context, template);
                     break;
+                case 'evaluate':
+                    await this.xsltEvaluate(context, template, output);
+                    break;
                 case 'element':
                     await this.xsltElement(context, template, output);
                     break;
@@ -362,6 +365,9 @@ export class Xslt {
                     break;
                 case 'iterate':
                     await this.xsltIterate(context, template, output);
+                    break;
+                case 'try':
+                    await this.xsltTry(context, template, output);
                     break;
                 case 'if':
                     await this.xsltIf(context, template, output);
@@ -1321,6 +1327,155 @@ export class Xslt {
 
             // Process on-completion body
             await this.xsltChildNodes(completionContext, onCompletion, output);
+        }
+    }
+
+    /**
+     * Implements `xsl:try`.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltTry(context: ExprContext, template: XNode, output?: XNode) {
+        const tryBodyNodes = Array.from(template.childNodes || []).filter(
+            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                     !this.isXsltElement(node as XNode, 'catch')
+        ) as XNode[];
+
+        const catchElements = Array.from(template.childNodes || []).filter(
+            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                     this.isXsltElement(node as XNode, 'catch')
+        ) as XNode[];
+
+        try {
+            // Execute try body
+            for (const bodyNode of tryBodyNodes) {
+                await this.xsltProcessContext(context, bodyNode, output);
+            }
+        } catch (error: any) {
+            // Extract error code from error object or use a generic error code
+            let errorCode = 'err:UNKNOWN';
+            if (error && typeof error === 'object') {
+                if (error.code) {
+                    errorCode = error.code;
+                } else if (error.message) {
+                    // Try to detect specific error types from error message
+                    if (error.message.includes('division by zero') || error.message.includes('div 0')) {
+                        errorCode = 'err:FOAR0001'; // Division by zero
+                    } else if (error.message.includes('undefined')) {
+                        errorCode = 'err:XPDY0002'; // Dynamic error
+                    }
+                }
+            }
+
+            // Try to match against catch blocks
+            let caught = false;
+            for (const catchElement of catchElements) {
+                const errorsAttr = xmlGetAttribute(catchElement, 'errors');
+                
+                // If no errors attribute, catch all errors
+                if (!errorsAttr) {
+                    caught = true;
+                } else {
+                    // Check if error code matches the pattern
+                    const errorPatterns = errorsAttr.split('|').map(p => p.trim());
+                    for (const pattern of errorPatterns) {
+                        if (pattern === '*' || pattern === errorCode) {
+                            caught = true;
+                            break;
+                        }
+                        // Support namespace-prefixed patterns like "err:*"
+                        if (pattern.endsWith('*')) {
+                            const prefix = pattern.slice(0, -1);
+                            if (errorCode.startsWith(prefix)) {
+                                caught = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (caught) {
+                    // Execute catch block body (but not the catch element itself)
+                    await this.xsltChildNodes(context, catchElement, output);
+                    return; // Successfully caught, stop processing further catch blocks
+                }
+            }
+
+            // If no catch block matched, re-throw the error
+            if (!caught && catchElements.length > 0) {
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * Implements `xsl:evaluate` (XSLT 3.0).
+     * Dynamically evaluates an XPath expression constructed as a string.
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltEvaluate(context: ExprContext, template: XNode, output?: XNode) {
+        const xpathAttr = xmlGetAttribute(template, 'xpath');
+        if (!xpathAttr) {
+            throw new Error('<xsl:evaluate> requires an xpath attribute.');
+        }
+
+        // Evaluate the xpath attribute itself (it may contain variables)
+        // to get the actual XPath expression to evaluate
+        const xpathExpr = this.xPath.xPathEval(xpathAttr, context).stringValue();
+
+        // Get optional context-item attribute
+        let contextItem = null;
+        const contextItemAttr = xmlGetAttribute(template, 'context-item');
+        if (contextItemAttr) {
+            const contextItemResult = this.xPath.xPathEval(contextItemAttr, context);
+            const items = contextItemResult.nodeSetValue();
+            if (items.length > 0) {
+                contextItem = items[0];
+            }
+        }
+
+        // Create evaluation context
+        // Use context-item if specified, otherwise use current context
+        let evalContext: ExprContext;
+        if (contextItem) {
+            evalContext = context.clone([contextItem], 0);
+        } else {
+            evalContext = context.clone();
+        }
+
+        try {
+            // Evaluate the dynamic XPath expression
+            const result = this.xPath.xPathEval(xpathExpr, evalContext);
+
+            // Output the result based on its type
+            const destinationNode = output || this.outputDocument;
+
+            if (result.type === 'node-set') {
+                // For node-sets, copy each node
+                const nodes = result.nodeSetValue();
+                for (const node of nodes) {
+                    this.xsltCopyOf(destinationNode, node);
+                }
+            } else if (result.type === 'array' && (result as any).arrayValue) {
+                // For arrays, serialize to text
+                const arrayItems = (result as any).arrayValue();
+                for (const item of arrayItems) {
+                    let textNode = domCreateTextNode(this.outputDocument, item.stringValue());
+                    textNode.siblingPosition = destinationNode.childNodes.length;
+                    domAppendChild(destinationNode, textNode);
+                }
+            } else {
+                // For other types, output as text
+                let textNode = domCreateTextNode(this.outputDocument, result.stringValue());
+                textNode.siblingPosition = destinationNode.childNodes.length;
+                domAppendChild(destinationNode, textNode);
+            }
+        } catch (error: any) {
+            // Wrap XPath errors as XSLT dynamic errors
+            throw new Error(`Dynamic XPath evaluation error in xsl:evaluate: ${error.message}`);
         }
     }
 
