@@ -360,6 +360,9 @@ export class Xslt {
                 case 'for-each-group':
                     await this.xsltForEachGroup(context, template, output);
                     break;
+                case 'iterate':
+                    await this.xsltIterate(context, template, output);
+                    break;
                 case 'if':
                     await this.xsltIf(context, template, output);
                     break;
@@ -1176,6 +1179,149 @@ export class Xslt {
         }
 
         return groups;
+    }
+
+    /**
+     * Implements `xsl:iterate` (XSLT 3.0).
+     *
+     * Iterates over a sequence, maintaining accumulators that are updated across iterations.
+     * Each iteration can output content and update accumulator values.
+     * After all iterations complete, optional xsl:on-completion is executed.
+     *
+     * @param context The Expression Context.
+     * @param template The template.
+     * @param output The output.
+     */
+    protected async xsltIterate(context: ExprContext, template: XNode, output?: XNode) {
+        const select = xmlGetAttribute(template, 'select');
+
+        if (!select) {
+            throw new Error('<xsl:iterate> requires a select attribute.');
+        }
+
+        // Evaluate the sequence to iterate over
+        const items = this.xPath.xPathEval(select, context).nodeSetValue();
+        if (items.length === 0) {
+            // Process on-completion even with empty sequence
+            const onCompletionElements = Array.from(template.childNodes || []).filter(
+                (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                         this.isXsltElement(node as XNode, 'on-completion')
+            ) as XNode[];
+
+            if (onCompletionElements.length > 0) {
+                const onCompletion = onCompletionElements[0];
+                const completionContext = context.clone([], 0);
+                await this.xsltChildNodes(completionContext, onCompletion, output);
+            }
+            return;
+        }
+        
+        // Initialize accumulators from xsl:param children
+        const accumulators: { [name: string]: any } = {};
+        const paramElements = Array.from(template.childNodes || []).filter(
+            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                     (node as XNode).localName === 'param' &&
+                     this.isXsltElement(node as XNode)
+        ) as XNode[];
+
+        // Initialize each accumulator
+        for (const paramNode of paramElements) {
+            const paramName = xmlGetAttribute(paramNode, 'name');
+            if (!paramName) {
+                throw new Error('<xsl:param> in <xsl:iterate> requires a name attribute.');
+            }
+
+            // Get initial value from select attribute
+            const selectValue = xmlGetAttribute(paramNode, 'select');
+            let initialValue: any = new StringValue('');
+
+            if (selectValue) {
+                initialValue = this.xPath.xPathEval(selectValue, context);
+            }
+
+            accumulators[paramName] = initialValue;
+        }
+
+        // Iterate over items
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            
+            // Create iteration context with current item as context node
+            const iterationContext = context.clone([item], 0);
+            
+            // Add accumulators to the context as variables
+            for (const accName in accumulators) {
+                iterationContext.variables[accName] = accumulators[accName];
+            }
+
+            // Process the iteration body (excluding xsl:param, xsl:on-completion, xsl:next-iteration)
+            const allBodyNodes = Array.from(template.childNodes || []);
+
+            // Process iteration body
+            for (const bodyNode of allBodyNodes) {
+                if (bodyNode.nodeType === DOM_ELEMENT_NODE) {
+                    const elem = bodyNode as XNode;
+                    // Skip XSLT special elements
+                    if (this.isXsltElement(elem) && 
+                        (elem.localName === 'param' ||
+                         elem.localName === 'on-completion' ||
+                         elem.localName === 'next-iteration')) {
+                        continue;
+                    }
+                }
+                
+                await this.xsltProcessContext(iterationContext, bodyNode, output);
+            }
+
+            // Process xsl:next-iteration to update accumulators
+            const nextIterationElements = Array.from(template.childNodes || []).filter(
+                (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                         this.isXsltElement(node as XNode, 'next-iteration')
+            ) as XNode[];
+
+            if (nextIterationElements.length > 0) {
+                const nextIteration = nextIterationElements[0];
+                const withParamElements = Array.from(nextIteration.childNodes || []).filter(
+                    (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                             this.isXsltElement(node as XNode, 'with-param')
+                ) as XNode[];
+
+                // Update accumulators with new values from xsl:with-param
+                for (const withParam of withParamElements) {
+                    const paramName = xmlGetAttribute(withParam, 'name');
+                    if (!paramName) {
+                        throw new Error('<xsl:with-param> requires a name attribute.');
+                    }
+
+                    const selectValue = xmlGetAttribute(withParam, 'select');
+                    if (selectValue) {
+                        const newValue = this.xPath.xPathEval(selectValue, iterationContext);
+                        accumulators[paramName] = newValue;
+                    }
+                }
+            }
+        }
+
+        // After iteration, process xsl:on-completion if present
+        const onCompletionElements = Array.from(template.childNodes || []).filter(
+            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                     this.isXsltElement(node as XNode, 'on-completion')
+        ) as XNode[];
+
+        if (onCompletionElements.length > 0) {
+            const onCompletion = onCompletionElements[0];
+            
+            // Create completion context - use empty nodelist but preserve variables
+            const completionContext = context.clone([], 0);
+            
+            // Add final accumulators to context
+            for (const accName in accumulators) {
+                completionContext.variables[accName] = accumulators[accName];
+            }
+
+            // Process on-completion body
+            await this.xsltChildNodes(completionContext, onCompletion, output);
+        }
     }
 
     /**
@@ -2692,7 +2838,14 @@ export class Xslt {
 
                 let newNode: XNode;
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
-                newNode.siblingPosition = node.siblingPosition;
+                if (node && node.siblingPosition !== undefined) {
+                    newNode.siblingPosition = node.siblingPosition;
+                } else if (node === undefined && context.nodeList.length === 0) {
+                    // Empty context - set position to number of existing children
+                    newNode.siblingPosition = (output || this.outputDocument).childNodes.length;
+                } else {
+                    newNode.siblingPosition = 0;
+                }
 
                 domAppendChild(output || this.outputDocument, newNode);
 
