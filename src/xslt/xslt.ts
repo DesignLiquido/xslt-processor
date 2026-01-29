@@ -393,6 +393,12 @@ export class Xslt {
                 case 'non-matching-substring':
                     // xsl:non-matching-substring is handled inside xsltAnalyzeString.
                     throw new Error(`<xsl:non-matching-substring> must be a child of <xsl:analyze-string>.`);
+                case 'on-empty':
+                    // xsl:on-empty is handled inside sequence-generating instructions.
+                    throw new Error(`<xsl:on-empty> must be a child of a sequence-generating instruction like <xsl:for-each>, <xsl:for-each-group>, or <xsl:apply-templates>.`);
+                case 'on-non-empty':
+                    // xsl:on-non-empty is handled inside sequence-generating instructions.
+                    throw new Error(`<xsl:on-non-empty> must be a child of a sequence-generating instruction like <xsl:for-each>, <xsl:for-each-group>, or <xsl:apply-templates>.`);
                 case 'number':
                     this.xsltNumber(context, template, output);
                     break;
@@ -509,6 +515,21 @@ export class Xslt {
             nodes = this.xPath.xPathEval(select, context).nodeSetValue();
         } else {
             nodes = context.nodeList[context.position].childNodes;
+        }
+
+        const onEmpty = this.findConditionalChild(template, 'on-empty');
+        const onNonEmpty = this.findConditionalChild(template, 'on-non-empty');
+
+        if (nodes.length === 0) {
+            if (onEmpty) {
+                await this.xsltChildNodes(context.clone(), onEmpty, output);
+            }
+            return;
+        }
+
+        if (onNonEmpty) {
+            await this.xsltChildNodes(context.clone(), onNonEmpty, output);
+            return;
         }
 
         // TODO: Check why apply-templates was sorting and filing parameters
@@ -959,7 +980,18 @@ export class Xslt {
     protected async xsltForEach(context: ExprContext, template: XNode, output?: XNode) {
         const select = xmlGetAttribute(template, 'select');
         const nodes = this.xPath.xPathEval(select, context).nodeSetValue();
+        const onEmpty = this.findConditionalChild(template, 'on-empty');
+        const onNonEmpty = this.findConditionalChild(template, 'on-non-empty');
+
         if (nodes.length === 0) {
+            if (onEmpty) {
+                await this.xsltChildNodes(context.clone(), onEmpty, output);
+            }
+            return;
+        }
+
+        if (onNonEmpty) {
+            await this.xsltChildNodes(context.clone(), onNonEmpty, output);
             return;
         }
 
@@ -976,7 +1008,11 @@ export class Xslt {
         }
 
         for (let i = 0; i < sortContext.contextSize(); ++i) {
-            await this.xsltChildNodes(sortContext.clone(sortContext.nodeList, i), template, output);
+            await this.xsltChildNodesExcludingConditional(
+                sortContext.clone(sortContext.nodeList, i),
+                template,
+                output
+            );
         }
     }
 
@@ -996,6 +1032,8 @@ export class Xslt {
         const groupAdjacent = xmlGetAttribute(template, 'group-adjacent');
         const groupStartingWith = xmlGetAttribute(template, 'group-starting-with');
         const groupEndingWith = xmlGetAttribute(template, 'group-ending-with');
+        const onEmpty = this.findConditionalChild(template, 'on-empty');
+        const onNonEmpty = this.findConditionalChild(template, 'on-non-empty');
 
         if (!select) {
             throw new Error('<xsl:for-each-group> requires a select attribute.');
@@ -1013,6 +1051,9 @@ export class Xslt {
         // Get the items to group
         const items = this.xPath.xPathEval(select, context).nodeSetValue();
         if (items.length === 0) {
+            if (onEmpty) {
+                await this.xsltChildNodes(context.clone(), onEmpty, output);
+            }
             return;
         }
 
@@ -1031,6 +1072,11 @@ export class Xslt {
             return; // Should not reach here
         }
 
+        if (onNonEmpty) {
+            await this.xsltChildNodes(context.clone(), onNonEmpty, output);
+            return;
+        }
+
         // Process each group
         for (let i = 0; i < groups.length; i++) {
             const group = groups[i];
@@ -1040,7 +1086,7 @@ export class Xslt {
             groupContext.currentGroup = group.items;
             groupContext.currentGroupingKey = group.key;
 
-            await this.xsltChildNodes(groupContext, template, output);
+            await this.xsltChildNodesExcludingConditional(groupContext, template, output);
         }
     }
 
@@ -2940,6 +2986,37 @@ export class Xslt {
             }
             await this.xsltProcessContext(contextClone, child, output);
         }
+    }
+
+    /**
+     * Processes child nodes while skipping xsl:on-empty and xsl:on-non-empty.
+     * Used by instructions that handle these conditionals explicitly.
+     */
+    protected async xsltChildNodesExcludingConditional(context: ExprContext, template: XNode, output?: XNode) {
+        const contextClone = context.clone();
+        for (let i = 0; i < template.childNodes.length; ++i) {
+            const child = template.childNodes[i];
+            if (child.nodeType === DOM_ATTRIBUTE_NODE) {
+                continue;
+            }
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child) &&
+                (child.localName === 'on-empty' || child.localName === 'on-non-empty')
+            ) {
+                continue;
+            }
+            await this.xsltProcessContext(contextClone, child, output);
+        }
+    }
+
+    private findConditionalChild(template: XNode, localName: 'on-empty' | 'on-non-empty'): XNode | null {
+        for (const child of template.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(child, localName)) {
+                return child;
+            }
+        }
+        return null;
     }
 
     /**
