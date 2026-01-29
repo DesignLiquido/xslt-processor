@@ -31,3 +31,4 @@ export * from './number-value';
 export * from './string-value';
 export * from './map-value';
 export * from './array-value';
+export * from './function-value';

@@ -17,6 +17,7 @@ import { BooleanValue } from './values/boolean-value';
 import { NodeSetValue } from './values/node-set-value';
 import { MapValue } from './values/map-value';
 import { ArrayValue } from './values/array-value';
+import { FunctionValue } from './values/function-value';
 import { XPathVersion, DEFAULT_XPATH_VERSION } from './lib/src/xpath-version';
 
 /**
@@ -287,6 +288,8 @@ class NodeConverter {
                 } else if (nodeValue.type === 'map') {
                     variables[name] = nodeValue.value;
                 } else if (nodeValue.type === 'array') {
+                    variables[name] = nodeValue.value;
+                } else if (nodeValue.type === 'function') {
                     variables[name] = nodeValue.value;
                 } else {
                     // Unknown type, try to get string value
@@ -658,6 +661,9 @@ class NodeConverter {
             }
             if ((result as any).__isArray) {
                 return new ArrayValue(result);
+            }
+            if ((result as any).__isFunctionItem) {
+                return new FunctionValue(result);
             }
         }
 

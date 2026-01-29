@@ -5,6 +5,7 @@ import { NumberValue } from './values/number-value';
 import { StringValue } from './values/string-value';
 import { MapValue } from './values/map-value';
 import { ArrayValue } from './values/array-value';
+import { FunctionValue } from './values/function-value';
 import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
 import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
@@ -208,7 +209,8 @@ export class ExprContext {
             value instanceof NumberValue ||
             value instanceof NodeSetValue ||
             value instanceof MapValue ||
-            value instanceof ArrayValue
+            value instanceof ArrayValue ||
+            value instanceof FunctionValue
         ) {
             this.variables[name] = value;
             return;
