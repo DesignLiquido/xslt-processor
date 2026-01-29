@@ -3,6 +3,8 @@ import { BooleanValue } from './values/boolean-value';
 import { NodeSetValue } from './values/node-set-value';
 import { NumberValue } from './values/number-value';
 import { StringValue } from './values/string-value';
+import { MapValue } from './values/map-value';
+import { ArrayValue } from './values/array-value';
 import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
 import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
@@ -204,7 +206,9 @@ export class ExprContext {
             value instanceof StringValue ||
             value instanceof BooleanValue ||
             value instanceof NumberValue ||
-            value instanceof NodeSetValue
+            value instanceof NodeSetValue ||
+            value instanceof MapValue ||
+            value instanceof ArrayValue
         ) {
             this.variables[name] = value;
             return;

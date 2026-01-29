@@ -4,13 +4,20 @@
 
 import { XNode, xmlValue } from '../dom';
 import { XPathLexer } from './lib/src/lexer';
-import { XPath10Parser } from './lib/src/parser';
+import { createXPathParser } from './lib/src/parser';
 import { XPathExpression, XPathLocationPath, XPathUnionExpression } from './lib/src/expressions';
 import { XPathContext, XPathResult, createContext } from './lib/src/context';
 import { XPathNode } from './lib/src/node';
 import { JsonToXmlConverter } from './lib/src/expressions/json-to-xml-converter';
 import { ExprContext } from './expr-context';
-import { NodeValue, StringValue, NumberValue, BooleanValue, NodeSetValue } from './values';
+import { NodeValue } from './values/node-value';
+import { StringValue } from './values/string-value';
+import { NumberValue } from './values/number-value';
+import { BooleanValue } from './values/boolean-value';
+import { NodeSetValue } from './values/node-set-value';
+import { MapValue } from './values/map-value';
+import { ArrayValue } from './values/array-value';
+import { XPathVersion, DEFAULT_XPATH_VERSION } from './lib/src/xpath-version';
 
 /**
  * Expression wrapper that provides backward-compatible interface.
@@ -277,6 +284,10 @@ class NodeConverter {
                     variables[name] = value.numberValue();
                 } else if (nodeValue.type === 'boolean') {
                     variables[name] = value.booleanValue();
+                } else if (nodeValue.type === 'map') {
+                    variables[name] = nodeValue.value;
+                } else if (nodeValue.type === 'array') {
+                    variables[name] = nodeValue.value;
                 } else {
                     // Unknown type, try to get string value
                     variables[name] = value.stringValue();
@@ -607,10 +618,26 @@ class NodeConverter {
      * Wrap XPath result in appropriate NodeValue type.
      */
     wrapResult(result: XPathResult, exprContext: ExprContext): NodeValue {
+        if (result === null || result === undefined) {
+            return new NodeSetValue([]);
+        }
+
         if (Array.isArray(result)) {
             // Node set - nodes are already XNodes (we use them directly)
-            const xnodes = result.map(node => this.xPathNodeToXNode(node)).filter(n => n !== null) as XNode[];
-            return new NodeSetValue(xnodes);
+            // But we must distinguish between node-set and sequence of other items.
+            // If it's a sequence of nodes, we treat it as NodeSetValue.
+            const nodes = result.map(node => this.xPathNodeToXNode(node)).filter(n => n !== null) as XNode[];
+            
+            // If we have nodes OR it's an empty sequence, default to NodeSetValue for backward compatibility
+            // In XPath 1.0, everything was a node-set (or primitive).
+            if (nodes.length > 0 || result.length === 0) {
+                return new NodeSetValue(nodes);
+            }
+            
+            // If it's a sequence of non-nodes, we should ideally have a SequenceValue.
+            // For now, let's treat it as a StringValue joined by space (common XSLT 2.0 behavior for sequences in some contexts)
+            // or just take the first item's string value.
+            return new StringValue(result.map(item => String(item)).join(' '));
         }
 
         if (typeof result === 'string') {
@@ -623,6 +650,15 @@ class NodeConverter {
 
         if (typeof result === 'boolean') {
             return new BooleanValue(result);
+        }
+
+        if (typeof result === 'object') {
+            if ((result as any).__isMap) {
+                return new MapValue(result);
+            }
+            if ((result as any).__isArray) {
+                return new ArrayValue(result);
+            }
         }
 
         // Default to empty node set
@@ -642,32 +678,49 @@ class NodeConverter {
  * while maintaining API compatibility with the old implementation.
  */
 export class XPath {
-    private lexer: XPathLexer;
-    private parser: XPath10Parser;
+    private lexers: Map<string, XPathLexer> = new Map();
+    private parsers: Map<string, any> = new Map();
     private nodeConverter: NodeConverter;
     private parseCache: Map<string, Expression> = new Map();
 
     constructor() {
-        // Use XPath 1.0 for backward compatibility with XSLT 1.0
-        this.lexer = new XPathLexer('1.0');
-        this.parser = new XPath10Parser();
         this.nodeConverter = new NodeConverter();
+    }
+
+    private getLexer(version: XPathVersion): XPathLexer {
+        const v = version || '1.0';
+        if (!this.lexers.has(v)) {
+            this.lexers.set(v, new XPathLexer({ version: v as any }));
+        }
+        return this.lexers.get(v)!;
+    }
+
+    private getParser(version: XPathVersion): any {
+        const v = version || '1.0';
+        if (!this.parsers.has(v)) {
+            this.parsers.set(v, createXPathParser(v as any));
+        }
+        return this.parsers.get(v)!;
     }
 
     /**
      * Parse an XPath expression and return an Expression object.
      * @param expression The XPath expression string.
      * @param axis Optional axis override for relative paths.
+     * @param version Optional XPath version (defaults to 1.0).
      */
-    xPathParse(expression: string, axis?: string): Expression {
-        const cacheKey = `${expression}:${axis || ''}`;
+    xPathParse(expression: string, axis?: string, version: XPathVersion = '1.0'): Expression {
+        const cacheKey = `${expression}:${axis || ''}:${version}`;
 
         if (this.parseCache.has(cacheKey)) {
             return this.parseCache.get(cacheKey)!;
         }
 
-        const tokens = this.lexer.scan(expression);
-        const xpathExpr = this.parser.parse(tokens);
+        const lexer = this.getLexer(version);
+        const parser = this.getParser(version);
+
+        const tokens = lexer.scan(expression);
+        const xpathExpr = parser.parse(tokens);
 
         const wrappedExpr = this.wrapExpression(xpathExpr, axis);
         this.parseCache.set(cacheKey, wrappedExpr);
@@ -681,7 +734,11 @@ export class XPath {
      * @param context The expression context.
      */
     xPathEval(select: string, context: ExprContext): NodeValue {
-        const expression = this.xPathParse(select);
+        const version = (context.xsltVersion as XPathVersion) || '1.0';
+        // For XSLT 3.0, use XPath 3.1 to get Maps and Arrays support which are often expected
+        const effectiveVersion = version === '3.0' ? '3.1' : version;
+        
+        const expression = this.xPathParse(select, undefined, effectiveVersion);
         return expression.evaluate(context);
     }
 

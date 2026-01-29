@@ -29,3 +29,5 @@ export * from './node-set-value';
 export * from './node-value';
 export * from './number-value';
 export * from './string-value';
+export * from './map-value';
+export * from './array-value';
