@@ -41,6 +41,17 @@ import {
 import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
 import { XsltOptions } from './xslt-options';
 import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
+import { 
+    PackageRegistry, 
+    XsltPackage, 
+    PackageComponent, 
+    UsedPackage,
+    ComponentVisibility,
+    ComponentType,
+    makeComponentKey,
+    isComponentVisible,
+    canOverrideComponent
+} from './xslt-package';
 import {
     collectAndExpandTemplates,
     selectBestTemplate,
@@ -178,6 +189,18 @@ export class Xslt {
      * Used by apply-imports to determine which template called it.
      */
     private currentTemplateStack: CurrentTemplateContext[] = [];
+
+        /**
+         * Package registry for XSLT 3.0 package system.
+         * Manages loaded packages and their components.
+         */
+        private packageRegistry: PackageRegistry = new PackageRegistry();
+
+        /**
+         * Current package being processed (for XSLT 3.0).
+         * null if processing a non-package stylesheet.
+         */
+        private currentPackage: XsltPackage | null = null;
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -410,6 +433,18 @@ export class Xslt {
                     this.outputMethod = xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name';
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     break;
+                    case 'package':
+                        await this.xsltPackage(context, template, output);
+                        break;
+                    case 'use-package':
+                        await this.xsltUsePackage(context, template, output);
+                        break;
+                    case 'expose':
+                        this.xsltExpose(context, template);
+                        break;
+                    case 'accept':
+                        this.xsltAccept(context, template);
+                        break;
                 case 'param':
                     await this.xsltVariable(context, template, false);
                     break;
@@ -1625,6 +1660,205 @@ export class Xslt {
     protected async xsltInclude(context: ExprContext, template: XNode, output?: XNode) {
         await this.xsltImportOrInclude(context, template, output, false);
     }
+
+        /**
+         * Implements `<xsl:package>` (XSLT 3.0 Section 3.6).
+         * Defines a package of XSLT components with controlled visibility.
+         * @param context The Expression Context.
+         * @param template The xsl:package element.
+         * @param output The output node.
+         */
+        protected async xsltPackage(context: ExprContext, template: XNode, output?: XNode) {
+            // Check XSLT version
+            const version = xmlGetAttribute(template, 'version') || this.version;
+            if (!version || parseFloat(version) < 3.0) {
+                throw new Error('<xsl:package> is only supported in XSLT 3.0 or later.');
+            }
+
+            // Get package attributes
+            const name = xmlGetAttribute(template, 'name');
+            const packageVersion = xmlGetAttribute(template, 'package-version');
+
+            if (!name) {
+                throw new Error('<xsl:package> requires a "name" attribute.');
+            }
+
+            // Create package structure
+            const pkg: XsltPackage = {
+                name,
+                version: packageVersion,
+                root: template,
+                components: new Map(),
+                usedPackages: new Map(),
+                isTopLevel: this.currentPackage === null
+            };
+
+            // Save previous package context
+            const previousPackage = this.currentPackage;
+            this.currentPackage = pkg;
+
+            try {
+                // Register the package
+                this.packageRegistry.register(pkg);
+
+                    // Process package like a stylesheet (templates, variables, keys, etc.)
+                    await this.xsltTransformOrStylesheet(context, template, output);
+            } finally {
+                // Restore previous package context
+                this.currentPackage = previousPackage;
+            }
+        }
+
+        /**
+         * Implements `<xsl:use-package>` (XSLT 3.0 Section 3.7).
+         * Imports another package and makes its public components available.
+         * @param context The Expression Context.
+         * @param template The xsl:use-package element.
+         * @param output The output node.
+         */
+        protected async xsltUsePackage(context: ExprContext, template: XNode, output?: XNode) {
+            if (!this.currentPackage) {
+                throw new Error('<xsl:use-package> can only appear as a child of <xsl:package>.');
+            }
+
+            // Get package reference
+            const name = xmlGetAttribute(template, 'name');
+            const packageVersion = xmlGetAttribute(template, 'package-version');
+
+            if (!name) {
+                throw new Error('<xsl:use-package> requires a "name" attribute.');
+            }
+
+            // Look up the package in the registry
+            const usedPackage = this.packageRegistry.get(name, packageVersion);
+            if (!usedPackage) {
+                throw new Error(
+                    `Package "${name}"${packageVersion ? `@${packageVersion}` : ''} not found. ` +
+                    'Packages must be loaded before they can be used.'
+                );
+            }
+
+            // Create used package entry
+            const usedPkg: UsedPackage = {
+                package: usedPackage,
+                acceptedComponents: new Map()
+            };
+
+            // Store in current package
+            const key = packageVersion ? `${name}@${packageVersion}` : name;
+            this.currentPackage.usedPackages.set(key, usedPkg);
+
+            // Process xsl:accept children to handle overrides
+            for (const child of template.childNodes) {
+                if (this.isXsltElement(child, 'accept')) {
+                    this.xsltAccept(context, child);
+                }
+            }
+        }
+
+        /**
+         * Implements `<xsl:expose>` (XSLT 3.0 Section 3.8).
+         * Marks a component as visible outside the package.
+         * @param context The Expression Context.
+         * @param template The xsl:expose element.
+         */
+        protected xsltExpose(context: ExprContext, template: XNode) {
+            if (!this.currentPackage) {
+                throw new Error('<xsl:expose> can only appear as a child of <xsl:package>.');
+            }
+
+            // Get exposure attributes
+            const componentType = xmlGetAttribute(template, 'component') as ComponentType;
+            const names = xmlGetAttribute(template, 'names');
+            const visibility = (xmlGetAttribute(template, 'visibility') || 'public') as ComponentVisibility;
+
+            if (!componentType) {
+                throw new Error('<xsl:expose> requires a "component" attribute (template, function, variable, attribute-set, mode).');
+            }
+
+            // Parse names (can be space-separated list or wildcard '*')
+            const nameList = names === '*' ? ['*'] : (names ? names.split(/\s+/) : []);
+
+            if (nameList.length === 0) {
+                throw new Error('<xsl:expose> requires a "names" attribute.');
+            }
+
+            // Mark components as exposed
+            // This is simplified - full implementation would need to track all components
+            // and apply visibility rules during component resolution
+            for (const name of nameList) {
+                const component: PackageComponent = {
+                    type: componentType,
+                    name: name === '*' ? undefined : name,
+                    visibility,
+                    overridable: visibility !== 'final',
+                    node: template
+                };
+
+                const key = makeComponentKey(component);
+                this.currentPackage.components.set(key, component);
+            }
+        }
+
+        /**
+         * Implements `<xsl:accept>` (XSLT 3.0 Section 3.9).
+         * Accepts and optionally overrides a component from a used package.
+         * @param context The Expression Context.
+         * @param template The xsl:accept element.
+         */
+        protected xsltAccept(context: ExprContext, template: XNode) {
+            if (!this.currentPackage) {
+                throw new Error('<xsl:accept> can only appear as a child of <xsl:use-package>.');
+            }
+
+            // Get accept attributes
+            const componentType = xmlGetAttribute(template, 'component') as ComponentType;
+            const names = xmlGetAttribute(template, 'names');
+
+            if (!componentType) {
+                throw new Error('<xsl:accept> requires a "component" attribute.');
+            }
+
+            if (!names) {
+                throw new Error('<xsl:accept> requires a "names" attribute.');
+            }
+
+            // Parse names
+            const nameList = names === '*' ? ['*'] : names.split(/\s+/);
+
+            // Find the parent xsl:use-package to determine which package we're accepting from
+            const parentUsePackage = template.parentNode;
+            if (!parentUsePackage || !this.isXsltElement(parentUsePackage, 'use-package')) {
+                throw new Error('<xsl:accept> must be a child of <xsl:use-package>.');
+            }
+
+            const packageName = xmlGetAttribute(parentUsePackage, 'name');
+            const packageVersion = xmlGetAttribute(parentUsePackage, 'package-version');
+            const key = packageVersion ? `${packageName}@${packageVersion}` : packageName;
+
+            const usedPkg = this.currentPackage.usedPackages.get(key);
+            if (!usedPkg) {
+                throw new Error(`Internal error: used package "${key}" not found.`);
+            }
+
+            // Mark components as accepted
+            // This is a simplified implementation - full version would need to:
+            // 1. Find matching components in the used package
+            // 2. Check visibility rules
+            // 3. Apply any overrides specified in xsl:accept children
+            for (const name of nameList) {
+                const component: PackageComponent = {
+                    type: componentType,
+                    name: name === '*' ? undefined : name,
+                    visibility: 'public',
+                    overridable: true,
+                    node: template
+                };
+
+                const componentKey = makeComponentKey(component);
+                usedPkg.acceptedComponents.set(componentKey, component);
+            }
+        }
 
     /**
      * Implements `xsl:key`.
