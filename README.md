@@ -61,23 +61,6 @@ xslt.xsltProcess(
 });
 ```
 
-To access the XPath parser, you can use the instance present at `Xslt` class:
-
-```js
-const xslt = new Xslt();
-const xPath = xslt.xPath;
-```
-
-Or you can import it like this:
-
-```js
-import { XPath } from 'xslt-processor'
-
-const xPath = new XPath();
-```
-
-`XPath` class is an external dependency, [living in its own repository](https://github.com/DesignLiquido/xpath). 
-
 If you write pre-2015 JS code, make adjustments as needed.
 
 ### `Xslt` class options
@@ -158,37 +141,49 @@ You can simply add a tag like this:
 
 All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
 
+## XPath Parser
+
+To access the XPath parser, you can use the instance present at `Xslt` class:
+
+```js
+const xslt = new Xslt();
+const xPath = xslt.xPath;
+```
+
+Or you can import it like this:
+
+```js
+import { XPath } from 'xslt-processor'
+
+const xPath = new XPath();
+```
+
+`XPath` class is an external dependency, [living in its own repository](https://github.com/DesignLiquido/xpath). 
+
 ## Introduction
 
-XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses XPath, it also contains an implementation of XPath that can be used
-independently of XSLT. This implementation has the advantage that it makes XSLT uniformly available whenever the browser's native `XSLTProcessor()`
+XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses XPath, it also contains an implementation of XPath that can be used independently of XSLT. This implementation has the advantage that it makes XSLT uniformly available whenever the browser's native `XSLTProcessor()`
 is not available such as in Node.js or in web workers.
 
-XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt) which was written before `XSLTProcessor()` became available in browsers, but the
-code base has been updated to comply with ES2015+ and to make it work outside of browsers.
+XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt) which was written before `XSLTProcessor()` became available in browsers, but the code base has been updated to comply with ES2015+ and to make it work outside of browsers.
 
-This implementation of XSLT operates at the DOM level on its input documents. 
-It internally uses a DOM implementation to create the output document, but usually 
-returns the output document as text stream. The DOM to construct the output document can 
-be supplied by the application, or else an internal minimal DOM implementation is used. This 
-DOM comes with a minimal XML parser that can be used to generate a suitable DOM 
-representation of the input documents if they are present as text.
+This implementation of XSLT operates at the DOM level on its input documents. It internally uses a DOM implementation to create the output document, but usually returns the output document as text stream. The DOM to construct the output document can be supplied by the application, or else an internal minimal DOM implementation is used. This DOM comes with a minimal XML parser that can be used to generate a suitable DOM representation of the input documents if they are present as text.
 
 ## Tests and usage examples
 
-New tests are written in Jest an can be run by calling: `npm test`.
+New tests are written in Jest an can be run by calling: `yarn test`.
 
 The files `xslt.html` and `xpath.html` in the directory `interactive-tests` are interactive tests. They can be run directly from the file system; no HTTP server is needed.
-Both interactive tests and automatic tests demonstrate the use of the library functions. There is not much more documentation so far.
+
+Both interactive tests and automatic tests demonstrate the use of the library functions. 
 
 ## Conformance
 
 A few features that are required by the XSLT and XPath standards were left out (but patches to add them are welcome).
+
 See our [TODO](TODO.md) for a list of missing features that we are aware of (please add more items by means of PRs).
 
 So far, we have implemented XQuery functions for versions 1.0 and 2.0, but this is not complete yet.
-
-Issues are also marked in the source code using throw-statements.
 
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
 
@@ -256,6 +251,8 @@ Use `<xsl:preserve-space>` to preserve whitespace in specific elements, overridi
 4. By default (no declarations), whitespace is preserved
 
 ### Breaking Changes
+
+Breaking changes are usually documented at every major release, but we also keep a short version of them below.
 
 #### Version 2
 
