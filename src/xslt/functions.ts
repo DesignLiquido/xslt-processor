@@ -1,8 +1,8 @@
 import { XNode } from "../dom/xnode";
 import { DOM_ELEMENT_NODE } from '../constants';
 import { ExprContext, XPath, MatchResolver, Expression, LocationExpr, UnionExpr } from "../xpath";
-import { TemplatePriority } from "./template-priority";
-import { TemplateSelectionResult } from "./template-selection-result";
+import { TemplatePriorityInterface } from "./template-priority-interface";
+import { TemplateSelectionResultInterface } from "./template-selection-result-interface";
 import { NodeTestAny, NodeTestComment, NodeTestElementOrAttribute, NodeTestName, NodeTestNC, NodeTestPI, NodeTestText } from "../xpath/node-tests";
 
 /**
@@ -269,8 +269,8 @@ export function collectAndExpandTemplates(
     mode: string | null,
     xPath: XPath,
     templateSourceMap?: Map<XNode, { importDepth: number; href: string; order: number }>
-): TemplatePriority[] {
-    const templates: TemplatePriority[] = [];
+): TemplatePriorityInterface[] {
+    const templates: TemplatePriorityInterface[] = [];
     let docOrder = 0;
 
     for (const child of stylesheetElement.childNodes) {
@@ -524,13 +524,13 @@ function nodeMatchesPattern(
  * @returns The selection result
  */
 export function selectBestTemplate(
-    templates: TemplatePriority[],
+    templates: TemplatePriorityInterface[],
     context: ExprContext,
     matchResolver: MatchResolver,
     xPath: XPath
-): TemplateSelectionResult {
+): TemplateSelectionResultInterface {
     // 1. Filter to templates that match the current node
-    const matching: TemplatePriority[] = [];
+    const matching: TemplatePriorityInterface[] = [];
     const currentNode = context.nodeList[context.position];
 
     for (const t of templates) {
@@ -586,7 +586,7 @@ export function selectBestTemplate(
  * @param result The template selection result
  * @param node The node being matched
  */
-export function emitConflictWarning(result: TemplateSelectionResult, node: XNode): void {
+export function emitConflictWarning(result: TemplateSelectionResultInterface, node: XNode): void {
     if (!result.hasConflict || result.conflictingTemplates.length < 2) {
         return;
     }

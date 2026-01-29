@@ -1,24 +1,14 @@
-// Copyright 2024 Design Liquido
+// Copyright 2024-2026 Design Liquido
 // XSLT Template Conflict Resolution
 // Implements XSLT 3.0 compliant template priority calculation and selection
 // See: https://www.w3.org/TR/xslt-30/#conflict
 
 import { XNode } from '../dom';
-import { ExprContext, XPath, MatchResolver, Expression, LocationExpr, UnionExpr } from '../xpath';
-import {
-    NodeTestAny,
-    NodeTestComment,
-    NodeTestElementOrAttribute,
-    NodeTestName,
-    NodeTestNC,
-    NodeTestPI,
-    NodeTestText
-} from '../xpath/node-tests';
 
 /**
  * Represents priority metadata for a single template rule.
  */
-export interface TemplatePriority {
+export interface TemplatePriorityInterface {
     /** The template XNode */
     template: XNode;
     /** Explicit priority from the priority attribute, or null if not specified */
@@ -34,4 +24,3 @@ export interface TemplatePriority {
     /** The match pattern string */
     matchPattern: string;
 }
-

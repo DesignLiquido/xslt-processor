@@ -39,25 +39,39 @@ import {
 } from '../constants';
 
 import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
-import { XsltOptions } from './xslt-options';
-import { XsltDecimalFormatSettings } from './xslt-decimal-format-settings';
+import { XsltDecimalFormatSettings, XsltOptions } from './types';
 import { 
     PackageRegistry, 
-    XsltPackage, 
-    PackageComponent, 
-    UsedPackage,
+    XsltPackageInterface, 
+    PackageComponentInterface, 
+    UsedPackageInterface,
     ComponentVisibility,
     ComponentType,
     makeComponentKey,
     isComponentVisible,
     canOverrideComponent
-} from './xslt-package';
+} from './package-system';
+import {
+    StreamingContext,
+    StreamingEventInterface,
+    StreamablePath,
+    CopyOperationInterface,
+    MergeSourceInterface,
+    StreamingEventType,
+    StreamingMode,
+    StreamingParserInterface,
+    StreamingParserBase,
+    StreamablePatternValidator,
+    StreamingModeDetector,
+    StreamingCopyManager,
+    StreamingMergeCoordinator
+} from './streaming';
 import {
     collectAndExpandTemplates,
     selectBestTemplate,
     emitConflictWarning
 } from './functions';
-import { TemplatePriority } from './template-priority';
+import { TemplatePriorityInterface } from './template-priority-interface';
 
 /**
  * Metadata about a stylesheet in the import hierarchy.
@@ -200,7 +214,33 @@ export class Xslt {
          * Current package being processed (for XSLT 3.0).
          * null if processing a non-package stylesheet.
          */
-        private currentPackage: XsltPackage | null = null;
+        private currentPackage: XsltPackageInterface | null = null;
+
+    /**
+     * Streaming context for XSLT 3.0 streaming processing.
+     * Manages state during streamed document processing.
+     */
+    private streamingContext: StreamingContext = new StreamingContext();
+
+    /**
+     * Streaming copy manager for coordinating multiple output branches.
+     */
+    private streamingCopyManager: StreamingCopyManager = new StreamingCopyManager();
+
+    /**
+     * Streaming merge coordinator for xsl:merge operations.
+     */
+    private streamingMergeCoordinator: StreamingMergeCoordinator = new StreamingMergeCoordinator();
+
+    /**
+     * Whether streaming is currently enabled for this stylesheet.
+     */
+    private streamingEnabled: boolean = false;
+
+    /**
+     * Streaming parser implementation (can be set by subclasses).
+     */
+    protected streamingParser: StreamingParserInterface = new StreamingParserBase();
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -467,6 +507,15 @@ export class Xslt {
                 case 'transform':
                     await this.xsltTransformOrStylesheet(context, template, output);
                     break;
+                case 'stream':
+                    await this.xsltStream(context, template, output);
+                    break;
+                case 'fork':
+                    await this.xsltFork(context, template, output);
+                    break;
+                case 'merge':
+                    await this.xsltMerge(context, template, output);
+                    break;
                 case 'template':
                     await this.xsltTemplate(context, template, output);
                     break;
@@ -576,7 +625,7 @@ export class Xslt {
         const top = template.ownerDocument.documentElement;
 
         // Collect all templates with their priority metadata
-        const expandedTemplates: TemplatePriority[] = collectAndExpandTemplates(top, mode, this.xPath, this.templateSourceMap);
+        const expandedTemplates: TemplatePriorityInterface[] = collectAndExpandTemplates(top, mode, this.xPath, this.templateSourceMap);
 
         // Clone context and set any xsl:with-param parameters defined on
         // the <xsl:apply-templates> element so they are visible to the
@@ -1684,7 +1733,7 @@ export class Xslt {
             }
 
             // Create package structure
-            const pkg: XsltPackage = {
+            const pkg: XsltPackageInterface = {
                 name,
                 version: packageVersion,
                 root: template,
@@ -1739,7 +1788,7 @@ export class Xslt {
             }
 
             // Create used package entry
-            const usedPkg: UsedPackage = {
+            const usedPkg: UsedPackageInterface = {
                 package: usedPackage,
                 acceptedComponents: new Map()
             };
@@ -1787,7 +1836,7 @@ export class Xslt {
             // This is simplified - full implementation would need to track all components
             // and apply visibility rules during component resolution
             for (const name of nameList) {
-                const component: PackageComponent = {
+                const component: PackageComponentInterface = {
                     type: componentType,
                     name: name === '*' ? undefined : name,
                     visibility,
@@ -1847,7 +1896,7 @@ export class Xslt {
             // 2. Check visibility rules
             // 3. Apply any overrides specified in xsl:accept children
             for (const name of nameList) {
-                const component: PackageComponent = {
+                const component: PackageComponentInterface = {
                     type: componentType,
                     name: name === '*' ? undefined : name,
                     visibility: 'public',
@@ -1859,6 +1908,159 @@ export class Xslt {
                 usedPkg.acceptedComponents.set(componentKey, component);
             }
         }
+
+    /**
+     * Implements `<xsl:stream>` (XSLT 3.0 Section 16).
+     * Enables streaming processing of large documents.
+     * @param context The Expression Context.
+     * @param template The xsl:stream element.
+     * @param output The output node.
+     */
+    protected async xsltStream(context: ExprContext, template: XNode, output?: XNode) {
+        // Check XSLT version
+        if (!this.version || parseFloat(this.version) < 3.0) {
+            throw new Error('<xsl:stream> is only supported in XSLT 3.0 or later.');
+        }
+
+        // Get select attribute (required)
+        const select = xmlGetAttribute(template, 'select');
+        if (!select) {
+            throw new Error('<xsl:stream> requires a "select" attribute specifying the input document.');
+        }
+
+        // Enable streaming mode
+        const previouslyStreaming = this.streamingEnabled;
+        this.streamingEnabled = true;
+        this.streamingContext.startStreaming();
+
+        try {
+            // Evaluate select to get document(s) to stream
+            const contextClone = context.clone();
+            const selectedValue = this.xPath.xPathEval(select, contextClone);
+
+            // Process selected document(s) in streaming mode
+            let nodes: XNode[] = [];
+            if (selectedValue.type === 'node-set') {
+                nodes = selectedValue.nodeSetValue();
+            } else if (selectedValue.type === 'node') {
+                nodes = [selectedValue] as any as XNode[];
+            }
+
+            // For each selected node, process its children with streaming
+            for (const node of nodes) {
+                await this.xsltChildNodes(context, template, output);
+            }
+        } finally {
+            // Disable streaming mode
+            this.streamingEnabled = previouslyStreaming;
+            this.streamingContext.endStreaming();
+            this.streamingCopyManager.clear();
+        }
+    }
+
+    /**
+     * Implements `<xsl:fork>` (XSLT 3.0 Section 17).
+     * Creates multiple independent output branches from the input stream.
+     * @param context The Expression Context.
+     * @param template The xsl:fork element.
+     * @param output The output node.
+     */
+    protected async xsltFork(context: ExprContext, template: XNode, output?: XNode) {
+        // Check that we're in streaming mode
+        if (!this.streamingEnabled) {
+            throw new Error('<xsl:fork> can only be used within <xsl:stream>.');
+        }
+
+        // Process each xsl:fork-sequence child
+        for (const child of template.childNodes) {
+            if (this.isXsltElement(child, 'fork-sequence')) {
+                // Each fork-sequence creates an independent branch
+                const copy = this.streamingCopyManager.createCopy(async (event: StreamingEventInterface) => {
+                    // Process the fork-sequence with the streaming events
+                    await this.xsltChildNodes(context, child, output);
+                });
+
+                // Distribute events from stream to this copy
+                // Full implementation would integrate with the streaming parser
+            }
+        }
+    }
+
+    /**
+     * Implements `<xsl:merge>` (XSLT 3.0 Section 15).
+     * Merges multiple sorted input sequences.
+     * @param context The Expression Context.
+     * @param template The xsl:merge element.
+     * @param output The output node.
+     */
+    protected async xsltMerge(context: ExprContext, template: XNode, output?: XNode) {
+        // Check XSLT version
+        if (!this.version || parseFloat(this.version) < 3.0) {
+            throw new Error('<xsl:merge> is only supported in XSLT 3.0 or later.');
+        }
+
+        // Get merge sources from xsl:merge-source children
+        const sources: MergeSourceInterface[] = [];
+        for (const child of template.childNodes) {
+            if (this.isXsltElement(child, 'merge-source')) {
+                const selectAttr = xmlGetAttribute(child, 'select');
+                if (!selectAttr) {
+                    throw new Error('<xsl:merge-source> requires a "select" attribute.');
+                }
+
+                // Create merge source
+                const source: MergeSourceInterface = {
+                    select: selectAttr,
+                    mergeKeys: [],
+                    position: 0,
+                    isExhausted: false,
+                    buffer: []
+                };
+
+                // Get merge keys from xsl:merge-key children
+                for (const keyChild of child.childNodes) {
+                    if (this.isXsltElement(keyChild, 'merge-key')) {
+                        const keySelect = xmlGetAttribute(keyChild, 'select');
+                        const order = (xmlGetAttribute(keyChild, 'order') || 'ascending') as 'ascending' | 'descending';
+
+                        source.mergeKeys.push({
+                            select: keySelect || '.',
+                            order
+                        });
+                    }
+                }
+
+                sources.push(source);
+            }
+        }
+
+        if (sources.length === 0) {
+            throw new Error('<xsl:merge> requires at least one <xsl:merge-source> child element.');
+        }
+
+        // Add sources to coordinator
+        for (const source of sources) {
+            this.streamingMergeCoordinator.addSource(source);
+        }
+
+        try {
+            // Process merge groups
+            // Full implementation would handle actual merging and sorting
+            while (!this.streamingMergeCoordinator.isComplete()) {
+                const group = this.streamingMergeCoordinator.getNextMergeGroup();
+                if (group.length === 0) break;
+
+                // Process merge group with xsl:merge-action
+                for (const child of template.childNodes) {
+                    if (this.isXsltElement(child, 'merge-action')) {
+                        await this.xsltChildNodes(context, child, output);
+                    }
+                }
+            }
+        } finally {
+            this.streamingMergeCoordinator.clear();
+        }
+    }
 
     /**
      * Implements `xsl:key`.
@@ -2800,7 +3002,7 @@ export class Xslt {
             const expandedTemplates = collectAndExpandTemplates(template, null, this.xPath, this.templateSourceMap);
 
             // Find all (template, matchedNodes) pairs by testing each template's pattern
-            const matchCandidates: { priority: TemplatePriority; matchedNodes: XNode[] }[] = [];
+            const matchCandidates: { priority: TemplatePriorityInterface; matchedNodes: XNode[] }[] = [];
 
             for (const t of expandedTemplates) {
                 try {
@@ -2819,7 +3021,7 @@ export class Xslt {
             if (matchCandidates.length > 0) {
                 // First, check if "/" pattern matches - it's the document entry point and should be preferred
                 const rootPatternMatch = matchCandidates.find(c => c.priority.matchPattern === '/');
-                let winner: { priority: TemplatePriority; matchedNodes: XNode[] };
+                let winner: { priority: TemplatePriorityInterface; matchedNodes: XNode[] };
                 
                 if (rootPatternMatch) {
                     // Use the root template as entry point

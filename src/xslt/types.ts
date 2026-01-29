@@ -1,3 +1,5 @@
+import { XsltParameter } from "./xslt-parameter"
+
 /**
  * According to https://www.w3schools.com/xml/ref_xsl_el_decimal-format.asp:
  *
@@ -25,4 +27,13 @@ export type XsltDecimalFormatSettings = {
    zeroDigit: string,
    digit: string,
    patternSeparator: string
+}
+
+
+export type XsltOptions = {
+    cData: boolean,
+    escape: boolean,
+    selfClosingTags: boolean,
+    outputMethod?: 'xml' | 'html' | 'text' | 'xhtml' | 'json' | 'adaptive',
+    parameters?: XsltParameter[]
 }
