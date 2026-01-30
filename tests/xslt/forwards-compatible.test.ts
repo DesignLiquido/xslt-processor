@@ -64,7 +64,7 @@ describe('Forwards-Compatible Processing (XSLT 1.0 Section 2.5)', () => {
             assert.strictEqual(xsltClass.forwardsCompatible, false);
         });
 
-        it.skip('should enter forwards-compatible mode for version="4.0"', async () => {
+        it('should enter forwards-compatible mode for version="4.0"', async () => {
             const xmlString = `<root>content</root>`;
             const xsltString = `<?xml version="1.0"?>
                 <xsl:stylesheet version="4.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -78,14 +78,17 @@ describe('Forwards-Compatible Processing (XSLT 1.0 Section 2.5)', () => {
             const originalWarn = console.warn;
             console.warn = (...args: any[]) => warnings.push(args.join(' '));
 
+            // Create xsltClass AFTER patching console.warn so warnings are captured
+            const localXsltClass = new Xslt();
+
             try {
                 const xml = xmlParser.xmlParse(xmlString);
                 const xslt = xmlParser.xmlParse(xsltString);
-                const result = await xsltClass.xsltProcess(xml, xslt);
+                const result = await localXsltClass.xsltProcess(xml, xslt);
 
                 assert.strictEqual(result, '<result>OK</result>');
-                assert.strictEqual(xsltClass.forwardsCompatible, true);
-                assert.strictEqual(xsltClass.version, '4.0');
+                assert.strictEqual(localXsltClass.forwardsCompatible, true);
+                assert.strictEqual(localXsltClass.version, '4.0');
 
                 // Should emit a warning
                 const fcWarning = warnings.find(w => w.includes('forwards-compatible'));

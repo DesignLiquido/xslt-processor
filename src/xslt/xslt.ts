@@ -763,6 +763,146 @@ export class Xslt {
                     } finally {
                         this.currentTemplateStack.pop();
                     }
+                } else {
+                    // No matching template found - apply built-in template for elements
+                    // The built-in template for elements recursively applies templates to children
+                    if (currentNode.nodeType === DOM_ELEMENT_NODE && currentNode.childNodes && currentNode.childNodes.length > 0) {
+                        // Filter out attribute nodes and recursively apply templates
+                        const childNodes = currentNode.childNodes.filter(
+                            (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE
+                        );
+                        // Process children using the same logic as the main loop
+                        for (let k = 0; k < childNodes.length; ++k) {
+                            const childNode = childNodes[k];
+                            if (childNode.nodeType === DOM_TEXT_NODE) {
+                                // Check for text-matching templates first
+                                const textContext = paramContext.clone([childNode], 0);
+                                textContext.inApplyTemplates = true;
+                                const textSelection = selectBestTemplate(
+                                    expandedTemplates,
+                                    textContext,
+                                    this.matchResolver,
+                                    this.xPath,
+                                    this.warningsCallback
+                                );
+                                if (textSelection.selectedTemplate) {
+                                    await this.xsltChildNodes(textContext, textSelection.selectedTemplate, output);
+                                } else {
+                                    // Built-in text template: copy text
+                                    this.commonLogicTextNode(textContext, childNode, output);
+                                }
+                            } else {
+                                // For element nodes, recursively select best template
+                                const childContext = paramContext.clone([childNode], 0);
+                                childContext.inApplyTemplates = true;
+                                const childSelection = selectBestTemplate(
+                                    expandedTemplates,
+                                    childContext,
+                                    this.matchResolver,
+                                    this.xPath,
+                                    this.warningsCallback
+                                );
+                                if (childSelection.selectedTemplate) {
+                                    const childMetadata = this.templateSourceMap.get(childSelection.selectedTemplate);
+                                    const childMatchPattern = xmlGetAttribute(childSelection.selectedTemplate, 'match');
+                                    const childModeAttr = xmlGetAttribute(childSelection.selectedTemplate, 'mode');
+                                    
+                                    this.currentTemplateStack.push({
+                                        template: childSelection.selectedTemplate,
+                                        stylesheetDepth: childMetadata?.importDepth ?? 0,
+                                        mode: childModeAttr || mode,
+                                        match: childMatchPattern
+                                    });
+                                    
+                                    try {
+                                        await this.xsltChildNodes(childContext, childSelection.selectedTemplate, output);
+                                    } finally {
+                                        this.currentTemplateStack.pop();
+                                    }
+                                } else if (childNode.nodeType === DOM_ELEMENT_NODE) {
+                                    // Recursively apply built-in template to this element's children
+                                    // Use a helper to avoid deep code duplication
+                                    await this.applyBuiltInTemplate(childNode, expandedTemplates, mode, paramContext, output);
+                                }
+                            }
+                        }
+                    } else if (currentNode.nodeType === DOM_TEXT_NODE) {
+                        // Built-in template for text nodes: copy text content
+                        this.commonLogicTextNode(clonedContext, currentNode, output);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Helper method to apply the built-in template for elements.
+     * The built-in template recursively applies templates to children.
+     */
+    private async applyBuiltInTemplate(
+        node: XNode,
+        expandedTemplates: TemplatePriorityInterface[],
+        mode: string | null,
+        paramContext: ExprContext,
+        output?: XNode
+    ): Promise<void> {
+        if (!node.childNodes || node.childNodes.length === 0) {
+            return;
+        }
+        
+        const childNodes = node.childNodes.filter(
+            (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE
+        );
+        
+        for (const childNode of childNodes) {
+            if (childNode.nodeType === DOM_TEXT_NODE) {
+                // Check for text-matching templates first
+                const textContext = paramContext.clone([childNode], 0);
+                textContext.inApplyTemplates = true;
+                const textSelection = selectBestTemplate(
+                    expandedTemplates,
+                    textContext,
+                    this.matchResolver,
+                    this.xPath,
+                    this.warningsCallback
+                );
+                if (textSelection.selectedTemplate) {
+                    await this.xsltChildNodes(textContext, textSelection.selectedTemplate, output);
+                } else {
+                    // Built-in text template: copy text
+                    this.commonLogicTextNode(textContext, childNode, output);
+                }
+            } else {
+                // For element nodes, recursively select best template
+                const childContext = paramContext.clone([childNode], 0);
+                childContext.inApplyTemplates = true;
+                const childSelection = selectBestTemplate(
+                    expandedTemplates,
+                    childContext,
+                    this.matchResolver,
+                    this.xPath,
+                    this.warningsCallback
+                );
+                if (childSelection.selectedTemplate) {
+                    const childMetadata = this.templateSourceMap.get(childSelection.selectedTemplate);
+                    const childMatchPattern = xmlGetAttribute(childSelection.selectedTemplate, 'match');
+                    const childModeAttr = xmlGetAttribute(childSelection.selectedTemplate, 'mode');
+                    
+                    this.currentTemplateStack.push({
+                        template: childSelection.selectedTemplate,
+                        stylesheetDepth: childMetadata?.importDepth ?? 0,
+                        mode: childModeAttr || mode,
+                        match: childMatchPattern
+                    });
+                    
+                    try {
+                        await this.xsltChildNodes(childContext, childSelection.selectedTemplate, output);
+                    } finally {
+                        this.currentTemplateStack.pop();
+                    }
+                } else if (childNode.nodeType === DOM_ELEMENT_NODE) {
+                    // Recursively apply built-in template
+                    await this.applyBuiltInTemplate(childNode, expandedTemplates, mode, paramContext, output);
                 }
             }
         }
@@ -2208,6 +2348,12 @@ export class Xslt {
                     }
                 }
 
+                // Evaluate the select expression to populate the buffer
+                const result = this.xPath.xPathEval(selectAttr, context);
+                const nodes = result.nodeSetValue ? result.nodeSetValue() : [];
+                source.buffer = Array.isArray(nodes) ? nodes.slice() : (nodes ? [nodes] : []);
+                source.isExhausted = source.buffer.length === 0;
+
                 sources.push(source);
             }
         }
@@ -2222,17 +2368,27 @@ export class Xslt {
         }
 
         try {
-            // Process merge groups
-            // Full implementation would handle actual merging and sorting
-            while (!this.streamingMergeCoordinator.isComplete()) {
-                const group = this.streamingMergeCoordinator.getNextMergeGroup();
-                if (group.length === 0) break;
-
-                // Process merge group with xsl:merge-action
-                for (const child of template.childNodes) {
-                    if (this.isXsltElement(child, 'merge-action')) {
-                        await this.xsltChildNodes(context, child, output);
+            // Process merge groups - iterate through all items in sources
+            // For a basic implementation, we process merge-action once for each source that has data
+            let hasData = sources.some(s => s.buffer.length > 0);
+            
+            if (hasData) {
+                // For each source that has items, process the merge-action
+                for (const source of sources) {
+                    while (source.buffer.length > 0) {
+                        const item = source.buffer.shift();
+                        
+                        // Create context with the current merge item
+                        const mergeContext = context.clone([item], 0);
+                        
+                        // Process merge group with xsl:merge-action
+                        for (const child of template.childNodes) {
+                            if (this.isXsltElement(child, 'merge-action')) {
+                                await this.xsltChildNodes(mergeContext, child, output);
+                            }
+                        }
                     }
+                    source.isExhausted = true;
                 }
             }
         } finally {
@@ -3928,8 +4084,8 @@ export class Xslt {
                 if (this.isXsltElement(child, 'template')) {
                     // Map this template to its stylesheet metadata
                     this.templateSourceMap.set(child, metadata);
-                } else if (this.isXsltElement(child, 'stylesheet') || this.isXsltElement(child, 'transform')) {
-                    // Recursively process nested stylesheets
+                } else if (this.isXsltElement(child, 'stylesheet') || this.isXsltElement(child, 'transform') || this.isXsltElement(child, 'package')) {
+                    // Recursively process nested stylesheets and packages
                     this.mapTemplatesFromStylesheet(child, metadata);
                 }
             }

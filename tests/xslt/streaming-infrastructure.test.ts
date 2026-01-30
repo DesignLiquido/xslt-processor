@@ -392,7 +392,7 @@ describe('XSLT 3.0 Streaming Infrastructure', () => {
             );
         });
 
-        it.skip('should support basic xsl:merge structure', async () => {
+        it('should support basic xsl:merge structure', async () => {
             const xmlString = '<root><item id="1"/><item id="2"/></root>';
             
             const xsltString = `<?xml version="1.0"?>

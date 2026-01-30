@@ -198,16 +198,19 @@ describe('JSON Functions (XSLT 3.0)', () => {
     });
 
     describe('Round-trip Conversion', () => {
-        it.skip('should preserve JSON structure through round-trip conversion', async () => {
+        it('should preserve JSON structure through round-trip conversion', async () => {
             const xmlString = '<root/>';
 
+            // Note: In XSLT 3.0, braces in text nodes are text value templates.
+            // Use {{ and }} to escape literal braces, or use xsl:text with disable-output-escaping.
             const xsltString = `<?xml version="1.0"?>
             <xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                 <xsl:output method="xml" omit-xml-declaration="yes"/>
                 <xsl:template match="/">
                     <result>
-                        <original>{&quot;name&quot;:&quot;Alice&quot;,&quot;scores&quot;:[95,87,92]}</original>
-                        <xsl:variable name="xml-version" select="json-to-xml('{&quot;name&quot;:&quot;Alice&quot;,&quot;scores&quot;:[95,87,92]}')"/>
+                        <xsl:variable name="json-str" select="'{&quot;name&quot;:&quot;Alice&quot;,&quot;scores&quot;:[95,87,92]}'"/>
+                        <original><xsl:value-of select="$json-str"/></original>
+                        <xsl:variable name="xml-version" select="json-to-xml($json-str)"/>
                         <back-to-json><xsl:value-of select="xml-to-json($xml-version)"/></back-to-json>
                     </result>
                 </xsl:template>

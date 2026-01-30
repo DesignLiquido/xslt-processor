@@ -58,15 +58,17 @@ describe('namespaces', () => {
 
         const xsltString =
             `<?xml version="1.0"?>
-            <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-                <xsl:template match="test">
+            <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                            xmlns:ex="http://example.com"
+                            xmlns:ex2="http://example.test/2">
+                <xsl:template match="ex:test | ex2:test | test">
                     <span>
                         <xsl:value-of select="namespace-uri()" />
                     </span>
                 </xsl:template>
                 <xsl:template match="/">
                     <div>
-                        <xsl:apply-templates select="//*" />
+                        <xsl:apply-templates select="//ex:test | //ex2:test | //test" />
                     </div>
                 </xsl:template>
             </xsl:stylesheet>`;
