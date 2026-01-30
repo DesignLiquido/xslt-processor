@@ -1,0 +1,188 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>xslt-processor - v4.6.1</title><meta name="description" content="Documentation for xslt-processor"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">xslt-processor - v4.6.1</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>xslt-processor - v4.6.1</h1></div><div class="tsd-panel tsd-typography"><h1 id="xslt-processor" class="tsd-anchor-link">XSLT-processor<a href="#xslt-processor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><em>A JavaScript XSLT processor without native library dependencies.</em></p>
+  <p align="center">
+    <a href="https://github.com/DesignLiquido/xslt-processor/issues" target="_blank">
+      <img src="https://img.shields.io/github/issues/Designliquido/xslt-processor" />
+    </a>
+    <img src="https://img.shields.io/github/stars/Designliquido/xslt-processor" />
+    <img src="https://img.shields.io/github/forks/Designliquido/xslt-processor" />
+    <a href="https://www.npmjs.com/package/xslt-processor" target="_blank">
+      <img src="https://img.shields.io/npm/v/xslt-processor" />
+    </a>
+    <img src="https://img.shields.io/npm/dw/xslt-processor" />
+    <img src="https://img.shields.io/github/license/DesignLiquido/xslt-processor" />
+  </p>
+<h2 id="interactive-demos" class="tsd-anchor-link">Interactive Demos<a href="#interactive-demos" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Try the XSLT and XPath processors directly in your browser:</p>
+<p><strong><a href="https://designliquido.github.io/xslt-processor/">🚀 Visit Interactive Demos</a></strong></p>
+<h2 id="how-to" class="tsd-anchor-link">How to<a href="#how-to" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Install xslt-processor using <a href="https://docs.npmjs.com/about-npm">npm</a>, <a href="https://ohpm.openharmony.cn/#/en/home">ohpm</a> or <a href="https://yarnpkg.com">yarn</a>:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">xslt-processor</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="sh"><span class="hl-0">ohpm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">xslt-processor</span>
+</code><button type="button">Copy</button></pre>
+
+<pre><code class="sh"><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">xslt-processor</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Within your ES2015+ code, import the <code>Xslt</code> class, the <code>XmlParser</code> class and use this way:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">Xslt</span><span class="hl-1">, </span><span class="hl-4">XmlParser</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span><br/><br/><span class="hl-5">// xmlString: string of xml file contents</span><br/><span class="hl-5">// xsltString: string of xslt file contents</span><br/><span class="hl-5">// outXmlString: output xml string.</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xmlParser</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">XmlParser</span><span class="hl-1">();</span><br/><span class="hl-5">// Either</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">outXmlString</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-0">xsltProcess</span><span class="hl-1">(</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">);</span><br/><span class="hl-5">// Or</span><br/><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-0">xsltProcess</span><span class="hl-1">(</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">).</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-4">output</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">// `output` is equivalent to `outXmlString` (a string with XML).</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>If you write pre-2015 JS code, make adjustments as needed.</p>
+<h3 id="class-options" class="tsd-anchor-link"><code>Xslt</code> class options<a href="#class-options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>You can pass an <code>options</code> object to <code>Xslt</code> class:</p>
+<pre><code class="js"><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">options</span><span class="hl-1"> = {</span><br/><span class="hl-1">  </span><span class="hl-4">escape:</span><span class="hl-1"> </span><span class="hl-6">false</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">selfClosingTags:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-4">parameters:</span><span class="hl-1"> [{ </span><span class="hl-4">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;myparam&#39;</span><span class="hl-1">, </span><span class="hl-4">value:</span><span class="hl-1"> </span><span class="hl-2">&#39;123&#39;</span><span class="hl-1"> }],</span><br/><span class="hl-1">  </span><span class="hl-4">outputMethod:</span><span class="hl-1"> </span><span class="hl-2">&#39;xml&#39;</span><br/><span class="hl-1">};</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">(</span><span class="hl-4">options</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li><code>cData</code> (<code>boolean</code>, default <code>true</code>): resolves CDATA elements in the output. Content under CDATA is resolved as text. This overrides <code>escape</code> for CDATA content.</li>
+<li><code>escape</code> (<code>boolean</code>, default <code>true</code>): replaces symbols like <code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code> and <code>&quot;</code> by the corresponding <a href="https://www.tutorialspoint.com/xml/xml_character_entities.htm">HTML/XML entities</a>. Can be overridden by <code>disable-output-escaping</code>, that also does the opposite, unescaping <code>&amp;gt;</code> and <code>&amp;lt;</code> by <code>&lt;</code> and <code>&gt;</code>, respectively.</li>
+<li><code>selfClosingTags</code> (<code>boolean</code>, default <code>true</code>): Self-closes tags that don't have inner elements, if <code>true</code>. For instance, <code>&lt;test&gt;&lt;/test&gt;</code> becomes <code>&lt;test /&gt;</code>.</li>
+<li><code>outputMethod</code> (<code>string</code>, default <code>xml</code>): Specifies the default output method. if <code>&lt;xsl:output&gt;</code> is declared in your XSLT file, this will be overridden. Valid values: <code>xml</code>, <code>html</code>, <code>text</code>, <code>name</code>, <code>xhtml</code>, <code>json</code>.</li>
+<li><code>parameters</code> (<code>array</code>, default <code>[]</code>): external parameters that you want to use.
+<ul>
+<li><code>name</code>: the parameter name;</li>
+<li><code>namespaceUri</code> (optional): the namespace;</li>
+<li><code>value</code>: the value.</li>
+</ul>
+</li>
+</ul>
+<h4 id="json-output-format" class="tsd-anchor-link">JSON Output Format<a href="#json-output-format" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>When using <code>outputMethod: 'json'</code>, the XSLT processor will convert the resulting XML document to JSON format. This is useful for APIs and modern JavaScript applications.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="js"><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">({ </span><span class="hl-4">outputMethod:</span><span class="hl-1"> </span><span class="hl-2">&#39;json&#39;</span><span class="hl-1"> });</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xmlParser</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">XmlParser</span><span class="hl-1">();</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xmlString</span><span class="hl-1"> = </span><span class="hl-2">`&lt;root&gt;</span><br/><span class="hl-2">  &lt;users&gt;</span><br/><span class="hl-2">    &lt;user&gt;Alice&lt;/user&gt;</span><br/><span class="hl-2">    &lt;user&gt;Bob&lt;/user&gt;</span><br/><span class="hl-2">  &lt;/users&gt;</span><br/><span class="hl-2">&lt;/root&gt;`</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xsltString</span><span class="hl-1"> = </span><span class="hl-2">`&lt;?xml version=&quot;1.0&quot;?&gt;</span><br/><span class="hl-2">  &lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;</span><br/><span class="hl-2">    &lt;xsl:template match=&quot;/&quot;&gt;</span><br/><span class="hl-2">      &lt;xsl:copy-of select=&quot;root&quot;/&gt;</span><br/><span class="hl-2">    &lt;/xsl:template&gt;</span><br/><span class="hl-2">  &lt;/xsl:stylesheet&gt;`</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">result</span><span class="hl-1"> = </span><span class="hl-3">await</span><span class="hl-1"> </span><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-0">xsltProcess</span><span class="hl-1">(</span><br/><span class="hl-1">  </span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">);</span><br/><br/><span class="hl-5">// result will be a JSON string:</span><br/><span class="hl-5">// {&quot;root&quot;:{&quot;users&quot;:{&quot;user&quot;:[&quot;Alice&quot;,&quot;Bob&quot;]}}}</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">parsed</span><span class="hl-1"> = </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-4">result</span><span class="hl-1">);</span><br/><span class="hl-4">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-4">parsed</span><span class="hl-1">.</span><span class="hl-4">root</span><span class="hl-1">.</span><span class="hl-4">users</span><span class="hl-1">.</span><span class="hl-4">user</span><span class="hl-1">); </span><span class="hl-5">// [&quot;Alice&quot;, &quot;Bob&quot;]</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>JSON Structure Rules:</strong></p>
+<ul>
+<li>Each element becomes a property in a JSON object</li>
+<li>Text-only elements become string values</li>
+<li>Elements with multiple children of the same name become arrays</li>
+<li>Empty elements are omitted from the output</li>
+<li>Attributes are prefixed with <code>@</code> (when present in the output)</li>
+<li>Mixed text and element content uses the <code>#text</code> property for text nodes</li>
+</ul>
+<h3 id="direct-use-in-browsers" class="tsd-anchor-link">Direct use in browsers<a href="#direct-use-in-browsers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>You can simply add a tag like this:</p>
+<pre><code class="html"><span class="hl-8">&lt;</span><span class="hl-9">script</span><span class="hl-10"> </span><span class="hl-11">type</span><span class="hl-10">=</span><span class="hl-12">&quot;application/javascript&quot;</span><span class="hl-10"> </span><span class="hl-11">src</span><span class="hl-10">=</span><span class="hl-12">&quot;https://www.unpkg.com/xslt-processor@latest/umd/xslt-processor.global.js&quot;</span><span class="hl-8">&gt;&lt;/</span><span class="hl-9">script</span><span class="hl-8">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>All the exports will live under <code>globalThis.XsltProcessor</code> and <code>window.XsltProcessor</code>. <a href="https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html">See a usage example here</a>.</p>
+<h2 id="xpath-parser" class="tsd-anchor-link">XPath Parser<a href="#xpath-parser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>To access the XPath parser, you can use the instance present at <code>Xslt</code> class:</p>
+<pre><code class="js"><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xPath</span><span class="hl-1"> = </span><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-4">xPath</span><span class="hl-1">;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Or you can import it like this:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">XPath</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xPath</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">XPath</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>XPath</code> class is an external dependency, <a href="https://github.com/DesignLiquido/xpath">living in its own repository</a>.</p>
+<h2 id="introduction" class="tsd-anchor-link">Introduction<a href="#introduction" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>XSLT-processor contains an implementation of XSLT in JavaScript. Because XSLT uses XPath, it also contains an implementation of XPath that can be used independently of XSLT. This implementation has the advantage that it makes XSLT uniformly available whenever the browser's native <code>XSLTProcessor()</code>
+is not available such as in Node.js or in web workers.</p>
+<p>XSLT-processor builds on Google's <a href="https://github.com/4031651/ajaxslt">AJAXSLT</a> which was written before <code>XSLTProcessor()</code> became available in browsers, but the code base has been updated to comply with ES2015+ and to make it work outside of browsers.</p>
+<p>This implementation of XSLT operates at the DOM level on its input documents. It internally uses a DOM implementation to create the output document, but usually returns the output document as text stream. The DOM to construct the output document can be supplied by the application, or else an internal minimal DOM implementation is used. This DOM comes with a minimal XML parser that can be used to generate a suitable DOM representation of the input documents if they are present as text.</p>
+<h2 id="tests-and-usage-examples" class="tsd-anchor-link">Tests and usage examples<a href="#tests-and-usage-examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>New tests are written in Jest an can be run by calling: <code>yarn test</code>.</p>
+<p>The files <code>xslt.html</code> and <code>xpath.html</code> in the directory <code>interactive-tests</code> are interactive tests. They can be run directly from the file system; no HTTP server is needed.</p>
+<p>Both interactive tests and automatic tests demonstrate the use of the library functions.</p>
+<h2 id="conformance" class="tsd-anchor-link">Conformance<a href="#conformance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>A few features that are required by the XSLT and XPath standards were left out (but patches to add them are welcome).</p>
+<p>See our <a href="media/TODO.md">TODO</a> for a list of missing features that we are aware of (please add more items by means of PRs).</p>
+<p>So far, we have implemented XQuery functions for versions 1.0 and 2.0, but this is not complete yet.</p>
+<p>The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.</p>
+<p>The implementation is all agnostic about namespaces. It just expects XSLT elements to have tags that carry the <code>xsl:</code> prefix, but we disregard all namespace declaration for them.</p>
+<p><a href="https://github.com/search?q=repo%3ADesignLiquido%2Fxslt-processor%20ext-&amp;type=code">There are a few nonstandard XPath functions</a>.</p>
+<h3 id="html-conformance" class="tsd-anchor-link">HTML Conformance<a href="#html-conformance" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>HTML per se is not strict XML. Because of that, starting on version 2.0.0, this library handles HTML differently than XML:</p>
+<ul>
+<li>For a document to be treated as HTML, it needs to have a <code>&lt;!DOCTYPE&gt;</code> tag defined with one of the following valid formats:
+<ul>
+<li><code>&lt;!DOCTYPE html&gt;</code> (for HTML5);</li>
+<li><code>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.01 Transitional//EN&quot; &quot;http://www.w3.org/TR/html4/loose.dtd&quot;&gt;</code> (for HTML4);</li>
+<li><code>&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.1//EN&quot; &quot;http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd&quot;&gt;</code> (for XHTML 1.1).</li>
+</ul>
+</li>
+<li>Tags like <code>&lt;hr&gt;</code>, <code>&lt;link&gt;</code> and <code>&lt;meta&gt;</code> don't need to be closed. The output for these tags doesn't close them (adding a <code>/</code> before the tag closes, or a corresponding close tag);
+<ul>
+<li>This rule doesn't apply for XHTML, which is strict XML.</li>
+</ul>
+</li>
+</ul>
+<h3 id="whitespace-handling" class="tsd-anchor-link">Whitespace Handling<a href="#whitespace-handling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>This library supports <code>xsl:strip-space</code> and <code>xsl:preserve-space</code> for controlling whitespace in the input document.</p>
+<h4 id="" class="tsd-anchor-link"><code>xsl:strip-space</code></h4>
+<p>Use <code>&lt;xsl:strip-space&gt;</code> to remove whitespace-only text nodes from specified elements in the input document:</p>
+<pre><code class="xml"><xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <!-- Strip whitespace from all elements -->
+    <xsl:strip-space elements="*"/>
+
+    <!-- Or strip from specific elements -->
+    <xsl:strip-space elements="book chapter section"/>
+
+    <!-- ... templates ... -->
+</xsl:stylesheet>
+</code><button type="button">Copy</button></pre>
+
+<p>The <code>elements</code> attribute accepts:</p>
+<ul>
+<li><code>*</code> - matches all elements</li>
+<li><code>name</code> - matches elements with the specified local name</li>
+<li><code>prefix:*</code> - matches all elements in a namespace</li>
+<li><code>prefix:name</code> - matches a specific element in a namespace</li>
+<li>Multiple patterns separated by whitespace (e.g., <code>&quot;book chapter section&quot;</code>)</li>
+</ul>
+<h4 id="-1" class="tsd-anchor-link"><code>xsl:preserve-space</code><a href="#-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Use <code>&lt;xsl:preserve-space&gt;</code> to preserve whitespace in specific elements, overriding <code>xsl:strip-space</code>:</p>
+<pre><code class="xml"><xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <!-- Preserve whitespace in pre and code elements -->
+    <xsl:preserve-space elements="pre code"/>
+
+    <!-- ... templates ... -->
+</xsl:stylesheet>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="precedence-rules" class="tsd-anchor-link">Precedence Rules<a href="#precedence-rules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ol>
+<li><code>xml:space=&quot;preserve&quot;</code> attribute on an element takes highest precedence</li>
+<li><code>xsl:preserve-space</code> overrides <code>xsl:strip-space</code> for matching elements</li>
+<li><code>xsl:strip-space</code> applies to remaining matches</li>
+<li>By default (no declarations), whitespace is preserved</li>
+</ol>
+<h3 id="breaking-changes" class="tsd-anchor-link">Breaking Changes<a href="#breaking-changes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Breaking changes are usually documented at every major release, but we also keep a short version of them below.</p>
+<h4 id="version-2" class="tsd-anchor-link">Version 2<a href="#version-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Until version 2.3.1, use like the example below:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">Xslt</span><span class="hl-1">, </span><span class="hl-4">XmlParser</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span><br/><br/><span class="hl-5">// xmlString: string of xml file contents</span><br/><span class="hl-5">// xsltString: string of xslt file contents</span><br/><span class="hl-5">// outXmlString: output xml string.</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xmlParser</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">XmlParser</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">outXmlString</span><span class="hl-1"> = </span><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-0">xsltProcess</span><span class="hl-1">( </span><span class="hl-5">// Not async.</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">	</span><span class="hl-4">xmlParser</span><span class="hl-1">.</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Version 3 received <code>&lt;xsl:include&gt;</code> which relies on Fetch API, which is asynchronous. Version 2 doesn't support <code>&lt;xsl:include&gt;</code>.</p>
+<p>If using Node.js older than version v17.5.0, please use version 3.2.3, that uses <code>node-fetch</code> package. Versions 3.3.0 onward require at least Node.js version v17.5.0, since they use native <code>fetch()</code> function.</p>
+<h4 id="version-1" class="tsd-anchor-link">Version 1<a href="#version-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Until version 1.2.8, use like the example below:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">Xslt</span><span class="hl-1">, </span><span class="hl-4">xmlParse</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span><br/><br/><span class="hl-5">// xmlString: string of xml file contents</span><br/><span class="hl-5">// xsltString: string of xslt file contents</span><br/><span class="hl-5">// outXmlString: output xml string.</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">xslt</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Xslt</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">outXmlString</span><span class="hl-1"> = </span><span class="hl-4">xslt</span><span class="hl-1">.</span><span class="hl-0">xsltProcess</span><span class="hl-1">(</span><br/><span class="hl-1">	</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">	</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="version-0" class="tsd-anchor-link">Version 0<a href="#version-0" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Until version 0.11.7, use like the example below:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">xsltProcess</span><span class="hl-1">, </span><span class="hl-4">xmlParse</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span><br/><br/><span class="hl-5">// xmlString: string of xml file contents</span><br/><span class="hl-5">// xsltString: string of xslt file contents</span><br/><span class="hl-5">// outXmlString: output xml string.</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">outXmlString</span><span class="hl-1"> = </span><span class="hl-0">xsltProcess</span><span class="hl-1">(</span><br/><span class="hl-1">	</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xmlString</span><span class="hl-1">),</span><br/><span class="hl-1">	</span><span class="hl-0">xmlParse</span><span class="hl-1">(</span><span class="hl-4">xsltString</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>and to access the XPath parser:</p>
+<pre><code class="js"><span class="hl-3">import</span><span class="hl-1"> { </span><span class="hl-4">xpathParse</span><span class="hl-1"> } </span><span class="hl-3">from</span><span class="hl-1"> </span><span class="hl-2">&#39;xslt-processor&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>These functions are part of <code>Xslt</code> and <code>XPath</code> classes, respectively, at version 1.x onward.</p>
+<h2 id="references" class="tsd-anchor-link">References<a href="#references" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>XPath Specification: <a href="http://www.w3.org/TR/1999/REC-xpath-19991116">http://www.w3.org/TR/1999/REC-xpath-19991116</a></li>
+<li>XSLT Specification: <a href="http://www.w3.org/TR/1999/REC-xslt-19991116">http://www.w3.org/TR/1999/REC-xslt-19991116</a></li>
+<li>W3C DOM Level 3 Core Specification: <a href="http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/">http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/</a></li>
+<li>ECMAScript Language Specification: <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">http://www.ecma-international.org/publications/standards/Ecma-262.htm</a></li>
+<li>Arkts Language Specification: <a href="https://gitee.com/openharmony/arkcompiler_runtime_core/releases/download/ArkTS-spec-1.2.0-alpha-20250307/arktsspecification.pdf">https://gitee.com/openharmony/arkcompiler_runtime_core/releases/download/ArkTS-spec-1.2.0-alpha-20250307/arktsspecification.pdf</a></li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#xslt-processor"><span>XSLT-<wbr/>processor</span></a><ul><li><a href="#interactive-demos"><span>Interactive <wbr/>Demos</span></a></li><li><a href="#how-to"><span>How to</span></a></li><li><ul><li><a href="#class-options"><span> class options</span></a></li><li><ul><li><a href="#json-output-format"><span>JSON <wbr/>Output <wbr/>Format</span></a></li></ul></li><li><a href="#direct-use-in-browsers"><span>Direct use in browsers</span></a></li></ul></li><li><a href="#xpath-parser"><span>X<wbr/>Path <wbr/>Parser</span></a></li><li><a href="#introduction"><span>Introduction</span></a></li><li><a href="#tests-and-usage-examples"><span>Tests and usage examples</span></a></li><li><a href="#conformance"><span>Conformance</span></a></li><li><ul><li><a href="#html-conformance"><span>HTML <wbr/>Conformance</span></a></li><li><a href="#whitespace-handling"><span>Whitespace <wbr/>Handling</span></a></li><li><ul><li><a href="#"><span></span></a></li><li><a href="#-1"><span></span></a></li><li><a href="#precedence-rules"><span>Precedence <wbr/>Rules</span></a></li></ul></li><li><a href="#breaking-changes"><span>Breaking <wbr/>Changes</span></a></li><li><ul><li><a href="#version-2"><span>Version 2</span></a></li><li><a href="#version-1"><span>Version 1</span></a></li><li><a href="#version-0"><span>Version 0</span></a></li></ul></li></ul></li><li><a href="#references"><span>References</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">xslt-processor - v4.6.1</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
