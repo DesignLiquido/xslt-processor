@@ -38,7 +38,7 @@ import {
     DOM_TEXT_NODE
 } from '../constants';
 
-import { StringValue, NodeSetValue, NodeValue } from '../xpath/values';
+import { StringValue, NodeSetValue, NodeValue, NumberValue, BooleanValue } from '../xpath/values';
 import { XsltDecimalFormatSettings, XsltOptions } from './types';
 import { 
     PackageRegistry, 
@@ -184,6 +184,18 @@ export class Xslt {
     attributeSets: Map<string, XNode[]>;
 
     /**
+     * Map of user-defined functions from xsl:function declarations.
+     * Keys are QNames (namespace:localname), values are the function definition nodes.
+     */
+    userDefinedFunctions: Map<string, XNode>;
+
+    /**
+     * Result documents created by xsl:result-document.
+     * Keys are the href URIs, values are the serialized output strings.
+     */
+    resultDocuments: Map<string, string>;
+
+    /**
      * Stack of stylesheet metadata for tracking import hierarchy.
      * Used by apply-imports to find templates from imported stylesheets.
      */
@@ -258,6 +270,8 @@ export class Xslt {
         this.namespaceAliases = new Map();
         this.supportedExtensions = new Set(['http://www.w3.org/1999/XSL/Transform']);
         this.attributeSets = new Map();
+        this.userDefinedFunctions = new Map();
+        this.resultDocuments = new Map();
         this.decimalFormatSettings = {
             decimalSeparator: '.',
             groupingSeparator: ',',
@@ -442,6 +456,11 @@ export class Xslt {
                 case 'for-each-group':
                     await this.xsltForEachGroup(context, template, output);
                     break;
+                case 'function':
+                    // xsl:function is collected during stylesheet initialization
+                    // and not executed during template processing
+                    this.xsltFunction(context, template);
+                    break;
                 case 'iterate':
                     await this.xsltIterate(context, template, output);
                     break;
@@ -465,6 +484,9 @@ export class Xslt {
                     throw new Error(`<xsl:matching-substring> must be a child of <xsl:analyze-string>.`);
                 case 'message':
                     await this.xsltMessage(context, template);
+                    break;
+                case 'namespace':
+                    await this.xsltNamespace(context, template, output);
                     break;
                 case 'namespace-alias':
                     this.xsltNamespaceAlias(template);
@@ -509,8 +531,14 @@ export class Xslt {
                 case 'preserve-space':
                     this.xsltPreserveSpace(template);
                     break;
+                case 'perform-sort':
+                    await this.xsltPerformSort(context, template, output);
+                    break;
                 case 'processing-instruction':
                     await this.xsltProcessingInstruction(context, template, output);
+                    break;
+                case 'result-document':
+                    await this.xsltResultDocument(context, template);
                     break;
                 case 'sequence':
                     await this.xsltSequence(context, template, output);
@@ -3162,6 +3190,12 @@ export class Xslt {
         // Collect attribute sets from stylesheet at the beginning
         this.collectAttributeSets(template);
 
+        // Collect user-defined functions from stylesheet
+        this.collectUserDefinedFunctions(template, context);
+
+        // Register user-defined functions in context so they're available to XPath
+        this.registerUserDefinedFunctionsInContext(context);
+
         // Validate stylesheet attributes
         this.validateStylesheetAttributes(template, context);
 
@@ -3563,6 +3597,301 @@ export class Xslt {
 
         // Process the child content of matching-substring or non-matching-substring
         await this.xsltChildNodes(childContext, template, output);
+    }
+
+    /**
+     * Implements `xsl:function` (XSLT 2.0).
+     * 
+     * Declares a stylesheet function that can be called from XPath expressions.
+     * Functions are collected during stylesheet initialization and made available
+     * to the XPath evaluator.
+     *
+     * @param context The expression context.
+     * @param template The xsl:function element.
+     */
+    protected xsltFunction(context: ExprContext, template: XNode): void {
+        const name = xmlGetAttribute(template, 'name');
+        const asAttr = xmlGetAttribute(template, 'as'); // Return type (optional)
+        const overrideAttr = xmlGetAttribute(template, 'override'); // Override imported functions
+
+        if (!name) {
+            throw new Error('<xsl:function> requires a "name" attribute.');
+        }
+
+        // Function name must be in a non-null namespace (prefixed)
+        if (!name.includes(':')) {
+            throw new Error(`<xsl:function> name "${name}" must be in a namespace (use a prefixed name like "my:functionName").`);
+        }
+
+        // Check if this function already exists
+        const override = overrideAttr === 'yes' || overrideAttr === 'true';
+        if (this.userDefinedFunctions.has(name) && !override) {
+            // Function already defined, only override if explicitly allowed
+            return;
+        }
+
+        // Store the function definition
+        this.userDefinedFunctions.set(name, template);
+    }
+
+    /**
+     * Execute a user-defined xsl:function.
+     * Called when a function from userDefinedFunctions is invoked from XPath.
+     *
+     * @param context The expression context.
+     * @param functionDef The xsl:function node.
+     * @param args The evaluated arguments passed to the function.
+     * @returns The result of the function execution.
+     */
+    protected async executeUserDefinedFunction(
+        context: ExprContext,
+        functionDef: XNode,
+        args: any[]
+    ): Promise<any> {
+        return this.executeUserDefinedFunctionSync(context, functionDef, args);
+    }
+
+    /**
+     * Synchronously execute a user-defined xsl:function.
+     * This is used when functions are called from XPath expressions.
+     * Limited to functions that don't require async operations in their body.
+     *
+     * @param context The expression context.
+     * @param functionDef The xsl:function node.
+     * @param args The evaluated arguments passed to the function.
+     * @returns The result of the function execution.
+     */
+    executeUserDefinedFunctionSync(
+        context: ExprContext,
+        functionDef: XNode,
+        args: any[]
+    ): any {
+        // Create a new context for function execution with its own variable scope
+        const functionContext = context.clone();
+        // Create a new variables object to avoid modifying parent scope
+        functionContext.variables = { ...context.variables };
+
+        // Get xsl:param children to bind arguments
+        const params: XNode[] = [];
+        for (const child of functionDef.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(child, 'param')) {
+                params.push(child);
+            }
+        }
+
+        // Bind arguments to parameters
+        for (let i = 0; i < params.length; i++) {
+            const paramName = xmlGetAttribute(params[i], 'name');
+            if (paramName) {
+                if (i < args.length) {
+                    // Use provided argument
+                    const argValue = args[i];
+                    if (argValue && typeof argValue === 'object' && 'stringValue' in argValue) {
+                        // It's a NodeValue-like object
+                        functionContext.setVariable(paramName, argValue as NodeValue);
+                    } else if (Array.isArray(argValue)) {
+                        functionContext.setVariable(paramName, new NodeSetValue(argValue));
+                    } else if (typeof argValue === 'number') {
+                        functionContext.setVariable(paramName, new NumberValue(argValue));
+                    } else if (typeof argValue === 'boolean') {
+                        functionContext.setVariable(paramName, new BooleanValue(argValue));
+                    } else {
+                        functionContext.setVariable(paramName, new StringValue(String(argValue ?? '')));
+                    }
+                } else {
+                    // Use default value from parameter definition if available
+                    const selectExpr = xmlGetAttribute(params[i], 'select');
+                    if (selectExpr) {
+                        const defaultValue = this.xPath.xPathEval(selectExpr, functionContext);
+                        functionContext.setVariable(paramName, defaultValue);
+                    } else {
+                        functionContext.setVariable(paramName, new StringValue(''));
+                    }
+                }
+            }
+        }
+
+        // Process function body - look for xsl:sequence with select
+        // This is the common pattern for XSLT 2.0 functions
+        for (const child of functionDef.childNodes) {
+            if (child.nodeType === DOM_ELEMENT_NODE) {
+                if (this.isXsltElement(child, 'sequence')) {
+                    const select = xmlGetAttribute(child, 'select');
+                    if (select) {
+                        // Evaluate the select expression and return
+                        const result = this.xPath.xPathEval(select, functionContext);
+                        // Return as the appropriate type
+                        if (result.type === 'number') {
+                            return result.numberValue();
+                        } else if (result.type === 'boolean') {
+                            return result.booleanValue();
+                        } else if (result.type === 'node-set') {
+                            return result.nodeSetValue();
+                        } else {
+                            return result.stringValue();
+                        }
+                    }
+                } else if (this.isXsltElement(child, 'value-of')) {
+                    const select = xmlGetAttribute(child, 'select');
+                    if (select) {
+                        return this.xPath.xPathEval(select, functionContext).stringValue();
+                    }
+                }
+                // Skip param elements
+            }
+        }
+
+        // If no result found, return empty string
+        return '';
+    }
+
+    /**
+     * Implements `xsl:result-document` (XSLT 2.0).
+     *
+     * Creates a secondary output document. The output is stored in the
+     * resultDocuments map, accessible via getResultDocuments().
+     *
+     * @param context The expression context.
+     * @param template The xsl:result-document element.
+     */
+    protected async xsltResultDocument(context: ExprContext, template: XNode): Promise<void> {
+        const hrefExpr = xmlGetAttribute(template, 'href') || '';
+        const methodAttr = xmlGetAttribute(template, 'method') || this.outputMethod || 'xml';
+        const omitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration') || this.outputOmitXmlDeclaration;
+
+        // Evaluate href as attribute value template
+        const href = this.xsltAttributeValue(hrefExpr, context);
+
+        if (!href) {
+            throw new Error('<xsl:result-document> requires a non-empty "href" attribute.');
+        }
+
+        // Check for duplicate result documents
+        if (this.resultDocuments.has(href)) {
+            throw new Error(`<xsl:result-document>: A document has already been created with href="${href}".`);
+        }
+
+        // Create a new output document for this result
+        const resultDocument = new XDocument();
+
+        // Process children into the new document
+        await this.xsltChildNodes(context, template, resultDocument);
+
+        // Serialize the result document
+        const serialized = xmlTransformedText(resultDocument, {
+            cData: this.options.cData,
+            escape: this.options.escape,
+            selfClosingTags: this.options.selfClosingTags,
+            outputMethod: methodAttr as 'xml' | 'html' | 'text' | 'xhtml',
+            outputVersion: this.outputVersion,
+            itemSeparator: this.itemSeparator
+        });
+
+        // Store in result documents map
+        this.resultDocuments.set(href, serialized);
+    }
+
+    /**
+     * Get all result documents created by xsl:result-document.
+     * @returns A map of href URIs to serialized output strings.
+     */
+    getResultDocuments(): Map<string, string> {
+        return this.resultDocuments;
+    }
+
+    /**
+     * Implements `xsl:perform-sort` (XSLT 2.0).
+     *
+     * Sorts a sequence of items without iteration. The sorted sequence
+     * is available via xsl:sequence or other sequence-consuming instructions.
+     *
+     * @param context The expression context.
+     * @param template The xsl:perform-sort element.
+     * @param output The output node.
+     */
+    protected async xsltPerformSort(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        const select = xmlGetAttribute(template, 'select');
+
+        // Get items to sort
+        let items: XNode[];
+        if (select) {
+            items = this.xPath.xPathEval(select, context).nodeSetValue();
+        } else {
+            // If no select, look for xsl:sequence children to provide items
+            const sequenceChildren: XNode[] = [];
+            for (const child of template.childNodes) {
+                if (child.nodeType === DOM_ELEMENT_NODE && !this.isXsltElement(child, 'sort')) {
+                    sequenceChildren.push(child);
+                }
+            }
+            // Evaluate sequence children
+            const fragment = domCreateDocumentFragment(this.outputDocument);
+            for (const child of sequenceChildren) {
+                await this.xsltProcessContext(context, child, fragment);
+            }
+            items = Array.from(fragment.childNodes);
+        }
+
+        if (items.length === 0) {
+            return;
+        }
+
+        // Create sort context and apply sorting
+        const sortContext = context.clone(items);
+        this.xsltSort(sortContext, template);
+
+        // Output the sorted items
+        const destinationNode = output || this.outputDocument;
+        for (const node of sortContext.nodeList) {
+            this.xsltCopyOf(destinationNode, node);
+        }
+    }
+
+    /**
+     * Implements `xsl:namespace` (XSLT 2.0).
+     *
+     * Creates a namespace node in the result tree.
+     *
+     * @param context The expression context.
+     * @param template The xsl:namespace element.
+     * @param output The output node.
+     */
+    protected async xsltNamespace(context: ExprContext, template: XNode, output?: XNode): Promise<void> {
+        const nameExpr = xmlGetAttribute(template, 'name');
+        const selectExpr = xmlGetAttribute(template, 'select');
+
+        if (!nameExpr && nameExpr !== '') {
+            throw new Error('<xsl:namespace> requires a "name" attribute.');
+        }
+
+        // Evaluate name as attribute value template
+        const prefix = this.xsltAttributeValue(nameExpr, context);
+
+        // Get the namespace URI
+        let namespaceUri: string;
+        if (selectExpr) {
+            namespaceUri = this.xPath.xPathEval(selectExpr, context).stringValue();
+        } else {
+            // Get value from child content
+            const fragment = domCreateDocumentFragment(this.outputDocument);
+            await this.xsltChildNodes(context, template, fragment);
+            namespaceUri = xmlValue(fragment);
+        }
+
+        // Validate namespace URI
+        if (!namespaceUri) {
+            throw new Error('<xsl:namespace> requires a non-empty namespace URI.');
+        }
+
+        // Create the namespace declaration on the output element
+        const destinationNode = output || this.outputDocument;
+        if (destinationNode.nodeType === DOM_ELEMENT_NODE) {
+            if (prefix) {
+                domSetAttribute(destinationNode, `xmlns:${prefix}`, namespaceUri);
+            } else {
+                domSetAttribute(destinationNode, 'xmlns', namespaceUri);
+            }
+        }
     }
 
     /**
@@ -3986,6 +4315,50 @@ export class Xslt {
                 }
             }
         }
+    }
+
+    /**
+     * Collect all user-defined function definitions from the stylesheet.
+     * Called at stylesheet initialization time.
+     * @param stylesheetElement The stylesheet or transform element.
+     * @param context The expression context.
+     */
+    private collectUserDefinedFunctions(stylesheetElement: XNode, context: ExprContext) {
+        for (const child of stylesheetElement.childNodes) {
+            if (
+                child.nodeType === DOM_ELEMENT_NODE &&
+                this.isXsltElement(child, 'function')
+            ) {
+                this.xsltFunction(context, child);
+            }
+        }
+    }
+
+    /**
+     * Register user-defined functions in the expression context.
+     * This makes them available to XPath expressions.
+     * @param context The expression context.
+     */
+    private registerUserDefinedFunctionsInContext(context: ExprContext) {
+        if (this.userDefinedFunctions.size === 0) {
+            return;
+        }
+
+        const functionsMap = new Map<string, {
+            functionDef: XNode;
+            executor: (ctx: ExprContext, functionDef: XNode, args: any[]) => any;
+        }>();
+
+        this.userDefinedFunctions.forEach((functionDef, name) => {
+            functionsMap.set(name, {
+                functionDef,
+                executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => {
+                    return this.executeUserDefinedFunctionSync(ctx, funcDef, args);
+                }
+            });
+        });
+
+        context.userDefinedFunctions = functionsMap;
     }
 
     /**

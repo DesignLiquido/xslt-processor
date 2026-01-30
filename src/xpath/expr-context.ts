@@ -108,6 +108,15 @@ export class ExprContext {
     currentGroupingKey?: any;
 
     /**
+     * User-defined XSLT functions from xsl:function declarations.
+     * Maps QName (namespace:localname) to function definition info.
+     */
+    userDefinedFunctions?: Map<string, {
+        functionDef: XNode;
+        executor: (context: ExprContext, functionDef: XNode, args: any[]) => any;
+    }>;
+
+    /**
      * Constructor -- gets the node, its position, the node set it
      * belongs to, and a parent context as arguments. The parent context
      * is used to implement scoping rules for variables: if a variable

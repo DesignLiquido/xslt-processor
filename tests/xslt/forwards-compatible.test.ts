@@ -242,11 +242,11 @@ describe('Forwards-Compatible Processing (XSLT 1.0 Section 2.5)', () => {
                 <xsl:stylesheet version="4.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
                     <xsl:template match="/">
                         <result>
-                            <xsl:perform-sort select="root/item">
+                            <xsl:future-sort-feature select="root/item">
                                 <xsl:fallback>
                                     <xsl:value-of select="root/item"/>
                                 </xsl:fallback>
-                            </xsl:perform-sort>
+                            </xsl:future-sort-feature>
                         </result>
                     </xsl:template>
                 </xsl:stylesheet>`;

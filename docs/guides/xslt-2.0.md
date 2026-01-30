@@ -2,7 +2,7 @@
 
 This document provides comprehensive documentation for the XSLT 2.0 specification implementation in xslt-processor.
 
-**Status**: ✅ 90%+ XSLT 2.0 Compliant (excluding schema-aware features)  
+**Status**: ✅ Fully Implemented (excluding schema-aware features)  
 **Reference**: [W3C XSLT 2.0 Specification](https://www.w3.org/TR/xslt20/)  
 **XPath Reference**: [W3C XPath 2.0 Specification](https://www.w3.org/TR/xpath20/)  
 **Prerequisites**: XSLT 1.0 Complete
@@ -47,14 +47,14 @@ XSLT 2.0 (published 2007) is a major upgrade from XSLT 1.0, introducing:
 | QName functions | ✅ Complete | All 7 QName functions |
 | URI functions | ✅ Complete | resolve-uri, encode-for-uri, etc. |
 
-### What's Partially Implemented
+### Additional XSLT 2.0 Elements
 
-| Category | Status | Priority |
-|----------|--------|----------|
-| `xsl:function` | ❌ Not started | MEDIUM |
-| `xsl:result-document` | ❌ Not started | LOW |
-| `xsl:perform-sort` | ❌ Not started | LOW |
-| `xsl:namespace` | ❌ Not started | LOW |
+| Category | Status | Description |
+|----------|--------|-------------|
+| `xsl:function` | ✅ Complete | User-defined functions callable from XPath |
+| `xsl:result-document` | ✅ Complete | Multiple output document support |
+| `xsl:perform-sort` | ✅ Complete | Standalone sequence sorting |
+| `xsl:namespace` | ✅ Complete | Dynamic namespace node creation |
 
 ---
 
@@ -179,7 +179,7 @@ Group items and process each group. The most powerful grouping mechanism in any 
 
 ---
 
-### xsl:function ❌ (Not Yet Implemented)
+### xsl:function ✅
 
 Define reusable functions callable from XPath expressions.
 
@@ -202,9 +202,15 @@ Define reusable functions callable from XPath expressions.
 | `as` | No | Return type (SequenceType) |
 | `override` | No | Whether to override functions from other modules |
 
+**Key Points**:
+- Function name must be in a non-default namespace (e.g., `my:functionName`)
+- Parameters are defined with `xsl:param` elements
+- Return value is specified with `xsl:sequence select="..."`
+- Functions are called synchronously from XPath expressions
+
 ---
 
-### xsl:result-document ❌ (Not Yet Implemented)
+### xsl:result-document ✅
 
 Create additional output documents (multiple file output).
 
@@ -215,6 +221,66 @@ Create additional output documents (multiple file output).
   </html>
 </xsl:result-document>
 ```
+
+**Attributes**:
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `href` | No | URI of the output document |
+| `method` | No | Output method (xml, html, text) |
+| `format` | No | Reference to xsl:output declaration |
+
+**Key Points**:
+- Secondary output documents are stored in a Map accessible via `getResultDocuments()`
+- Duplicate hrefs throw an error
+- If no href is provided, generates a unique key
+
+---
+
+### xsl:perform-sort ✅
+
+Sort a sequence of items.
+
+```xml
+<xsl:perform-sort select="//item">
+  <xsl:sort select="@name" order="ascending"/>
+</xsl:perform-sort>
+```
+
+**Attributes**:
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `select` | No | XPath expression selecting items to sort |
+
+**Key Points**:
+- Uses `xsl:sort` children to specify sort criteria
+- Returns the sorted sequence
+- Can sort any sequence, not just node-sets
+
+---
+
+### xsl:namespace ✅
+
+Create a namespace node in the output.
+
+```xml
+<xsl:namespace name="ex" select="'http://example.com'"/>
+<!-- Or with child content -->
+<xsl:namespace name="ex">http://example.com</xsl:namespace>
+```
+
+**Attributes**:
+
+| Attribute | Required | Description |
+|-----------|----------|-------------|
+| `name` | Yes | Namespace prefix (empty for default namespace) |
+| `select` | No | XPath expression for namespace URI |
+
+**Key Points**:
+- If `select` is not provided, namespace URI comes from child content
+- Empty `name` creates a default namespace
+- Must be used within an element constructor
 
 ---
 

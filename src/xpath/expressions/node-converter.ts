@@ -430,6 +430,24 @@ export class NodeConverter {
             return '';
         };
 
+        // Add user-defined XSLT functions (xsl:function)
+        // Search up the parent chain to find userDefinedFunctions
+        let ctx: ExprContext | undefined = exprContext;
+        while (ctx) {
+            if (ctx.userDefinedFunctions) {
+                ctx.userDefinedFunctions.forEach((funcInfo, funcName) => {
+                    if (!functions[funcName]) {
+                        // Execute the function synchronously
+                        functions[funcName] = (_context: XPathContext, ...args: any[]) => {
+                            return funcInfo.executor(exprContext, funcInfo.functionDef, args);
+                        };
+                    }
+                });
+                break;
+            }
+            ctx = ctx.parent;
+        }
+
         return functions;
     }
 
