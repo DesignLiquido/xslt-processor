@@ -21,10 +21,10 @@
     "pre-build-setup": "rimraf ./dist",
     "build": "yarn pre-build-setup && tsup && yarn copy-files-from-to",
     "lint": "eslint src/**/*",
-    "deploy": "yarn build && git subtree push --prefix interactive-tests origin gh-pages",
     "docs": "typedoc",
     "docs:watch": "typedoc --watch",
-    "docs:html": "typedoc --plugin none --out docs/api-html"
+    "docs:markdown": "typedoc --plugin typedoc-plugin-markdown --out docs/api",
+    "deploy": "yarn build && yarn docs && git subtree push --prefix interactive-tests origin gh-pages"
   },
   "repository": {
     "type": "git",
@@ -89,6 +89,10 @@
     {
       "from": "dist/umd/xslt-processor.global.js",
       "to": "interactive-tests/js/xslt-processor.global.js"
+    },
+    {
+      "from": "docs/guides/*.md",
+      "to": "interactive-tests/docs/guides/"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts"],
-  "out": "./docs/api",
-  "plugin": ["typedoc-plugin-markdown"],
+  "out": "./interactive-tests/docs",
+  "plugin": [],
   "name": "xslt-processor",
   "readme": "./README.md",
   "includeVersion": true,
