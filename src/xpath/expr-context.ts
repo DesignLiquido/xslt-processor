@@ -72,6 +72,11 @@ export class ExprContext {
      */
     unparsedEntities?: { [name: string]: string };
 
+    /**
+     * Warning callback for non-fatal XPath/XSLT warnings.
+     */
+    warningsCallback?: (...args: any[]) => void;
+
     caseInsensitive: any;
     ignoreAttributesWithoutValue: any;
     returnOnFirstMatch: any;
@@ -132,7 +137,8 @@ export class ExprContext {
         opt_caseInsensitive?: any,
         opt_ignoreAttributesWithoutValue?: any,
         opt_returnOnFirstMatch?: any,
-        opt_ignoreNonElementNodesForNTA?: any
+        opt_ignoreNonElementNodesForNTA?: any,
+        opt_warningsCallback?: (...args: any[]) => void
     ) {
         this.nodeList = nodeList;
         this.xsltVersion = xsltVersion;
@@ -150,6 +156,7 @@ export class ExprContext {
         this.ignoreNonElementNodesForNTA = opt_ignoreNonElementNodesForNTA || false;
         this.inApplyTemplates = false;
         this.baseTemplateMatched = false;
+        this.warningsCallback = opt_warningsCallback ?? opt_parent?.warningsCallback;
 
         this.decimalFormatSettings = opt_decimalFormatSettings || {
             decimalSeparator: '.',
@@ -198,7 +205,8 @@ export class ExprContext {
             this.caseInsensitive,
             this.ignoreAttributesWithoutValue,
             this.returnOnFirstMatch,
-            this.ignoreNonElementNodesForNTA
+            this.ignoreNonElementNodesForNTA,
+            this.warningsCallback
         );
     }
 

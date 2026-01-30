@@ -406,7 +406,8 @@ export class NodeConverter {
                     }
                 } catch (e) {
                     // Document loading failed, return empty node-set
-                    console.warn(`document() failed to load: ${uri}`, e);
+                    const warn = exprContext.warningsCallback ?? console.warn;
+                    warn(`document() failed to load: ${uri}`, e);
                 }
             }
 

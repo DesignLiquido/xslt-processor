@@ -168,14 +168,19 @@ function calculateDefaultPriorityFromExpression(expr: Expression, xPath: XPath):
  * @param xPath The XPath instance for parsing
  * @returns The calculated default priority
  */
-export function calculateDefaultPriority(pattern: string, xPath: XPath): number {
+export function calculateDefaultPriority(
+    pattern: string,
+    xPath: XPath,
+    warningsCallback?: (...args: any[]) => void
+): number {
     try {
         // Parse without axis override to preserve original axis for priority calculation
         const expr = xPath.xPathParse(pattern);
         return calculateDefaultPriorityFromExpression(expr, xPath);
     } catch (e) {
         // If parsing fails, return default priority 0
-        console.warn(`Failed to parse pattern "${pattern}" for priority calculation:`, e);
+        const warn = warningsCallback ?? console.warn;
+        warn(`Failed to parse pattern "${pattern}" for priority calculation:`, e);
         return 0;
     }
 }
@@ -527,8 +532,10 @@ export function selectBestTemplate(
     templates: TemplatePriorityInterface[],
     context: ExprContext,
     matchResolver: MatchResolver,
-    xPath: XPath
+    xPath: XPath,
+    warningsCallback?: (...args: any[]) => void
 ): TemplateSelectionResultInterface {
+    const warn = warningsCallback ?? console.warn;
     // 1. Filter to templates that match the current node
     const matching: TemplatePriorityInterface[] = [];
     const currentNode = context.nodeList[context.position];
@@ -540,7 +547,7 @@ export function selectBestTemplate(
             }
         } catch (e) {
             // If pattern matching fails, skip this template
-            console.warn(`Failed to match pattern "${t.matchPattern}":`, e);
+            warn(`Failed to match pattern "${t.matchPattern}":`, e);
         }
     }
 
@@ -586,7 +593,11 @@ export function selectBestTemplate(
  * @param result The template selection result
  * @param node The node being matched
  */
-export function emitConflictWarning(result: TemplateSelectionResultInterface, node: XNode): void {
+export function emitConflictWarning(
+    result: TemplateSelectionResultInterface,
+    node: XNode,
+    warningsCallback?: (...args: any[]) => void
+): void {
     if (!result.hasConflict || result.conflictingTemplates.length < 2) {
         return;
     }
@@ -595,7 +606,8 @@ export function emitConflictWarning(result: TemplateSelectionResultInterface, no
         .map(t => `"${t.matchPattern}" (priority: ${t.effectivePriority})`)
         .join(', ');
 
-    console.warn(
+    const warn = warningsCallback ?? console.warn;
+    warn(
         `XSLT Warning: Ambiguous template match for node <${node.nodeName}>. ` +
         `Multiple templates match with equal priority: ${patterns}. ` +
         `Using the last one in document order.`

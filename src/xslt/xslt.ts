@@ -131,6 +131,7 @@ export class Xslt {
     matchResolver: MatchResolver;
     options: XsltOptions;
     decimalFormatSettings: XsltDecimalFormatSettings;
+    warningsCallback: (...args: any[]) => void;
 
     outputDocument: XDocument;
     outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
@@ -281,6 +282,7 @@ export class Xslt {
         };
         this.firstTemplateRan = false;
         this.forwardsCompatible = false;
+        this.warningsCallback = console.warn.bind(console);
     }
 
     /**
@@ -293,6 +295,7 @@ export class Xslt {
         const outputDocument = new XDocument();
         this.outputDocument = outputDocument;
         const expressionContext = new ExprContext([xmlDoc]);
+        expressionContext.warningsCallback = this.warningsCallback;
 
         if (this.options.parameters.length > 0) {
             for (const parameter of this.options.parameters) {
@@ -330,6 +333,9 @@ export class Xslt {
      * @param output If set, the output where the transformation should occur.
      */
     protected async xsltProcessContext(context: ExprContext, template: XNode, output?: XNode) {
+        if (!context.warningsCallback) {
+            context.warningsCallback = this.warningsCallback;
+        }
         if (!this.isXsltElement(template)) {
             // Check if this is an unsupported extension element
             if (
@@ -653,7 +659,8 @@ export class Xslt {
                     expandedTemplates,
                     textNodeContext,
                     this.matchResolver,
-                    this.xPath
+                    this.xPath,
+                    this.warningsCallback
                 );
 
                 if (textSelection.selectedTemplate) {
@@ -692,12 +699,13 @@ export class Xslt {
                     expandedTemplates,
                     clonedContext,
                     this.matchResolver,
-                    this.xPath
+                    this.xPath,
+                    this.warningsCallback
                 );
 
                 // Emit warning if there's a conflict
                 if (selection.hasConflict) {
-                    emitConflictWarning(selection, currentNode);
+                    emitConflictWarning(selection, currentNode, this.warningsCallback);
                 }
 
                 // Execute ONLY the selected template (not all matching templates)
@@ -771,7 +779,7 @@ export class Xslt {
         const nodeContext = context.clone([currentNode], 0);
         
         // Select best matching template from imported stylesheets
-        const selection = selectBestTemplate(importedTemplates, nodeContext, this.matchResolver, this.xPath);
+        const selection = selectBestTemplate(importedTemplates, nodeContext, this.matchResolver, this.xPath, this.warningsCallback);
         
         if (!selection.selectedTemplate) {
             // No matching template in imported stylesheets
@@ -780,7 +788,7 @@ export class Xslt {
         
         // Clone context and apply any with-param parameters from the apply-imports element
         const importedContext = context.clone();
-        await this.xsltWithParam(importedContext, template);
+            const expandedTemplates: TemplatePriorityInterface[] = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
         
         // Execute the imported template
         // Need to track this as the new current template
@@ -2877,7 +2885,7 @@ export class Xslt {
                     // Treat as 1.0 for processing but remember original version
                     this.version = nodeValue;
                     context.xsltVersion = '1.0';
-                    console.warn(
+                    this.warningsCallback(
                         `XSLT Warning: Stylesheet version "${nodeValue}" is not directly supported. ` +
                         `Entering forwards-compatible processing mode (XSLT 1.0 Section 2.5).`
                     );
@@ -3014,7 +3022,7 @@ export class Xslt {
                     }
                 } catch (e) {
                     // If pattern parsing fails, skip this template
-                    console.warn(`Failed to match pattern "${t.matchPattern}":`, e);
+                    this.warningsCallback(`Failed to match pattern "${t.matchPattern}":`, e);
                 }
             }
 
@@ -3050,7 +3058,7 @@ export class Xslt {
                     const patterns = conflicts
                         .map(t => `"${t.priority.matchPattern}" (priority: ${t.priority.effectivePriority})`)
                         .join(', ');
-                    console.warn(
+                    this.warningsCallback(
                         `XSLT Warning: Ambiguous template match. ` +
                         `Multiple templates match with equal priority: ${patterns}. ` +
                         `Using the last one in document order.`
@@ -3099,7 +3107,8 @@ export class Xslt {
                                     expandedTemplates,
                                     clonedContext,
                                     this.matchResolver,
-                                    this.xPath
+                                    this.xPath,
+                                    this.warningsCallback
                                 );
 
                                 if (selection.selectedTemplate) {
@@ -3139,7 +3148,8 @@ export class Xslt {
                                                         expandedTemplates,
                                                         grandchildClonedContext,
                                                         this.matchResolver,
-                                                        this.xPath
+                                                        this.xPath,
+                                                        this.warningsCallback
                                                     );
                                                     if (grandchildSelection.selectedTemplate) {
                                                         const grandchildTemplateContext = grandchildClonedContext.clone([grandchildNode], 0);
