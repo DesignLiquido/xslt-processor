@@ -4,12 +4,7 @@
     "debug.javascript.usePreview": true,
     "debug.javascript.skipFiles": [
         "<node_internals>/**",
-        "<node_internals>/internal/async_hooks.js",
-        "<node_internals>/internal/inspector_async_hook.js",
-        "<node_internals>/internal/async_hooks/**",
-        "**/async_hooks.js",
-        "**/inspector_async_hook.js",
-        "**/internal/async_hooks/**"
+        "**/node_modules/**"
     ],
     "jest.jestCommandLine": "npx jest",
     "jest.autoRun": "off",
@@ -20,10 +15,15 @@
     "debug.javascript.terminalOptions": {
         "skipFiles": [
             "<node_internals>/**",
-            "**/async_hooks.js",
-            "**/inspector_async_hook.js",
-            "**/internal/async_hooks/**"
+            "**/node_modules/**"
         ],
-        "smartStep": false
+        "smartStep": true
+    },
+    "jestrunner.debugOptions": {
+        "skipFiles": [
+            "<node_internals>/**",
+            "**/node_modules/**"
+        ],
+        "smartStep": true
     }
 }

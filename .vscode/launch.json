@@ -20,18 +20,13 @@
             "smartStep": false,
             "skipFiles": [
                 "<node_internals>/**",
-                "<node_internals>/internal/async_hooks.js",
-                "<node_internals>/internal/inspector_async_hook.js",
-                "<node_internals>/internal/async_hooks/**",
-                "**/async_hooks.js",
-                "**/inspector_async_hook.js",
-                "**/internal/async_hooks/**",
-                "node_modules/**"
+                "**/node_modules/**"
             ],
             "sourceMaps": true,
             "autoAttachChildProcesses": false,
             "disableOptimisticBPs": true,
-            "justMyCode": false,
+            "justMyCode": true,
+            "stopOnEntry": false,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "resolveSourceMapLocations": [
@@ -65,19 +60,14 @@
             "internalConsoleOptions": "neverOpen",
             "skipFiles": [
                 "<node_internals>/**",
-                "<node_internals>/internal/async_hooks.js",
-                "<node_internals>/internal/inspector_async_hook.js",
-                "<node_internals>/internal/async_hooks/**",
-                "**/async_hooks.js",
-                "**/inspector_async_hook.js",
-                "**/internal/async_hooks/**",
-                "node_modules/**"
+                "**/node_modules/**"
             ],
-            "smartStep": false,
+            "smartStep": true,
             "sourceMaps": true,
             "autoAttachChildProcesses": false,
             "disableOptimisticBPs": true,
-            "justMyCode": false,
+            "justMyCode": true,
+            "stopOnEntry": false,
             "resolveSourceMapLocations": [
                 "${workspaceFolder}/**",
                 "!**/node_modules/**"
