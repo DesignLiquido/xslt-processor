@@ -21,7 +21,7 @@
         "coverage/**/*",
         "demo/**/*",
         "dist/**/*",
-        "interactive-tests/js/**/*",
+        "interactive-tests/**/*",
         "node_modules/**/*",
         "test-without-jest.*",
         "tests/**/*"

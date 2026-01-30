@@ -97,27 +97,32 @@ interface CurrentTemplateContext {
 }
 
 /**
- * The main class for XSL-T processing. The implementation is NOT
- * complete; some xsl element are left out.
+ * The main class for XSL-T processing.
  *
  * References:
  *
- * [XSLT] XSL-T Specification
- * <http://www.w3.org/TR/1999/REC-xslt-19991116>.
+ * [XSLT 1.0] XSL Transformations (XSLT) Version 1.0
+ * <https://www.w3.org/TR/1999/REC-xslt-19991116>.
+ *
+ * [XSLT 2.0] XSL Transformations (XSLT) Version 2.0
+ * <https://www.w3.org/TR/xslt20/>.
+ *
+ * [XSLT 3.0] XSL Transformations (XSLT) Version 3.0
+ * <https://www.w3.org/TR/xslt-30/>.
  *
  * [ECMA] ECMAScript Language Specification
  * <http://www.ecma-international.org/publications/standards/Ecma-262.htm>.
  *
- * The XSL processor API has one entry point, the function
- * `xsltProcess()`. It receives as arguments the starting point in the
- * input document as an XPath expression context, the DOM root node of
- * the XSL-T stylesheet, and a DOM node that receives the output.
+ * The XSL processor API has one entry point: the async function
+ * `xsltProcess()`. It receives as arguments the input XML document
+ * and the XSL-T stylesheet document (both as `XDocument` instances),
+ * and returns the transformed output as a string (XML, HTML, JSON,
+ * or plain text depending on the output method).
  *
- * NOTE: Actually, XSL-T processing according to the specification is
- * defined as operation on text documents, not as operation on DOM
- * trees. So, strictly speaking, this implementation is not an XSL-T
- * processor, but the processing engine that needs to be complemented
- * by an XML parser and serializer in order to be complete. Those two
+ * NOTE: Strictly speaking, XSL-T processing according to the specification
+ * is defined as operation on text documents, not as operation on DOM
+ * trees. This implementation operates on an internal DOM representation,
+ * complemented by an XML parser and serializer to be complete. Those two
  * are found in the `dom` folder.
  */
 export class Xslt {
