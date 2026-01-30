@@ -3483,7 +3483,13 @@ export class Xslt {
                 return;
             }
 
-            let node = domCreateTextNode(this.outputDocument, template.nodeValue);
+            // Apply Text Value Templates for XSLT 3.0+
+            let textValue = template.nodeValue;
+            if (this.version && parseFloat(this.version) >= 3.0) {
+                textValue = this.xsltTextValueTemplate(textValue, context);
+            }
+
+            let node = domCreateTextNode(this.outputDocument, textValue);
             // Set siblingPosition to preserve insertion order during serialization
             node.siblingPosition = output.childNodes.length;
             domAppendChild(output, node);
@@ -3628,6 +3634,86 @@ export class Xslt {
         }
 
         return ret;
+    }
+
+    /**
+     * Evaluates text value templates in XSLT 3.0. Text value templates
+     * allow XPath expressions in braces {} within text nodes.
+     * The expressions are evaluated in the current input context.
+     * To include a literal brace, use {{ or }}.
+     * @param value The text node value to process
+     * @param context The expression context
+     * @returns The processed text with expressions evaluated
+     */
+    protected xsltTextValueTemplate(value: string, context: ExprContext): string {
+        if (!value) {
+            return value;
+        }
+
+        let result = '';
+        let i = 0;
+        
+        while (i < value.length) {
+            const char = value[i];
+            
+            if (char === '{') {
+                // Check for escaped {{
+                if (i + 1 < value.length && value[i + 1] === '{') {
+                    result += '{';
+                    i += 2;
+                    continue;
+                }
+                
+                // Find matching closing brace
+                let depth = 1;
+                let j = i + 1;
+                let expr = '';
+                
+                while (j < value.length && depth > 0) {
+                    if (value[j] === '{') {
+                        depth++;
+                    } else if (value[j] === '}') {
+                        depth--;
+                        if (depth === 0) {
+                            break;
+                        }
+                    }
+                    expr += value[j];
+                    j++;
+                }
+                
+                if (depth === 0) {
+                    // Evaluate the XPath expression
+                    try {
+                        const val = this.xPath.xPathEval(expr, context).stringValue();
+                        result += val;
+                    } catch (e) {
+                        throw new Error(`Error evaluating text value template expression "${expr}": ${e.message}`);
+                    }
+                    i = j + 1;
+                } else {
+                    // Unmatched opening brace - treat as literal
+                    result += char;
+                    i++;
+                }
+            } else if (char === '}') {
+                // Check for escaped }}
+                if (i + 1 < value.length && value[i + 1] === '}') {
+                    result += '}';
+                    i += 2;
+                    continue;
+                }
+                
+                // Unmatched closing brace - treat as literal
+                result += char;
+                i++;
+            } else {
+                result += char;
+                i++;
+            }
+        }
+        
+        return result;
     }
 
     /**
