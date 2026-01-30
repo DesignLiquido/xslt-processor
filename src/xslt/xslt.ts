@@ -72,6 +72,12 @@ import {
     emitConflictWarning
 } from './functions';
 import { TemplatePriorityInterface } from './template-priority-interface';
+import {
+    AccumulatorDefinition,
+    AccumulatorRule,
+    AccumulatorState,
+    AccumulatorRegistry
+} from './xslt-accumulator';
 
 /**
  * Metadata about a stylesheet in the import hierarchy.
@@ -218,6 +224,12 @@ export class Xslt {
          * null if processing a non-package stylesheet.
          */
         private currentPackage: XsltPackageInterface | null = null;
+
+        /**
+         * Accumulator registry for XSLT 3.0 accumulators.
+         * Stores accumulator definitions and current state during processing.
+         */
+        private accumulatorRegistry: AccumulatorRegistry = new AccumulatorRegistry();
 
     /**
      * Streaming context for XSLT 3.0 streaming processing.
@@ -414,6 +426,12 @@ export class Xslt {
                         domAppendChild(destinationNode, node);
                     }
                     break;
+                case 'accumulator':
+                    this.xsltAccumulator(context, template);
+                    break;
+                case 'accumulator-rule':
+                    // xsl:accumulator-rule is handled inside xsltAccumulator.
+                    throw new Error(`<xsl:accumulator-rule> must be a child of <xsl:accumulator>.`);
                 case 'decimal-format':
                     this.xsltDecimalFormat(context, template);
                     break;
@@ -1077,6 +1095,142 @@ export class Xslt {
         // context.nodeList[context.position].outputNode = node;
         const clonedContext = context.clone(undefined, 0);
         await this.xsltChildNodes(clonedContext, template, node);
+    }
+
+    /**
+     * Implements `xsl:accumulator` (XSLT 3.0).
+     *
+     * Accumulators are a declarative way to compute values during template processing.
+     * They consist of rules that are applied as elements are processed.
+     *
+     * @param context The expression context
+     * @param template The xsl:accumulator element
+     */
+    protected xsltAccumulator(context: ExprContext, template: XNode) {
+        const name = xmlGetAttribute(template, 'name');
+        if (!name) {
+            throw new Error('<xsl:accumulator> requires a "name" attribute');
+        }
+
+        const initialValue = xmlGetAttribute(template, 'initial-value') || '()';
+        const as = xmlGetAttribute(template, 'as') || 'xs:anyAtomicType*';
+        const streamableStr = xmlGetAttribute(template, 'streamable') || 'no';
+        const streamable = streamableStr === 'yes' || streamableStr === 'true' || streamableStr === '1';
+
+        const rules: AccumulatorRule[] = [];
+
+        // Process xsl:accumulator-rule children
+        for (let i = 0; i < template.childNodes.length; i++) {
+            const child = template.childNodes[i];
+            if (child.nodeType === DOM_ELEMENT_NODE && child.nodeName === 'accumulator-rule') {
+                const match = xmlGetAttribute(child, 'match');
+                if (!match) {
+                    throw new Error('<xsl:accumulator-rule> requires a "match" attribute');
+                }
+
+                const select = xmlGetAttribute(child, 'select');
+                if (!select) {
+                    throw new Error('<xsl:accumulator-rule> requires a "select" attribute');
+                }
+
+                const phase = xmlGetAttribute(child, 'phase');
+                rules.push({
+                    match,
+                    select,
+                    phase: (phase === 'start' || phase === 'end') ? phase : undefined
+                });
+            }
+        }
+
+        const definition: AccumulatorDefinition = {
+            name,
+            initialValue,
+            as,
+            rules,
+            streamable
+        };
+
+        // Register the accumulator
+        this.accumulatorRegistry.registerAccumulator(definition);
+
+        // Initialize the accumulator value with the initial value expression
+        try {
+            const initialResult = this.xPath.xPathEval(initialValue, context);
+            const state: AccumulatorState = {
+                currentValue: initialResult,
+                valueStack: [initialResult]
+            };
+            this.accumulatorRegistry.setAccumulatorState(name, state);
+        } catch (e) {
+            // If initial-value evaluation fails, use the result as-is
+            const state: AccumulatorState = {
+                currentValue: null,
+                valueStack: [null]
+            };
+            this.accumulatorRegistry.setAccumulatorState(name, state);
+        }
+    }
+
+    /**
+     * Evaluates all matching accumulator rules for a given node
+     * and updates the accumulator state
+     *
+     * @param context The expression context with current node
+     * @param node The current node being processed
+     */
+    protected evaluateAccumulatorRules(context: ExprContext, node: XNode): void {
+        const allAccumulators = this.accumulatorRegistry.getAllAccumulators();
+
+        for (const accumulator of allAccumulators) {
+            const state = this.accumulatorRegistry.getAccumulatorState(accumulator.name);
+            if (!state) continue;
+
+            // Process each rule
+            for (const rule of accumulator.rules) {
+                // Check if the pattern matches the current node
+                try {
+                    // Create a match context for this node
+                    const matchContext = context.clone([node], 0);
+                    const matchedNodes = this.xsltMatch(rule.match, matchContext);
+                    const matchResult = matchedNodes && matchedNodes.length > 0;
+
+                    if (matchResult) {
+                        // Pattern matches - evaluate the select expression
+                        // The context should include the $value variable with current accumulated value
+                        const ruleContext = context.clone([node], 0);
+
+                        // Set $value to current accumulated value
+                        ruleContext.setVariable('value', new StringValue(
+                            state.currentValue ? String(state.currentValue) : ''
+                        ));
+
+                        // Evaluate the select expression
+                        const newValue = this.xPath.xPathEval(rule.select, ruleContext);
+
+                        // Update the accumulator state
+                        state.currentValue = newValue;
+                    }
+                } catch (e) {
+                    // Pattern matching or evaluation failed - skip this rule
+                    // Log warning if configured
+                    if (this.warningsCallback) {
+                        this.warningsCallback(`Error evaluating accumulator rule for ${accumulator.name}: ${e}`);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves the current value of an accumulator
+     * Used when accessing accumulators in templates via accumulator-after() or accumulator-before()
+     *
+     * @param accumulatorName The name of the accumulator
+     * @returns The current value of the accumulator, or null if not found
+     */
+    protected getAccumulatorValue(accumulatorName: string): any {
+        const state = this.accumulatorRegistry.getAccumulatorState(accumulatorName);
+        return state ? state.currentValue : null;
     }
 
     /**

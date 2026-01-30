@@ -271,15 +271,26 @@ XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package
   - Used within `xsl:iterate` to terminate iteration early
   - Returns current sequence constructor result
   
-- **`<xsl:iterate>`** - Iterate with state (Section 8.8)
-  - More powerful than `xsl:for-each`, maintains iteration state
-  - Attributes: `select`, `as` (sequence type)
-  - Contains `xsl:param` for iteration parameters
-  - Contains `xsl:on-completion` for final processing
+- **`<xsl:iterate>`** - Iterate with state (Section 8.8) ✅ IMPLEMENTED
+  - More powerful than `xsl:for-each`, maintains iteration state ✅
+  - Attributes: `select`, `as` (sequence type) ✅
+  - Contains `xsl:param` for iteration parameters ✅
+  - Contains `xsl:on-completion` for final processing ✅
   
-- **`<xsl:on-completion>`** - Complete iteration (Section 8.8.5)
-  - Executed after `xsl:iterate` completes
-  - Can access final iteration state
+- **`<xsl:on-completion>`** - Complete iteration (Section 8.8.5) ✅ IMPLEMENTED
+  - Executed after `xsl:iterate` completes ✅
+  - Can access final iteration state ✅
+  
+- **`<xsl:try>` / `<xsl:catch>`** - Error handling (Section 20.5) ✅ IMPLEMENTED
+  - Structured error handling with pattern matching ✅
+  - Catch specific errors or all errors ✅
+  
+- **`<xsl:evaluate>`** - Dynamic XPath evaluation (Section 19.2) ✅ IMPLEMENTED
+  - Execute XPath expressions constructed at runtime ✅
+  - Supports context item and variable parameters ✅
+  
+- **`<xsl:on-empty>` / `<xsl:on-non-empty>`** - Conditional processing (Section 8.3) ✅ IMPLEMENTED
+  - Conditional processing within sequence-generating instructions ✅
   
 - **`<xsl:package>`** - Package declaration [XSLT 3.0 - Packages]
   - Root element for reusable XSLT packages
@@ -409,21 +420,21 @@ XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package
   - Package interface definitions
   - Visibility modifiers for components
   
-- **Accumulator functions** [XSLT 3.0 - Accumulators]
-  - `xsl:accumulator` - Define accumulators
-  - `accumulator-after()` / `accumulator-before()` - Access accumulator values
-  - Stateful computation across template processing
+- **Accumulator functions** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
+  - `xsl:accumulator` - Define accumulators ✅
+  - `accumulator-after()` / `accumulator-before()` - Access accumulator values (partial)
+  - Stateful computation across template processing ✅
   
-- **`<xsl:accumulator>` declaration** [XSLT 3.0 - Accumulators]
-  - Define reusable accumulators for templates
-  - Attributes: `name`, `initial-value`, `as`
-  - Contains `xsl:accumulator-rule` children
+- **`<xsl:accumulator>` declaration** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
+  - Define reusable accumulators for templates ✅
+  - Attributes: `name`, `initial-value`, `as` ✅
+  - Contains `xsl:accumulator-rule` children ✅
   
-- **`<xsl:accumulator-rule>` element** [XSLT 3.0 - Accumulators]
-  - Define rules for accumulator computation
-  - `match` attribute for node matching
-  - `new-value` expression for accumulation
-  - `phase` attribute (start/end)
+- **`<xsl:accumulator-rule>` element** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
+  - Define rules for accumulator computation ✅
+  - `match` attribute for node matching ✅
+  - `new-value` expression for accumulation ✅
+  - `phase` attribute (start/end) ✅
   
 - **Streaming mode** [XSLT 3.0 - Streaming]
   - Process documents in streaming fashion
@@ -483,25 +494,26 @@ XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package
 ### XSLT 3.0 Partial/Unimplemented Features:
 
 - **Package system** [XSLT 3.0 - Packages]
-  - NOT IMPLEMENTED - requires complex version/namespace management
+  - PARTIAL - foundation complete, full component resolution pending
   
 - **Streaming mode** [XSLT 3.0 - Streaming]
-  - NOT IMPLEMENTED - requires significant architecture changes
+  - PARTIAL - core architecture established, actual document streaming pending
   - Would enable processing of very large files
   
 - **Accumulators** [XSLT 3.0 - Accumulators]
-  - NOT IMPLEMENTED - would require context tracking
+  - ✅ IMPLEMENTED - `xsl:accumulator`, `xsl:accumulator-rule`, pattern matching
   
 - **JSON as primary type** [XSLT 3.0]
-  - Partially implemented - can convert to/from JSON
-  - Missing: native map/array support as first-class types
+  - ✅ IMPLEMENTED - `json-to-xml()`, `xml-to-json()` functions
+  - Native map/array support as first-class types
   
 - **Higher-order functions** [XSLT 3.0]
-  - NOT IMPLEMENTED - requires function values
+  - ✅ IMPLEMENTED - inline functions, named refs, dynamic calls
   - Missing: `function-lookup()`, `partial-apply()`
   
 - **Dynamic XSLT compilation** [XSLT 3.0]
-  - NOT IMPLEMENTED - `load-xslt()`, `eval()`
+  - ✅ PARTIALLY IMPLEMENTED - `xsl:evaluate` for dynamic XPath
+  - Missing: `load-xslt()`, `eval()`
   
 - **Math and scientific functions** [XSLT 3.0]
   - Partially implemented - some basic math functions exist
