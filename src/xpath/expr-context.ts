@@ -8,7 +8,7 @@ import { ArrayValue } from './values/array-value';
 import { FunctionValue } from './values/function-value';
 import { TOK_NUMBER } from './tokens';
 import { XNode } from '../dom';
-import { XsltDecimalFormatSettings } from '../xslt/xslt-decimal-format-settings';
+import { XsltDecimalFormatSettings } from '../xslt/types';
 import { NodeValue } from './values';
 
 /**

@@ -425,14 +425,19 @@ describe('XSLT 3.0 Streaming Infrastructure', () => {
         it('should emit document start and end events', async () => {
             const parser = new StreamingParserBase();
             const events: StreamingEventInterface[] = [];
-            
-            await parser.parse('test.xml', async (event) => {
+
+            const xmlString = '<root id="r"><item id="1">text</item><!--c--></root>';
+            await parser.parse(xmlString, async (event) => {
                 events.push(event);
             });
-            
-            assert.strictEqual(events.length, 2);
+
+            assert.ok(events.length > 2);
             assert.strictEqual(events[0].type, 'document-start');
-            assert.strictEqual(events[1].type, 'document-end');
+            assert.strictEqual(events[events.length - 1].type, 'document-end');
+            assert.ok(events.some(e => e.type === 'start-element' && e.name === 'root'));
+            assert.ok(events.some(e => e.type === 'attribute' && e.name === 'id' && e.content === 'r'));
+            assert.ok(events.some(e => e.type === 'text' && (e.content || '').includes('text')));
+            assert.ok(events.some(e => e.type === 'comment'));
         });
 
         it('should support canStream check', async () => {

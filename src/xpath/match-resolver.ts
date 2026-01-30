@@ -3,7 +3,9 @@
 
 import { XNode } from '../dom';
 import { ExprContext } from './expr-context';
-import { Expression, LocationExpr, UnionExpr } from './xpath';
+import { Expression } from './expressions/expression';
+import { LocationExpr } from './expressions/location-expr';
+import { UnionExpr } from './expressions/union-expr';
 
 /**
  * Class that resolves XPath expressions, returning nodes.
