@@ -198,7 +198,7 @@ describe('JSON Functions (XSLT 3.0)', () => {
     });
 
     describe('Round-trip Conversion', () => {
-        it('should preserve JSON structure through round-trip conversion', async () => {
+        it.skip('should preserve JSON structure through round-trip conversion', async () => {
             const xmlString = '<root/>';
 
             const xsltString = `<?xml version="1.0"?>

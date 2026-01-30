@@ -136,6 +136,8 @@ export class Xslt {
     outputDocument: XDocument;
     outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
     outputOmitXmlDeclaration: string;
+    outputVersion: string;
+    itemSeparator: string;
     version: string;
     firstTemplateRan: boolean;
 
@@ -263,6 +265,8 @@ export class Xslt {
         };
         this.outputMethod = options.outputMethod || 'xml';
         this.outputOmitXmlDeclaration = 'no';
+        this.outputVersion = '';
+        this.itemSeparator = '';
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
         this.namespaceAliases = new Map();
@@ -316,11 +320,21 @@ export class Xslt {
             outputMethod = detectAdaptiveOutputFormat(outputDocument);
         }
 
+        // Support HTML5 output (method="html" version="5.0")
+        // Keep method as 'html' for serialization, but track version for HTML5-specific handling
+        let serializationMethod = outputMethod;
+        if (outputMethod === 'html' && this.outputVersion === '5.0') {
+            // HTML5 uses method="html" with version="5.0"
+            serializationMethod = 'html';
+        }
+
         const transformedOutputXml: string = xmlTransformedText(outputDocument, {
             cData: this.options.cData,
             escape: this.options.escape,
             selfClosingTags: this.options.selfClosingTags,
-            outputMethod: outputMethod as 'xml' | 'html' | 'text' | 'xhtml'
+            outputMethod: serializationMethod as 'xml' | 'html' | 'text' | 'xhtml',
+            outputVersion: this.outputVersion,
+            itemSeparator: this.itemSeparator
         });
 
         return transformedOutputXml;
@@ -478,6 +492,8 @@ export class Xslt {
                 case 'output':
                     this.outputMethod = xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name';
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
+                    this.outputVersion = xmlGetAttribute(template, 'version') || '';
+                    this.itemSeparator = xmlGetAttribute(template, 'item-separator') || '';
                     break;
                     case 'package':
                         await this.xsltPackage(context, template, output);
