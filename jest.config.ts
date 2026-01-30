@@ -8,6 +8,10 @@ export default async (): Promise<Config.InitialOptions> => ({
         '<rootDir>/node_modules/',
         '<rootDir>/src/xpath/lib/'
     ],
+    coveragePathIgnorePatterns: [
+        '<rootDir>/node_modules/',
+        '<rootDir>/src/xpath/lib/'
+    ],
     maxWorkers: '50%',
     testEnvironment: 'node',
     coverageReporters: ['json-summary', 'lcov', 'text', 'text-summary'],
