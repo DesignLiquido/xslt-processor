@@ -52,19 +52,8 @@ import {
     canOverrideComponent
 } from './package-system';
 import {
-    StreamingContext,
-    StreamingEventInterface,
-    StreamablePath,
-    CopyOperationInterface,
-    MergeSourceInterface,
-    StreamingEventType,
-    StreamingMode,
-    StreamingParserInterface,
-    StreamingParserBase,
-    StreamablePatternValidator,
-    StreamingModeDetector,
-    StreamingCopyManager,
-    StreamingMergeCoordinator
+    StreamingProcessor,
+    StreamingChildProcessor
 } from './streaming';
 import {
     collectAndExpandTemplates,
@@ -232,30 +221,10 @@ export class Xslt {
         private accumulatorRegistry: AccumulatorRegistry = new AccumulatorRegistry();
 
     /**
-     * Streaming context for XSLT 3.0 streaming processing.
-     * Manages state during streamed document processing.
+     * Streaming processor for XSLT 3.0 streaming processing.
+     * Encapsulates streaming context, copy management, and merge coordination.
      */
-    private streamingContext: StreamingContext = new StreamingContext();
-
-    /**
-     * Streaming copy manager for coordinating multiple output branches.
-     */
-    private streamingCopyManager: StreamingCopyManager = new StreamingCopyManager();
-
-    /**
-     * Streaming merge coordinator for xsl:merge operations.
-     */
-    private streamingMergeCoordinator: StreamingMergeCoordinator = new StreamingMergeCoordinator();
-
-    /**
-     * Whether streaming is currently enabled for this stylesheet.
-     */
-    private streamingEnabled: boolean = false;
-
-    /**
-     * Streaming parser implementation (can be set by subclasses).
-     */
-    protected streamingParser: StreamingParserInterface = new StreamingParserBase();
+    private streamingProcessor: StreamingProcessor;
 
     constructor(
         options: Partial<XsltOptions> = {
@@ -299,6 +268,10 @@ export class Xslt {
         this.firstTemplateRan = false;
         this.forwardsCompatible = false;
         this.warningsCallback = console.warn.bind(console);
+        this.streamingProcessor = new StreamingProcessor({
+            xPath: this.xPath,
+            version: ''
+        });
     }
 
     /**
@@ -2235,45 +2208,16 @@ export class Xslt {
      * @param output The output node.
      */
     protected async xsltStream(context: ExprContext, template: XNode, output?: XNode) {
-        // Check XSLT version
-        if (!this.version || parseFloat(this.version) < 3.0) {
-            throw new Error('<xsl:stream> is only supported in XSLT 3.0 or later.');
-        }
-
-        // Get select attribute (required)
-        const select = xmlGetAttribute(template, 'select');
-        if (!select) {
-            throw new Error('<xsl:stream> requires a "select" attribute specifying the input document.');
-        }
-
-        // Enable streaming mode
-        const previouslyStreaming = this.streamingEnabled;
-        this.streamingEnabled = true;
-        this.streamingContext.startStreaming();
-
-        try {
-            // Evaluate select to get document(s) to stream
-            const contextClone = context.clone();
-            const selectedValue = this.xPath.xPathEval(select, contextClone);
-
-            // Process selected document(s) in streaming mode
-            let nodes: XNode[] = [];
-            if (selectedValue.type === 'node-set') {
-                nodes = selectedValue.nodeSetValue();
-            } else if (selectedValue.type === 'node') {
-                nodes = [selectedValue] as any as XNode[];
-            }
-
-            // For each selected node, process its children with streaming
-            for (const node of nodes) {
-                await this.xsltChildNodes(context, template, output);
-            }
-        } finally {
-            // Disable streaming mode
-            this.streamingEnabled = previouslyStreaming;
-            this.streamingContext.endStreaming();
-            this.streamingCopyManager.clear();
-        }
+        // Update streaming processor with current version
+        this.streamingProcessor.setVersion(this.version);
+        
+        // Create child processor callback
+        const childProcessor: StreamingChildProcessor = {
+            processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
+            isXsltElement: (node, name) => this.isXsltElement(node, name)
+        };
+        
+        await this.streamingProcessor.processStream(context, template, output, childProcessor);
     }
 
     /**
@@ -2284,24 +2228,13 @@ export class Xslt {
      * @param output The output node.
      */
     protected async xsltFork(context: ExprContext, template: XNode, output?: XNode) {
-        // Check that we're in streaming mode
-        if (!this.streamingEnabled) {
-            throw new Error('<xsl:fork> can only be used within <xsl:stream>.');
-        }
-
-        // Process each xsl:fork-sequence child
-        for (const child of template.childNodes) {
-            if (this.isXsltElement(child, 'fork-sequence')) {
-                // Each fork-sequence creates an independent branch
-                const copy = this.streamingCopyManager.createCopy(async (event: StreamingEventInterface) => {
-                    // Process the fork-sequence with the streaming events
-                    await this.xsltChildNodes(context, child, output);
-                });
-
-                // Distribute events from stream to this copy
-                // Full implementation would integrate with the streaming parser
-            }
-        }
+        // Create child processor callback
+        const childProcessor: StreamingChildProcessor = {
+            processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
+            isXsltElement: (node, name) => this.isXsltElement(node, name)
+        };
+        
+        await this.streamingProcessor.processFork(context, template, output, childProcessor);
     }
 
     /**
@@ -2312,88 +2245,16 @@ export class Xslt {
      * @param output The output node.
      */
     protected async xsltMerge(context: ExprContext, template: XNode, output?: XNode) {
-        // Check XSLT version
-        if (!this.version || parseFloat(this.version) < 3.0) {
-            throw new Error('<xsl:merge> is only supported in XSLT 3.0 or later.');
-        }
-
-        // Get merge sources from xsl:merge-source children
-        const sources: MergeSourceInterface[] = [];
-        for (const child of template.childNodes) {
-            if (this.isXsltElement(child, 'merge-source')) {
-                const selectAttr = xmlGetAttribute(child, 'select');
-                if (!selectAttr) {
-                    throw new Error('<xsl:merge-source> requires a "select" attribute.');
-                }
-
-                // Create merge source
-                const source: MergeSourceInterface = {
-                    select: selectAttr,
-                    mergeKeys: [],
-                    position: 0,
-                    isExhausted: false,
-                    buffer: []
-                };
-
-                // Get merge keys from xsl:merge-key children
-                for (const keyChild of child.childNodes) {
-                    if (this.isXsltElement(keyChild, 'merge-key')) {
-                        const keySelect = xmlGetAttribute(keyChild, 'select');
-                        const order = (xmlGetAttribute(keyChild, 'order') || 'ascending') as 'ascending' | 'descending';
-
-                        source.mergeKeys.push({
-                            select: keySelect || '.',
-                            order
-                        });
-                    }
-                }
-
-                // Evaluate the select expression to populate the buffer
-                const result = this.xPath.xPathEval(selectAttr, context);
-                const nodes = result.nodeSetValue ? result.nodeSetValue() : [];
-                source.buffer = Array.isArray(nodes) ? nodes.slice() : (nodes ? [nodes] : []);
-                source.isExhausted = source.buffer.length === 0;
-
-                sources.push(source);
-            }
-        }
-
-        if (sources.length === 0) {
-            throw new Error('<xsl:merge> requires at least one <xsl:merge-source> child element.');
-        }
-
-        // Add sources to coordinator
-        for (const source of sources) {
-            this.streamingMergeCoordinator.addSource(source);
-        }
-
-        try {
-            // Process merge groups - iterate through all items in sources
-            // For a basic implementation, we process merge-action once for each source that has data
-            let hasData = sources.some(s => s.buffer.length > 0);
-            
-            if (hasData) {
-                // For each source that has items, process the merge-action
-                for (const source of sources) {
-                    while (source.buffer.length > 0) {
-                        const item = source.buffer.shift();
-                        
-                        // Create context with the current merge item
-                        const mergeContext = context.clone([item], 0);
-                        
-                        // Process merge group with xsl:merge-action
-                        for (const child of template.childNodes) {
-                            if (this.isXsltElement(child, 'merge-action')) {
-                                await this.xsltChildNodes(mergeContext, child, output);
-                            }
-                        }
-                    }
-                    source.isExhausted = true;
-                }
-            }
-        } finally {
-            this.streamingMergeCoordinator.clear();
-        }
+        // Update streaming processor with current version
+        this.streamingProcessor.setVersion(this.version);
+        
+        // Create child processor callback
+        const childProcessor: StreamingChildProcessor = {
+            processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
+            isXsltElement: (node, name) => this.isXsltElement(node, name)
+        };
+        
+        await this.streamingProcessor.processMerge(context, template, output, childProcessor);
     }
 
     /**

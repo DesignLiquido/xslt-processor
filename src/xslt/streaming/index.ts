@@ -25,4 +25,5 @@ export * from './streaming-merge-coordinator';
 export * from './streaming-mode-detector';
 export * from './streaming-parser-base';
 export * from './streaming-parser-interface';
+export * from './streaming-processor';
 export * from './types';
