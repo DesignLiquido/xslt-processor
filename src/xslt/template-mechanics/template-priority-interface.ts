@@ -3,7 +3,7 @@
 // Implements XSLT 3.0 compliant template priority calculation and selection
 // See: https://www.w3.org/TR/xslt-30/#conflict
 
-import { XNode } from '../dom';
+import { XNode } from '../../dom';
 
 /**
  * Represents priority metadata for a single template rule.
@@ -23,4 +23,6 @@ export interface TemplatePriorityInterface {
     documentOrder: number;
     /** The match pattern string */
     matchPattern: string;
+    /** Original component (for overridden templates, to support xsl:original) */
+    originalComponent?: any;
 }

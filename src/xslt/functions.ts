@@ -1,9 +1,9 @@
 import { XNode } from "../dom/xnode";
 import { DOM_ELEMENT_NODE } from '../constants';
 import { ExprContext, XPath, MatchResolver, Expression, LocationExpr, UnionExpr } from "../xpath";
-import { TemplatePriorityInterface } from "./template-priority-interface";
-import { TemplateSelectionResultInterface } from "./template-selection-result-interface";
+
 import { NodeTestAny, NodeTestComment, NodeTestElementOrAttribute, NodeTestName, NodeTestNC, NodeTestPI, NodeTestText } from "../xpath/node-tests";
+import { TemplatePriorityInterface, TemplateSelectionResultInterface } from "./template-mechanics";
 
 /**
  * Calculate the default priority for a single step pattern.
@@ -583,7 +583,8 @@ export function selectBestTemplate(
     return {
         selectedTemplate: winner.template,
         hasConflict: conflicts.length > 1,
-        conflictingTemplates: conflicts.length > 1 ? conflicts : []
+        conflictingTemplates: conflicts.length > 1 ? conflicts : [],
+        originalComponent: winner.originalComponent
     };
 }
 

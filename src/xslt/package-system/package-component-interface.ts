@@ -28,4 +28,13 @@ export interface PackageComponentInterface {
     
     /** Priority (for templates) */
     priority?: number;
+    
+    /** The package this component originates from */
+    sourcePackage?: string;
+    
+    /** Whether this component was accepted via xsl:accept */
+    isAccepted?: boolean;
+    
+    /** Visibility as seen by the importing package (may differ from original) */
+    effectiveVisibility?: ComponentVisibility;
 }

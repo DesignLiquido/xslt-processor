@@ -1,4 +1,4 @@
 export * from './types';
 export * from './xslt-parameter';
 export * from './xslt';
-export * from './template-priority-interface';
+export * from './template-mechanics';

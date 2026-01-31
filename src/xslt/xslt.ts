@@ -47,6 +47,7 @@ import {
     UsedPackageInterface,
     ComponentVisibility,
     ComponentType,
+    ModeProperties,
     makeComponentKey,
     isComponentVisible,
     canOverrideComponent
@@ -60,13 +61,14 @@ import {
     selectBestTemplate,
     emitConflictWarning
 } from './functions';
-import { TemplatePriorityInterface } from './template-priority-interface';
+
 import {
     AccumulatorDefinition,
     AccumulatorRule,
     AccumulatorState,
     AccumulatorRegistry
 } from './xslt-accumulator';
+import { TemplatePriorityInterface } from './template-mechanics';
 
 /**
  * Metadata about a stylesheet in the import hierarchy.
@@ -226,10 +228,22 @@ export class Xslt {
         private packageRegistry: PackageRegistry = new PackageRegistry();
 
         /**
+         * Callback for loading external packages.
+         * Called when a package is not found in the registry.
+         */
+        private packageLoader?: (uri: string, version?: string) => Promise<XNode | null>;
+
+        /**
          * Current package being processed (for XSLT 3.0).
          * null if processing a non-package stylesheet.
          */
         private currentPackage: XsltPackageInterface | null = null;
+
+        /**
+         * Current override context (for XSLT 3.0 xsl:original).
+         * Tracks the original component when executing an override.
+         */
+        private currentOverrideContext: PackageComponentInterface | null = null;
 
         /**
          * Accumulator registry for XSLT 3.0 accumulators.
@@ -525,6 +539,12 @@ export class Xslt {
                     case 'accept':
                         this.xsltAccept(context, template);
                         break;
+                    case 'override':
+                        await this.xsltOverride(context, template, output);
+                        break;
+                    case 'original':
+                        await this.xsltOriginal(context, template, output);
+                        break;
                 case 'param':
                     await this.xsltVariable(context, template, false);
                     break;
@@ -561,6 +581,12 @@ export class Xslt {
                     break;
                 case 'merge':
                     await this.xsltMerge(context, template, output);
+                    break;
+                case 'mode':
+                    // xsl:mode declaration (XSLT 3.0)
+                    if (this.currentPackage) {
+                        this.xsltMode(context, template);
+                    }
                     break;
                 case 'template':
                     await this.xsltTemplate(context, template, output);
@@ -668,10 +694,14 @@ export class Xslt {
         this.xsltSort(sortContext, template); */
 
         const mode: string | null = xmlGetAttribute(template, 'mode');
+        const effectiveMode = mode || null;
         const top = template.ownerDocument.documentElement;
 
         // Collect all templates with their priority metadata
-        const expandedTemplates: TemplatePriorityInterface[] = collectAndExpandTemplates(top, mode, this.xPath, this.templateSourceMap);
+        let expandedTemplates: TemplatePriorityInterface[] = collectAndExpandTemplates(top, effectiveMode, this.xPath, this.templateSourceMap);
+
+        // Also collect templates from accepted components in used packages
+        expandedTemplates = expandedTemplates.concat(this.collectAcceptedTemplates(effectiveMode));
 
         // Clone context and set any xsl:with-param parameters defined on
         // the <xsl:apply-templates> element so they are visible to the
@@ -712,14 +742,21 @@ export class Xslt {
                     this.currentTemplateStack.push({
                         template: textSelection.selectedTemplate,
                         stylesheetDepth: metadata?.importDepth ?? 0,
-                        mode: modeAttr || mode,
+                        mode: modeAttr || effectiveMode,
                         match: matchPattern
                     });
+
+                    const previousOverrideContext = this.currentOverrideContext;
+                    const overrideContext = textSelection.originalComponent || (textSelection.selectedTemplate as any).__originalComponent;
+                    if (overrideContext) {
+                        this.currentOverrideContext = overrideContext;
+                    }
 
                     try {
                         await this.xsltChildNodes(textNodeContext, textSelection.selectedTemplate, output);
                     } finally {
                         this.currentTemplateStack.pop();
+                        this.currentOverrideContext = previousOverrideContext;
                     }
                 } else {
                     // No matching template - use built-in behavior (copy text)
@@ -760,14 +797,22 @@ export class Xslt {
                     this.currentTemplateStack.push({
                         template: selection.selectedTemplate,
                         stylesheetDepth: metadata?.importDepth ?? 0,
-                        mode: modeAttr || mode,
+                        mode: modeAttr || effectiveMode,
                         match: matchPattern
                     });
+                    
+                    // Set override context if this is an overridden template
+                    const previousOverrideContext = this.currentOverrideContext;
+                    const overrideContext = selection.originalComponent || (selection.selectedTemplate as any).__originalComponent;
+                    if (overrideContext) {
+                        this.currentOverrideContext = overrideContext;
+                    }
                     
                     try {
                         await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
                     } finally {
                         this.currentTemplateStack.pop();
+                        this.currentOverrideContext = previousOverrideContext;
                     }
                 } else {
                     // No matching template found - apply built-in template for elements
@@ -816,7 +861,7 @@ export class Xslt {
                                     this.currentTemplateStack.push({
                                         template: childSelection.selectedTemplate,
                                         stylesheetDepth: childMetadata?.importDepth ?? 0,
-                                        mode: childModeAttr || mode,
+                                        mode: childModeAttr || effectiveMode,
                                         match: childMatchPattern
                                     });
                                     
@@ -828,7 +873,7 @@ export class Xslt {
                                 } else if (childNode.nodeType === DOM_ELEMENT_NODE) {
                                     // Recursively apply built-in template to this element's children
                                     // Use a helper to avoid deep code duplication
-                                    await this.applyBuiltInTemplate(childNode, expandedTemplates, mode, paramContext, output);
+                                    await this.applyBuiltInTemplate(childNode, expandedTemplates, effectiveMode, paramContext, output);
                                 }
                             }
                         }
@@ -873,7 +918,16 @@ export class Xslt {
                     this.warningsCallback
                 );
                 if (textSelection.selectedTemplate) {
-                    await this.xsltChildNodes(textContext, textSelection.selectedTemplate, output);
+                    const previousOverrideContext = this.currentOverrideContext;
+                    const overrideContext = textSelection.originalComponent || (textSelection.selectedTemplate as any).__originalComponent;
+                    if (overrideContext) {
+                        this.currentOverrideContext = overrideContext;
+                    }
+                    try {
+                        await this.xsltChildNodes(textContext, textSelection.selectedTemplate, output);
+                    } finally {
+                        this.currentOverrideContext = previousOverrideContext;
+                    }
                 } else {
                     // Built-in text template: copy text
                     this.commonLogicTextNode(textContext, childNode, output);
@@ -901,10 +955,17 @@ export class Xslt {
                         match: childMatchPattern
                     });
                     
+                    const previousOverrideContext = this.currentOverrideContext;
+                    const overrideContext = childSelection.originalComponent || (childSelection.selectedTemplate as any).__originalComponent;
+                    if (overrideContext) {
+                        this.currentOverrideContext = overrideContext;
+                    }
+
                     try {
                         await this.xsltChildNodes(childContext, childSelection.selectedTemplate, output);
                     } finally {
                         this.currentTemplateStack.pop();
+                        this.currentOverrideContext = previousOverrideContext;
                     }
                 } else if (childNode.nodeType === DOM_ELEMENT_NODE) {
                     // Recursively apply built-in template
@@ -928,63 +989,78 @@ export class Xslt {
         if (this.currentTemplateStack.length === 0) {
             throw new Error('<xsl:apply-imports> can only be used within a template');
         }
-        
+
         // Get the current executing template's context
         const currentTemplateContext = this.currentTemplateStack[this.currentTemplateStack.length - 1];
         const {
             stylesheetDepth: currentDepth,
             mode: currentMode
         } = currentTemplateContext;
-        
+
         // Get current node
         const currentNode = context.nodeList[context.position];
-        
+
         // Collect templates from imported stylesheets (higher import depth = lower precedence)
         // We only want templates with importPrecedence LESS than current template (from imported stylesheets)
         const top = template.ownerDocument.documentElement;
         const allTemplates = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
-        
+
         // Filter to only templates from imported stylesheets (depth > currentDepth)
-        const importedTemplates = allTemplates.filter(t => {
+        const importedTemplates = allTemplates.filter((t) => {
             const metadata = this.templateSourceMap.get(t.template);
             return metadata && metadata.importDepth > currentDepth;
         });
-        
+
         if (importedTemplates.length === 0) {
-            // No imported templates found, silently do nothing (per spec)
             return;
         }
-        
+
         // Create a context for the current node to use with template selection
         const nodeContext = context.clone([currentNode], 0);
-        
+
         // Select best matching template from imported stylesheets
-        const selection = selectBestTemplate(importedTemplates, nodeContext, this.matchResolver, this.xPath, this.warningsCallback);
-        
+        const selection = selectBestTemplate(
+            importedTemplates,
+            nodeContext,
+            this.matchResolver,
+            this.xPath,
+            this.warningsCallback
+        );
+
         if (!selection.selectedTemplate) {
             // No matching template in imported stylesheets
             return;
         }
-        
+
         // Clone context and apply any with-param parameters from the apply-imports element
         const importedContext = context.clone();
-            const expandedTemplates: TemplatePriorityInterface[] = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
-        
+        await this.xsltWithParam(importedContext, template);
+
         // Execute the imported template
         // Need to track this as the new current template
         const metadata = this.templateSourceMap.get(selection.selectedTemplate);
         if (metadata) {
             const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
+            const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
             this.currentTemplateStack.push({
                 template: selection.selectedTemplate,
                 stylesheetDepth: metadata.importDepth,
-                mode: currentMode,
+                mode: modeAttr || currentMode,
                 match: matchPattern
             });
-            
-            await this.xsltChildNodes(importedContext, selection.selectedTemplate, output);
-            
-            this.currentTemplateStack.pop();
+
+            const previousOverrideContext = this.currentOverrideContext;
+            const overrideContext = selection.originalComponent || (selection.selectedTemplate as any).__originalComponent;
+            if (overrideContext) {
+                this.currentOverrideContext = overrideContext;
+            }
+
+            try {
+                await this.xsltChildNodes(importedContext, selection.selectedTemplate, output);
+            } finally {
+                this.currentTemplateStack.pop();
+                this.currentOverrideContext = previousOverrideContext;
+            }
         }
     }
 
@@ -1021,6 +1097,27 @@ export class Xslt {
         const paramContext = context.clone();
         await this.xsltWithParam(paramContext, template);
 
+        // First, check for overridden named templates from used packages
+        let foundTemplate: XNode | null = null;
+        if (this.currentPackage) {
+            this.currentPackage.usedPackages.forEach((usedPkg) => {
+                usedPkg.acceptedComponents.forEach((component) => {
+                    if (component.type === 'template' && component.name === name && component.isAccepted) {
+                        // Check for override
+                        const effectiveComponent = this.getEffectiveComponent(component);
+                        foundTemplate = effectiveComponent.node;
+                    }
+                });
+            });
+        }
+
+        // If found in accepted components (possibly overridden), use it
+        if (foundTemplate) {
+            await this.xsltChildNodes(paramContext, foundTemplate, output);
+            return;
+        }
+
+        // Otherwise, search in the current stylesheet
         for (let i = 0; i < top.childNodes.length; ++i) {
             let childNode = top.childNodes[i];
             if (
@@ -1078,7 +1175,6 @@ export class Xslt {
             domAppendChild(destination, node);
             return node;
         }
-
         if (source.nodeType == DOM_TEXT_NODE) {
             // Check if this whitespace-only text node should be stripped
             if (this.shouldStripWhitespaceNode(source)) {
@@ -2051,9 +2147,18 @@ export class Xslt {
             // Get package attributes
             const name = xmlGetAttribute(template, 'name');
             const packageVersion = xmlGetAttribute(template, 'package-version');
+            const declaredModes = (xmlGetAttribute(template, 'declared-modes') || 'yes') as 'yes' | 'no';
+            const inputTypeAnnotations = (xmlGetAttribute(template, 'input-type-annotations') || 'unspecified') as 'preserve' | 'strip' | 'unspecified';
 
             if (!name) {
                 throw new Error('<xsl:package> requires a "name" attribute.');
+            }
+
+            // Mark as loading for circular dependency detection (if not already marked by loadAndRegisterPackage)
+            const packageKey = packageVersion ? `${name}@${packageVersion}` : name;
+            const wasAlreadyLoading = this.packageRegistry.isLoading(packageKey);
+            if (!wasAlreadyLoading) {
+                this.packageRegistry.beginLoading(packageKey);
             }
 
             // Create package structure
@@ -2063,7 +2168,11 @@ export class Xslt {
                 root: template,
                 components: new Map(),
                 usedPackages: new Map(),
-                isTopLevel: this.currentPackage === null
+                isTopLevel: this.currentPackage === null,
+                overrides: new Map(),
+                modes: new Map(),
+                declaredModes,
+                inputTypeAnnotations
             };
 
             // Save previous package context
@@ -2077,8 +2186,63 @@ export class Xslt {
                     // Process package like a stylesheet (templates, variables, keys, etc.)
                     await this.xsltTransformOrStylesheet(context, template, output);
             } finally {
+                // Only end loading if we started it (not if loadAndRegisterPackage did)
+                if (!wasAlreadyLoading) {
+                    this.packageRegistry.endLoading(packageKey);
+                }
                 // Restore previous package context
                 this.currentPackage = previousPackage;
+            }
+        }
+
+        /**
+         * Loads and registers an external package.
+         * Creates a temporary context and processes the package document.
+         * 
+         * @param name The package name/URI.
+         * @param packageDoc The parsed package document.
+         * @param version Optional semantic version string.
+         */
+        protected async loadAndRegisterPackage(name: string, packageDoc: XNode, version?: string): Promise<void> {
+            // Detect circular dependencies
+            const packageKey = version ? `${name}@${version}` : name;
+            
+            if (!this.packageRegistry.beginLoading(packageKey)) {
+                throw new Error(`Circular package dependency detected: "${packageKey}".`);
+            }
+
+            try {
+                // Find the xsl:package root element
+                let packageRoot = packageDoc;
+                if (packageDoc.nodeType === DOM_DOCUMENT_NODE) {
+                    for (const child of packageDoc.childNodes) {
+                        if (child.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(child, 'package')) {
+                            packageRoot = child;
+                            break;
+                        }
+                    }
+                }
+
+                // Process as package
+                if (packageRoot && this.isXsltElement(packageRoot, 'package')) {
+                    // Override the name and version if provided
+                    if (name && !xmlGetAttribute(packageRoot, 'name')) {
+                        domSetAttribute(packageRoot, 'name', name);
+                    }
+                    if (version && !xmlGetAttribute(packageRoot, 'package-version')) {
+                        domSetAttribute(packageRoot, 'package-version', version);
+                    }
+                    
+                    // Create a temporary context for processing
+                    const tempContext = new ExprContext([packageRoot]);
+                    
+                    // We don't need output for package registration, just to process the package definition
+                    await this.xsltPackage(tempContext, packageRoot);
+                } else {
+                    throw new Error('Package document does not contain an xsl:package root element.');
+                }
+            } finally {
+                this.packageRegistry.endLoading(packageKey);
             }
         }
 
@@ -2102,12 +2266,37 @@ export class Xslt {
                 throw new Error('<xsl:use-package> requires a "name" attribute.');
             }
 
-            // Look up the package in the registry
-            const usedPackage = this.packageRegistry.get(name, packageVersion);
+            // Check for circular dependency - if the package is currently being loaded, it's a circular reference
+            const packageKey = packageVersion ? `${name}@${packageVersion}` : name;
+            if (this.packageRegistry.isLoading(packageKey)) {
+                throw new Error(`Circular package dependency detected: "${packageKey}".`);
+            }
+
+            // Try to load the package from registry first
+            let usedPackage = this.packageRegistry.get(name, packageVersion);
+            
+            // If not found and loader exists, try loading
+            if (!usedPackage && this.packageLoader) {
+                try {
+                    const packageDoc = await this.packageLoader(name, packageVersion);
+                    if (packageDoc) {
+                        // Parse and register the package
+                        await this.loadAndRegisterPackage(name, packageDoc, packageVersion);
+                        usedPackage = this.packageRegistry.get(name, packageVersion);
+                    }
+                } catch (error) {
+                    // If this is a circular dependency error, rethrow it
+                    if (error instanceof Error && error.message.includes('Circular package dependency')) {
+                        throw error;
+                    }
+                    // Otherwise, continue to error message below
+                }
+            }
+            
             if (!usedPackage) {
                 throw new Error(
                     `Package "${name}"${packageVersion ? `@${packageVersion}` : ''} not found. ` +
-                    'Packages must be loaded before they can be used.'
+                    (this.packageLoader ? 'Package loader failed to load the package.' : 'Packages must be loaded before they can be used.')
                 );
             }
 
@@ -2121,12 +2310,32 @@ export class Xslt {
             const key = packageVersion ? `${name}@${packageVersion}` : name;
             this.currentPackage.usedPackages.set(key, usedPkg);
 
-            // Process xsl:accept children to handle overrides
+            // Process xsl:accept and xsl:override children
             for (const child of template.childNodes) {
                 if (this.isXsltElement(child, 'accept')) {
                     this.xsltAccept(context, child);
+                } else if (this.isXsltElement(child, 'override')) {
+                    await this.xsltOverride(context, child, output);
                 }
             }
+
+            // Register accepted variables in the context
+            await this.registerAcceptedVariables(context);
+
+            // Refresh function registry so accepted/overridden functions are available
+            this.registerUserDefinedFunctionsInContext(context);
+
+            // Validate that all abstract components have been overridden (Phase 4.5)
+            usedPackage.components.forEach((component, key) => {
+                if (component.visibility === 'abstract') {
+                    const hasOverride = this.currentPackage!.overrides.has(key);
+                    if (!hasOverride) {
+                        throw new Error(
+                            `Abstract component "${component.name || component.match || key}" from package "${name}" must be overridden.`
+                        );
+                    }
+                }
+            });
         }
 
         /**
@@ -2157,20 +2366,88 @@ export class Xslt {
             }
 
             // Mark components as exposed
-            // This is simplified - full implementation would need to track all components
-            // and apply visibility rules during component resolution
+            // For xsl:expose, we need to find the actual component definitions in the package
+            // and register them with their actual nodes
             for (const name of nameList) {
-                const component: PackageComponentInterface = {
-                    type: componentType,
-                    name: name === '*' ? undefined : name,
-                    visibility,
-                    overridable: visibility !== 'final',
-                    node: template
-                };
+                // Find the actual component in the package root
+                const actualComponent = this.findComponentInPackageRoot(
+                    this.currentPackage.root,
+                    componentType,
+                    name === '*' ? null : name
+                );
 
-                const key = makeComponentKey(component);
-                this.currentPackage.components.set(key, component);
+                if (actualComponent) {
+                    const component: PackageComponentInterface = {
+                        type: componentType,
+                            name: actualComponent.name || (name !== '*' ? name : undefined),
+                        match: actualComponent.match,
+                        mode: actualComponent.mode,
+                        visibility,
+                        overridable: visibility !== 'final',
+                        node: actualComponent.node,
+                        priority: actualComponent.priority
+                    };
+
+                    const key = makeComponentKey(component);
+                    this.currentPackage.components.set(key, component);
+                } else if (name !== '*') {
+                    // Only warn for specific names, not wildcards
+                    // Wildcard might not match anything yet
+                }
             }
+        }
+
+        /**
+         * Find a component definition in the package root.
+         * @param packageRoot The package root element
+         * @param type The component type to find
+         * @param name The component name (null for all matching type)
+         * @returns Component information or null if not found
+         */
+        private findComponentInPackageRoot(
+            packageRoot: XNode,
+            type: ComponentType,
+            name: string | null
+        ): { node: XNode; name?: string; match?: string; mode?: string | null; priority?: number } | null {
+            for (const child of packageRoot.childNodes) {
+                if (child.nodeType !== DOM_ELEMENT_NODE) {
+                    continue;
+                }
+
+                // Match by component type
+                if (type === 'template' && this.isXsltElement(child, 'template')) {
+                    const templateName = xmlGetAttribute(child, 'name');
+                    const match = xmlGetAttribute(child, 'match');
+                    const mode = xmlGetAttribute(child, 'mode');
+                    
+                    // If name is specified, match by name
+                    if (name) {
+                        if (templateName === name) {
+                            return { node: child, name: templateName, match, mode };
+                        }
+                    } else {
+                        // Return first template for wildcard
+                        return { node: child, name: templateName, match, mode };
+                    }
+                } else if (type === 'function' && this.isXsltElement(child, 'function')) {
+                    const functionName = xmlGetAttribute(child, 'name');
+                    if (!name || functionName === name) {
+                        return { node: child, name: functionName };
+                    }
+                } else if (type === 'variable' && this.isXsltElement(child, 'variable')) {
+                    const varName = xmlGetAttribute(child, 'name');
+                    if (!name || varName === name) {
+                        return { node: child, name: varName };
+                    }
+                } else if (type === 'attribute-set' && this.isXsltElement(child, 'attribute-set')) {
+                    const setName = xmlGetAttribute(child, 'name');
+                    if (!name || setName === name) {
+                        return { node: child, name: setName };
+                    }
+                }
+            }
+
+            return null;
         }
 
         /**
@@ -2187,6 +2464,7 @@ export class Xslt {
             // Get accept attributes
             const componentType = xmlGetAttribute(template, 'component') as ComponentType;
             const names = xmlGetAttribute(template, 'names');
+            const visibilityOverride = xmlGetAttribute(template, 'visibility') as ComponentVisibility | undefined;
 
             if (!componentType) {
                 throw new Error('<xsl:accept> requires a "component" attribute.');
@@ -2214,23 +2492,429 @@ export class Xslt {
                 throw new Error(`Internal error: used package "${key}" not found.`);
             }
 
-            // Mark components as accepted
-            // This is a simplified implementation - full version would need to:
-            // 1. Find matching components in the used package
-            // 2. Check visibility rules
-            // 3. Apply any overrides specified in xsl:accept children
-            for (const name of nameList) {
-                const component: PackageComponentInterface = {
-                    type: componentType,
-                    name: name === '*' ? undefined : name,
-                    visibility: 'public',
-                    overridable: true,
-                    node: template
+            // Look up and accept components from the used package
+            const componentsToAccept = this.findComponentsInPackage(
+                usedPkg.package,
+                componentType,
+                nameList
+            );
+
+            // Validate and accept each component
+            for (const component of componentsToAccept) {
+                // Check if component is visible (not from the same package, so fromPackage = false)
+                if (!isComponentVisible(component, false)) {
+                    const componentName = component.name || component.match || 'unnamed';
+                    throw new Error(
+                        `Cannot accept private component "${componentName}" of type "${componentType}" ` +
+                        `from package "${usedPkg.package.name}".`
+                    );
+                }
+
+                // Create accepted component with tracking information
+                const acceptedComponent: PackageComponentInterface = {
+                    ...component,
+                    sourcePackage: usedPkg.package.name,
+                    isAccepted: true,
+                    effectiveVisibility: visibilityOverride || component.visibility
                 };
 
-                const componentKey = makeComponentKey(component);
-                usedPkg.acceptedComponents.set(componentKey, component);
+                const componentKey = makeComponentKey(acceptedComponent);
+                usedPkg.acceptedComponents.set(componentKey, acceptedComponent);
             }
+        }
+
+        /**
+         * Implements <xsl:override> (XSLT 3.0 Section 3.7.2).
+         * Overrides components from a used package.
+         */
+        protected async xsltOverride(context: ExprContext, template: XNode, output?: XNode) {
+            if (!this.currentPackage) {
+                throw new Error('<xsl:override> can only appear as a child of <xsl:use-package>.');
+            }
+
+            // Validate parent is xsl:use-package
+            const parentUsePackage = template.parentNode;
+            if (!parentUsePackage || !this.isXsltElement(parentUsePackage, 'use-package')) {
+                throw new Error('<xsl:override> must be a child of <xsl:use-package>.');
+            }
+
+            const packageName = xmlGetAttribute(parentUsePackage, 'name');
+            const packageVersion = xmlGetAttribute(parentUsePackage, 'package-version');
+            const key = packageVersion ? `${packageName}@${packageVersion}` : packageName;
+
+            const usedPkg = this.currentPackage.usedPackages.get(key);
+            if (!usedPkg) {
+                throw new Error(`Internal error: used package "${key}" not found.`);
+            }
+
+            // Process each child element as an override
+            for (let i = 0; i < template.childNodes.length; i++) {
+                const child = template.childNodes[i];
+                if (child.nodeType !== DOM_ELEMENT_NODE) {
+                    continue;
+                }
+
+                const localName = child.localName;
+                
+                // Determine component type from element name
+                let componentType: ComponentType | null = null;
+                let componentName: string | null = null;
+                let componentMatch: string | null = null;
+                
+                switch (localName) {
+                    case 'template':
+                        componentType = 'template';
+                        componentName = xmlGetAttribute(child, 'name');
+                        componentMatch = xmlGetAttribute(child, 'match');
+                        break;
+                    case 'function':
+                        componentType = 'function';
+                        componentName = xmlGetAttribute(child, 'name');
+                        break;
+                    case 'variable':
+                        componentType = 'variable';
+                        componentName = xmlGetAttribute(child, 'name');
+                        break;
+                    case 'attribute-set':
+                        componentType = 'attribute-set';
+                        componentName = xmlGetAttribute(child, 'name');
+                        break;
+                    default:
+                        throw new Error(`<xsl:override> does not support <xsl:${localName}> elements.`);
+                }
+
+                if (!componentType) {
+                    continue;
+                }
+
+                // Find the original component in the used package
+                // Check both accepted components and the package's own components
+                let originalComponent: PackageComponentInterface | undefined;
+                
+                
+                // First check accepted components (which we explicitly accepted)
+                usedPkg.acceptedComponents.forEach((component) => {
+                    if (component.type !== componentType) {
+                        return;
+                    }
+                    
+                    // Match by name or match pattern
+                    if (componentName && component.name === componentName) {
+                        originalComponent = component;
+                    } else if (componentMatch && component.match === componentMatch) {
+                        originalComponent = component;
+                    }
+                });
+                
+                // If not found in accepted, check the package components directly
+                if (!originalComponent) {
+                    usedPkg.package.components.forEach((component) => {
+                        if (component.type !== componentType) {
+                            return;
+                        }
+                        
+                        // Match by name or match pattern
+                        if (componentName && component.name === componentName) {
+                            originalComponent = component;
+                        } else if (componentMatch && component.match === componentMatch) {
+                            originalComponent = component;
+                        }
+                    });
+                }
+
+                if (!originalComponent) {
+                    const identifier = componentName || componentMatch || 'unnamed';
+                    throw new Error(
+                        `Cannot override component "${identifier}" of type "${componentType}": ` +
+                        `component not found in package "${usedPkg.package.name}".`
+                    );
+                }
+
+                // Verify it's overridable (not final)
+                if (!canOverrideComponent(originalComponent)) {
+                    const identifier = componentName || componentMatch || 'unnamed';
+                    throw new Error(
+                        `Cannot override component "${identifier}" of type "${componentType}": ` +
+                        `component is marked as "final" in package "${usedPkg.package.name}".`
+                    );
+                }
+
+                // Create the overriding component
+                const overridingComponent: PackageComponentInterface = {
+                    type: componentType,
+                    name: componentName || undefined,
+                    match: componentMatch || undefined,
+                    mode: xmlGetAttribute(child, 'mode') || undefined,
+                    visibility: originalComponent.visibility, // Inherit visibility from original
+                    overridable: false, // Overrides cannot themselves be overridden (unless explicitly marked)
+                    node: child,
+                    sourcePackage: this.currentPackage.name,
+                    isAccepted: false,
+                    effectiveVisibility: originalComponent.visibility
+                };
+
+                // Store reference to original component in the overriding component
+                // This allows xsl:original to find and call the original
+                (overridingComponent as any).originalComponent = originalComponent;
+                (overridingComponent.node as any).__originalComponent = originalComponent;
+
+                // Register the override
+                const componentKey = makeComponentKey(originalComponent);
+                this.currentPackage.overrides.set(componentKey, overridingComponent);
+
+                // Register overriding function definitions so they are available to XPath
+                if (componentType === 'function') {
+                    this.xsltFunction(context, child);
+                }
+
+                // Do not execute the overriding component during registration.
+                // It will be selected/executed during transformation when matched.
+            }
+        }
+
+        /**
+         * Find components in a package matching the given criteria.
+         * Used by xsl:accept to locate components from used packages.
+         * 
+         * @param pkg The package to search in
+         * @param componentType The type of component to find
+         * @param namePatterns Array of name patterns ('*' for all, or specific names)
+         * @returns Array of matching components
+         */
+        private findComponentsInPackage(
+            pkg: XsltPackageInterface,
+            componentType: ComponentType,
+            namePatterns: string[]
+        ): PackageComponentInterface[] {
+            const results: PackageComponentInterface[] = [];
+            const isWildcard = namePatterns.includes('*');
+
+            pkg.components.forEach((component, key) => {
+                // Filter by component type
+                if (component.type !== componentType) {
+                    return;
+                }
+
+                // If wildcard, accept all components of this type
+                if (isWildcard) {
+                    results.push(component);
+                    return;
+                }
+
+                // Otherwise, match by name
+                const componentName = this.getComponentNameForMatching(component);
+                if (componentName && namePatterns.includes(componentName)) {
+                    results.push(component);
+                }
+            });
+
+            return results;
+        }
+
+        /**
+         * Get the name to use when matching components.
+         * For named components (functions, variables, attribute-sets), returns the name.
+         * For templates, returns the name if present, otherwise returns null (match-based templates).
+         * 
+         * @param component The component to get the name from
+         * @returns The component name for matching, or null if unnamed
+         */
+        private getComponentNameForMatching(component: PackageComponentInterface): string | null {
+            switch (component.type) {
+                case 'function':
+                case 'variable':
+                case 'attribute-set':
+                case 'mode':
+                    return component.name || null;
+                case 'template':
+                    // Only named templates can be matched by name in xsl:accept
+                    return component.name || null;
+                default:
+                    return null;
+            }
+        }
+
+        /**
+         * Implements <xsl:original> (XSLT 3.0 Section 3.7.2).
+         * Calls the original component from within an override.
+         */
+        protected async xsltOriginal(context: ExprContext, template: XNode, output?: XNode) {
+            // Check if we're within an override context
+            if (!this.currentOverrideContext && this.currentTemplateStack.length > 0) {
+                const currentTemplate = this.currentTemplateStack[this.currentTemplateStack.length - 1].template;
+                const templateOverrideContext = (currentTemplate as any).__originalComponent as PackageComponentInterface | undefined;
+                if (templateOverrideContext) {
+                    this.currentOverrideContext = templateOverrideContext;
+                }
+            }
+            if (!this.currentOverrideContext) {
+                throw new Error('<xsl:original> can only be used within an overriding component.');
+            }
+
+            const originalComponent = this.currentOverrideContext;
+            const originalNode = originalComponent.node;
+
+            // Execute the original component based on its type
+            switch (originalComponent.type) {
+                case 'template':
+                    // Execute the original template's children
+                    await this.xsltChildNodes(context, originalNode, output);
+                    break;
+                
+                case 'function':
+                    // For functions, xsl:original would be called from within the override function body
+                    // The actual function execution is handled by the function call mechanism
+                    throw new Error('<xsl:original> for functions should be called as a function, not as an element.');
+                
+                case 'variable':
+                    // For variables, execute the original variable definition
+                    await this.xsltVariable(context, originalNode, true);
+                    break;
+                
+                case 'attribute-set':
+                    // For attribute-sets, apply the original attribute set
+                    if (originalComponent.name && output) {
+                        await this.applyAttributeSets(context, output, originalComponent.name);
+                    }
+                    break;
+                
+                default:
+                    throw new Error(`<xsl:original> does not support component type "${originalComponent.type}".`);
+            }
+        }
+
+        /**
+         * Implements `<xsl:mode>` (XSLT 3.0 Section 3.5).
+         * Declares a mode with visibility and other properties.
+         * Only valid within an xsl:package.
+         */
+        protected xsltMode(context: ExprContext, template: XNode): void {
+            if (!this.currentPackage) {
+                throw new Error('<xsl:mode> can only appear as a child of <xsl:package>.');
+            }
+
+            const name = xmlGetAttribute(template, 'name');
+            if (!name) {
+                throw new Error('<xsl:mode> requires a "name" attribute.');
+            }
+
+            // Get mode properties
+            const visibility = (xmlGetAttribute(template, 'visibility') || 'public') as ComponentVisibility;
+            const streamableAttr = xmlGetAttribute(template, 'streamable');
+            const onNoMatch = xmlGetAttribute(template, 'on-no-match');
+            const onMultipleMatch = xmlGetAttribute(template, 'on-multiple-match');
+
+            const streamable = streamableAttr === 'yes';
+
+            // Initialize modes map if not already done
+            if (!this.currentPackage.modes) {
+                this.currentPackage.modes = new Map();
+            }
+
+            // Register the mode with its properties
+            const modeProperties: ModeProperties = {
+                name,
+                visibility,
+                streamable,
+                onNoMatch,
+                onMultipleMatch
+            };
+
+            this.currentPackage.modes.set(name, modeProperties);
+
+            // Also register as a component for tracking
+            const componentKey = makeComponentKey({ type: 'mode', name, visibility } as any);
+            if (!this.currentPackage.components.has(componentKey)) {
+                this.currentPackage.components.set(componentKey, {
+                    type: 'mode',
+                    name,
+                    visibility,
+                    overridable: false,
+                    node: template
+                });
+            }
+        }
+
+        /**
+         * Get the effective component, checking for overrides first.
+         * If the component has been overridden in the current package, returns the override.
+         * Otherwise, returns the original component.
+         * @param component The original component
+         * @returns The effective component (override or original)
+         */
+        private getEffectiveComponent(component: PackageComponentInterface): PackageComponentInterface {
+            if (!this.currentPackage) {
+                return component;
+            }
+
+            const componentKey = makeComponentKey(component);
+            const override = this.currentPackage.overrides.get(componentKey);
+            return override || component;
+        }
+
+        /**
+         * Collect templates from accepted components in used packages.
+         * @param mode The mode to match (null for default mode)
+         * @returns Array of template priority interfaces
+         */
+        private collectAcceptedTemplates(mode: string | null): TemplatePriorityInterface[] {
+            const templates: TemplatePriorityInterface[] = [];
+            
+            if (!this.currentPackage) {
+                return templates;
+            }
+
+            // Iterate through all used packages
+            this.currentPackage.usedPackages.forEach((usedPkg, packageKey) => {
+                // Look at accepted components
+                usedPkg.acceptedComponents.forEach((component, componentKey) => {
+                    if (component.type === 'template' && component.isAccepted) {
+                        // Check for overrides - use the effective component
+                        const effectiveComponent = this.getEffectiveComponent(component);
+                        const templateNode = effectiveComponent.node;
+                        
+                        // If this is an override, store the original for xsl:original
+                        const isOverride = effectiveComponent !== component;
+                        const originalForContext = isOverride ? component : undefined;
+                        
+                        // Check if this template matches the requested mode
+                        const templateMode = xmlGetAttribute(templateNode, 'mode') || null;
+                        const effectiveMode = mode || null;
+                        if (effectiveMode !== templateMode) {
+                            return;
+                        }
+                        
+                        // Only include templates with match patterns
+                        const match = xmlGetAttribute(templateNode, 'match');
+                        if (!match) {
+                            return;
+                        }
+                        
+                        // Get priority
+                        const priorityAttr = xmlGetAttribute(templateNode, 'priority');
+                        const explicitPriority = priorityAttr ? parseFloat(priorityAttr) : null;
+                        
+                        // Calculate default priority - use 0 as a safe default for accepted templates
+                        const defaultPriority = component.priority || 0;
+                        const effectivePriority = explicitPriority !== null && !isNaN(explicitPriority)
+                            ? explicitPriority
+                            : defaultPriority;
+                        
+                        templates.push({
+                            template: templateNode,
+                            explicitPriority: explicitPriority !== null && !isNaN(explicitPriority) ? explicitPriority : null,
+                            defaultPriority,
+                            effectivePriority,
+                            importPrecedence: 0, // Accepted templates have neutral precedence
+                            documentOrder: 0,
+                            matchPattern: match,
+                            originalComponent: originalForContext // Store original for xsl:original support
+                        });
+                    }
+                });
+            });
+
+            return templates;
         }
 
     /**
@@ -3635,6 +4319,39 @@ export class Xslt {
     }
 
     /**
+     * Coerce a NodeValue to a specific type based on the 'as' attribute.
+     * 
+     * @param value The value to coerce.
+     * @param type The target type (e.g., "xs:integer", "xs:string", "xs:boolean").
+     * @returns The coerced value.
+     */
+    protected coerceToType(value: NodeValue, type: string): NodeValue {
+        const normalizedType = type.replace(/^xs:/, '').toLowerCase();
+        
+        switch (normalizedType) {
+            case 'integer':
+            case 'int':
+            case 'double':
+            case 'decimal':
+            case 'number':
+                // Convert to number
+                return new NumberValue(value.numberValue());
+            
+            case 'string':
+                // Convert to string
+                return new StringValue(value.stringValue());
+            
+            case 'boolean':
+                // Convert to boolean
+                return new BooleanValue(value.booleanValue());
+            
+            default:
+                // For unknown types or node-set types, return as-is
+                return value;
+        }
+    }
+
+    /**
      * Execute a user-defined xsl:function.
      * Called when a function from userDefinedFunctions is invoked from XPath.
      *
@@ -3685,19 +4402,39 @@ export class Xslt {
             if (paramName) {
                 if (i < args.length) {
                     // Use provided argument
-                    const argValue = args[i];
+                    let argValue = args[i];
+                    const paramType = xmlGetAttribute(params[i], 'as');
+                    
+                    // Convert argument to NodeValue based on parameter type
+                    let paramValue: NodeValue;
+                    
                     if (argValue && typeof argValue === 'object' && 'stringValue' in argValue) {
-                        // It's a NodeValue-like object
-                        functionContext.setVariable(paramName, argValue as NodeValue);
+                        // It's a NodeValue-like object - apply type coercion if needed
+                        paramValue = argValue as NodeValue;
+                        if (paramType) {
+                            paramValue = this.coerceToType(paramValue, paramType);
+                        }
+                    } else if (argValue && typeof argValue === 'object' && 'nodeType' in argValue) {
+                        // It's a raw DOM node
+                        paramValue = new NodeSetValue([argValue as XNode]);
+                        if (paramType) {
+                            paramValue = this.coerceToType(paramValue, paramType);
+                        }
                     } else if (Array.isArray(argValue)) {
-                        functionContext.setVariable(paramName, new NodeSetValue(argValue));
+                        // Array of nodes from XPath evaluation
+                        paramValue = new NodeSetValue(argValue);
+                        if (paramType) {
+                            paramValue = this.coerceToType(paramValue, paramType);
+                        }
                     } else if (typeof argValue === 'number') {
-                        functionContext.setVariable(paramName, new NumberValue(argValue));
+                        paramValue = new NumberValue(argValue);
                     } else if (typeof argValue === 'boolean') {
-                        functionContext.setVariable(paramName, new BooleanValue(argValue));
+                        paramValue = new BooleanValue(argValue);
                     } else {
-                        functionContext.setVariable(paramName, new StringValue(String(argValue ?? '')));
+                        paramValue = new StringValue(String(argValue ?? ''));
                     }
+                    
+                    functionContext.setVariable(paramName, paramValue);
                 } else {
                     // Use default value from parameter definition if available
                     const selectExpr = xmlGetAttribute(params[i], 'select');
@@ -3797,6 +4534,30 @@ export class Xslt {
      */
     getResultDocuments(): Map<string, string> {
         return this.resultDocuments;
+    }
+
+    /**
+     * Sets the package loader callback.
+     * The callback is called when a package is referenced via xsl:use-package
+     * but is not found in the registry.
+     * 
+     * @param loader A function that loads package documents by URI and optional version.
+     *               Returns the parsed package document, or null if not found.
+     */
+    setPackageLoader(loader: (uri: string, version?: string) => Promise<XNode | null>): void {
+        this.packageLoader = loader;
+    }
+
+    /**
+     * Pre-registers a package for use in transformations.
+     * The package is parsed and stored in the internal registry.
+     * 
+     * @param name The package name/URI.
+     * @param packageDoc The parsed package document.
+     * @param version Optional semantic version string.
+     */
+    async registerPackage(name: string, packageDoc: XNode, version?: string): Promise<void> {
+        await this.loadAndRegisterPackage(name, packageDoc, version);
     }
 
     /**
@@ -3930,6 +4691,28 @@ export class Xslt {
         if (override || !context.getVariable(name)) {
             context.setVariable(name, value);
         }
+    }
+
+    /**
+     * Register accepted variables from used packages into the context.
+     * Called after processing package use-package declarations.
+     * @param context The expression context.
+     */
+    private async registerAcceptedVariables(context: ExprContext) {
+        if (!this.currentPackage) {
+            return;
+        }
+
+        // Iterate through all used packages
+        this.currentPackage.usedPackages.forEach((usedPkg, packageKey) => {
+            // Look at accepted components
+            usedPkg.acceptedComponents.forEach((component, componentKey) => {
+                if (component.type === 'variable' && component.name && component.isAccepted) {
+                    // Process this variable node to get its value
+                    this.xsltVariable(context, component.node, false);
+                }
+            });
+        });
     }
 
     /**
@@ -4340,7 +5123,7 @@ export class Xslt {
      * @param context The expression context.
      */
     private registerUserDefinedFunctionsInContext(context: ExprContext) {
-        if (this.userDefinedFunctions.size === 0) {
+        if (this.userDefinedFunctions.size === 0 && !this.hasAcceptedFunctions()) {
             return;
         }
 
@@ -4349,6 +5132,7 @@ export class Xslt {
             executor: (ctx: ExprContext, functionDef: XNode, args: any[]) => any;
         }>();
 
+        // Register user-defined functions from the current stylesheet
         this.userDefinedFunctions.forEach((functionDef, name) => {
             functionsMap.set(name, {
                 functionDef,
@@ -4358,7 +5142,62 @@ export class Xslt {
             });
         });
 
+        // Register functions from accepted components in used packages
+        this.registerAcceptedFunctions(functionsMap);
+
         context.userDefinedFunctions = functionsMap;
+    }
+
+    /**
+     * Check if there are any accepted functions in used packages.
+     */
+    private hasAcceptedFunctions(): boolean {
+        if (!this.currentPackage) {
+            return false;
+        }
+
+        let hasAccepted = false;
+        this.currentPackage.usedPackages.forEach((usedPkg) => {
+            usedPkg.acceptedComponents.forEach((component) => {
+                if (component.type === 'function' && component.isAccepted) {
+                    hasAccepted = true;
+                }
+            });
+        });
+        return hasAccepted;
+    }
+
+    /**
+     * Register accepted functions from used packages.
+     * @param functionsMap The map to register functions into.
+     */
+    private registerAcceptedFunctions(
+        functionsMap: Map<string, {
+            functionDef: XNode;
+            executor: (ctx: ExprContext, functionDef: XNode, args: any[]) => any;
+        }>
+    ) {
+        if (!this.currentPackage) {
+            return;
+        }
+
+        // Iterate through all used packages
+        this.currentPackage.usedPackages.forEach((usedPkg, packageKey) => {
+            // Look at accepted components
+            usedPkg.acceptedComponents.forEach((component, componentKey) => {
+                if (component.type === 'function' && component.name && component.isAccepted) {
+                    // Check for overrides - use the effective component
+                    const effectiveComponent = this.getEffectiveComponent(component);
+                    // Register this function
+                    functionsMap.set(component.name, {
+                        functionDef: effectiveComponent.node,
+                        executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => {
+                            return this.executeUserDefinedFunctionSync(ctx, funcDef, args);
+                        }
+                    });
+                }
+            });
+        });
     }
 
     /**
