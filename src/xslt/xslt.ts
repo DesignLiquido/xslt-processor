@@ -4826,14 +4826,12 @@ export class Xslt {
 
                 let newNode: XNode;
                 newNode = domCreateElement(this.outputDocument, template.nodeName);
-                if (node && node.siblingPosition !== undefined) {
-                    newNode.siblingPosition = node.siblingPosition;
-                } else if (node === undefined && context.nodeList.length === 0) {
-                    // Empty context - set position to number of existing children
-                    newNode.siblingPosition = (output || this.outputDocument).childNodes.length;
-                } else {
-                    newNode.siblingPosition = 0;
-                }
+                
+                // Set position based on current number of children in output
+                // This preserves document order for literal elements in templates
+                // (Issue #158: text nodes before block elements should stay before them)
+                // We don't copy siblingPosition from input node because it's from a different document
+                newNode.siblingPosition = (output || this.outputDocument).childNodes.length;
 
                 domAppendChild(output || this.outputDocument, newNode);
 
