@@ -1,6 +1,6 @@
 {
   "name": "xslt-processor",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "description": "A JavaScript XSLT Processor",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
