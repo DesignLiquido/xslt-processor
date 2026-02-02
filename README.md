@@ -80,7 +80,7 @@ const xslt = new Xslt(options);
 - `cData` (`boolean`, default `true`): resolves CDATA elements in the output. Content under CDATA is resolved as text. This overrides `escape` for CDATA content.
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [HTML/XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). Can be overridden by `disable-output-escaping`, that also does the opposite, unescaping `&gt;` and `&lt;` by `<` and `>`, respectively.
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`.
+- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`, `adaptive`.
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
@@ -130,6 +130,52 @@ console.log(parsed.root.users.user); // ["Alice", "Bob"]
 - Empty elements are omitted from the output
 - Attributes are prefixed with `@` (when present in the output)
 - Mixed text and element content uses the `#text` property for text nodes
+
+#### Adaptive Output Format
+
+When using `outputMethod: 'adaptive'`, the XSLT processor automatically detects the most appropriate output format based on the transformation result. This implements XSLT 3.1 adaptive output behavior.
+
+**Detection Rules:**
+
+- If the output contains only text nodes (no elements), it returns as plain text
+- If the output contains one or more elements, it returns as XML
+
+**Example:**
+
+```js
+const xslt = new Xslt({ outputMethod: 'adaptive' });
+const xmlParser = new XmlParser();
+
+// Example 1: Pure text output
+const xmlString1 = `<root><value>Hello World</value></root>`;
+const xsltString1 = `<?xml version="1.0"?>
+  <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+      <xsl:value-of select="root/value"/>
+    </xsl:template>
+  </xsl:stylesheet>`;
+
+const result1 = await xslt.xsltProcess(
+  xmlParser.xmlParse(xmlString1),
+  xmlParser.xmlParse(xsltString1)
+);
+console.log(result1); // "Hello World" (plain text)
+
+// Example 2: XML output
+const xmlString2 = `<root><user>John</user></root>`;
+const xsltString2 = `<?xml version="1.0"?>
+  <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+      <users><xsl:copy-of select="root/user"/></users>
+    </xsl:template>
+  </xsl:stylesheet>`;
+
+const result2 = await xslt.xsltProcess(
+  xmlParser.xmlParse(xmlString2),
+  xmlParser.xmlParse(xsltString2)
+);
+console.log(result2); // "<users><user>John</user></users>" (XML)
+```
 
 ### Direct use in browsers
 

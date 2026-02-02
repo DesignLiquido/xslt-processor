@@ -84,7 +84,7 @@ const xslt = new Xslt(options);
 - `cData` (`boolean`, default `true`): resolves CDATA elements in the output. Content under CDATA is resolved as text. This overrides `escape` for CDATA content.
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [HTML/XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). Can be overridden by `disable-output-escaping`, that also does the opposite, unescaping `&gt;` and `&lt;` by `<` and `>`, respectively.
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`.
+- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`, `adaptive`.
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
