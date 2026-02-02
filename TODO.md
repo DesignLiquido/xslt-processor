@@ -2,7 +2,7 @@
 
 This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3.org/TR/xslt-10/), [W3C XSLT 2.0 Specification](https://www.w3.org/TR/xslt20/), and [W3C XSLT 3.0 Specification](https://www.w3.org/TR/xslt-30/) against the current implementation. Items marked as unimplemented are identified from the specifications and/or the codebase.
 
-**VERSION SUPPORT**: The processor currently targets XSLT 1.0 compliance. XSLT 2.0+ features are marked with `[XSLT 2.0]` tags, and XSLT 3.0+ features are marked with `[XSLT 3.0]` tags. Most XSLT 2.0 and 3.0 features are unimplemented unless noted otherwise.
+**VERSION SUPPORT**: The processor currently targets **XSLT 1.0 compliance** with selective XSLT 3.0 features. XSLT 2.0+ features are marked with `[XSLT 2.0]` tags, and XSLT 3.0+ features are marked with `[XSLT 3.0]` tags. Most XSLT 2.0 features remain unimplemented. Several XSLT 3.0 features have been implemented, including accumulators, iterators, error handling, dynamic evaluation, and partial package/streaming infrastructure.
 
 ## Unimplemented XSLT Elements (Section 2-7, B)
 
@@ -60,60 +60,22 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 - **`current()`** - ✅ Implemented
   - Returns the current node being processed
 
-## Known Bugs
+## Known Issues & Areas Needing Verification
 
-### BUG: concat() with XPath expressions
-When using `concat()` with XPath expressions as arguments (e.g., `concat(root/first, ' ', root/second)`), the function returns malformed output like "1, first, null 1, second, null" instead of properly concatenating the string values. This appears to be an issue with how XPath NodeSetValue results are being converted to strings within the concat function. (Section 12.4, XPath core functions)
-
-### BUG: Template precedence and priority
-Need to verify correct implementation of:
+### Template precedence and priority
+Need to verify complete correctness of:
 - Template conflict resolution (Section 5.5)
 - Import precedence (Section 2.6.2)
 - Template priority attribute (Section 5.3)
 
-## XPath Core/Extension Functions
-
-- **`current()`** - ✅ Implemented
-- **`id()`** - ✅ Implemented - XPath core function
-- **`lang()`** - ✅ Implemented - Check language support
-
-## Missing Output Methods
-
-- **JSON output method** - Not in XSLT 1.0 spec (3.0 feature, but code mentions it)
-- **Adaptive output method** - Referenced in code but completeness unclear
-- **XHTML output method** - Not explicitly in XSLT 1.0
-
-## Validation & Error Handling
-
+### Specification Compliance Verification Needed
+The following features are implemented but need complete specification compliance testing:
+- **Modes** (Section 5.7) - Template processing with different modes
+- **Variables and Parameters** (Section 11) - Scope and binding rules
+- **Sorting** (Section 10) - Sort key evaluation and language-dependent sorting
+- **Patterns** (Section 5.2) - Pattern matching against nodes
+- **Literal result elements** (Section 7.1.1) - Namespace handling and attribute value templates
 - **Forwards-compatible processing** (Section 2.5) - Version attribute handling for XSLT 2.0+ stylesheets
-  - Should gracefully ignore unknown elements/attributes from future XSLT versions
-  
-- **Schema validation** (Section 17) - XSLT processor conformance validation
-  - DTD validation not mentioned as supported
-
-## Output Methods (Section 16)
-
-All three standard output methods are implemented:
-- ✓ XML output method (16.1)
-- ✓ HTML output method (16.2) 
-- ✓ Text output method (16.3)
-
-Output attributes appear fully implemented:
-- ✓ `method`, `version`, `encoding`, `omit-xml-declaration`, `standalone`
-- ✓ `doctype-system`, `doctype-public`, `cdata-section-elements`, `indent`, `media-type`
-- ✓ `disable-output-escaping` (16.4)
-
-## Features Under Consideration (Future XSLT Versions, Section G)
-
-These are not XSLT 1.0 features but noted as considerations:
-- Conditional expressions (XSLT 2.0+)
-- XML Schema datatypes
-- Regular expressions
-- Multiple result documents
-- Additional sorting controls
-- Result tree fragment operations
-
-## XSLT 2.0 New Elements and Features [XSLT 2.0]
 
 ### Major New Instructions/Declarations (not in XSLT 1.0):
 
@@ -260,73 +222,86 @@ These are not XSLT 1.0 features but noted as considerations:
 - **Forwards-Compatible Mode** (Section 3.9) [XSLT 2.0]
   - Allows XSLT 2.0 stylesheets to run on XSLT 1.0 processors (with fallback)
   - Version attribute > 2.0 triggers special handling
+## Output Methods (Section 16)
 
+XSLT 1.0 standard output methods are fully implemented:
+- ✓ XML output method (16.1)
+- ✓ HTML output method (16.2) 
+- ✓ Text output method (16.3)
+- ✓ `disable-output-escaping` (16.4)
+
+Extended output methods (XSLT 3.0):
+- ✓ JSON output method - ✅ IMPLEMENTED
+- ✓ Adaptive output method - ✅ IMPLEMENTED
+
+All standard output attributes are implemented:
+- ✓ `method`, `version`, `encoding`, `omit-xml-declaration`, `standalone`
+- ✓ `doctype-system`, `doctype-public`, `cdata-section-elements`, `indent`, `media-type`
+
+## Validation & Error Handling
+
+- **Forwards-compatible processing** (Section 2.5) - Version attribute handling for XSLT 2.0+ stylesheets
+  - Should gracefully ignore unknown elements/attributes from future XSLT versions
+  - Needs verification for complete compliance
+  
+- **Schema validation** (Section 17) - NOT IMPLEMENTED
+  - DTD validation not available in JavaScript environments
 ## XSLT 3.0 New Elements and Features [XSLT 3.0]
 
-XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package distribution, streaming, and enhanced text processing. These are substantial additions requiring significant implementation effort.
+XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package distribution, streaming, and enhanced text processing.
 
 ### Major New Instructions [XSLT 3.0]:
 
-- **`<xsl:break>`** - Exit from `xsl:iterate` (Section 8.8.1)
-  - Used within `xsl:iterate` to terminate iteration early
-  - Returns current sequence constructor result
+- **`<xsl:break>`** - Exit from `xsl:iterate` (Section 8.8.1) - NOT IMPLEMENTED
   
-- **`<xsl:iterate>`** - Iterate with state (Section 8.8) ✅ IMPLEMENTED
-  - More powerful than `xsl:for-each`, maintains iteration state ✅
-  - Attributes: `select`, `as` (sequence type) ✅
-  - Contains `xsl:param` for iteration parameters ✅
-  - Contains `xsl:on-completion` for final processing ✅
+- **`<xsl:iterate>`** - Iterate with state (Section 8.8) - ✅ IMPLEMENTED
+  - More powerful than `xsl:for-each`, maintains iteration state
+  - Attributes: `select`, `as` (sequence type)
+  - Contains `xsl:param` for iteration parameters
   
-- **`<xsl:on-completion>`** - Complete iteration (Section 8.8.5) ✅ IMPLEMENTED
-  - Executed after `xsl:iterate` completes ✅
-  - Can access final iteration state ✅
+- **`<xsl:on-completion>`** - Complete iteration (Section 8.8.5) - ✅ IMPLEMENTED
+  - Executed after `xsl:iterate` completes
+  - Can access final iteration state
   
-- **`<xsl:try>` / `<xsl:catch>`** - Error handling (Section 20.5) ✅ IMPLEMENTED
-  - Structured error handling with pattern matching ✅
-  - Catch specific errors or all errors ✅
+- **`<xsl:try>` / `<xsl:catch>`** - Error handling (Section 20.5) - ✅ IMPLEMENTED
+  - Structured error handling with pattern matching
+  - Catch specific errors or all errors
   
-- **`<xsl:evaluate>`** - Dynamic XPath evaluation (Section 19.2) ✅ IMPLEMENTED
-  - Execute XPath expressions constructed at runtime ✅
-  - Supports context item and variable parameters ✅
+- **`<xsl:evaluate>`** - Dynamic XPath evaluation (Section 19.2) - ✅ IMPLEMENTED
+  - Execute XPath expressions constructed at runtime
+  - Supports context item and variable parameters
   
-- **`<xsl:on-empty>` / `<xsl:on-non-empty>`** - Conditional processing (Section 8.3) ✅ IMPLEMENTED
-  - Conditional processing within sequence-generating instructions ✅
+- **`<xsl:on-empty>` / `<xsl:on-non-empty>`** - Conditional processing (Section 8.3) - ✅ IMPLEMENTED
+  - Conditional processing within sequence-generating instructions
   
-- **`<xsl:package>`** - Package declaration [XSLT 3.0 - Packages]
+- **`<xsl:package>`** - Package declaration [XSLT 3.0 - Packages] - ✅ PARTIAL
   - Root element for reusable XSLT packages
-  - Attributes: `name`, `package-version`, `input-type-annotations`
-  - Replaces/enhances `xsl:stylesheet` for packages
+  - Infrastructure complete, full component resolution pending
   
-- **`<xsl:use-package>`** - Import package [XSLT 3.0 - Packages]
+- **`<xsl:use-package>`** - Import package [XSLT 3.0 - Packages] - ✅ PARTIAL
   - Import XSLT package with version support
-  - Attributes: `name`, `package-version`
-  - Contains `xsl:override` for selective overrides
+  - Infrastructure complete, full resolution pending
   
-- **`<xsl:override>`** - Override components [XSLT 3.0 - Packages]
+- **`<xsl:override>`** - Override components [XSLT 3.0 - Packages] - ✅ PARTIAL
   - Override templates/functions from imported package
-  - Used within `xsl:use-package`
+  - Infrastructure complete, full resolution pending
 
 ### XSLT 3.0 Streaming Features [XSLT 3.0 - Streaming]:
 
-- **`<xsl:stream>`** - Process stream (Section 16)
-  - Process large documents without loading entirely into memory
-  - Used with `streamable` template attribute
+- **`<xsl:stream>`** - Process stream (Section 16) - ✅ PARTIAL
+  - Infrastructure in place, actual document streaming pending
   
-- **`<xsl:merge>`** - Merge multiple sorted documents (Section 15)
-  - Merge sorted sequences from multiple sources
-  - Contains `xsl:merge-source` children
+- **`<xsl:merge>`** - Merge multiple sorted documents (Section 15) - ✅ PARTIAL
+  - Infrastructure in place, full merge logic pending
   
-- **`<xsl:merge-source>`** - Merge source (Section 15.1)
-  - Defines source for merge operation
-  - Streaming-capable processing
+- **`<xsl:merge-source>`** - Merge source (Section 15.1) - ✅ PARTIAL
+  - Infrastructure in place, full integration pending
   
-- **`<xsl:fork>`** - Fork processing [XSLT 3.0 - Streaming]
-  - Create multiple output streams
-  - Useful for streaming transformations
+- **`<xsl:fork>`** - Fork processing [XSLT 3.0 - Streaming] - ✅ PARTIAL
+  - Infrastructure in place, full fork logic pending
   
-- **Streamable patterns** - Pattern syntax for streaming
-  - Special pattern matching for streamed processing
-  - Restrictions on context access
+- **Streamable patterns** - Pattern syntax for streaming - ✅ PARTIAL
+  - Validator infrastructure exists, full streaming pending
 
 ### XSLT 3.0 Enhancements to Existing Instructions:
 
@@ -355,169 +330,65 @@ XSLT 3.0 (W3C Recommendation since June 2017) adds advanced features for package
 
 ### XSLT 3.0 New XPath Functions:
 
-- **`map` type operations** (XPath 3.0) [XSLT 3.0]
-  - `map:new()`, `map:entry()`, `map:get()`, `map:put()`, `map:remove()`, `map:size()`, `map:keys()`, `map:contains()`
-  - Full map/dictionary support in XSLT expressions
-  
-- **`array` type operations** (XPath 3.0) [XSLT 3.0]
-  - `array:new()`, `array:size()`, `array:head()`, `array:tail()`, `array:subarray()`, `array:append()`, `array:join()`, `array:reverse()`
-  - Full array support for sequences
-  
-- **`json-to-xml()` and `xml-to-json()`** - Enhanced [XSLT 3.0]
-  - Now standard (was 2.0 extension)
-  - Support for custom mapping options
-  
-- **`parse-xml()` and `parse-xml-fragment()`** - Parse XML strings [XSLT 3.0]
-  - Parse XML text at runtime
-  - `parse-xml-fragment()` allows fragments
-  
-- **`serialize()`** - Serialize to string [XSLT 3.0]
-  - Convert nodes to serialized XML/HTML/JSON text
-  - Takes node and optional serialization parameters
-  
-- **`load-xslt()`** - Dynamic stylesheet loading [XSLT 3.0]
-  - Load and cache XSLT stylesheets at runtime
-  - Dynamic stylesheet compilation
-  
-- **`eval()`** - Evaluate XPath expression [XSLT 3.0]
-  - Execute dynamically constructed XPath expressions
-  - Security considerations for untrusted input
-  
-- **`regex` improvements** (XPath 3.0) [XSLT 3.0]
-  - Enhanced regular expression support
-  - `matches()`, `replace()`, `tokenize()` improvements
-  - Unicode support enhancements
-  
-- **`string-join()`** - Join sequences [XSLT 3.0]
-  - Join sequence items with separator
-  - XPath 3.0 function
-  
-- **`string-length()` enhancements** - Unicode handling [XSLT 3.0]
-  - Better Unicode grapheme cluster handling
-  
-- **`analyze-string()` function** [XSLT 3.0]
-  - Available as function (instruction also exists in XSLT 2.0)
-  
-- **Math functions** (XPath 3.0) [XSLT 3.0]
-  - `math:pi()`, `math:exp()`, `math:log()`, `math:sqrt()`, `math:sin()`, `math:cos()`, `math:tan()`, `math:pow()`
-  - Scientific computing support
-  
-- **Higher-order functions** (XPath 3.0) [XSLT 3.0]
-  - `function-lookup()` - Get function by name and arity
-  - `partial-apply()` - Partial function application
-  - Pass functions as values
-  
-- **Compared to XSLT 2.0**, new functions include:
-  - JSON: `parse-json()` - parse JSON strings
-  - QName: `QName()` - construct QName values
-  - Dynamic SQL binding (extension-dependent)
+Most XSLT 3.0 XPath functions are NOT IMPLEMENTED. The following are specific to XSLT 3.0:
+
+- **`map` type operations** (XPath 3.0)
+  - `map:new()`, `map:entry()`, `map:get()`, `map:put()`, etc.
+- **`array` type operations** (XPath 3.0)
+  - `array:new()`, `array:size()`, `array:head()`, etc.
+- **`parse-xml()` and `parse-xml-fragment()`**
+- **`serialize()`**
+- **`load-xslt()`**
+- **`function-lookup()`, `partial-apply()`**
+- **`current-group()`, `current-grouping-key()`**
+- **`unparsed-text()`, `unparsed-text-available()`**
+- **Date/Time functions** - `format-date()`, `current-date()`, etc.
 
 ### XSLT 3.0 New Language Features:
 
-- **Packages and Modules** [XSLT 3.0 - Packages]
-  - Replace/enhance import/include with package system
-  - Version support for packages
-  - Package interface definitions
-  - Visibility modifiers for components
+- **Packages and Modules** [XSLT 3.0 - Packages] - ✅ PARTIAL
+  - Foundation complete, full component resolution pending
+  - Package system infrastructure exists
   
-- **Accumulator functions** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
-  - `xsl:accumulator` - Define accumulators ✅
-  - `accumulator-after()` / `accumulator-before()` - Access accumulator values (partial)
-  - Stateful computation across template processing ✅
+- **Streaming mode** [XSLT 3.0 - Streaming] - ✅ PARTIAL
+  - Core architecture established
+  - Actual document streaming pending
   
-- **`<xsl:accumulator>` declaration** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
-  - Define reusable accumulators for templates ✅
-  - Attributes: `name`, `initial-value`, `as` ✅
-  - Contains `xsl:accumulator-rule` children ✅
+- **Higher-order functions** [XSLT 3.0] - ✅ PARTIAL
+  - Inline functions and named references implemented
+  - Missing: `function-lookup()`, `partial-apply()`
   
-- **`<xsl:accumulator-rule>` element** [XSLT 3.0 - Accumulators] ✅ IMPLEMENTED
-  - Define rules for accumulator computation ✅
-  - `match` attribute for node matching ✅
-  - `new-value` expression for accumulation ✅
-  - `phase` attribute (start/end) ✅
-  
-- **Streaming mode** [XSLT 3.0 - Streaming]
-  - Process documents in streaming fashion
-  - Linearity restrictions for memory efficiency
-  - For processing large XML documents
-  
-- **JSON as primary data format** [XSLT 3.0]
-  - Full support for JSON input/output
-  - Maps and arrays as native types
-  - Object notation available
-  
-- **Regular expression syntax standardization** [XSLT 3.0]
-  - XSD regex patterns now standard
-  - Improved Unicode support
-  - Named capture groups available
-  
-- **Partial evaluation and caching** [XSLT 3.0]
-  - Cache results with `cache` attribute
-  - Function result memoization
-  - Template result caching
-  
-- **Post-processing of result documents** [XSLT 3.0]
-  - Enhanced serialization control
-  - Better HTML5 support
-  - Character map improvements
+- **Regular expression syntax** [XSLT 3.0] - NOT IMPLEMENTED
+  - XSD regex patterns
+  - Named capture groups
 
 ### XSLT 3.0 Output Methods [XSLT 3.0]:
 
-- **`html` method enhancements**
+- **`html` method enhancements** - NOT IMPLEMENTED
   - HTML5 support with `html-version` parameter
   - `base-element` for correct link handling
   
-- **`xhtml` method enhancements**
+- **`xhtml` method enhancements** - NOT IMPLEMENTED
   - XHTML5 output capability
-  
-- **`json` method** [XSLT 3.0]
-  - Native JSON output serialization
-  - Not just XML->JSON conversion
-  - Custom JSON mapping options
-
-### XSLT 3.0 Conformance Levels [XSLT 3.0]:
-
-- **Basic XSLT 3.0 processor**
-  - No streaming support
-  - No packages/modules
-  - Core language features
-  
-- **Schema-aware XSLT 3.0 processor**
-  - XML Schema validation
-  - Type annotations
-  
-- **Streaming XSLT 3.0 processor**
-  - Streaming transformations
-  - Memory-efficient processing
-  - Additional restrictions
 
 ### XSLT 3.0 Partial/Unimplemented Features:
 
-- **Package system** [XSLT 3.0 - Packages]
-  - PARTIAL - foundation complete, full component resolution pending
+- **Package system** [XSLT 3.0 - Packages] - ✅ PARTIAL
+  - Foundation complete, full component resolution pending
   
-- **Streaming mode** [XSLT 3.0 - Streaming]
-  - PARTIAL - core architecture established, actual document streaming pending
-  - Would enable processing of very large files
+- **Streaming mode** [XSLT 3.0 - Streaming] - ✅ PARTIAL
+  - Core architecture established, actual document streaming pending
   
-- **Accumulators** [XSLT 3.0 - Accumulators]
-  - ✅ IMPLEMENTED - `xsl:accumulator`, `xsl:accumulator-rule`, pattern matching
+- **Higher-order functions** [XSLT 3.0] - ✅ PARTIAL
   
-- **JSON as primary type** [XSLT 3.0]
-  - ✅ IMPLEMENTED - `json-to-xml()`, `xml-to-json()` functions
-  - Native map/array support as first-class types
+- **Dynamic XSLT compilation** [XSLT 3.0] - ✅ PARTIAL
+  - `xsl:evaluate` for dynamic XPath implemented
+  - Missing: `load-xslt()`
+
+- **Schema Awareness** [XSLT 3.0] - NOT IMPLEMENTED
+  - Would require XML Schema processor integration
   
-- **Higher-order functions** [XSLT 3.0]
-  - ✅ IMPLEMENTED - inline functions, named refs, dynamic calls
-  - Missing: `function-lookup()`, `partial-apply()`
-  
-- **Dynamic XSLT compilation** [XSLT 3.0]
-  - ✅ PARTIALLY IMPLEMENTED - `xsl:evaluate` for dynamic XPath
-  - Missing: `load-xslt()`, `eval()`
-  
-- **Math and scientific functions** [XSLT 3.0]
-  - Partially implemented - some basic math functions exist
-  - Missing: trigonometric, logarithmic, advanced functions
+- **Static Typing** [XSLT 3.0] - NOT IMPLEMENTED
 
 ## Partially Tested Features
 
@@ -539,8 +410,7 @@ The following features need verification of complete specification compliance:
 ## Statistics
 
 ### XSLT 1.0 Coverage:
-- **Implemented XSLT Elements**: ~28+ out of 35+ elements in spec
-- **Not Implemented XSLT Elements**: 1 (apply-imports)
+- **Implemented XSLT Elements**: ~30+ out of 35+ elements in spec
 - **Partially Implemented**: ~5
 - **Implemented XPath Core Functions**: ~26+
 - **XSLT Additional Functions**: ✅ All 9 functions implemented
@@ -549,39 +419,54 @@ The following features need verification of complete specification compliance:
   - `unparsed-entity-uri()` (stub - DTD not available in JS)
 
 ### XSLT 2.0 Coverage:
-- **New Instructions [XSLT 2.0]**: 9 elements not in XSLT 1.0 (analyze-string, for-each-group, function, import-schema, namespace, next-match, perform-sort, result-document, character-map)
+- **New Instructions [XSLT 2.0]**: 9 elements not in XSLT 1.0
   - **Implemented**: 0
-  - **Not Implemented**: 9
+  - **Not Implemented**: 9 (analyze-string, for-each-group, function, import-schema, namespace, next-match, perform-sort, result-document, character-map)
 - **Enhanced Instructions [XSLT 2.0]**: ~8+ existing instructions with new attributes/modes
-  - **Partial Support**: Most have some new features but not all
-- **New XPath Functions [XSLT 2.0]**: 15+ functions specific to XSLT 2.0
-  - **Implemented**: 0
+  - **Partial Support**: Some enhancements present
+- **New XPath Functions [XSLT 2.0]**: 15+ functions
   - **Not Implemented**: 15+
-- **New Language Features [XSLT 2.0]**: Sequence types, enhanced templates, default collation, xpath-default-namespace
-  - **Implemented**: Minimal (basic type system exists)
-  - **Not Implemented**: Most enhancements
+- **New Language Features [XSLT 2.0]**: Sequence types, enhanced templates, etc.
+  - **Minimal implementation**: Basic type system exists
+
+### XSLT 3.0 Coverage:
+- **New Instructions [XSLT 3.0]**: 9 major new elements
+  - **Implemented**: 5 (iterate, on-completion, try/catch, evaluate, on-empty/on-non-empty)
+  - **Partial**: 3 (package, use-package, override)
+  - **Not Implemented**: 1 (break)
+- **Streaming Features [XSLT 3.0]**: 5 elements - ✅ PARTIAL (infrastructure exists)
+- **New XPath Functions [XSLT 3.0]**: 20+ functions
+  - **Implemented**: 2 (json-to-xml, xml-to-json)
+  - **Not Implemented**: 18+
+- **New Language Features [XSLT 3.0]**:
+  - **Implemented**: Accumulators, JSON functions, error handling, math functions
+  - **Partial**: Packages, streaming, higher-order functions
+  - **Not Implemented**: Maps/arrays as native types, schema awareness
 
 ### Summary:
-- **XSLT 1.0**: ~85% functional (27+/35+ elements, all 9 XSLT functions implemented)
+- **XSLT 1.0**: ~90% functional (all major elements, all 9 XSLT functions)
 - **XSLT 2.0**: ~5% functional (mostly not implemented as separate layer)
-- **XSLT 3.0**: ~5% functional (json-to-xml, xml-to-json implemented; major features require significant new architecture)
+- **XSLT 3.0**: ~20% functional (select features: accumulators, iterators, error handling, dynamic evaluation, JSON, math functions, partial package/streaming infrastructure)
 
-### XSLT 3.0 Coverage (if implemented):
-- **New Instructions [XSLT 3.0]**: 6 major new elements (break, iterate, on-completion, package, use-package, override)
-  - **Implemented**: 0
-  - **Not Implemented**: 6
-- **Streaming Features [XSLT 3.0]**: 5 elements (stream, merge, merge-source, fork, plus streamable patterns)
-  - **Implemented**: 0
-  - **Not Implemented**: 5
-- **Enhanced Instructions [XSLT 3.0]**: ~5+ existing instructions with streaming/caching attributes
-  - **Implemented**: 0
-  - **Not Implemented**: 5+
-- **New XPath Functions [XSLT 3.0]**: 20+ functions including maps, arrays, math, higher-order functions
-  - **Implemented**: 0 (maps/arrays as native XPath types not supported)
-  - **Not Implemented**: 20+
-- **New Language Features [XSLT 3.0]**: Packages, accumulators, streaming, JSON, higher-order functions
-  - **Implemented**: 0
-  - **Not Implemented**: All major features
+---
+
+## Implementation History
+
+### Version 4.x (2025-2026):
+- ✅ XSLT 3.0 accumulators (`xsl:accumulator`, `xsl:accumulator-rule`)
+- ✅ XSLT 3.0 iteration (`xsl:iterate`, `xsl:on-completion`)
+- ✅ XSLT 3.0 error handling (`xsl:try`, `xsl:catch`)
+- ✅ XSLT 3.0 dynamic evaluation (`xsl:evaluate`)
+- ✅ XSLT 3.0 conditional output (`xsl:on-empty`, `xsl:on-non-empty`)
+- ✅ XSLT 3.0 package system infrastructure (`xsl:package`, `xsl:use-package`, `xsl:override`)
+- ✅ XSLT 3.0 streaming infrastructure (`xsl:stream`, `xsl:fork`, `xsl:merge`)
+- ✅ XSLT 1.0 `xsl:apply-imports` element
+- ✅ JSON output method
+- ✅ Adaptive output method
+- ✅ concat() XPath function with node-set arguments
+- ✅ All XSLT 1.0 Section 12 functions
+- ✅ Versioned XPath parser API
+- ✅ XPath 3.0 math functions (all 14 functions)
 
 ---
 
@@ -595,11 +480,4 @@ The following features need verification of complete specification compliance:
 - Check [W3C XPath 2.0 Spec](https://www.w3.org/TR/xpath20/) for XPath 2.0 details
 - Check [W3C XPath 3.0 Spec](https://www.w3.org/TR/xpath-30/) for XPath 3.0 details
 - Look at existing test files in `tests/` directory for examples
-- The concat() bug is a priority fix due to common usage
-- XSLT 3.0 package system and streaming are major architectural changes - consider carefully before implementation
-
-### Recently Implemented (January 2026):
-- ✅ All XSLT 1.0 Section 12 functions now implemented
-- ✅ `system-property()`, `element-available()`, `function-available()` added
-- ✅ `document()` basic implementation (requires documentLoader callback)
-- ✅ Versioned XPath parser API (XPath10Parser, XPath20Parser, createXPathParser)
+- XSLT 3.0 package system and streaming require careful architectural consideration
