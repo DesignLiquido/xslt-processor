@@ -68,7 +68,7 @@ describe('Issues 160 and 161', () => {
         const xslt = xmlParser.xmlParse(xsltString);
         const outXmlString = await xsltClass.xsltProcess(xml, xslt);
         
-        console.log('Issue 161 Output:', outXmlString);
+        // console.log('Issue 161 Output:', outXmlString);
         assert.equal(outXmlString.replace(/\s+/g, ''), expectedOutString.replace(/\s+/g, ''));
     });
 });
