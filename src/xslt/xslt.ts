@@ -1332,10 +1332,13 @@ export class Xslt {
 
         // node.transformedNodeName = name;
 
+        // Fix for Issue 161: Set siblingPosition to preserve document order
+        node.siblingPosition = (output || this.outputDocument).childNodes.length;
+
         domAppendChild(output || this.outputDocument, node);
         // The element becomes the output node of the source node.
         // context.nodeList[context.position].outputNode = node;
-        const clonedContext = context.clone(undefined, 0);
+        const clonedContext = context.clone();
         await this.xsltChildNodes(clonedContext, template, node);
     }
 
