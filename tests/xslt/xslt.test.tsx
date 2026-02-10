@@ -405,4 +405,179 @@ describe('xslt', () => {
         const html = await xsltClass.xsltProcess(xml, xslt);
         assert.equal(html, '<item pos="2">A</item><item pos="3">B</item><item pos="1">C</item>');
     });
-});
+
+    describe('Variables and Parameters - Scoping and Shadowing', () => {
+        it('Local variable shadows global variable of same name', async () => {
+            const xmlString = `<root><item>test</item></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:variable name="x">GLOBAL</xsl:variable>
+                <xsl:template match="/">
+                    <result>
+                        <xsl:value-of select="$x"/>
+                        <xsl:variable name="x">LOCAL</xsl:variable>
+                        <xsl:value-of select="$x"/>
+                    </result>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            // Global x used before local, then local x shadows it
+            assert.equal(html, '<result>GLOBALLOCAL</result>');
+        });
+
+        it('Parameter default value used when not supplied', async () => {
+            const xmlString = `<root><item>test</item></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <result><xsl:call-template name="mytemplate"/></result>
+                </xsl:template>
+                <xsl:template name="mytemplate">
+                    <xsl:param name="msg">DEFAULT</xsl:param>
+                    <xsl:value-of select="$msg"/>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(html, '<result>DEFAULT</result>');
+        });
+
+        it('Parameter value overrides default when supplied', async () => {
+            const xmlString = `<root><item>test</item></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <result>
+                        <xsl:call-template name="mytemplate">
+                            <xsl:with-param name="msg">SUPPLIED</xsl:with-param>
+                        </xsl:call-template>
+                    </result>
+                </xsl:template>
+                <xsl:template name="mytemplate">
+                    <xsl:param name="msg">DEFAULT</xsl:param>
+                    <xsl:value-of select="$msg"/>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(html, '<result>SUPPLIED</result>');
+        });
+
+        it('Variable scope limited to ancestor/descendant context', async () => {
+            const xmlString = `<root><a>A</a><b>B</b></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <xsl:variable name="outer">OUTER</xsl:variable>
+                    <result>
+                        <xsl:for-each select="root/a">
+                            <xsl:variable name="inner">INNER-A</xsl:variable>
+                            <a><xsl:value-of select="$outer"/></a>
+                        </xsl:for-each>
+                        <xsl:for-each select="root/b">
+                            <!-- $inner from a is not accessible here -->
+                            <b><xsl:value-of select="$outer"/></b>
+                        </xsl:for-each>
+                    </result>
+                </xsl:variable>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            // Both should access outer, which is in scope
+            assert.ok(html.includes('<a>OUTER</a>'));
+            assert.ok(html.includes('<b>OUTER</b>'));
+        });
+
+        it('Parameter shadowing in nested template calls', async () => {
+            const xmlString = `<root><item>test</item></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <result>
+                        <xsl:call-template name="outer">
+                            <xsl:with-param name="x">OUTER-VALUE</xsl:with-param>
+                        </xsl:call-template>
+                    </result>
+                </xsl:template>
+                <xsl:template name="outer">
+                    <xsl:param name="x">OUTER-DEFAULT</xsl:param>
+                    <first><xsl:value-of select="$x"/></first>
+                    <xsl:call-template name="inner">
+                        <xsl:with-param name="x">INNER-VALUE</xsl:with-param>
+                    </xsl:call-template>
+                </xsl:template>
+                <xsl:template name="inner">
+                    <xsl:param name="x">INNER-DEFAULT</xsl:param>
+                    <second><xsl:value-of select="$x"/></second>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            // Each parameter shadows in its scope
+            assert.equal(html, '<result><first>OUTER-VALUE</first><second>INNER-VALUE</second></result>');
+        });
+
+        it('Variable with numeric expression evaluated at binding time', async () => {
+            const xmlString = `<root><a>5</a><b>3</b></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <xsl:variable name="result" select="number(//a) + number(//b)"/>
+                    <result><xsl:value-of select="$result"/></result>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(html, '<result>8</result>');
+        });
+
+        it('Global variable can use node context', async () => {
+            const xmlString = `<root><value>42</value></root>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:variable name="globalVal" select="//value"/>
+                <xsl:template match="/">
+                    <result><xsl:value-of select="$globalVal"/></result>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const html = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(html, '<result>42</result>');
+        });
+    });

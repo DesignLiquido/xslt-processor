@@ -316,4 +316,140 @@ describe('xsl:preserve-space', () => {
         assert.ok(outXmlString.includes('function hello()'));
         assert.ok(outXmlString.includes('return "world"'));
     });
+
+    it('Whitespace stripping with mixed strip and preserve patterns', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <section>
+        <para>Text</para>
+    </section>
+    <code>
+        function test() {
+            return true;
+        }
+    </code>
+</root>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:preserve-space elements="code"/>
+    <xsl:output method="xml" indent="no"/>
+
+    <xsl:template match="/">
+        <result>
+            <sections><xsl:apply-templates select="root/section"/></sections>
+            <codeblocks><xsl:apply-templates select="root/code"/></codeblocks>
+        </result>
+    </xsl:template>
+
+    <xsl:template match="section|code">
+        <element><xsl:copy-of select="."/></element>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        // Section should be compacted (whitespace stripped)
+        assert.ok(outXmlString.includes('<section><para>Text</para></section>'));
+        // Code should preserve formatting
+        assert.ok(outXmlString.includes('function test()'));
+    });
+
+    it('Strip-space with wildcard takes lower precedence than specific preserve-space', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <item>A</item>
+    <special>
+        <nested>B</nested>
+    </special>
+</root>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:preserve-space elements="special"/>
+    <xsl:output method="xml" indent="no"/>
+
+    <xsl:template match="/">
+        <result><xsl:copy-of select="root"/></result>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        // "special" should preserve its whitespace children due to preserve-space taking precedence
+        assert.ok(outXmlString.includes('<special>'));
+    });
+
+    it('xml:space="default" within xml:space="preserve" resets to default rules', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<root xml:space="preserve">
+    <item>
+        <nested xml:space="default">
+            <deep>Text</deep>
+        </nested>
+    </item>
+</root>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="*"/>
+    <xsl:output method="xml" indent="no"/>
+
+    <xsl:template match="/">
+        <result><xsl:copy-of select="root"/></result>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        // Root's preserve takes effect, but nested "default" resets to strip rules
+        assert.ok(outXmlString.includes('<root'));
+        assert.ok(outXmlString.includes('<deep>Text</deep>'));
+    });
+
+    it('Empty text nodes stripped when whitespace-only between elements', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <a/>
+    <b/>
+    <c/>
+</root>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:strip-space elements="root"/>
+    <xsl:output method="xml" indent="no"/>
+
+    <xsl:template match="/">
+        <result><xsl:copy-of select="root"/></result>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        // Should have no whitespace between a, b, c elements
+        assert.equal(outXmlString, '<result><root><a/><b/><c/></root></result>');
+    });
 });

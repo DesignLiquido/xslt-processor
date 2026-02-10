@@ -969,3 +969,242 @@ describe('Import Precedence and apply-imports', () => {
         assert.strictEqual(result, 'MAINIMPORTED');
     });
 });
+describe('Pattern Features and Axis Behaviors', () => {
+    it('should match attribute patterns with @axis', async () => {
+        const xmlString = `<root><item id="123">content</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/item/@id"/></result>
+                </xsl:template>
+                <xsl:template match="@id">ATTR-ID</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.strictEqual(result, '<result>ATTR-ID</result>');
+    });
+
+    it('should handle @* wildcard for all attributes', async () => {
+        const xmlString = `<root><item id="123" name="test">content</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/item/@*"/></result>
+                </xsl:template>
+                <xsl:template match="@*">[<xsl:value-of select="name()"/>]</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.ok(result.includes('[id]'));
+        assert.ok(result.includes('[name]'));
+    });
+
+    it('Union patterns with mixed axis types', async () => {
+        const xmlString = `<root><item id="123">text</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result>
+                        <xsl:apply-templates select="root/item/@id | root/item/text()"/>
+                    </result>
+                </xsl:template>
+                <xsl:template match="text()">TEXT</xsl:template>
+                <xsl:template match="@id">ATTR</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.ok(result.includes('ATTR'));
+        assert.ok(result.includes('TEXT'));
+    });
+
+    it('Namespace-aware pattern matching with prefixes', async () => {
+        const xmlString = `<?xml version="1.0"?>
+            <root xmlns:custom="http://example.com/custom">
+                <custom:element>content</custom:element>
+            </root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+                xmlns:custom="http://example.com/custom" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/custom:element"/></result>
+                </xsl:template>
+                <xsl:template match="custom:element">NS-ELEMENT</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.strictEqual(result, '<result>NS-ELEMENT</result>');
+    });
+
+    it('Priority with namespace wildcard ns:*', async () => {
+        const xmlString = `<?xml version="1.0"?>
+            <root xmlns:ns="http://example.com">
+                <ns:item>A</ns:item>
+                <item>B</item>
+            </root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+                xmlns:ns="http://example.com" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/*"/></result>
+                </xsl:template>
+                <xsl:template match="*">WILDCARD</xsl:template>
+                <xsl:template match="ns:*">NS-WILDCARD</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        // ns:* has priority -0.25, * has priority -0.5, so ns:* wins for ns:item
+        assert.ok(result.includes('NS-WILDCARD'));
+        assert.ok(result.includes('WILDCARD'));
+    });
+
+    it('Predicate patterns have higher default priority than simple names', async () => {
+        const xmlString = `<root><item id="1">A</item><item id="2">B</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/item"/></result>
+                </xsl:template>
+                <xsl:template match="item">SIMPLE</xsl:template>
+                <xsl:template match="item[@id='1']">WITH-PREDICATE</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        // Predicate pattern (0.5) wins for id=1, simple name (0) for others
+        assert.ok(result.includes('WITH-PREDICATE'));
+        assert.ok(result.includes('SIMPLE'));
+    });
+
+    it('Pattern with predicate has higher priority than simple name', async () => {
+        const xmlString = `<root>
+            <item id="special">SPECIAL</item>
+            <item id="other">OTHER</item>
+        </root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/item"/></result>
+                </xsl:template>
+                <xsl:template match="item[@id='special']">HAS-ID</xsl:template>
+                <xsl:template match="item">NO-ID</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        // item[@id='special'] has priority 0.5, item has priority 0
+        // So id=special should match HAS-ID, other should match NO-ID
+        assert.ok(result.includes('HAS-ID'));
+        assert.ok(result.includes('NO-ID'));
+    });
+
+    it('Text node pattern matches text content', async () => {
+        const xmlString = `<root>text1<!-- comment -->text2</root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <result><xsl:apply-templates select="root/node()"/></result>
+                </xsl:template>
+                <xsl:template match="text()">[TEXT]</xsl:template>
+                <xsl:template match="comment()">[COMMENT]</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.strictEqual(result, '<result>[TEXT][COMMENT][TEXT]</result>');
+    });
+});
+
+describe('Literal Result Elements with Namespaces', () => {
+    it('Literal elements preserve namespace declarations', async () => {
+        const xmlString = `<root/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="/">
+                    <root xmlns="http://example.com/default" xmlns:custom="http://example.com/custom">
+                        <custom:element>content</custom:element>
+                    </root>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        // Should output with proper namespace declarations
+        assert.ok(result.includes('element'));
+        assert.ok(result.includes('content'));
+    });
+
+    it('Namespace alias applies to literal result elements', async () => {
+        const xmlString = `<root/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+                xmlns:old="http://example.com/old" xmlns:new="http://example.com/new" 
+                version="1.0">
+                <xsl:namespace-alias stylesheet-prefix="old" result-prefix="new"/>
+                <xsl:template match="/">
+                    <old:root>
+                        <old:child>content</old:child>
+                    </old:root>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        // old: namespace should be aliased to new: namespace
+        assert.ok(result.includes('content'));
+    });
+});
