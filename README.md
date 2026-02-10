@@ -4,7 +4,7 @@ _A JavaScript XSLT processor without native library dependencies._
 
   <p align="center">
     <a href="https://github.com/DesignLiquido/xslt-processor/issues" target="_blank">
-      <img src="https://img.shields.io/github/issues/Designliquido/xslt-processor" />
+      <img src="https://img.shields.io/github/issues/DesignLiquido/xslt-processor" />
     </a>
     <img src="https://img.shields.io/github/stars/Designliquido/xslt-processor" />
     <img src="https://img.shields.io/github/forks/Designliquido/xslt-processor" />
@@ -37,7 +37,7 @@ ohpm install xslt-processor
 yarn add xslt-processor
 ```
 
-Within your ES2015+ code, import the `Xslt` class, the `XmlParser` class and use this way:
+Within your ES2015+ code, import the `Xslt` class, the `XmlParser` class and use it this way:
 
 ```js
 import { Xslt, XmlParser } from 'xslt-processor'
@@ -80,7 +80,7 @@ const xslt = new Xslt(options);
 - `cData` (`boolean`, default `true`): resolves CDATA elements in the output. Content under CDATA is resolved as text. This overrides `escape` for CDATA content.
 - `escape` (`boolean`, default `true`): replaces symbols like `<`, `>`, `&` and `"` by the corresponding [HTML/XML entities](https://www.tutorialspoint.com/xml/xml_character_entities.htm). Can be overridden by `disable-output-escaping`, that also does the opposite, unescaping `&gt;` and `&lt;` by `<` and `>`, respectively.
 - `selfClosingTags` (`boolean`, default `true`): Self-closes tags that don't have inner elements, if `true`. For instance, `<test></test>` becomes `<test />`.
-- `outputMethod` (`string`, default `xml`): Specifies the default output method. if `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `name`, `xhtml`, `json`, `adaptive`.
+- `outputMethod` (`string`, default `xml`): Specifies the default output method. If `<xsl:output>` is declared in your XSLT file, this will be overridden. Valid values: `xml`, `html`, `text`, `xhtml`, `json`, `adaptive`.
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
@@ -182,10 +182,10 @@ console.log(result2); // "<users><user>John</user></users>" (XML)
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://www.unpkg.com/xslt-processor@latest/umd/xslt-processor.global.js"></script>
+<script type="application/javascript" src="https://unpkg.com/xslt-processor@latest/umd/xslt-processor.global.js"></script>
 ```
 
-All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html). 
+All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html).
 
 ## XPath Parser
 
@@ -204,7 +204,7 @@ import { XPath } from 'xslt-processor'
 const xPath = new XPath();
 ```
 
-`XPath` class is an external dependency, [living in its own repository](https://github.com/DesignLiquido/xpath). 
+`XPath` class is an external dependency, [living in its own repository](https://github.com/DesignLiquido/xpath).
 
 ## Introduction
 
@@ -215,13 +215,40 @@ XSLT-processor builds on Google's [AJAXSLT](https://github.com/4031651/ajaxslt) 
 
 This implementation of XSLT operates at the DOM level on its input documents. It internally uses a DOM implementation to create the output document, but usually returns the output document as text stream. The DOM to construct the output document can be supplied by the application, or else an internal minimal DOM implementation is used. This DOM comes with a minimal XML parser that can be used to generate a suitable DOM representation of the input documents if they are present as text.
 
+## Building from source
+
+The XPath engine lives in a Git submodule at `src/xpath/lib`. A regular `git clone` does **not** fetch it automatically, so the build will fail unless the submodule is initialised.
+
+### Fresh clone
+
+```sh
+git clone --recurse-submodules https://github.com/DesignLiquido/xslt-processor.git
+cd xslt-processor
+yarn install
+yarn build
+```
+
+### Already cloned without submodules
+
+```sh
+git submodule update --init --recursive
+yarn install
+yarn build
+```
+
+### Updating the submodule to the latest commit
+
+```sh
+git submodule update --remote src/xpath/lib
+```
+
 ## Tests and usage examples
 
-New tests are written in Jest an can be run by calling: `yarn test`.
+New tests are written in Jest and can be run by calling: `yarn test`.
 
 The files `xslt.html` and `xpath.html` in the directory `interactive-tests` are interactive tests. They can be run directly from the file system; no HTTP server is needed.
 
-Both interactive tests and automatic tests demonstrate the use of the library functions. 
+Both interactive tests and automatic tests demonstrate the use of the library functions.
 
 ## Conformance
 
@@ -233,9 +260,9 @@ So far, we have implemented XQuery functions for versions 1.0 and 2.0, but this 
 
 The DOM implementation is minimal so as to support the XSLT processing, and not intended to be complete.
 
-The implementation is all agnostic about namespaces. It just expects XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declaration for them.
+The implementation is all agnostic about namespaces. It just expects XSLT elements to have tags that carry the `xsl:` prefix, but we disregard all namespace declarations for them.
 
-[There are a few nonstandard XPath functions](https://github.com/search?q=repo%3ADesignLiquido%2Fxslt-processor%20ext-&type=code). 
+[There are a few nonstandard XPath functions](https://github.com/search?q=repo%3ADesignLiquido%2Fxslt-processor%20ext-&type=code).
 
 ### HTML Conformance
 
