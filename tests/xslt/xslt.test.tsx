@@ -57,6 +57,27 @@ describe('xslt', () => {
             assert.equal(outXmlString, expectedOutString);
         });
 
+        it('Variables can use function names', async () => {
+            const xmlString = `<root/>`;
+
+            const xsltString = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <out>
+                        <xsl:variable name="name">a</xsl:variable>
+                        <xsl:if test="$name = 'a'">A</xsl:if>
+                    </out>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt();
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(outXmlString, '<out>A</out>');
+        });
+
         // The three examples below from Marco Balestra illustrate
         // the difference between triggering `<xsl:template>` vs. triggering
         // `<xsl:apply-templates>`:
