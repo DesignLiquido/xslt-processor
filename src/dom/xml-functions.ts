@@ -317,6 +317,12 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
             continue;
         }
 
+        // In HTML output mode, skip namespace declarations (xmlns and xmlns:*)
+        if (options.outputMethod === 'html' && 
+            (attribute.nodeName === 'xmlns' || attribute.nodeName.startsWith('xmlns:'))) {
+            continue;
+        }
+
         if (attribute.nodeName && attribute.nodeValue !== null && attribute.nodeValue !== undefined) {
             buffer.push(` ${xmlFullNodeName(attribute)}="${xmlEscapeAttr(attribute.nodeValue)}"`);
         }

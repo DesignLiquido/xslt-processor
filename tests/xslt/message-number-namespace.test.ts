@@ -694,6 +694,46 @@ describe('Error messages for misplaced elements', () => {
     });
 });
 
+describe('Namespace declarations on literal result elements (issue #165)', () => {
+    it('Namespace-prefixed literal result element includes xmlns declaration', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <q:text>Out</q:text>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<q:text xmlns:q="urn:Q">Out</q:text>');
+    });
+
+    it('Nested namespace-prefixed elements do not duplicate xmlns declaration', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <q:outer><q:inner>Text</q:inner></q:outer>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<q:outer xmlns:q="urn:Q"><q:inner>Text</q:inner></q:outer>');
+    });
+});
+
 describe('Modes and Multiple Template Sets', () => {
     it('Template in non-default mode not selected if no mode specified', async () => {
         const xmlString = `<?xml version="1.0"?>
