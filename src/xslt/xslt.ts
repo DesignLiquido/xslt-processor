@@ -98,6 +98,12 @@ interface CurrentTemplateContext {
     match: string | null;
 }
 
+interface WhitespacePattern {
+    namespaceUri: string | null;
+    localName: string;
+    isWildcard: boolean;
+}
+
 /**
  * The main class for XSL-T processing.
  *
@@ -157,14 +163,14 @@ export class Xslt {
      * List of element name patterns from xsl:strip-space declarations.
      * Whitespace-only text nodes inside matching elements will be stripped.
      */
-    stripSpacePatterns: string[];
+    stripSpacePatterns: WhitespacePattern[];
 
     /**
      * List of element name patterns from xsl:preserve-space declarations.
      * Whitespace-only text nodes inside matching elements will be preserved.
      * preserve-space takes precedence over strip-space for conflicting patterns.
      */
-    preserveSpacePatterns: string[];
+    preserveSpacePatterns: WhitespacePattern[];
 
     /**
      * Namespace aliases from xsl:namespace-alias declarations.
@@ -1003,7 +1009,44 @@ export class Xslt {
         // Collect templates from imported stylesheets (higher import depth = lower precedence)
         // We only want templates with importPrecedence LESS than current template (from imported stylesheets)
         const top = template.ownerDocument.documentElement;
-        const allTemplates = collectAndExpandTemplates(top, currentMode, this.xPath, this.templateSourceMap);
+        const stylesheetRoots: XNode[] = [];
+
+        if (top) {
+            stylesheetRoots.push(top);
+        }
+
+        this.importedStylesheets.forEach((doc) => {
+            if (!doc) {
+                return;
+            }
+            if (doc.nodeType === DOM_DOCUMENT_NODE) {
+                const rootElement = doc.childNodes.find(
+                    (child: XNode) => child.nodeType === DOM_ELEMENT_NODE
+                );
+                if (rootElement) {
+                    stylesheetRoots.push(rootElement);
+                }
+            } else if (doc.nodeType === DOM_ELEMENT_NODE) {
+                stylesheetRoots.push(doc);
+            }
+        });
+
+        let allTemplates: TemplatePriorityInterface[] = [];
+        let docOrderOffset = 0;
+
+        for (const root of stylesheetRoots) {
+            const templates = collectAndExpandTemplates(
+                root,
+                currentMode,
+                this.xPath,
+                this.templateSourceMap
+            );
+            for (const templateEntry of templates) {
+                templateEntry.documentOrder += docOrderOffset;
+            }
+            docOrderOffset += templates.length;
+            allTemplates = allTemplates.concat(templates);
+        }
 
         // Filter to only templates from imported stylesheets (depth > currentDepth)
         const importedTemplates = allTemplates.filter((t) => {
@@ -1168,7 +1211,12 @@ export class Xslt {
             let node = domCreateElement(this.outputDocument, source.nodeName);
             // node.transformedNodeName = source.nodeName;
             if (source.namespaceUri !== null && source.namespaceUri !== undefined) {
-                domSetAttribute(node, 'xmlns', source.namespaceUri);
+                const prefix = source.prefix || (source.nodeName.includes(':') ? source.nodeName.split(':')[0] : null);
+                const nsAttr = prefix ? `xmlns:${prefix}` : 'xmlns';
+                // Only add the namespace declaration if not already declared by an ancestor
+                if (!this.isNamespaceDeclaredOnAncestor(destination, nsAttr, source.namespaceUri)) {
+                    domSetAttribute(node, nsAttr, source.namespaceUri);
+                }
             }
             // Set siblingPosition to preserve insertion order during serialization
             node.siblingPosition = destination.childNodes.length;
@@ -3424,6 +3472,18 @@ export class Xslt {
         groupingSeparator: string | null,
         groupingSize: string | null
     ): string {
+        if (format.match(/^0+1$/)) {
+            const width = format.length;
+            let result = number.toString().padStart(width, '0');
+            if (groupingSeparator && groupingSize) {
+                const size = parseInt(groupingSize, 10);
+                if (size > 0 && !isNaN(size)) {
+                    result = this.applyGrouping(result, groupingSeparator, size);
+                }
+            }
+            return result;
+        }
+
         // Handle different format tokens
         const formatChar = format.charAt(0);
 
@@ -3567,6 +3627,63 @@ export class Xslt {
         this.xPath.xPathSort(context, sort);
     }
 
+    private resolveNamespaceUriForPrefix(node: XNode, prefix: string | null): string | null {
+        const attrName = prefix ? `xmlns:${prefix}` : 'xmlns';
+        let current: XNode | null = node;
+
+        while (current) {
+            const attributes = current.childNodes.filter(
+                (child) => child.nodeType === DOM_ATTRIBUTE_NODE
+            );
+            for (const attribute of attributes) {
+                if (attribute.nodeName === attrName) {
+                    return attribute.nodeValue;
+                }
+
+                if (prefix && attribute.prefix === 'xmlns' && attribute.localName === prefix) {
+                    return attribute.nodeValue;
+                }
+
+                if (!prefix && attribute.nodeName === 'xmlns') {
+                    return attribute.nodeValue;
+                }
+            }
+            current = current.parentNode;
+        }
+
+        return null;
+    }
+
+    private isNamespaceDeclaredOnAncestor(node: XNode, nsAttr: string, nsUri: string): boolean {
+        let current: XNode | null = node;
+        while (current) {
+            const value = domGetAttributeValue(current, nsAttr);
+            if (value === nsUri) {
+                return true;
+            }
+            current = current.parentNode;
+        }
+        return false;
+    }
+
+    private parseWhitespacePattern(pattern: string, template: XNode): WhitespacePattern {
+        if (pattern === '*') {
+            return { namespaceUri: null, localName: '*', isWildcard: true };
+        }
+
+        if (pattern.includes(':')) {
+            const [prefix, localPart] = pattern.split(':');
+            const namespaceUri = this.resolveNamespaceUriForPrefix(template, prefix);
+            return {
+                namespaceUri: namespaceUri ?? null,
+                localName: localPart || '*',
+                isWildcard: localPart === '*'
+            };
+        }
+
+        return { namespaceUri: null, localName: pattern, isWildcard: false };
+    }
+
     /**
      * Implements `xsl:strip-space`.
      * Collects element name patterns for which whitespace-only text nodes should be stripped.
@@ -3577,7 +3694,9 @@ export class Xslt {
         if (elements) {
             // Split on whitespace to get individual patterns (e.g., "* book" becomes ["*", "book"])
             const patterns = elements.trim().split(/\s+/);
-            this.stripSpacePatterns.push(...patterns);
+            for (const pattern of patterns) {
+                this.stripSpacePatterns.push(this.parseWhitespacePattern(pattern, template));
+            }
         }
     }
 
@@ -3592,7 +3711,9 @@ export class Xslt {
         if (elements) {
             // Split on whitespace to get individual patterns (e.g., "pre code" becomes ["pre", "code"])
             const patterns = elements.trim().split(/\s+/);
-            this.preserveSpacePatterns.push(...patterns);
+            for (const pattern of patterns) {
+                this.preserveSpacePatterns.push(this.parseWhitespacePattern(pattern, template));
+            }
         }
     }
 
@@ -3662,30 +3783,27 @@ export class Xslt {
      * @param element The element node (for namespace checking).
      * @returns True if the element matches the pattern.
      */
-    protected matchesNamePattern(elementName: string, pattern: string, element: XNode): boolean {
-        // Universal match
-        if (pattern === '*') {
+    protected matchesNamePattern(
+        elementName: string,
+        pattern: WhitespacePattern,
+        element: XNode
+    ): boolean {
+        const elementNamespace =
+            element.namespaceUri ?? this.resolveNamespaceUriForPrefix(element, element.prefix || null);
+
+        if (pattern.namespaceUri !== null) {
+            if (elementNamespace !== pattern.namespaceUri) {
+                return false;
+            }
+        } else if (!pattern.isWildcard && elementNamespace) {
+            return false;
+        }
+
+        if (pattern.isWildcard) {
             return true;
         }
 
-        // Handle patterns with namespace prefixes
-        if (pattern.includes(':')) {
-            const [prefix, localPart] = pattern.split(':');
-
-            // Check if element has a matching prefix
-            const elementPrefix = element.prefix || '';
-
-            if (localPart === '*') {
-                // prefix:* - match any element in that namespace
-                return elementPrefix === prefix;
-            } else {
-                // prefix:name - match specific element in namespace
-                return elementPrefix === prefix && elementName === localPart;
-            }
-        }
-
-        // Simple name match (no namespace prefix in pattern)
-        return elementName === pattern;
+        return elementName === pattern.localName;
     }
 
     /**
@@ -4828,7 +4946,22 @@ export class Xslt {
                 node = context.nodeList[context.position];
 
                 let newNode: XNode;
-                newNode = domCreateElement(this.outputDocument, template.nodeName);
+                let qualifiedName = template.nodeName;
+                let namespaceUri = template.namespaceUri;
+                const templatePrefix = template.prefix || '';
+                const aliasPrefix = this.namespaceAliases.get(templatePrefix);
+                if (aliasPrefix) {
+                    const localName = template.localName || template.nodeName;
+                    if (aliasPrefix === '#default') {
+                        qualifiedName = localName;
+                        namespaceUri = this.resolveNamespaceUriForPrefix(template, null);
+                    } else {
+                        qualifiedName = `${aliasPrefix}:${localName}`;
+                        namespaceUri = this.resolveNamespaceUriForPrefix(template, aliasPrefix);
+                    }
+                }
+
+                newNode = domCreateElement(this.outputDocument, qualifiedName);
                 
                 // Set position based on current number of children in output
                 // This preserves document order for literal elements in templates
@@ -4837,6 +4970,16 @@ export class Xslt {
                 newNode.siblingPosition = (output || this.outputDocument).childNodes.length;
 
                 domAppendChild(output || this.outputDocument, newNode);
+
+                if (aliasPrefix) {
+                    if (aliasPrefix === '#default') {
+                        if (namespaceUri) {
+                            domSetAttribute(newNode, 'xmlns', namespaceUri);
+                        }
+                    } else if (namespaceUri) {
+                        domSetAttribute(newNode, `xmlns:${aliasPrefix}`, namespaceUri);
+                    }
+                }
 
                 // Apply attribute sets from use-attribute-sets attribute on literal elements
                 const useAttributeSetsAttr = template.childNodes.find(

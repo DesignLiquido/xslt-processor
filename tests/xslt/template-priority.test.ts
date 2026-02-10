@@ -911,3 +911,61 @@ describe('Conflict Detection Behavior', () => {
         }
     });
 });
+
+describe('Import Precedence and apply-imports', () => {
+    it('should prefer templates in the importing stylesheet', async () => {
+        const xmlString = `<root><item>content</item></root>`;
+
+        const importedXslt = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="item">IMPORTED</xsl:template>
+            </xsl:stylesheet>`;
+
+        const importHref = `data:text/xml,${encodeURIComponent(importedXslt)}`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:import href="${importHref}"/>
+                <xsl:template match="/">
+                    <xsl:apply-templates select="root/item"/>
+                </xsl:template>
+                <xsl:template match="item">MAIN</xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.strictEqual(result, 'MAIN');
+    });
+
+    it('should use apply-imports to invoke lower-precedence templates', async () => {
+        const xmlString = `<root><item>content</item></root>`;
+
+        const importedXslt = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:template match="item">IMPORTED</xsl:template>
+            </xsl:stylesheet>`;
+
+        const importHref = `data:text/xml,${encodeURIComponent(importedXslt)}`;
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                <xsl:import href="${importHref}"/>
+                <xsl:template match="/">
+                    <xsl:apply-templates select="root/item"/>
+                </xsl:template>
+                <xsl:template match="item">MAIN<xsl:apply-imports/></xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const result = await xsltClass.xsltProcess(xml, xslt);
+        assert.strictEqual(result, 'MAINIMPORTED');
+    });
+});

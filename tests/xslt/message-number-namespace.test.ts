@@ -414,6 +414,26 @@ describe('xsl:number', () => {
         // Should format as "1.a.i" (chapter 1, section a, subsection i)
         assert.ok(outXmlString.includes('1.a.i'), 'Should have mixed format 1.a.i');
     });
+
+    it('Number with zero-padded format', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<root><item>test</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/">
+        <result><xsl:number value="7" format="01"/>-<xsl:number value="42" format="001"/></result>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, `<result>07-042</result>`);
+    });
 });
 
 describe('xsl:namespace-alias', () => {
@@ -464,6 +484,32 @@ describe('xsl:namespace-alias', () => {
             async () => await xsltClass.xsltProcess(xml, xslt),
             /requires both stylesheet-prefix and result-prefix/
         );
+    });
+
+    it('Applies namespace alias to literal result elements', async () => {
+        const xmlString = `<?xml version="1.0"?>
+<root><item>test</item></root>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:s="urn:source"
+    xmlns:r="urn:result">
+    <xsl:namespace-alias stylesheet-prefix="s" result-prefix="r"/>
+    <xsl:template match="/">
+        <s:out>ok</s:out>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.ok(outXmlString.includes('<r:out'), 'Should use aliased prefix');
+        assert.ok(outXmlString.includes('xmlns:r="urn:result"'), 'Should use result namespace');
+        assert.ok(!outXmlString.includes('<s:out'), 'Should not keep stylesheet prefix');
     });
 });
 

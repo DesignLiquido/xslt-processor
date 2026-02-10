@@ -252,6 +252,35 @@ describe('xsl:strip-space', () => {
         // Text content should never be stripped
         assert.equal(outXmlString, `<root><item>actual text content</item></root>`);
     });
+
+    it('Strip-space with namespace-prefixed pattern', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:p="urn:test">
+    <p:item>
+        <p:value>1</p:value>
+    </p:item>
+    <p:other> text </p:other>
+</root>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:p="urn:test">
+    <xsl:strip-space elements="p:*"/>
+    <xsl:output method="xml" indent="no"/>
+
+    <xsl:template match="/">
+        <xsl:copy-of select="root"/>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.ok(outXmlString.includes('<p:item><p:value>1</p:value></p:item>'));
+        assert.ok(outXmlString.includes('<p:other> text </p:other>'));
+    });
 });
 
 describe('xsl:preserve-space', () => {
