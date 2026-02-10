@@ -4979,6 +4979,12 @@ export class Xslt {
                     } else if (namespaceUri) {
                         domSetAttribute(newNode, `xmlns:${aliasPrefix}`, namespaceUri);
                     }
+                } else if (namespaceUri) {
+                    const prefix = templatePrefix || (qualifiedName.includes(':') ? qualifiedName.split(':')[0] : null);
+                    const nsAttr = prefix ? `xmlns:${prefix}` : 'xmlns';
+                    if (!this.isNamespaceDeclaredOnAncestor(output, nsAttr, namespaceUri)) {
+                        domSetAttribute(newNode, nsAttr, namespaceUri);
+                    }
                 }
 
                 // Apply attribute sets from use-attribute-sets attribute on literal elements
