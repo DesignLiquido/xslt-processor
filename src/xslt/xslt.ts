@@ -395,7 +395,7 @@ export class Xslt {
 
         if (this.options.parameters.length > 0) {
             for (const parameter of this.options.parameters) {
-                expressionContext.setVariable(parameter.name, new StringValue(parameter.value));
+                expressionContext.setVariable(parameter.name, this.toNodeValue(parameter.value));
             }
         }
 
@@ -4522,6 +4522,30 @@ export class Xslt {
     }
 
     /**
+     * Converts a raw JavaScript value to the appropriate NodeValue type.
+     * Detects NodeValue instances, DOM nodes, arrays, numbers, booleans,
+     * and falls back to StringValue.
+     *
+     * @param value The raw value to convert.
+     * @returns The wrapped NodeValue.
+     */
+    protected toNodeValue(value: any): NodeValue {
+        if (value && typeof value === 'object' && 'stringValue' in value) {
+            return value as NodeValue;
+        } else if (value && typeof value === 'object' && 'nodeType' in value) {
+            return new NodeSetValue([value as XNode]);
+        } else if (Array.isArray(value)) {
+            return new NodeSetValue(value);
+        } else if (typeof value === 'number') {
+            return new NumberValue(value);
+        } else if (typeof value === 'boolean') {
+            return new BooleanValue(value);
+        } else {
+            return new StringValue(String(value ?? ''));
+        }
+    }
+
+    /**
      * Execute a user-defined xsl:function.
      * Called when a function from userDefinedFunctions is invoked from XPath.
      *
@@ -4572,36 +4596,10 @@ export class Xslt {
             if (paramName) {
                 if (i < args.length) {
                     // Use provided argument
-                    let argValue = args[i];
                     const paramType = xmlGetAttribute(params[i], 'as');
-                    
-                    // Convert argument to NodeValue based on parameter type
-                    let paramValue: NodeValue;
-                    
-                    if (argValue && typeof argValue === 'object' && 'stringValue' in argValue) {
-                        // It's a NodeValue-like object - apply type coercion if needed
-                        paramValue = argValue as NodeValue;
-                        if (paramType) {
-                            paramValue = this.coerceToType(paramValue, paramType);
-                        }
-                    } else if (argValue && typeof argValue === 'object' && 'nodeType' in argValue) {
-                        // It's a raw DOM node
-                        paramValue = new NodeSetValue([argValue as XNode]);
-                        if (paramType) {
-                            paramValue = this.coerceToType(paramValue, paramType);
-                        }
-                    } else if (Array.isArray(argValue)) {
-                        // Array of nodes from XPath evaluation
-                        paramValue = new NodeSetValue(argValue);
-                        if (paramType) {
-                            paramValue = this.coerceToType(paramValue, paramType);
-                        }
-                    } else if (typeof argValue === 'number') {
-                        paramValue = new NumberValue(argValue);
-                    } else if (typeof argValue === 'boolean') {
-                        paramValue = new BooleanValue(argValue);
-                    } else {
-                        paramValue = new StringValue(String(argValue ?? ''));
+                    let paramValue = this.toNodeValue(args[i]);
+                    if (paramType) {
+                        paramValue = this.coerceToType(paramValue, paramType);
                     }
                     
                     functionContext.setVariable(paramName, paramValue);
@@ -4850,12 +4848,12 @@ export class Xslt {
         } else if (select) {
             value = this.xPath.xPathEval(select, context);
         } else {
-            let parameterValue = '';
             const filteredParameter = this.options.parameters.filter((p) => p.name === name);
             if (filteredParameter.length > 0) {
-                parameterValue = filteredParameter[0].value;
+                value = this.toNodeValue(filteredParameter[0].value);
+            } else {
+                value = new StringValue('');
             }
-            value = new StringValue(parameterValue);
         }
 
         if (override || !context.getVariable(name)) {
