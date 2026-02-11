@@ -388,6 +388,34 @@ export class Xslt {
     }
 
     /**
+     * Processes the XSLT transformation and returns the output as an XDocument
+     * instead of a serialized string. This is useful for:
+     * - Working with the result tree programmatically
+     * - Converting to a different DOM representation (e.g., React elements)
+     * - Using browser-native serialization (XMLSerializer) if desired
+     *
+     * @param xmlDoc The input document root, as DOM node.
+     * @param stylesheet The stylesheet document root, as DOM node.
+     * @returns The processed document as an XDocument tree.
+     */
+    async xsltProcessToDocument(xmlDoc: XDocument, stylesheet: XDocument): Promise<XDocument> {
+        const outputDocument = new XDocument();
+        this.outputDocument = outputDocument;
+        const expressionContext = new ExprContext([xmlDoc]);
+        expressionContext.warningsCallback = this.warningsCallback;
+
+        if (this.options.parameters.length > 0) {
+            for (const parameter of this.options.parameters) {
+                expressionContext.setVariable(parameter.name, new StringValue(parameter.value));
+            }
+        }
+
+        await this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
+
+        return outputDocument;
+    }
+
+    /**
      * The main entry point of the XSL-T processor, as explained on the top of the file.
      * @param context The input document root, as XPath `ExprContext`.
      * @param template The stylesheet document root, as DOM node.

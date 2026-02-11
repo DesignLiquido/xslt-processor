@@ -66,6 +66,7 @@
     "eslint-plugin-jest": "^28.8.3",
     "eslint-plugin-jsx": "^0.1.0",
     "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "npm-check-updates": "^16.10.13",
     "release-it": "^17.6.0",
     "rimraf": "^5.0.1",
@@ -76,7 +77,6 @@
     "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.9.2"
   },
-  "dependencies": {},
   "copyFiles": [
     {
       "from": "LICENSE",

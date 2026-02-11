@@ -1,3 +1,4 @@
+export * from './dom-to-xdocument';
 export * from './functions';
 export * from './xdocument';
 export * from './xml-functions';
