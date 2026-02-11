@@ -812,6 +812,76 @@ describe('Namespace declarations on attributes (issue #169)', () => {
     });
 });
 
+describe('Namespace declarations in HTML output mode (issue #170)', () => {
+    it('SVG with xlink namespace preserved in HTML mode', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xlink="https://www.w3.org/1999/xlink" version="1.0">
+    <xsl:output method="html"/>
+    <xsl:template match="/">
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg">
+                <image xlink:href="/logo.png"/>
+            </svg>
+        </div>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outHtmlString = await xsltClass.xsltProcess(xml, xslt);
+        expect(outHtmlString).toContain('xmlns="http://www.w3.org/2000/svg"');
+        expect(outHtmlString).toContain('xmlns:xlink="https://www.w3.org/1999/xlink"');
+        expect(outHtmlString).toContain('xlink:href="/logo.png"');
+    });
+
+    it('SVG xmlns preserved on svg element in HTML mode', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+    <xsl:output method="html"/>
+    <xsl:template match="/">
+        <div><svg xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100"/></svg></div>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outHtmlString = await xsltClass.xsltProcess(xml, xslt);
+        expect(outHtmlString).toContain('<svg xmlns="http://www.w3.org/2000/svg">');
+    });
+
+    it('XHTML xmlns still stripped in HTML mode', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns="http://www.w3.org/1999/xhtml" version="1.0">
+    <xsl:output method="html"/>
+    <xsl:template match="/">
+        <div>Hello</div>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outHtmlString = await xsltClass.xsltProcess(xml, xslt);
+        expect(outHtmlString).not.toContain('xmlns');
+        expect(outHtmlString).toContain('<div>Hello</div>');
+    });
+});
+
 describe('Modes and Multiple Template Sets', () => {
     it('Template in non-default mode not selected if no mode specified', async () => {
         const xmlString = `<?xml version="1.0"?>

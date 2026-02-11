@@ -317,9 +317,10 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
             continue;
         }
 
-        // In HTML output mode, skip namespace declarations (xmlns and xmlns:*)
-        if (options.outputMethod === 'html' && 
-            (attribute.nodeName === 'xmlns' || attribute.nodeName.startsWith('xmlns:'))) {
+        // In HTML output mode, skip only XHTML namespace declarations (redundant in HTML)
+        if (options.outputMethod === 'html' &&
+            attribute.nodeName === 'xmlns' &&
+            attribute.nodeValue === 'http://www.w3.org/1999/xhtml') {
             continue;
         }
 
