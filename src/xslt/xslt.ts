@@ -315,13 +315,19 @@ export class Xslt {
         this.forwardsCompatible = false;
         this.warningsCallback = console.warn.bind(console);
         this.fetchFunction = options.fetchFunction || (async (uri: string) => {
-            if (!global.globalThis.fetch) {
-                global.globalThis.fetch = fetch as any;
-                global.globalThis.Headers = Headers as any;
-                global.globalThis.Request = Request as any;
-                global.globalThis.Response = Response as any;
+            const globalFetch =
+                typeof globalThis !== 'undefined' && typeof (globalThis as any).fetch === 'function'
+                    ? (globalThis as any).fetch
+                    : null;
+
+            if (!globalFetch) {
+                throw new Error(
+                    'No global fetch implementation available. ' +
+                    'Please provide options.fetchFunction or use a runtime that exposes globalThis.fetch.'
+                );
             }
-            const response = await global.globalThis.fetch(uri);
+
+            const response = await globalFetch(uri);
             return response.text();
         });
         this.streamingProcessor = new StreamingProcessor({
