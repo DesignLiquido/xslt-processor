@@ -65,7 +65,7 @@ If you write pre-2015 JS code, make adjustments as needed.
 
 ### Working with browser DOM and XDocument output
 
-Feature available at version 5+ of this library. 
+Feature available in v5 (next major) of this library. 
 
 If you already have a browser DOM `Document` or `Node`, convert it to an `XDocument` without re-parsing XML strings:
 
