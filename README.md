@@ -63,6 +63,41 @@ xslt.xsltProcess(
 
 If you write pre-2015 JS code, make adjustments as needed.
 
+### Working with browser DOM and XDocument output
+
+Feature available in v5 (next major) of this library. 
+
+If you already have a browser DOM `Document` or `Node`, convert it to an `XDocument` without re-parsing XML strings:
+
+```js
+import { domDocumentToXDocument } from 'xslt-processor'
+
+const parser = new DOMParser();
+const nativeDoc = parser.parseFromString('<root>hello</root>', 'text/xml');
+const xDoc = domDocumentToXDocument(nativeDoc);
+```
+
+You can also run XSLT and get the output as an `XDocument` tree instead of a serialized string:
+
+```js
+import { Xslt, XmlParser } from 'xslt-processor'
+
+const xmlParser = new XmlParser();
+const xslt = new Xslt();
+
+const xmlDoc = xmlParser.xmlParse('<root><item>hello</item></root>');
+const styleDoc = xmlParser.xmlParse(
+  '<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">' +
+  '  <xsl:template match="/">' +
+  '    <output><xsl:value-of select="/root/item"/></output>' +
+  '  </xsl:template>' +
+  '</xsl:stylesheet>'
+);
+
+const outDoc = await xslt.xsltProcessToDocument(xmlDoc, styleDoc);
+// outDoc is an XDocument you can traverse or serialize with xmlTransformedText.
+```
+
 ### `Xslt` class options
 
 You can pass an `options` object to `Xslt` class:
