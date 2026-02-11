@@ -343,18 +343,7 @@ export class Xslt {
      * @returns the processed document, as XML text in a string, JSON string if outputMethod is 'json', or text if outputMethod is 'text' or 'adaptive' (with text content).
      */
     async xsltProcess(xmlDoc: XDocument, stylesheet: XDocument) {
-        const outputDocument = new XDocument();
-        this.outputDocument = outputDocument;
-        const expressionContext = new ExprContext([xmlDoc]);
-        expressionContext.warningsCallback = this.warningsCallback;
-
-        if (this.options.parameters.length > 0) {
-            for (const parameter of this.options.parameters) {
-                expressionContext.setVariable(parameter.name, new StringValue(parameter.value));
-            }
-        }
-
-        await this.xsltProcessContext(expressionContext, stylesheet, this.outputDocument);
+        const outputDocument = await this.xsltProcessToDocument(xmlDoc, stylesheet);
 
         // Handle JSON output format
         if (this.outputMethod === 'json') {
