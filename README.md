@@ -119,7 +119,46 @@ const xslt = new Xslt(options);
 - `parameters` (`array`, default `[]`): external parameters that you want to use.
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
-    - `value`: the value.
+    - `value`: the value. The type is preserved automatically:
+        - **string** values become `StringValue`;
+        - **number** values become `NumberValue` (usable in XPath arithmetic);
+        - **boolean** values become `BooleanValue` (usable in `xsl:if`/`xsl:when` tests);
+        - **`NodeSetValue`** instances are kept as-is (useful for passing additional documents);
+        - DOM nodes (objects with `nodeType`) are wrapped in a `NodeSetValue`;
+        - arrays of nodes are wrapped in a `NodeSetValue`.
+
+**`parameters` examples:**
+
+```js
+import { Xslt, XmlParser } from 'xslt-processor'
+
+// String parameter (default behavior)
+const xslt = new Xslt({ parameters: [
+  { name: 'title', value: 'Hello' }
+] });
+
+// Number parameter — works in XPath arithmetic ($count + 1 = 43)
+const xslt = new Xslt({ parameters: [
+  { name: 'count', value: 42 }
+] });
+
+// Boolean parameter — works in xsl:if / xsl:when tests
+const xslt = new Xslt({ parameters: [
+  { name: 'debug', value: true }
+] });
+
+// Node-set parameter — pass an additional document for cross-document lookups
+import { NodeSetValue } from 'xslt-processor/xpath/values'
+
+const xmlParser = new XmlParser();
+const lookupDoc = xmlParser.xmlParse('<lookup><entry key="a">Alpha</entry></lookup>');
+
+const xslt = new Xslt({ parameters: [
+  { name: 'lookup', value: new NodeSetValue([lookupDoc]) }
+] });
+// In XSLT: <xsl:value-of select="$lookup/lookup/entry[@key='a']"/>
+```
+
 - `fetchFunction` (`(uri: string) => Promise<string>`, optional): a custom function for loading external resources referenced by `<xsl:import>` and `<xsl:include>`. Receives the URI and must return the fetched content as a string. Defaults to the global `fetch` API. This is useful for:
     - Denying external loading entirely;
     - Loading from the local filesystem or other non-HTTP sources;
