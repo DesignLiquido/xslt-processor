@@ -75,6 +75,7 @@ function convertNode(nativeNode: Node, ownerDoc: XDocument): XNode | null {
                 attrNode.prefix = attr.prefix || null;
                 attrNode.localName = attr.localName || attr.name;
                 attrNode.parentNode = xNode;
+                attrNode.siblingPosition = xNode.childNodes.length;
                 xNode.appendChild(attrNode);
             }
 
