@@ -35,5 +35,6 @@ export type XsltOptions = {
     escape: boolean,
     selfClosingTags: boolean,
     outputMethod?: 'xml' | 'html' | 'text' | 'xhtml' | 'json' | 'adaptive',
-    parameters?: XsltParameter[]
+    parameters?: XsltParameter[],
+    fetchFunction?: (uri: string) => Promise<string>
 }

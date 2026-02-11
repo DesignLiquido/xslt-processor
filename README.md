@@ -85,6 +85,39 @@ const xslt = new Xslt(options);
     - `name`: the parameter name;
     - `namespaceUri` (optional): the namespace;
     - `value`: the value.
+- `fetchFunction` (`(uri: string) => Promise<string>`, optional): a custom function for loading external resources referenced by `<xsl:import>` and `<xsl:include>`. Receives the URI and must return the fetched content as a string. Defaults to the global `fetch` API. This is useful for:
+    - Denying external loading entirely;
+    - Loading from the local filesystem or other non-HTTP sources;
+    - Transforming or remapping URIs before fetching.
+
+**`fetchFunction` examples:**
+
+```js
+import { readFileSync } from 'fs';
+
+// Deny all external loading
+const xslt = new Xslt({
+  fetchFunction: async (uri) => {
+    throw new Error(`External loading is not allowed: ${uri}`);
+  }
+});
+
+// Load from local filesystem
+const xslt = new Xslt({
+  fetchFunction: async (uri) => {
+    return readFileSync(uri, 'utf-8');
+  }
+});
+
+// Remap URIs before fetching
+const xslt = new Xslt({
+  fetchFunction: async (uri) => {
+    const remapped = uri.replace('https://example.com/', '/local/stylesheets/');
+    const response = await fetch(remapped);
+    return response.text();
+  }
+});
+```
 
 #### JSON Output Format
 

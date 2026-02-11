@@ -141,6 +141,13 @@ export class Xslt {
     decimalFormatSettings: XsltDecimalFormatSettings;
     warningsCallback: (...args: any[]) => void;
 
+    /**
+     * Custom fetch function for loading external resources (e.g. xsl:import, xsl:include).
+     * Takes a URI and returns the fetched content as a string.
+     * Defaults to using the global `fetch` API.
+     */
+    fetchFunction: (uri: string) => Promise<string>;
+
     outputDocument: XDocument;
     outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
     outputOmitXmlDeclaration: string;
@@ -307,6 +314,22 @@ export class Xslt {
         this.firstTemplateRan = false;
         this.forwardsCompatible = false;
         this.warningsCallback = console.warn.bind(console);
+        this.fetchFunction = options.fetchFunction || (async (uri: string) => {
+            const globalFetch =
+                typeof globalThis !== 'undefined' && typeof (globalThis as any).fetch === 'function'
+                    ? (globalThis as any).fetch
+                    : null;
+
+            if (!globalFetch) {
+                throw new Error(
+                    'No global fetch implementation available. ' +
+                    'Please provide options.fetchFunction or use a runtime that exposes globalThis.fetch.'
+                );
+            }
+
+            const response = await globalFetch(uri);
+            return response.text();
+        });
         this.streamingProcessor = new StreamingProcessor({
             xPath: this.xPath,
             version: ''
@@ -2126,20 +2149,6 @@ export class Xslt {
      */
     protected async xsltImportOrInclude(context: ExprContext, template: XNode, output: XNode | undefined, isImport: boolean) {
         const elementName = isImport ? 'xsl:import' : 'xsl:include';
-        const [major, minor] = process.versions.node.split('.').map(Number);
-        if (major <= 17 && minor < 5) {
-            throw new Error(`Your Node.js version does not support \`<${elementName}>\`. If possible, please update your Node.js version to at least version 17.5.0.`);
-        }
-
-        // We need to test here whether `window.fetch` is available or not.
-        // If it is a browser environemnt, it should be.
-        // Otherwise, we will need to import an equivalent library, like 'node-fetch'.
-        if (!global.globalThis.fetch) {
-            global.globalThis.fetch = fetch as any;
-            global.globalThis.Headers = Headers as any;
-            global.globalThis.Request = Request as any;
-            global.globalThis.Response = Response as any;
-        }
 
         const hrefAttributeFind = template.childNodes.filter(n => n.nodeName === 'href');
         if (hrefAttributeFind.length <= 0) {
@@ -2155,8 +2164,7 @@ export class Xslt {
             return;
         }
 
-        const fetchTest = await global.globalThis.fetch(href);
-        const fetchResponse = await fetchTest.text();
+        const fetchResponse = await this.fetchFunction(href);
         const includedXslt = this.xmlParser.xmlParse(fetchResponse);
         
         // Track stylesheet metadata for apply-imports
