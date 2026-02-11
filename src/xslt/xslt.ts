@@ -1124,6 +1124,21 @@ export class Xslt {
 
         if (output) {
             domSetAttribute(output, name, value);
+
+            // If the attribute name has a namespace prefix, ensure xmlns declaration exists
+            if (name.includes(':')) {
+                const prefix = name.split(':')[0];
+                if (prefix !== 'xmlns') {
+                    const explicitNs = xmlGetAttribute(template, 'namespace');
+                    const nsUri = explicitNs || this.resolveNamespaceUriForPrefix(template, prefix);
+                    if (nsUri) {
+                        const nsAttr = `xmlns:${prefix}`;
+                        if (!this.isNamespaceDeclaredOnAncestor(output, nsAttr, nsUri)) {
+                            domSetAttribute(output, nsAttr, nsUri);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1241,6 +1256,15 @@ export class Xslt {
             domAppendChild(destination, node);
         } else if (source.nodeType == DOM_ATTRIBUTE_NODE) {
             domSetAttribute(destination, source.nodeName, source.nodeValue);
+
+            // If the attribute has a namespace prefix, ensure xmlns declaration exists
+            if (source.prefix && source.namespaceUri &&
+                source.prefix !== 'xmlns' && !source.nodeName.startsWith('xmlns')) {
+                const nsAttr = `xmlns:${source.prefix}`;
+                if (!this.isNamespaceDeclaredOnAncestor(destination, nsAttr, source.namespaceUri)) {
+                    domSetAttribute(destination, nsAttr, source.namespaceUri);
+                }
+            }
         }
 
         return null;
@@ -5006,6 +5030,15 @@ export class Xslt {
                     const name = attribute.nodeName;
                     const value = this.xsltAttributeValue(attribute.nodeValue, elementContext);
                     domSetAttribute(newNode, name, value);
+
+                    // If the attribute has a namespace prefix, ensure the xmlns declaration exists
+                    if (attribute.prefix && attribute.namespaceUri &&
+                        attribute.prefix !== 'xmlns' && !attribute.nodeName.startsWith('xmlns')) {
+                        const nsAttr = `xmlns:${attribute.prefix}`;
+                        if (!this.isNamespaceDeclaredOnAncestor(newNode, nsAttr, attribute.namespaceUri)) {
+                            domSetAttribute(newNode, nsAttr, attribute.namespaceUri);
+                        }
+                    }
                 }
 
                 break;

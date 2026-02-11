@@ -734,6 +734,84 @@ describe('Namespace declarations on literal result elements (issue #165)', () =>
     });
 });
 
+describe('Namespace declarations on attributes (issue #169)', () => {
+    it('Namespace-prefixed attribute includes xmlns declaration', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <text q:title="str">Out</text>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<text q:title="str" xmlns:q="urn:Q">Out</text>');
+    });
+
+    it('Element and attribute sharing same namespace prefix emit xmlns only once', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <q:text q:title="str">Out</q:text>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<q:text xmlns:q="urn:Q" q:title="str">Out</q:text>');
+    });
+
+    it('xsl:attribute with namespace prefix includes xmlns declaration', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <text><xsl:attribute name="q:title">str</xsl:attribute>Out</text>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<text q:title="str" xmlns:q="urn:Q">Out</text>');
+    });
+
+    it('Nested element inherits ancestor namespace declaration for attribute', async () => {
+        const xmlString = `<?xml version="1.0"?><doc/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:q="urn:Q" version="1.0">
+    <xsl:template match="/">
+        <q:outer><inner q:title="str">Text</inner></q:outer>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+        assert.equal(outXmlString, '<q:outer xmlns:q="urn:Q"><inner q:title="str">Text</inner></q:outer>');
+    });
+});
+
 describe('Modes and Multiple Template Sets', () => {
     it('Template in non-default mode not selected if no mode specified', async () => {
         const xmlString = `<?xml version="1.0"?>
