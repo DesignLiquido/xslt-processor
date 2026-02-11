@@ -23,7 +23,9 @@ export class XDocument extends XNode {
 
     appendChild(node: any) {
         super.appendChild(node);
-        this.documentElement = this.childNodes[0];
+        if (node.nodeType === DOM_ELEMENT_NODE && !this.documentElement) {
+            this.documentElement = node;
+        }
     }
 
     createElement(name: string): XNode {
