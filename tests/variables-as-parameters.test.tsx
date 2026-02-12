@@ -70,12 +70,34 @@ describe('variables-as-parameters', () => {
           <xsl:stylesheet version="1.0">
             <xsl:param name="flag"/>
             <xsl:template match="/">
+              <out><xsl:if test="not($flag)">yes</xsl:if></out>
+            </xsl:template>
+          </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt({ parameters: [
+          { name: 'flag', value: false }
+        ] });
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.equal(outXmlString, '<out>yes</out>');
+    });
+
+    it('string "false" is truthy in XPath tests', async () => {
+        const xmlString = `<root/>`;
+
+        const xsltString = `<?xml version="1.0"?>
+          <xsl:stylesheet version="1.0">
+            <xsl:param name="flag"/>
+            <xsl:template match="/">
               <out><xsl:if test="$flag">yes</xsl:if></out>
             </xsl:template>
           </xsl:stylesheet>`;
 
         const xsltClass = new Xslt({ parameters: [
-          { name: 'flag', value: true }
+          { name: 'flag', value: 'false' }
         ] });
         const xmlParser = new XmlParser();
         const xml = xmlParser.xmlParse(xmlString);

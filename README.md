@@ -123,6 +123,7 @@ const xslt = new Xslt(options);
         - **string** values become `StringValue`;
         - **number** values become `NumberValue` (usable in XPath arithmetic);
         - **boolean** values become `BooleanValue` (usable in `xsl:if`/`xsl:when` tests);
+        - Note: in XPath/XSLT, any non-empty string is truthy, so the string "false" still behaves as true in tests;
         - **`NodeSetValue`** instances are kept as-is (useful for passing additional documents);
         - DOM nodes (objects with `nodeType`) are wrapped in a `NodeSetValue`;
         - arrays of nodes are wrapped in a `NodeSetValue`.
