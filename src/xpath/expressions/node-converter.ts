@@ -167,31 +167,41 @@ export class NodeConverter {
     private convertVariables(exprContext: ExprContext): Record<string, any> {
         const variables: Record<string, any> = {};
 
-        for (const [name, value] of Object.entries(exprContext.variables || {})) {
-            if (value && typeof value === 'object' && 'stringValue' in value) {
-                // It's a NodeValue, extract the raw value
-                // Cast to any to access the type property which exists on concrete implementations
-                const nodeValue = value as any;
-                if (nodeValue.type === 'node-set') {
-                    variables[name] = (value as NodeSetValue).nodeSetValue().map(n => this.adaptXNode(n));
-                } else if (nodeValue.type === 'string') {
-                    variables[name] = value.stringValue();
-                } else if (nodeValue.type === 'number') {
-                    variables[name] = value.numberValue();
-                } else if (nodeValue.type === 'boolean') {
-                    variables[name] = value.booleanValue();
-                } else if (nodeValue.type === 'map') {
-                    variables[name] = nodeValue.value;
-                } else if (nodeValue.type === 'array') {
-                    variables[name] = nodeValue.value;
-                } else if (nodeValue.type === 'function') {
-                    variables[name] = nodeValue.value;
+        const contexts: ExprContext[] = [];
+        let ctx: ExprContext | undefined = exprContext;
+        while (ctx) {
+            contexts.push(ctx);
+            ctx = ctx.parent;
+        }
+
+        for (let i = contexts.length - 1; i >= 0; i--) {
+            const current = contexts[i];
+            for (const [name, value] of Object.entries(current.variables || {})) {
+                if (value && typeof value === 'object' && 'stringValue' in value) {
+                    // It's a NodeValue, extract the raw value
+                    // Cast to any to access the type property which exists on concrete implementations
+                    const nodeValue = value as any;
+                    if (nodeValue.type === 'node-set') {
+                        variables[name] = (value as NodeSetValue).nodeSetValue().map(n => this.adaptXNode(n));
+                    } else if (nodeValue.type === 'string') {
+                        variables[name] = value.stringValue();
+                    } else if (nodeValue.type === 'number') {
+                        variables[name] = value.numberValue();
+                    } else if (nodeValue.type === 'boolean') {
+                        variables[name] = value.booleanValue();
+                    } else if (nodeValue.type === 'map') {
+                        variables[name] = nodeValue.value;
+                    } else if (nodeValue.type === 'array') {
+                        variables[name] = nodeValue.value;
+                    } else if (nodeValue.type === 'function') {
+                        variables[name] = nodeValue.value;
+                    } else {
+                        // Unknown type, try to get string value
+                        variables[name] = value.stringValue();
+                    }
                 } else {
-                    // Unknown type, try to get string value
-                    variables[name] = value.stringValue();
+                    variables[name] = value;
                 }
-            } else {
-                variables[name] = value;
             }
         }
 

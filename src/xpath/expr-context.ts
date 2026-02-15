@@ -208,7 +208,7 @@ export class ExprContext {
             this.xsltVersion,
             typeof opt_position !== 'undefined' ? opt_position : this.position,
             this.decimalFormatSettings,
-            this.variables,
+            Object.create(this.variables || {}),
             this.knownNamespaces,
             this,
             this.caseInsensitive,
