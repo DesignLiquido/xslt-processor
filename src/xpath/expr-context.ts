@@ -127,13 +127,14 @@ export class ExprContext {
      *
      * Notice that position starts at 0 at the outside interface;
      * inside XPath expressions this shows up as position()=1.
-     * @param nodeList TODO
-     * @param opt_position TODO
-     * @param opt_parent TODO
-     * @param opt_caseInsensitive TODO
-     * @param opt_ignoreAttributesWithoutValue TODO
-     * @param opt_returnOnFirstMatch TODO
-     * @param opt_ignoreNonElementNodesForNTA TODO
+     * @param nodeList The list of nodes that contains the current node. This is needed to implement the position() and last() functions, and to evaluate predicates.
+     * @param xsltVersion The XSLT version in use, which may affect certain function behaviors (e.g. 1.0 vs 2.0).
+     * @param opt_position The position of the current node in the nodeList. Defaults to 0.
+     * @param opt_parent The parent expression context, used for variable scoping. Defaults to null.
+     * @param opt_caseInsensitive Whether node name tests should be case insensitive. Defaults to false.
+     * @param opt_ignoreAttributesWithoutValue Whether to ignore attributes that have no value (e.g. <input disabled>) when evaluating XPath expressions. Defaults to false.
+     * @param opt_returnOnFirstMatch Whether XPath evaluation should return as soon as the first match is found. Defaults to false.
+     * @param opt_ignoreNonElementNodesForNTA Whether to ignore non-element nodes when evaluating the "node()" any node test. Defaults to false.
      */
     constructor(
         nodeList: XNode[],
@@ -198,9 +199,9 @@ export class ExprContext {
      * parent. If passed as argument to clone(), the new context has a
      * different node, position, or node set. What is not passed is
      * inherited from the cloned context.
-     * @param opt_nodeList TODO
-     * @param opt_position TODO
-     * @returns TODO
+     * @param opt_nodeList The node list for the new context. If not provided, the new context inherits the node list of the current context.
+     * @param opt_position The position for the new context. If not provided, the new context inherits the position of the current context.
+     * @returns A new ExprContext instance with the specified node list and position, and the current context as its parent.
      */
     clone(opt_nodeList?: XNode[], opt_position?: number) {
         return new ExprContext(
@@ -287,31 +288,31 @@ export class ExprContext {
         return this.caseInsensitive;
     }
 
-    setCaseInsensitive(caseInsensitive) {
+    setCaseInsensitive(caseInsensitive: boolean): boolean {
         return (this.caseInsensitive = caseInsensitive);
     }
 
-    isIgnoreAttributesWithoutValue() {
+    isIgnoreAttributesWithoutValue(): boolean {
         return this.ignoreAttributesWithoutValue;
     }
 
-    setIgnoreAttributesWithoutValue(ignore) {
+    setIgnoreAttributesWithoutValue(ignore: boolean): boolean {
         return (this.ignoreAttributesWithoutValue = ignore);
     }
 
-    isReturnOnFirstMatch() {
+    isReturnOnFirstMatch(): boolean {
         return this.returnOnFirstMatch;
     }
 
-    setReturnOnFirstMatch(returnOnFirstMatch) {
+    setReturnOnFirstMatch(returnOnFirstMatch: boolean): boolean {
         return (this.returnOnFirstMatch = returnOnFirstMatch);
     }
 
-    isIgnoreNonElementNodesForNTA() {
+    isIgnoreNonElementNodesForNTA(): boolean {
         return this.ignoreNonElementNodesForNTA;
     }
 
-    setIgnoreNonElementNodesForNTA(ignoreNonElementNodesForNTA) {
+    setIgnoreNonElementNodesForNTA(ignoreNonElementNodesForNTA: boolean): boolean {
         return (this.ignoreNonElementNodesForNTA = ignoreNonElementNodesForNTA);
     }
 }
