@@ -19,7 +19,11 @@ export class StringValue implements NodeValue {
     }
 
     numberValue() {
-        return this.value - 0;
+        const text = String(this.value).trim();
+        if (text.length === 0) {
+            return NaN;
+        }
+        return Number(text);
     }
 
     nodeSetValue(): XNode[] {

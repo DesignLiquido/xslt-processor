@@ -146,4 +146,47 @@ describe('xsl:with-param and apply-templates', () => {
 
         assert.equal(outXmlString, expectedOutString);
     });
+
+    it('treats empty string param as false (issue 177)', async () => {
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
+<panel/>`;
+
+        const xsltString = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <xsl:template match="panel">
+    <out>
+      <xsl:call-template name="one"/>
+    </out>
+  </xsl:template>
+
+  <xsl:template match="/">
+    <xsl:apply-templates select="panel"/>
+  </xsl:template>
+
+  <xsl:template name="one">
+    <xsl:param name="width"><xsl:value-of select="@width"/></xsl:param>
+    <xsl:call-template name="two">
+      <xsl:with-param name="width" select="$width"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template name="two">
+    <xsl:param name="defaultWidth" select="'100%'"/>
+    <xsl:param name="width" select="@width"/>
+    <xsl:choose>
+      <xsl:when test="number($width) &gt;= 0"><xsl:value-of select="$width"/>px</xsl:when>
+      <xsl:otherwise><xsl:value-of select="$defaultWidth"/></xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.equal(outXmlString, '<out>100%</out>');
+    });
 });
