@@ -13,6 +13,12 @@ _A JavaScript XSLT processor without native library dependencies._
     </a>
     <img src="https://img.shields.io/npm/dw/xslt-processor" />
     <img src="https://img.shields.io/github/license/DesignLiquido/xslt-processor" />
+    <a href="https://github.com/sponsors/leonelsanchesdasilva" target="_blank">
+      <img src="https://img.shields.io/github/sponsors/leonelsanchesdasilva" />
+    </a>
+    <a href="https://buymeacoffee.com/leonelsanches" target="_blank">
+      <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee" />
+    </a>
   </p>
 
 ## Interactive Demos
