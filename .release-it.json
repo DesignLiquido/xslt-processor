@@ -5,11 +5,7 @@
     "github": {
         "release": true
     },
-    "npm": {
-        "publishPath": "./dist"
-    },
     "hooks": {
-        "before:init": ["yarn build"],
-        "after:bump": "yarn copyfiles -V ./package.json ./dist && yarn copyfiles -V ./README.md ./dist"
+        "before:init": ["yarn build"]
     }
 }
