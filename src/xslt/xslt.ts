@@ -58,6 +58,7 @@ import {
 } from './streaming';
 import {
     collectAndExpandTemplates,
+    nodeMatchesPattern,
     selectBestTemplate,
     emitConflictWarning
 } from './functions';
@@ -3103,24 +3104,41 @@ export class Xslt {
             throw new Error(errorMessage);
         }
 
-        let keyContext: ExprContext;
-        if (context.nodeList[context.position].nodeName === '#document') {
-            keyContext = context.clone(context.nodeList[context.position].childNodes);
-        } else {
-            keyContext = context;
-        }
-
-        const nodes = this.xsltMatch(match, keyContext);
         if (!(name in context.keys)) {
             context.keys[name] = {};
         }
 
-        for (const node of nodes) {
-            const nodeContext = context.clone([node]);
-            const attribute = this.xPath.xPathEval(use, nodeContext);
-            const attributeValue = attribute.stringValue();
-            context.keys[name][attributeValue] = new NodeSetValue([node]);
+        // Test each descendant node individually against the match pattern.
+        // This correctly handles both relative (e.g. "City") and absolute
+        // (e.g. "/Response/Content/Cities/City") match patterns, and supports
+        // multiple nodes sharing the same key value.
+        const allNodes = this.collectAllDescendants(context.root);
+        for (const node of allNodes) {
+            if (nodeMatchesPattern(node, match, context, this.matchResolver, this.xPath)) {
+                const nodeContext = context.clone([node]);
+                const attribute = this.xPath.xPathEval(use, nodeContext);
+                const attributeValue = attribute.stringValue();
+                if (!(attributeValue in context.keys[name])) {
+                    context.keys[name][attributeValue] = new NodeSetValue([node]);
+                } else {
+                    context.keys[name][attributeValue].nodeSetValue().push(node);
+                }
+            }
         }
+    }
+
+    /**
+     * Returns all descendant nodes of the given node, depth-first.
+     * @param node The root node to traverse from.
+     * @returns All descendant nodes.
+     */
+    private collectAllDescendants(node: XNode): XNode[] {
+        const result: XNode[] = [];
+        for (const child of node.childNodes || []) {
+            result.push(child);
+            result.push(...this.collectAllDescendants(child));
+        }
+        return result;
     }
 
     /**

@@ -493,7 +493,7 @@ function nodeMatchesSinglePattern(
  * @param xPath The XPath instance
  * @returns true if the node matches the pattern
  */
-function nodeMatchesPattern(
+export function nodeMatchesPattern(
     node: XNode,
     pattern: string,
     context: ExprContext,
