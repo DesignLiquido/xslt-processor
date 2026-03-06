@@ -296,7 +296,7 @@ console.log(result2); // "<users><user>John</user></users>" (XML)
 You can simply add a tag like this:
 
 ```html
-<script type="application/javascript" src="https://unpkg.com/xslt-processor@latest/umd/xslt-processor.global.js"></script>
+<script type="application/javascript" src="https://unpkg.com/xslt-processor@latest/dist/umd/xslt-processor.global.js"></script>
 ```
 
 All the exports will live under `globalThis.XsltProcessor` and `window.XsltProcessor`. [See a usage example here](https://github.com/DesignLiquido/xslt-processor/blob/main/interactive-tests/xslt.html).
