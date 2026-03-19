@@ -4184,99 +4184,11 @@ export class Xslt {
                 
                 this.currentTemplateStack.pop();
             } else {
-                // No template matched the root element.
-                // Apply the default XSLT behavior: process child nodes
+                // No template matched the root context.
+                // Apply the built-in template: recursively process descendants at any depth.
                 const rootNode = context.nodeList[context.position];
-                if (rootNode && rootNode.childNodes && rootNode.childNodes.length > 0) {
-                    // Filter out DTD sections and apply templates to remaining children
-                    const childNodes = rootNode.childNodes.filter((n: XNode) => n.nodeName !== '#dtd-section');
-                    if (childNodes.length > 0) {
-                        const childContext = context.clone(childNodes);
-                        // Process each child node using xsltApplyTemplates logic
-                        for (let j = 0; j < childContext.contextSize(); ++j) {
-                            const currentNode = childContext.nodeList[j];
-
-                            if (currentNode.nodeType === DOM_TEXT_NODE) {
-                                const textNodeContext = context.clone([currentNode], 0);
-                                this.commonLogicTextNode(textNodeContext, currentNode, output);
-                            } else {
-                                const clonedContext = childContext.clone([currentNode], 0);
-                                const selection = selectBestTemplate(
-                                    expandedTemplates,
-                                    clonedContext,
-                                    this.matchResolver,
-                                    this.xPath,
-                                    this.warningsCallback
-                                );
-
-                                if (selection.selectedTemplate) {
-                                    const templateContext = clonedContext.clone([currentNode], 0);
-                                    templateContext.inApplyTemplates = true;
-                                    
-                                    // Track this template execution for apply-imports
-                                    const metadata = this.templateSourceMap.get(selection.selectedTemplate);
-                                    const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
-                                    const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
-                                    
-                                    this.currentTemplateStack.push({
-                                        template: selection.selectedTemplate,
-                                        stylesheetDepth: metadata?.importDepth ?? 0,
-                                        mode: modeAttr || null,
-                                        match: matchPattern
-                                    });
-                                    
-                                    await this.xsltChildNodes(templateContext, selection.selectedTemplate, output);
-                                    
-                                    this.currentTemplateStack.pop();
-                                } else {
-                                    // If no template matches this child, recursively process its children
-                                    if (currentNode.childNodes && currentNode.childNodes.length > 0) {
-                                        const grandchildNodes = currentNode.childNodes.filter((n: XNode) => n.nodeName !== '#dtd-section');
-                                        if (grandchildNodes.length > 0) {
-                                            const grandchildContext = context.clone(grandchildNodes);
-                                            // Recursively process grandchildren
-                                            for (let k = 0; k < grandchildContext.contextSize(); ++k) {
-                                                const grandchildNode = grandchildContext.nodeList[k];
-                                                if (grandchildNode.nodeType === DOM_TEXT_NODE) {
-                                                    const textNodeContext = context.clone([grandchildNode], 0);
-                                                    this.commonLogicTextNode(textNodeContext, grandchildNode, output);
-                                                } else {
-                                                    const grandchildClonedContext = grandchildContext.clone([grandchildNode], 0);
-                                                    const grandchildSelection = selectBestTemplate(
-                                                        expandedTemplates,
-                                                        grandchildClonedContext,
-                                                        this.matchResolver,
-                                                        this.xPath,
-                                                        this.warningsCallback
-                                                    );
-                                                    if (grandchildSelection.selectedTemplate) {
-                                                        const grandchildTemplateContext = grandchildClonedContext.clone([grandchildNode], 0);
-                                                        grandchildTemplateContext.inApplyTemplates = true;
-                                                        
-                                                        // Track this template execution for apply-imports
-                                                        const metadata = this.templateSourceMap.get(grandchildSelection.selectedTemplate);
-                                                        const matchPattern = xmlGetAttribute(grandchildSelection.selectedTemplate, 'match');
-                                                        const modeAttr = xmlGetAttribute(grandchildSelection.selectedTemplate, 'mode');
-                                                        
-                                                        this.currentTemplateStack.push({
-                                                            template: grandchildSelection.selectedTemplate,
-                                                            stylesheetDepth: metadata?.importDepth ?? 0,
-                                                            mode: modeAttr || null,
-                                                            match: matchPattern
-                                                        });
-                                                        
-                                                        await this.xsltChildNodes(grandchildTemplateContext, grandchildSelection.selectedTemplate, output);
-                                                        
-                                                        this.currentTemplateStack.pop();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                if (rootNode) {
+                    await this.applyBuiltInTemplate(rootNode, expandedTemplates, null, context, output);
                 }
             }
         }
