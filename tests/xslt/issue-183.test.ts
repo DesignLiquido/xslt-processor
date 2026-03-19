@@ -6,7 +6,7 @@ describe('Issue #183: Template match with nested elements', () => {
         const xmlParser = new XmlParser();
 
         const xml = xmlParser.xmlParse('<page><child><message>Hello World.</message></child></page>');
-        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="//message">
         <div><xsl:value-of select="."/></div>
     </xsl:template>
@@ -21,7 +21,7 @@ describe('Issue #183: Template match with nested elements', () => {
         const xmlParser = new XmlParser();
 
         const xml = xmlParser.xmlParse('<page><child><message>Hello World.</message></child></page>');
-        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="/page/child/message">
         <div><xsl:value-of select="."/></div>
     </xsl:template>
@@ -36,7 +36,7 @@ describe('Issue #183: Template match with nested elements', () => {
         const xmlParser = new XmlParser();
 
         const xml = xmlParser.xmlParse('<page><message>Hello World.</message></page>');
-        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="//message">
         <div><xsl:value-of select="."/></div>
     </xsl:template>

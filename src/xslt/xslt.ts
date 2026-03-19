@@ -949,7 +949,7 @@ export class Xslt {
         }
         
         const childNodes = node.childNodes.filter(
-            (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE
+            (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE && n.nodeName !== '#dtd-section'
         );
         
         for (const childNode of childNodes) {
