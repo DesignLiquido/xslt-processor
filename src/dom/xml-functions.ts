@@ -244,7 +244,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
         }
     } else if (nodeType == DOM_COMMENT_NODE) {
         if (options.outputMethod !== 'text') {
-            buffer.push(`<!-- ${nodeValue} -->`);
+            buffer.push(`<!--${nodeValue}-->`);
         }
     } else if (nodeType === DOM_PROCESSING_INSTRUCTION_NODE) {
         if (options.outputMethod !== 'text') {
