@@ -1,6 +1,6 @@
 import { Xslt, XmlParser } from '../../src/index';
 
-describe('Issue #187: Identity transformation adds spaces to comments', () => {
+describe('xsl:copy-of', () => {
     it('keeps comment content stable across repeated identity transforms', async () => {
         const xslt = new Xslt();
         const xmlParser = new XmlParser();
