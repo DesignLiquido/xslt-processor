@@ -109,15 +109,15 @@ describe('XPath arithmetic operations', () => {
     });
 
     it('empty node-set in arithmetic does not throw', async () => {
-        // XPath 2.0 empty-sequence semantics: empty node-set → null → no output.
-        // (XPath 1.0 would yield NaN, but this implementation follows 2.0 rules.)
+        // XPath 1.0 typically yields NaN for arithmetic on an empty node-set.
+        // This test only asserts that xsltProcess resolves without throwing.
         const xml = xmlParser.xmlParse('<page><number>1</number></page>');
         const stylesheet = xmlParser.xmlParse(`<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="page">
         <result><xsl:value-of select="missing + 1"/></result>
     </xsl:template>
 </xsl:stylesheet>`);
-        await expect(xslt.xsltProcess(xml, stylesheet)).resolves.not.toThrow();
+        await xslt.xsltProcess(xml, stylesheet);
     });
 
     it('plain number select still works: select="number" returns 1', async () => {
