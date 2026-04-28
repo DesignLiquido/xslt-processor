@@ -13,6 +13,7 @@ import { NodeValue } from "../values";
 import { JsonToXmlConverter } from "../lib/src/expressions/json-to-xml-converter";
 import { xmlValue } from "../../dom";
 import { DOM_DOCUMENT_NODE, DOM_TEXT_NODE, DOM_ELEMENT_NODE, DOM_ATTRIBUTE_NODE, DOM_COMMENT_NODE, DOM_PROCESSING_INSTRUCTION_NODE } from "../../constants";
+import { XsltDecimalFormatSettings } from "../../xslt/types";
 
 /**
  * Handles conversion between ExprContext and XPathContext.
@@ -70,7 +71,9 @@ export class NodeConverter {
      * We add missing properties but keep the original XNode reference.
      */
     adaptXNode(node: XNode): XPathNode {
-        if (!node) return null;
+        if (!node) {
+            throw new Error('Cannot adapt undefined XPath node.');
+        }
 
         // XNode already has most properties, we just need to handle some differences
         // We add adapter properties without modifying the original object
@@ -176,7 +179,12 @@ export class NodeConverter {
 
         for (let i = contexts.length - 1; i >= 0; i--) {
             const current = contexts[i];
-            for (const [name, value] of Object.entries(current.variables || {})) {
+            const currentVariables = current.variables || {};
+            for (const name in currentVariables) {
+                if (!Object.prototype.hasOwnProperty.call(currentVariables, name)) {
+                    continue;
+                }
+                const value = currentVariables[name];
                 if (value && typeof value === 'object' && 'stringValue' in value) {
                     // It's a NodeValue, extract the raw value
                     // Cast to any to access the type property which exists on concrete implementations
@@ -236,10 +244,9 @@ export class NodeConverter {
 
         // format-number() function - XSLT specific
         // Signature: format-number(context, number, format, decimalFormatName?)
-        functions['format-number'] = (_context: XPathContext, number: number, format: string, decimalFormatName?: string) => {
+        functions['format-number'] = (_context: XPathContext, number: any, format: string, decimalFormatName?: string) => {
             const settings = exprContext.decimalFormatSettings;
-            // Basic implementation - can be expanded
-            return number.toLocaleString();
+            return this.formatXsltNumberPicture(Number(number), String(format), settings);
         };
 
         // xml-to-json() function - XSLT 3.0 specific
@@ -360,7 +367,7 @@ export class NodeConverter {
 
             // Handle with or without prefix
             const normalizedName = name.startsWith('xsl:') ? name : `xsl:${name}`;
-            return xsltElements.includes(normalizedName) || xsltElements.includes(name);
+            return xsltElements.indexOf(normalizedName) >= 0 || xsltElements.indexOf(name) >= 0;
         };
 
         // function-available() function - XSLT specific (Section 15)
@@ -391,7 +398,7 @@ export class NodeConverter {
             ];
 
             const allFunctions = [...xpathCoreFunctions, ...xsltFunctions, ...additionalFunctions];
-            return allFunctions.includes(name);
+            return allFunctions.indexOf(name) >= 0;
         };
 
         // document() function - XSLT specific (Section 12.1)
@@ -462,6 +469,128 @@ export class NodeConverter {
     }
 
     /**
+     * Minimal XSLT/XPath format-number() picture formatter.
+     * Supports grouping, decimal precision, percent/per-mille scaling and positive/negative subpictures.
+     */
+    private formatXsltNumberPicture(
+        value: number,
+        picture: string,
+        settings: XsltDecimalFormatSettings
+    ): string {
+        if (Number.isNaN(value)) {
+            return settings.naN;
+        }
+
+        if (!Number.isFinite(value)) {
+            return value < 0 ? `${settings.minusSign}${settings.infinity}` : settings.infinity;
+        }
+
+        const subPictures = picture.split(settings.patternSeparator);
+        const isNegative = value < 0;
+        const activePicture = (isNegative && subPictures.length > 1 ? subPictures[1] : subPictures[0]) || '';
+        const absValue = Math.abs(value);
+
+        const placeholders = new Set([settings.digit, settings.zeroDigit, settings.groupingSeparator, settings.decimalSeparator]);
+        let firstPatternIndex = -1;
+        let lastPatternIndex = -1;
+
+        for (let i = 0; i < activePicture.length; i++) {
+            if (placeholders.has(activePicture[i])) {
+                if (firstPatternIndex === -1) {
+                    firstPatternIndex = i;
+                }
+                lastPatternIndex = i;
+            }
+        }
+
+        if (firstPatternIndex === -1) {
+            return activePicture;
+        }
+
+        const prefix = activePicture.slice(0, firstPatternIndex);
+        const suffix = activePicture.slice(lastPatternIndex + 1);
+        const numericPicture = activePicture.slice(firstPatternIndex, lastPatternIndex + 1);
+
+        let scaledValue = absValue;
+        if (activePicture.includes(settings.percent)) {
+            scaledValue *= 100;
+        }
+        if (activePicture.includes(settings.perMille)) {
+            scaledValue *= 1000;
+        }
+
+        const decimalIndex = numericPicture.indexOf(settings.decimalSeparator);
+        const integerPattern = decimalIndex >= 0 ? numericPicture.slice(0, decimalIndex) : numericPicture;
+        const fractionPattern = decimalIndex >= 0 ? numericPicture.slice(decimalIndex + 1) : '';
+
+        const minIntegerDigits = integerPattern.split('').filter((c) => c === settings.zeroDigit).length;
+        const minFractionDigits = fractionPattern.split('').filter((c) => c === settings.zeroDigit).length;
+        const maxFractionDigits = fractionPattern.split('').filter((c) => c === settings.zeroDigit || c === settings.digit).length;
+
+        const rounded = maxFractionDigits > 0
+            ? scaledValue.toFixed(maxFractionDigits)
+            : Math.round(scaledValue).toString();
+
+        let [integerPart, fractionPart = ''] = rounded.split('.');
+
+        if (integerPart.length < minIntegerDigits) {
+            integerPart = this.leftPad(integerPart, minIntegerDigits, settings.zeroDigit);
+        }
+
+        while (fractionPart.length > minFractionDigits && fractionPart.endsWith(settings.zeroDigit)) {
+            fractionPart = fractionPart.slice(0, -1);
+        }
+
+        const lastGroupingPos = integerPattern.lastIndexOf(settings.groupingSeparator);
+        if (lastGroupingPos >= 0) {
+            const groupSize = integerPattern.slice(lastGroupingPos + 1)
+                .split('')
+                .filter((c) => c === settings.zeroDigit || c === settings.digit).length;
+
+            if (groupSize > 0) {
+                integerPart = this.applyGrouping(integerPart, settings.groupingSeparator, groupSize);
+            }
+        }
+
+        const numberText = fractionPart.length > 0
+            ? `${integerPart}${settings.decimalSeparator}${fractionPart}`
+            : integerPart;
+
+        if (isNegative && subPictures.length < 2) {
+            return `${settings.minusSign}${prefix}${numberText}${suffix}`;
+        }
+
+        return `${prefix}${numberText}${suffix}`;
+    }
+
+    private applyGrouping(numberText: string, separator: string, groupSize: number): string {
+        if (groupSize <= 0 || numberText.length <= groupSize) {
+            return numberText;
+        }
+
+        const chunks: string[] = [];
+        for (let i = numberText.length; i > 0; i -= groupSize) {
+            const start = Math.max(0, i - groupSize);
+            chunks.unshift(numberText.slice(start, i));
+        }
+        return chunks.join(separator);
+    }
+
+    private leftPad(value: string, width: number, fillChar: string): string {
+        if (value.length >= width) {
+            return value;
+        }
+
+        const padChar = fillChar && fillChar.length > 0 ? fillChar.charAt(0) : '0';
+        const missing = width - value.length;
+        let padding = '';
+        for (let i = 0; i < missing; i++) {
+            padding += padChar;
+        }
+        return padding + value;
+    }
+
+    /**
      * Convert an XPathNode interface tree to actual XNode objects.
      * This is needed to convert json-to-xml() output to XSLT-compatible nodes.
      */
@@ -476,7 +605,11 @@ export class NodeConverter {
             // For document nodes, extract and return the root element
             if (xpathNode.childNodes && xpathNode.childNodes.length > 0) {
                 const rootChild = xpathNode.childNodes[0] as any;
-                node = this.convertXPathNodeToXNode(rootChild, ownerDoc);
+                const convertedNode = this.convertXPathNodeToXNode(rootChild, ownerDoc);
+                if (!convertedNode) {
+                    return null;
+                }
+                node = convertedNode;
                 return node;
             }
             return null;

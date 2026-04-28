@@ -4,6 +4,7 @@
         "outDir": "dist",
         "module": "CommonJS",
         "target": "ES5",
+        "ignoreDeprecations": "6.0",
         "rootDir": "src",
         "allowJs": true,
         "sourceMap": true,
@@ -23,6 +24,7 @@
         "dist/**/*",
         "interactive-tests/**/*",
         "node_modules/**/*",
+        "tmp-*.ts",
         "test-without-jest.*",
         "tests/**/*"
     ]
