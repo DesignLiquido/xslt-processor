@@ -82,7 +82,7 @@ export class ExprContext {
     returnOnFirstMatch: any;
     ignoreNonElementNodesForNTA: any;
 
-    parent: ExprContext;
+    parent: ExprContext | null;
     root: XNode;
     decimalFormatSettings: XsltDecimalFormatSettings;
 
@@ -220,7 +220,7 @@ export class ExprContext {
         );
     }
 
-    setVariable(name?: string, value?: NodeValue | string) {
+    setVariable(name: string, value?: NodeValue | string) {
         if (
             value instanceof StringValue ||
             value instanceof BooleanValue ||
@@ -246,7 +246,7 @@ export class ExprContext {
         }
     }
 
-    getVariable(name: string): NodeValue {
+    getVariable(name: string): NodeValue | null {
         if (typeof this.variables[name] != 'undefined') {
             return this.variables[name];
         }
