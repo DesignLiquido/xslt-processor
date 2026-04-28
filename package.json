@@ -78,7 +78,7 @@
     "tsup": "^8.5.1",
     "typedoc": "^0.28.17",
     "typedoc-plugin-markdown": "^4.10.0",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.3"
   },
   "copyFiles": [
     {
