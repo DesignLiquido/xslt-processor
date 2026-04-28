@@ -63,6 +63,34 @@ describe('Enhanced xsl:output (XSLT 3.0)', () => {
             assert(result.includes('<hr'));
         });
 
+        it('should not double-render void elements when outputMethod option is passed to Xslt constructor (issue #198)', async () => {
+            const xmlString = `<root/>`;
+
+            const xsltString = `<?xml version="1.0"?>
+              <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:output method="html"/>
+                <xsl:template match="/">
+                  <div>
+                    <br/>
+                    <img src="test.jpg"/>
+                    <hr/>
+                    <input type="text"/>
+                  </div>
+                </xsl:template>
+              </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt({ outputMethod: 'html' });
+            const xmlParser = new XmlParser();
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const result = await xsltClass.xsltProcess(xml, xslt);
+
+            assert(!result.includes('</br>'), `<br> must not have closing tag, got: ${result}`);
+            assert(!result.includes('</img>'), `<img> must not have closing tag, got: ${result}`);
+            assert(!result.includes('</hr>'), `<hr> must not have closing tag, got: ${result}`);
+            assert(!result.includes('</input>'), `<input> must not have closing tag, got: ${result}`);
+        });
+
         it('should produce valid HTML5 DOCTYPE', async () => {
             const xmlString = `<root><title>Test</title></root>`;
 

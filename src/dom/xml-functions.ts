@@ -345,7 +345,7 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
 
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     if (childNodes.length === 0) {
-        if (options.outputMethod === 'html' && ['hr', 'link', 'meta'].includes(node.nodeName)) {
+        if (options.outputMethod === 'html' && ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'].includes(node.nodeName)) {
             buffer.push('>');
         } else if (options.selfClosingTags) {
             buffer.push('/>');
