@@ -1983,8 +1983,8 @@ export class Xslt {
         if (onCompletionElements.length > 0) {
             const onCompletion = onCompletionElements[0];
             
-            // Create completion context - use empty nodelist but preserve variables
-            const completionContext = context.clone([], 0);
+            // on-completion inherits the xsl:iterate instruction's context item/position/size.
+            const completionContext = context.clone();
             
             // Add final accumulators to context
             for (const accName in accumulators) {
