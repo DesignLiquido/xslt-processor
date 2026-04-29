@@ -127,4 +127,37 @@ describe('namespaces', () => {
 
         assert.equal(outXmlString, expectedOutString);
     });
+
+    it('supports prefixed variable names in XPath references', async () => {
+        const xmlString = (
+            `<root>
+                <quantity>12.34</quantity>
+            </root>`
+        );
+
+        const xsltString = `<?xml version="1.0"?>
+            <xsl:stylesheet version="1.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:myns="http://www.example.com">
+                <xsl:template match="/">
+                    <out>
+                        <xsl:for-each select="/*/quantity">
+                            <xsl:variable name="myns:contentStrings_1">
+                                <xsl:value-of select="concat('Q-', string(.))" />
+                            </xsl:variable>
+                            <xsl:variable name="myns:sContent_1" select="string($myns:contentStrings_1)" />
+                            <xsl:value-of select="$myns:sContent_1" />
+                        </xsl:for-each>
+                    </out>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+        assert.equal(outXmlString, '<out>Q-12.34</out>');
+    });
 });
