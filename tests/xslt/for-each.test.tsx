@@ -206,3 +206,4 @@ describe('xsl:for-each', () => {
         // Primary sort by primary (1, 1, 2, 2), then by secondary: (1,a), (1,b), (2,a), (2,b) = B, D, C, A
         assert.equal(html, 'BDCA');
     });
+});

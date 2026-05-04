@@ -7,7 +7,7 @@
 import assert from 'assert';
 
 import { domDocumentToXDocument } from '../src/dom/dom-to-xdocument';
-import { XmlParser, xmlTransformedText } from '../src/dom';
+import { XmlParser, xmlTransformedText, XNode } from '../src/dom';
 import { Xslt } from '../src/xslt';
 import {
     DOM_ATTRIBUTE_NODE,
@@ -27,7 +27,7 @@ describe('domDocumentToXDocument', () => {
         assert.equal(xDoc.documentElement.nodeName, 'root');
         assert.equal(xDoc.documentElement.nodeType, DOM_ELEMENT_NODE);
 
-        const textNodes = xDoc.documentElement.childNodes.filter(n => n.nodeType === DOM_TEXT_NODE);
+        const textNodes = xDoc.documentElement.childNodes.filter((n: XNode) => n.nodeType === DOM_TEXT_NODE);
         assert.equal(textNodes.length, 1);
         assert.equal(textNodes[0].nodeValue, 'hello');
     });
@@ -37,11 +37,11 @@ describe('domDocumentToXDocument', () => {
         const nativeDoc = parser.parseFromString('<root attr1="value1" attr2="value2" />', 'text/xml');
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const attrs = xDoc.documentElement.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const attrs = xDoc.documentElement.childNodes.filter((n: XNode) => n.nodeType === DOM_ATTRIBUTE_NODE);
         assert.equal(attrs.length, 2);
 
-        const attr1 = attrs.find(a => a.nodeName === 'attr1');
-        const attr2 = attrs.find(a => a.nodeName === 'attr2');
+        const attr1 = attrs.find((a: XNode) => a.nodeName === 'attr1');
+        const attr2 = attrs.find((a: XNode) => a.nodeName === 'attr2');
         assert.equal(attr1.nodeValue, 'value1');
         assert.equal(attr2.nodeValue, 'value2');
     });
@@ -68,8 +68,8 @@ describe('domDocumentToXDocument', () => {
         );
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const attrs = xDoc.documentElement.childNodes.filter(n => n.nodeType === DOM_ATTRIBUTE_NODE);
-        const customAttr = attrs.find(a => a.localName === 'attr');
+        const attrs = xDoc.documentElement.childNodes.filter((n: XNode) => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const customAttr = attrs.find((a: XNode) => a.localName === 'attr');
         assert.ok(customAttr, 'Should find the custom:attr attribute');
         assert.equal(customAttr.prefix, 'custom');
         assert.equal(customAttr.namespaceUri, 'http://custom.com');
@@ -81,7 +81,7 @@ describe('domDocumentToXDocument', () => {
         const nativeDoc = parser.parseFromString('<root><!-- a comment --></root>', 'text/xml');
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const comments = xDoc.documentElement.childNodes.filter(n => n.nodeType === DOM_COMMENT_NODE);
+        const comments = xDoc.documentElement.childNodes.filter((n: XNode) => n.nodeType === DOM_COMMENT_NODE);
         assert.equal(comments.length, 1);
         assert.equal(comments[0].nodeValue, ' a comment ');
     });
@@ -95,7 +95,7 @@ describe('domDocumentToXDocument', () => {
         const xDoc = domDocumentToXDocument(nativeDoc);
 
         const pis = xDoc.documentElement.childNodes.filter(
-            n => n.nodeType === DOM_PROCESSING_INSTRUCTION_NODE
+            (n: XNode) => n.nodeType === DOM_PROCESSING_INSTRUCTION_NODE
         );
         assert.equal(pis.length, 1);
         assert.equal(pis[0].nodeName, 'my-pi');
@@ -110,16 +110,16 @@ describe('domDocumentToXDocument', () => {
         );
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const a = xDoc.documentElement;
+        const a: XNode = xDoc.documentElement;
         assert.equal(a.nodeName, 'a');
-        const b = a.childNodes.find(n => n.nodeType === DOM_ELEMENT_NODE);
-        assert.equal(b.nodeName, 'b');
-        const c = b.childNodes.find(n => n.nodeType === DOM_ELEMENT_NODE);
-        assert.equal(c.nodeName, 'c');
-        const d = c.childNodes.find(n => n.nodeType === DOM_ELEMENT_NODE);
-        assert.equal(d.nodeName, 'd');
-        const textNodes = d.childNodes.filter(n => n.nodeType === DOM_TEXT_NODE);
-        assert.equal(textNodes[0].nodeValue, 'deep');
+        const b: XNode | undefined = a.childNodes.find((n: XNode) => n.nodeType === DOM_ELEMENT_NODE);
+        assert.equal(b?.nodeName, 'b');
+        const c: XNode | undefined = b?.childNodes.find((n: XNode) => n.nodeType === DOM_ELEMENT_NODE);
+        assert.equal(c?.nodeName, 'c');
+        const d: XNode | undefined = c?.childNodes.find((n: XNode) => n.nodeType === DOM_ELEMENT_NODE);
+        assert.equal(d?.nodeName, 'd');
+        const textNodes: XNode[] = d?.childNodes.filter((n: XNode) => n.nodeType === DOM_TEXT_NODE) ?? [];
+        assert.equal(textNodes[0]?.nodeValue, 'deep');
     });
 
     it('should set siblingPosition correctly', () => {
@@ -130,7 +130,7 @@ describe('domDocumentToXDocument', () => {
         );
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const children = xDoc.documentElement.childNodes.filter(n => n.nodeType === DOM_ELEMENT_NODE);
+        const children: XNode[] = xDoc.documentElement.childNodes.filter((n: XNode) => n.nodeType === DOM_ELEMENT_NODE);
         assert.equal(children.length, 3);
         // Each child should have an incremented siblingPosition
         for (let i = 0; i < children.length; i++) {
@@ -143,7 +143,7 @@ describe('domDocumentToXDocument', () => {
         const nativeDoc = parser.parseFromString('<root><child/></root>', 'text/xml');
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const child = xDoc.documentElement.childNodes.find(n => n.nodeType === DOM_ELEMENT_NODE);
+        const child = xDoc.documentElement.childNodes.find((n: XNode) => n.nodeType === DOM_ELEMENT_NODE);
         assert.equal(child.parentNode, xDoc.documentElement);
     });
 
@@ -152,7 +152,7 @@ describe('domDocumentToXDocument', () => {
         const nativeDoc = parser.parseFromString('<root attr="val"/>', 'text/xml');
         const xDoc = domDocumentToXDocument(nativeDoc);
 
-        const attr = xDoc.documentElement.childNodes.find(n => n.nodeType === DOM_ATTRIBUTE_NODE);
+        const attr = xDoc.documentElement.childNodes.find((n: XNode) => n.nodeType === DOM_ATTRIBUTE_NODE);
         assert.equal(attr.parentNode, xDoc.documentElement);
     });
 
@@ -161,7 +161,7 @@ describe('domDocumentToXDocument', () => {
         const nativeDoc = parser.parseFromString('<root><child>text</child></root>', 'text/xml');
         const childElement = nativeDoc.documentElement.firstChild;
 
-        const xDoc = domDocumentToXDocument(childElement);
+        const xDoc = domDocumentToXDocument(childElement as any);
         assert.equal(xDoc.documentElement.nodeName, 'child');
     });
 
