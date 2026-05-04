@@ -151,6 +151,35 @@ describe('xsl:for-each', () => {
         assert.equal(html, 'ACEBD');
     });
 
+    it('handles variable with select="/" (issue #201)', async () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<obj>
+  <entity>
+    <description>entity 1</description>
+    <value>4</value>
+  </entity>
+</obj>`;
+
+        const xslt = `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:variable name="ROOT" select="/" />
+  <xsl:template match="/">
+    <xsl:for-each select="$ROOT/obj">
+      <xsl:for-each select="entity">
+        <xsl:value-of select="value" />
+      </xsl:for-each>
+    </xsl:for-each>
+  </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xmlDoc = xmlParser.xmlParse(xml);
+        const xsltDoc = xmlParser.xmlParse(xslt);
+        const html = await xsltClass.xsltProcess(xmlDoc, xsltDoc);
+        assert.equal(html, '4');
+    });
+
     it('multiple sort keys applied in order', async () => {
         const xmlStringMultiSort = `<all>
             <item primary="2" secondary="b">A</item>

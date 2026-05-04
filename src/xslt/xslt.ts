@@ -1622,11 +1622,6 @@ export class Xslt {
         const sortContext = context.clone(nodes);
         this.xsltSort(sortContext, template);
 
-        const nodesWithParent = sortContext.nodeList.filter((n) => n.parentNode !== null && n.parentNode !== undefined);
-        if (nodesWithParent.length <= 0) {
-            throw new Error('Nodes with no parents defined.');
-        }
-
         for (let i = 0; i < sortContext.contextSize(); ++i) {
             await this.xsltChildNodesExcludingConditional(
                 sortContext.clone(sortContext.nodeList, i),
