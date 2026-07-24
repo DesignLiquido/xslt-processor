@@ -50,6 +50,10 @@
     "url": "https://github.com/DesignLiquido/xslt-processor/issues"
   },
   "homepage": "https://github.com/DesignLiquido/xslt-processor#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "devDependencies": {
     "@babel/cli": "^7.22.5",
     "@babel/core": "^7.22.5",
