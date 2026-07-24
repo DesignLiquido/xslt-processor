@@ -405,17 +405,19 @@ export class NodeConverter {
         // Signature: document(context, uriOrNodeSet, baseNode?)
         // Note: This is a basic implementation. Full implementation requires document loading.
         functions['document'] = (_context: XPathContext, uriOrNodeSet: any, _baseNode?: any) => {
-            // If a document loader is provided in context, use it
+            const uri = Array.isArray(uriOrNodeSet)
+                ? (uriOrNodeSet[0]?.textContent || String(uriOrNodeSet[0] || ''))
+                : String(uriOrNodeSet || '');
+
+            if (!uri) {
+                // The empty string always refers to the stylesheet document itself,
+                // regardless of whether a documentLoader is configured.
+                const selfDocument = exprContext.stylesheetRoot ?? exprContext.root;
+                return selfDocument ? [this.adaptXNode(selfDocument)] : [];
+            }
+
+            // Loading external documents requires a documentLoader to be configured.
             if (exprContext.documentLoader) {
-                const uri = Array.isArray(uriOrNodeSet)
-                    ? (uriOrNodeSet[0]?.textContent || String(uriOrNodeSet[0] || ''))
-                    : String(uriOrNodeSet || '');
-
-                if (!uri) {
-                    // Empty string returns the current document
-                    return exprContext.root ? [this.adaptXNode(exprContext.root)] : [];
-                }
-
                 try {
                     const doc = exprContext.documentLoader(uri);
                     if (doc) {

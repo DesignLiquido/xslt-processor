@@ -393,6 +393,7 @@ export class Xslt {
         this.outputDocument = outputDocument;
         const expressionContext = new ExprContext([xmlDoc]);
         expressionContext.warningsCallback = this.warningsCallback;
+        expressionContext.stylesheetRoot = stylesheet;
 
         if (this.options.parameters.length > 0) {
             for (const parameter of this.options.parameters) {

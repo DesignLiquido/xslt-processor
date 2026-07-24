@@ -67,6 +67,13 @@ export class ExprContext {
     documentLoader?: (uri: string) => XNode | null;
 
     /**
+     * The stylesheet document being processed. Used by the document('') function
+     * (XSLT 1.0 Section 12.1), which must resolve the empty string to the
+     * stylesheet itself, independently of any documentLoader.
+     */
+    stylesheetRoot?: XNode;
+
+    /**
      * Unparsed entity URIs for the unparsed-entity-uri() function.
      * Maps entity names to their URIs (from DTD declarations).
      */
@@ -158,6 +165,7 @@ export class ExprContext {
         this.variables = opt_variables || {};
         this.keys = opt_parent?.keys || {};
         this.knownNamespaces = opt_knownNamespaces || {};
+        this.stylesheetRoot = opt_parent?.stylesheetRoot;
 
         this.parent = opt_parent || null;
         this.caseInsensitive = opt_caseInsensitive || false;
