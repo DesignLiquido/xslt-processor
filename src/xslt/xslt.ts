@@ -149,6 +149,12 @@ export class Xslt {
      */
     fetchFunction: (uri: string) => Promise<string>;
 
+    /**
+     * Loader used by the `document()` XPath function (XSLT 1.0 Section 12.1) to
+     * resolve external document URIs. See {@link XsltOptions.documentLoader}.
+     */
+    documentLoader?: (uri: string) => XNode | null;
+
     outputDocument: XDocument;
     outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
     outputOmitXmlDeclaration: string;
@@ -331,6 +337,7 @@ export class Xslt {
             const response = await globalFetch(uri);
             return response.text();
         });
+        this.documentLoader = options.documentLoader;
         this.streamingProcessor = new StreamingProcessor({
             xPath: this.xPath,
             version: ''
@@ -394,6 +401,7 @@ export class Xslt {
         const expressionContext = new ExprContext([xmlDoc]);
         expressionContext.warningsCallback = this.warningsCallback;
         expressionContext.stylesheetRoot = stylesheet;
+        expressionContext.documentLoader = this.documentLoader;
 
         if (this.options.parameters.length > 0) {
             for (const parameter of this.options.parameters) {
@@ -2332,7 +2340,8 @@ export class Xslt {
                     
                     // Create a temporary context for processing
                     const tempContext = new ExprContext([packageRoot]);
-                    
+                    tempContext.documentLoader = this.documentLoader;
+
                     // We don't need output for package registration, just to process the package definition
                     await this.xsltPackage(tempContext, packageRoot);
                 } else {

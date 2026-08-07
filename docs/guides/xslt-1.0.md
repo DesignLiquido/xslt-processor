@@ -348,13 +348,19 @@ const result = await xslt.xsltProcess(xml, xsl, {
 
 ### With Document Loader
 
+The `document()` XPath function (Section 12.1) needs a `documentLoader` to resolve
+URIs to documents. It's configured on the `Xslt` constructor and must be
+**synchronous**, since `document()` is evaluated synchronously during XPath
+evaluation — pre-fetch and cache documents ahead of time if they come from an
+async source such as `fetch`:
+
 ```typescript
+const cache = new Map([
+  ['catalog.xml', parser.xmlParse(await (await fetch('catalog.xml')).text())]
+]);
+
 const xslt = new Xslt({
-  documentLoader: async (uri) => {
-    const response = await fetch(uri);
-    const text = await response.text();
-    return parser.xmlParse(text);
-  }
+  documentLoader: (uri) => cache.get(uri) ?? null
 });
 ```
 

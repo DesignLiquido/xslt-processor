@@ -200,6 +200,43 @@ const xslt = new Xslt({
 });
 ```
 
+- `documentLoader` (`(uri: string) => XNode | null`, optional): resolves URIs passed to the XPath `document()` function ([XSLT 1.0 §12.1](https://www.w3.org/TR/1999/REC-xslt-19991116#document)). Receives the URI and must return a parsed `XNode` document, or `null`/`undefined` if it can't be loaded (in which case `document()` returns an empty node-set). Not set by default — without it, `document()` only resolves the empty-string URI (`document('')`, the stylesheet itself); any other URI returns an empty node-set.
+    - **Must be synchronous** — `document()` is evaluated synchronously during XPath evaluation, so it can't `await` a fetch. Pre-load and cache documents ahead of time if they come from an async source.
+    - Inherited automatically by nested contexts (e.g. inside `xsl:for-each`, `xsl:apply-templates`), so it only needs to be set once on the `Xslt` constructor.
+
+**`documentLoader` examples:**
+
+```js
+import { Xslt, XmlParser } from 'xslt-processor';
+
+const xmlParser = new XmlParser();
+
+// Load from an in-memory map (documents already parsed ahead of time)
+const documents = new Map([
+  ['catalog.xml', xmlParser.xmlParse('<catalog><item>Widget</item></catalog>')]
+]);
+
+const xslt = new Xslt({
+  documentLoader: (uri) => documents.get(uri) ?? null
+});
+// In XSLT: <xsl:value-of select="document('catalog.xml')/catalog/item"/>
+
+// Load from the local filesystem
+import { readFileSync } from 'fs';
+
+const xslt = new Xslt({
+  documentLoader: (uri) => xmlParser.xmlParse(readFileSync(uri, 'utf-8'))
+});
+
+// Pre-fetch over HTTP, then serve synchronously from cache
+const response = await fetch('https://example.com/catalog.xml');
+const cached = xmlParser.xmlParse(await response.text());
+
+const xslt = new Xslt({
+  documentLoader: (uri) => (uri === 'https://example.com/catalog.xml' ? cached : null)
+});
+```
+
 #### JSON Output Format
 
 When using `outputMethod: 'json'`, the XSLT processor will convert the resulting XML document to JSON format. This is useful for APIs and modern JavaScript applications.

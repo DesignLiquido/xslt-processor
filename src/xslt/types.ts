@@ -1,4 +1,5 @@
 import { XsltParameter } from "./xslt-parameter"
+import { XNode } from "../dom"
 
 /**
  * According to https://www.w3schools.com/xml/ref_xsl_el_decimal-format.asp:
@@ -36,5 +37,13 @@ export type XsltOptions = {
     selfClosingTags: boolean,
     outputMethod?: 'xml' | 'html' | 'text' | 'xhtml' | 'json' | 'adaptive',
     parameters?: XsltParameter[],
-    fetchFunction?: (uri: string) => Promise<string>
+    fetchFunction?: (uri: string) => Promise<string>,
+    /**
+     * Loader used by the `document()` XPath function (XSLT 1.0 Section 12.1) to
+     * resolve external document URIs. Takes the URI referenced by `document()`
+     * and returns the parsed document as an `XNode`, or `null`/`undefined` if it
+     * can't be loaded. Must be synchronous, since `document()` is evaluated
+     * synchronously during XPath evaluation.
+     */
+    documentLoader?: (uri: string) => XNode | null
 }

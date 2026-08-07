@@ -609,4 +609,29 @@ describe('xslt', () => {
 
             assert.equal(outXmlString.replace(/\s+/g, ''), '<div>Hehe</div>');
         });
+
+        it('document() loads an external document via the documentLoader option (issue #215)', async () => {
+            const xmlParser = new XmlParser();
+
+            const externalXmlString = `<catalog><item>Widget</item></catalog>`;
+            const externalDoc = xmlParser.xmlParse(externalXmlString);
+
+            const xmlString = `<root/>`;
+
+            const xsltString = `
+            <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                <xsl:template match="/">
+                    <result><xsl:value-of select="document('catalog.xml')/catalog/item"/></result>
+                </xsl:template>
+            </xsl:stylesheet>`;
+
+            const xsltClass = new Xslt({
+                documentLoader: (uri) => (uri === 'catalog.xml' ? externalDoc : null)
+            });
+            const xml = xmlParser.xmlParse(xmlString);
+            const xslt = xmlParser.xmlParse(xsltString);
+            const outXmlString = await xsltClass.xsltProcess(xml, xslt);
+
+            assert.equal(outXmlString, '<result>Widget</result>');
+        });
     });

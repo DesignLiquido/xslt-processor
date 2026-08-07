@@ -166,6 +166,7 @@ export class ExprContext {
         this.keys = opt_parent?.keys || {};
         this.knownNamespaces = opt_knownNamespaces || {};
         this.stylesheetRoot = opt_parent?.stylesheetRoot;
+        this.documentLoader = opt_parent?.documentLoader;
 
         this.parent = opt_parent || null;
         this.caseInsensitive = opt_caseInsensitive || false;

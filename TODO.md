@@ -21,7 +21,7 @@ This document maps features from the [W3C XSLT 1.0 Specification](https://www.w3
 ### XSLT Additional Functions (Section 12):
 
 - **`document()`** - ✅ Implemented (basic)
-  - Requires `documentLoader` callback in context for external document loading
+  - Requires a `documentLoader` callback, passed via `new Xslt({ documentLoader })`, for external document loading
   - Empty URI returns current document
   - Returns empty node-set if loading fails
 
