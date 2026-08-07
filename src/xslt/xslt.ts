@@ -1225,7 +1225,30 @@ export class Xslt {
             return;
         }
 
-        // Otherwise, search in the current stylesheet
+        // Otherwise, search the current stylesheet and any imported/included stylesheets.
+        // `templateSourceMap` is populated for the main stylesheet and for every
+        // imported/included stylesheet (see `mapTemplatesFromStylesheet`), so named
+        // templates defined via `xsl:import`/`xsl:include` are reachable here too.
+        // Named templates follow import precedence: when the same name is defined in
+        // more than one stylesheet, the definition with the highest import precedence
+        // (lowest import depth) wins.
+        let bestTemplate: XNode | null = null;
+        let bestDepth = Infinity;
+        this.templateSourceMap.forEach((metadata, candidateTemplate) => {
+            if (domGetAttributeValue(candidateTemplate, 'name') === name && metadata.importDepth < bestDepth) {
+                bestTemplate = candidateTemplate;
+                bestDepth = metadata.importDepth;
+            }
+        });
+
+        if (bestTemplate) {
+            await this.xsltChildNodes(paramContext, bestTemplate, output);
+            return;
+        }
+
+        // Fallback: search direct children of the current stylesheet document element.
+        // Covers cases where the template wasn't registered in `templateSourceMap`
+        // (e.g. dynamically constructed documents outside the normal stylesheet flow).
         for (let i = 0; i < top.childNodes.length; ++i) {
             let childNode = top.childNodes[i];
             if (
