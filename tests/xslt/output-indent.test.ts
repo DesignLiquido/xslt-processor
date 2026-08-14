@@ -85,6 +85,31 @@ describe('xsl:output indent', () => {
         expect(result).toBe('<a>\n  <b>\n    <c/>\n    <d/>\n  </b>\n</a>');
     });
 
+    it('still indents when ignorable whitespace-only text nodes are copied from the source (e.g. via xsl:copy-of)', async () => {
+        // The source's own pretty-printing whitespace is copied along with the element
+        // nodes but produces no output (it's whitespace-only and not from xsl:text),
+        // so it must not disable indentation of the surrounding elements.
+        const xmlString = `<root><a>
+    <b/>
+    <c/>
+</a></root>`;
+        const xsltString = `<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:output method="xml" indent="yes"/>
+    <xsl:template match="/root">
+        <xsl:copy-of select="a"/>
+    </xsl:template>
+</xsl:stylesheet>`;
+
+        const xsltClass = new Xslt();
+        const xmlParser = new XmlParser();
+        const xml = xmlParser.xmlParse(xmlString);
+        const xslt = xmlParser.xmlParse(xsltString);
+        const result = await xsltClass.xsltProcess(xml, xslt);
+
+        expect(result).toBe('<a>\n  <b/>\n  <c/>\n</a>');
+    });
+
     it('honors indent="yes" set via xsl:result-document, independent of xsl:output', async () => {
         const xmlString = `<FOO></FOO>`;
         const xsltString = `<?xml version="1.0" encoding="utf-8"?>

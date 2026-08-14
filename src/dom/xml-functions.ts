@@ -222,7 +222,8 @@ const INDENT_UNIT = '  ';
 
 /**
  * Whether indentation should be considered at all for the given output method.
- * `text`, `json` and `name` outputs are never indented.
+ * Only `xml`, `xhtml` and `html` are eligible; `text` and `name` outputs are
+ * never indented (and `json`/`adaptive` never reach this serializer at all).
  * @param options XML output options.
  */
 function xmlIsIndentEligibleOutputMethod(options: XmlOutputOptions): boolean {
@@ -230,17 +231,36 @@ function xmlIsIndentEligibleOutputMethod(options: XmlOutputOptions): boolean {
 }
 
 /**
+ * Whether a node contributes no output to the serialized result. This mirrors
+ * the skip condition applied to text nodes in `xmlTransformedTextRecursive`:
+ * a text node produces nothing when it has no value, or when it's
+ * whitespace-only and wasn't created by `xsl:text`.
+ * @param node The node to check.
+ */
+function xmlProducesNoOutput(node: XNode): boolean {
+    if (node.nodeType !== DOM_TEXT_NODE) {
+        return false;
+    }
+    const isFromXslText = node.fromXslText === true;
+    return !(node.nodeValue && (isFromXslText || node.nodeValue.trim() !== ''));
+}
+
+/**
  * Decides whether a node's direct (non-attribute) children should be
- * pretty-printed. Indentation is only safe when every child is an element,
- * comment or processing instruction; any text/CDATA content is considered
- * "mixed content" and is left untouched to avoid altering the value.
+ * pretty-printed. Indentation is only safe when every child that actually
+ * produces output is an element, comment or processing instruction; any
+ * text/CDATA content that will be serialized is considered "mixed content"
+ * and is left untouched to avoid altering the value. Ignorable whitespace-only
+ * text nodes (which are dropped during serialization anyway) don't disqualify
+ * indentation.
  * @param childNodes The non-attribute child nodes of an element.
  */
 function xmlShouldIndentChildren(childNodes: XNode[]): boolean {
-    if (childNodes.length === 0) {
+    const significantChildren = childNodes.filter((child) => !xmlProducesNoOutput(child));
+    if (significantChildren.length === 0) {
         return false;
     }
-    return childNodes.every(
+    return significantChildren.every(
         (child) =>
             child.nodeType === DOM_ELEMENT_NODE ||
             child.nodeType === DOM_COMMENT_NODE ||
@@ -395,10 +415,13 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
             xmlIsIndentEligibleOutputMethod(options) &&
             xmlShouldIndentChildren(childNodes);
         for (let i = 0; i < childNodes.length; ++i) {
-            if (indentChildren) {
+            const child = childNodes[i];
+            // Skip the indent prefix before nodes that produce no output (e.g.
+            // ignorable whitespace-only text), so they don't leave blank lines.
+            if (indentChildren && !xmlProducesNoOutput(child)) {
                 buffer.push('\n' + INDENT_UNIT.repeat(depth + 1));
             }
-            xmlTransformedTextRecursive(childNodes[i], buffer, options, depth + 1);
+            xmlTransformedTextRecursive(child, buffer, options, depth + 1);
         }
         if (indentChildren) {
             buffer.push('\n' + INDENT_UNIT.repeat(depth));
