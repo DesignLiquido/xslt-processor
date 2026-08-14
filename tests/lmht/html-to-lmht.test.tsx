@@ -1547,19 +1547,20 @@ describe('HTML to LMHT', () => {
             </html>
         `;
 
-        const expectedOutString = `<lmht>` +
-                `<cabeça>` +
-                    `<meta nome="description" conteúdo="LMHT"/>` +
-                    `<meta nome="keywords" conteúdo="HTML, LMHT, Desenvolvimento, Web"/>` +
-                    `<meta nome="author" conteúdo="Leonel Sanches da Silva"/>` +
-                    `<meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>` +
-                    `<título>About - Simple Blog Template</título>` +
-                    `<recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>` +
-                    `<recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>` +
-                `</cabeça>` +
-                `<corpo>` +
-                    `<parágrafo classe="anything">This is a paragraph with a class</parágrafo>` +
-                `</corpo>` +
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        const expectedOutString = `<lmht>\n` +
+                `  <cabeça>\n` +
+                    `    <meta nome="description" conteúdo="LMHT"/>\n` +
+                    `    <meta nome="keywords" conteúdo="HTML, LMHT, Desenvolvimento, Web"/>\n` +
+                    `    <meta nome="author" conteúdo="Leonel Sanches da Silva"/>\n` +
+                    `    <meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>\n` +
+                    `    <título>About - Simple Blog Template</título>\n` +
+                    `    <recurso destino="css/bootstrap.min.css" tipo="stylesheet"/>\n` +
+                    `    <recurso destino="css/simple-blog-template.css" tipo="stylesheet"/>\n` +
+                `  </cabeça>\n` +
+                `  <corpo>\n` +
+                    `    <parágrafo classe="anything">This is a paragraph with a class</parágrafo>\n` +
+                `  </corpo>\n` +
             `</lmht>`
 
         const xsltClass = new Xslt({ selfClosingTags: true });
@@ -1587,17 +1588,26 @@ describe('HTML to LMHT', () => {
             </html>
         `;
 
-        const expectedOutString = `<lmht>`+
-            `<corpo>`+
-                `<título1><ligação destino="#">Delégua Blog</ligação></título1>`+
-                `<navegação>`+
-                    `<lista-simples>`+
-                        `<item-lista><ligação destino="#">Início</ligação></item-lista>`+
-                        `<item-lista><ligação destino="#">Sobre</ligação></item-lista>`+
-                        `<item-lista><ligação destino="#">Contato</ligação></item-lista>`+
-                    `</lista-simples>`+
-                `</navegação>`+
-            `</corpo>`+
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        const expectedOutString = `<lmht>\n`+
+            `  <corpo>\n`+
+                `    <título1>\n`+
+                    `      <ligação destino="#">Delégua Blog</ligação>\n`+
+                `    </título1>\n`+
+                `    <navegação>\n`+
+                    `      <lista-simples>\n`+
+                        `        <item-lista>\n`+
+                            `          <ligação destino="#">Início</ligação>\n`+
+                        `        </item-lista>\n`+
+                        `        <item-lista>\n`+
+                            `          <ligação destino="#">Sobre</ligação>\n`+
+                        `        </item-lista>\n`+
+                        `        <item-lista>\n`+
+                            `          <ligação destino="#">Contato</ligação>\n`+
+                        `        </item-lista>\n`+
+                    `      </lista-simples>\n`+
+                `    </navegação>\n`+
+            `  </corpo>\n`+
         `</lmht>`;
 
         const xsltClass = new Xslt({ selfClosingTags: true });
@@ -1634,26 +1644,27 @@ describe('HTML to LMHT', () => {
             </html>
         `;
 
-        const expectedOutString = `<lmht>`+
-            `<cabeça>`+
-                `<meta codificação="UTF-8"/>`+
-                `<meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>`+
-                `<título>Blog Simples</título>`+
-            `</cabeça>`+
-            `<corpo>`+
-                `<divisão classe="container main-content">`+
-                    `<divisão classe="post">`+
-                        `<título2>Título da Postagem 1</título2>`+
-                        `<parágrafo>Publicado em 2 de julho de 2024</parágrafo>`+
-                        `<parágrafo>Conteúdo da postagem 1. Este é um exemplo de conteúdo para uma postagem de blog. Você pode adicionar mais postagens conforme necessário.</parágrafo>`+
-                    `</divisão>`+
-                        `<divisão classe="post">`+
-                            `<título2>Título da Postagem 2</título2>`+
-                            `<parágrafo>Publicado em 1 de julho de 2024</parágrafo>`+
-                            `<parágrafo>Conteúdo da postagem 2. Este é outro exemplo de conteúdo para uma postagem de blog.</parágrafo>`+
-                        `</divisão>`+
-                `</divisão>`+
-            `</corpo>`+
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        const expectedOutString = `<lmht>\n`+
+            `  <cabeça>\n`+
+                `    <meta codificação="UTF-8"/>\n`+
+                `    <meta nome="viewport" conteúdo="width=device-width, initial-scale=1.0"/>\n`+
+                `    <título>Blog Simples</título>\n`+
+            `  </cabeça>\n`+
+            `  <corpo>\n`+
+                `    <divisão classe="container main-content">\n`+
+                    `      <divisão classe="post">\n`+
+                        `        <título2>Título da Postagem 1</título2>\n`+
+                        `        <parágrafo>Publicado em 2 de julho de 2024</parágrafo>\n`+
+                        `        <parágrafo>Conteúdo da postagem 1. Este é um exemplo de conteúdo para uma postagem de blog. Você pode adicionar mais postagens conforme necessário.</parágrafo>\n`+
+                    `      </divisão>\n`+
+                        `      <divisão classe="post">\n`+
+                            `        <título2>Título da Postagem 2</título2>\n`+
+                            `        <parágrafo>Publicado em 1 de julho de 2024</parágrafo>\n`+
+                            `        <parágrafo>Conteúdo da postagem 2. Este é outro exemplo de conteúdo para uma postagem de blog.</parágrafo>\n`+
+                        `      </divisão>\n`+
+                `    </divisão>\n`+
+            `  </corpo>\n`+
         `</lmht>`;
 
         const xsltClass = new Xslt({ selfClosingTags: true });

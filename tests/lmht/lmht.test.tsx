@@ -1588,7 +1588,8 @@ describe('LMHT', () => {
             </lmht>`
         );
 
-        const expectedOutString = `<html><head><title>Teste</title></head><body>Teste</body></html>`;
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        const expectedOutString = `<html>\n  <head>\n    <title>Teste</title>\n  </head>\n  <body>Teste</body>\n</html>`;
 
         const xsltClass = new Xslt();
         const xmlParser = new XmlParser();
@@ -1619,22 +1620,23 @@ describe('LMHT', () => {
             </lmht>`
         );
 
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
         const expectedOutString =
-            `<html>` +
-            `<head>` +
-            `<meta name="description" content="LMHT">` +
-            `<meta name="keywords" content="HTML, LMHT, Desenvolvimento, Web">` +
-            `<meta name="author" content="Leonel Sanches da Silva">` +
-            `<meta name="viewport" content="width=device-width, initial-scale=1.0">` +
-            `<title>Meu blog</title>` +
-            `<link rel="stylesheet" href="/publico/css/teste.css">` +
-            `</head>` +
-            `<body>` +
-            `<article>` +
-            `<h1>Meu primeiro artigo</h1>` +
-            `<p>Este é meu primeiro artigo.</p>` +
-            `</article>` +
-            `</body>` +
+            `<html>\n` +
+            `  <head>\n` +
+            `    <meta name="description" content="LMHT">\n` +
+            `    <meta name="keywords" content="HTML, LMHT, Desenvolvimento, Web">\n` +
+            `    <meta name="author" content="Leonel Sanches da Silva">\n` +
+            `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n` +
+            `    <title>Meu blog</title>\n` +
+            `    <link rel="stylesheet" href="/publico/css/teste.css">\n` +
+            `  </head>\n` +
+            `  <body>\n` +
+            `    <article>\n` +
+            `      <h1>Meu primeiro artigo</h1>\n` +
+            `      <p>Este é meu primeiro artigo.</p>\n` +
+            `    </article>\n` +
+            `  </body>\n` +
             `</html>`;
 
         const xsltClass = new Xslt({ selfClosingTags: false });

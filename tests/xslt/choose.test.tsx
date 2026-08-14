@@ -42,7 +42,8 @@ describe('xsl:choose', () => {
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
         const html = await xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, '<products><product>No</product><product>Yes</product></products>');
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        assert.equal(html, '<products>\n  <product>No</product>\n  <product>Yes</product>\n</products>');
     });
 
     it('https://github.com/DesignLiquido/xslt-processor/issues/92', async () => {
@@ -128,7 +129,8 @@ describe('xsl:choose', () => {
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
         const html = await xsltClass.xsltProcess(xml, xslt);
-        assert.equal(html, '<hamgestural_sign><sign_manual/></hamgestural_sign>');
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        assert.equal(html, '<hamgestural_sign>\n  <sign_manual/>\n</hamgestural_sign>');
     });
 
     /**
