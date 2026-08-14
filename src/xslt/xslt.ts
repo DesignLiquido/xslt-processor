@@ -159,6 +159,7 @@ export class Xslt {
     outputMethod: 'xml' | 'html' | 'text' | 'name' | 'xhtml' | 'json' | 'adaptive';
     outputOmitXmlDeclaration: string;
     outputVersion: string;
+    outputIndent: boolean;
     itemSeparator: string;
     version: string;
     firstTemplateRan: boolean;
@@ -298,6 +299,7 @@ export class Xslt {
         this.outputMethod = options.outputMethod || 'xml';
         this.outputOmitXmlDeclaration = 'no';
         this.outputVersion = '';
+        this.outputIndent = false;
         this.itemSeparator = '';
         this.stripSpacePatterns = [];
         this.preserveSpacePatterns = [];
@@ -378,7 +380,8 @@ export class Xslt {
             selfClosingTags: this.options.selfClosingTags,
             outputMethod: serializationMethod as 'xml' | 'html' | 'text' | 'xhtml',
             outputVersion: this.outputVersion,
-            itemSeparator: this.itemSeparator
+            itemSeparator: this.itemSeparator,
+            indent: this.outputIndent
         });
 
         return transformedOutputXml;
@@ -581,6 +584,7 @@ export class Xslt {
                     this.outputMethod = xmlGetAttribute(template, 'method') as 'xml' | 'html' | 'text' | 'name';
                     this.outputOmitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration');
                     this.outputVersion = xmlGetAttribute(template, 'version') || '';
+                    this.outputIndent = xmlGetAttribute(template, 'indent') === 'yes';
                     this.itemSeparator = xmlGetAttribute(template, 'item-separator') || '';
                     break;
                     case 'package':
@@ -4621,6 +4625,8 @@ export class Xslt {
         const hrefExpr = xmlGetAttribute(template, 'href') || '';
         const methodAttr = xmlGetAttribute(template, 'method') || this.outputMethod || 'xml';
         const omitXmlDeclaration = xmlGetAttribute(template, 'omit-xml-declaration') || this.outputOmitXmlDeclaration;
+        const indentAttr = xmlGetAttribute(template, 'indent');
+        const indent = indentAttr ? indentAttr === 'yes' : this.outputIndent;
 
         // Evaluate href as attribute value template
         const href = this.xsltAttributeValue(hrefExpr, context);
@@ -4647,7 +4653,8 @@ export class Xslt {
             selfClosingTags: this.options.selfClosingTags,
             outputMethod: methodAttr as 'xml' | 'html' | 'text' | 'xhtml',
             outputVersion: this.outputVersion,
-            itemSeparator: this.itemSeparator
+            itemSeparator: this.itemSeparator,
+            indent
         });
 
         // Store in result documents map

@@ -210,8 +210,62 @@ export function xmlTransformedText(
     }
 ) {
     const buffer: string[] = [];
-    xmlTransformedTextRecursive(node, buffer, options);
+    xmlTransformedTextRecursive(node, buffer, options, 0);
     return buffer.join('');
+}
+
+/**
+ * Two spaces, used as the indentation unit per depth level when
+ * `options.indent` is enabled.
+ */
+const INDENT_UNIT = '  ';
+
+/**
+ * Whether indentation should be considered at all for the given output method.
+ * Only `xml`, `xhtml` and `html` are eligible; `text` and `name` outputs are
+ * never indented (and `json`/`adaptive` never reach this serializer at all).
+ * @param options XML output options.
+ */
+function xmlIsIndentEligibleOutputMethod(options: XmlOutputOptions): boolean {
+    return options.outputMethod === 'xml' || options.outputMethod === 'xhtml' || options.outputMethod === 'html';
+}
+
+/**
+ * Whether a node contributes no output to the serialized result. This mirrors
+ * the skip condition applied to text nodes in `xmlTransformedTextRecursive`:
+ * a text node produces nothing when it has no value, or when it's
+ * whitespace-only and wasn't created by `xsl:text`.
+ * @param node The node to check.
+ */
+function xmlProducesNoOutput(node: XNode): boolean {
+    if (node.nodeType !== DOM_TEXT_NODE) {
+        return false;
+    }
+    const isFromXslText = node.fromXslText === true;
+    return !(node.nodeValue && (isFromXslText || node.nodeValue.trim() !== ''));
+}
+
+/**
+ * Decides whether a node's direct (non-attribute) children should be
+ * pretty-printed. Indentation is only safe when every child that actually
+ * produces output is an element, comment or processing instruction; any
+ * text/CDATA content that will be serialized is considered "mixed content"
+ * and is left untouched to avoid altering the value. Ignorable whitespace-only
+ * text nodes (which are dropped during serialization anyway) don't disqualify
+ * indentation.
+ * @param childNodes The non-attribute child nodes of an element.
+ */
+function xmlShouldIndentChildren(childNodes: XNode[]): boolean {
+    const significantChildren = childNodes.filter((child) => !xmlProducesNoOutput(child));
+    if (significantChildren.length === 0) {
+        return false;
+    }
+    return significantChildren.every(
+        (child) =>
+            child.nodeType === DOM_ELEMENT_NODE ||
+            child.nodeType === DOM_COMMENT_NODE ||
+            child.nodeType === DOM_PROCESSING_INSTRUCTION_NODE
+    );
 }
 
 /**
@@ -219,8 +273,9 @@ export function xmlTransformedText(
  * @param {XNode} node The node.
  * @param {string[]} buffer The buffer, that will represent the transformed XML text.
  * @param {XmlOutputOptions} options XML output options.
+ * @param {number} depth Current nesting depth, used to compute indentation.
  */
-function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptions) {
+function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: XmlOutputOptions, depth: number = 0) {
     if (node.visited) return;
     const nodeType = node.nodeType
     const nodeValue = node.nodeValue;
@@ -258,15 +313,15 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
     } else if (nodeType == DOM_ELEMENT_NODE) {
         if (options.outputMethod === 'text') {
             // For text output, only extract text content from elements
-            xmlElementLogicTextOnly(node, buffer, options);
+            xmlElementLogicTextOnly(node, buffer, options, depth);
         } else {
             // If node didn't have a transformed name, but its children
             // had transformations, children should be present at output.
             // This is called here "muted logic".
             if (node.nodeName !== null && node.nodeName !== undefined) {
-                xmlElementLogicTrivial(node, buffer, options);
+                xmlElementLogicTrivial(node, buffer, options, depth);
             } else {
-                xmlElementLogicMuted(node, buffer, options);
+                xmlElementLogicMuted(node, buffer, options, depth);
             }
         }
     } else if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
@@ -281,7 +336,7 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
         childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
 
         for (let i = 0; i < childNodes.length; ++i) {
-            xmlTransformedTextRecursive(childNodes[i], buffer, options);
+            xmlTransformedTextRecursive(childNodes[i], buffer, options, depth);
         }
     }
 
@@ -292,9 +347,10 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
  * XML element output, trivial logic.
  * @param node The XML node.
  * @param buffer The XML buffer.
- * @param cdata If using CDATA configuration.
+ * @param options XML output options.
+ * @param depth Current nesting depth, used to compute indentation.
  */
-function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions) {
+function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutputOptions, depth: number = 0) {
     buffer.push(`<${xmlFullNodeName(node)}`);
 
     let attributes: XNode[] = [];
@@ -354,8 +410,21 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
         }
     } else {
         buffer.push('>');
+        const indentChildren =
+            options.indent === true &&
+            xmlIsIndentEligibleOutputMethod(options) &&
+            xmlShouldIndentChildren(childNodes);
         for (let i = 0; i < childNodes.length; ++i) {
-            xmlTransformedTextRecursive(childNodes[i], buffer, options);
+            const child = childNodes[i];
+            // Skip the indent prefix before nodes that produce no output (e.g.
+            // ignorable whitespace-only text), so they don't leave blank lines.
+            if (indentChildren && !xmlProducesNoOutput(child)) {
+                buffer.push('\n' + INDENT_UNIT.repeat(depth + 1));
+            }
+            xmlTransformedTextRecursive(child, buffer, options, depth + 1);
+        }
+        if (indentChildren) {
+            buffer.push('\n' + INDENT_UNIT.repeat(depth));
         }
         buffer.push(`</${xmlFullNodeName(node)}>`);
     }
@@ -367,9 +436,10 @@ function xmlElementLogicTrivial(node: XNode, buffer: string[], options: XmlOutpu
  * children can be printed if they have transformed values.
  * @param node The XML node.
  * @param buffer The XML buffer.
- * @param cdata If using CDATA configuration.
+ * @param options XML output options.
+ * @param depth Current nesting depth, used to compute indentation.
  */
-function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions) {
+function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOptions, depth: number = 0) {
     let childNodes: XNode[] = [];
     if (node.firstChild) {
         let child = node.firstChild;
@@ -382,7 +452,7 @@ function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOpti
     }
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     for (let i = 0; i < childNodes.length; ++i) {
-        xmlTransformedTextRecursive(childNodes[i], buffer, options);
+        xmlTransformedTextRecursive(childNodes[i], buffer, options, depth);
     }
 }
 
@@ -391,8 +461,9 @@ function xmlElementLogicMuted(node: XNode, buffer: any[], options: XmlOutputOpti
  * @param node The XML node.
  * @param buffer The output buffer.
  * @param options XML output options.
+ * @param depth Current nesting depth (unused in text mode, kept for signature symmetry).
  */
-function xmlElementLogicTextOnly(node: XNode, buffer: string[], options: XmlOutputOptions) {
+function xmlElementLogicTextOnly(node: XNode, buffer: string[], options: XmlOutputOptions, depth: number = 0) {
     let childNodes: XNode[] = [];
     if (node.firstChild) {
         let child = node.firstChild;
@@ -405,7 +476,7 @@ function xmlElementLogicTextOnly(node: XNode, buffer: string[], options: XmlOutp
     }
     childNodes = childNodes.sort((a, b) => a.siblingPosition - b.siblingPosition);
     for (let i = 0; i < childNodes.length; ++i) {
-        xmlTransformedTextRecursive(childNodes[i], buffer, options);
+        xmlTransformedTextRecursive(childNodes[i], buffer, options, depth);
     }
 }
 

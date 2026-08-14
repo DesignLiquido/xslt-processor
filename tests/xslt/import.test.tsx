@@ -17,7 +17,31 @@ describe('xsl:import', () => {
         const xml = xmlParser.xmlParse(xmlSource);
         const xslt = xmlParser.xmlParse(xsltSource);
         const resultingXml = await xsltClass.xsltProcess(xml, xslt);
-        assert.equal(resultingXml, '<html><head><link rel="stylesheet" type="text/css" href="style.css"><title/></head><body><div id="container"><div id="header"><div id="menu"><ul><li><a href="#" class="active">Home</a></li><li><a href="#">about</a></li></ul></div></div></div></body></html>');
+        // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result is pretty-printed.
+        const expected =
+            '<html>\n' +
+            '  <head>\n' +
+            '    <link rel="stylesheet" type="text/css" href="style.css">\n' +
+            '    <title/>\n' +
+            '  </head>\n' +
+            '  <body>\n' +
+            '    <div id="container">\n' +
+            '      <div id="header">\n' +
+            '        <div id="menu">\n' +
+            '          <ul>\n' +
+            '            <li>\n' +
+            '              <a href="#" class="active">Home</a>\n' +
+            '            </li>\n' +
+            '            <li>\n' +
+            '              <a href="#">about</a>\n' +
+            '            </li>\n' +
+            '          </ul>\n' +
+            '        </div>\n' +
+            '      </div>\n' +
+            '    </div>\n' +
+            '  </body>\n' +
+            '</html>';
+        assert.equal(resultingXml, expected);
     });
 
     it('Not the first child of `<xsl:stylesheet>` or `<xsl:transform>`', async () => {

@@ -40,10 +40,13 @@ describe('xslt', () => {
             </xsl:stylesheet>`
 
             // Needs to be this way. `isomorphic-jsx rewrites `<outputA />` as `<outputA></outputA>`.
-            const expectedOutString = `<outputUnknown original-name="root">`+
-                `<outputA/>`+
-                `<outputB>I have text!</outputB>`+
-            `</outputUnknown>`;
+            // `indent="yes"` is declared in the stylesheet's `<xsl:output>`, so the result
+            // is pretty-printed (2-space indent) since `outputUnknown`'s children are all elements.
+            const expectedOutString =
+                `<outputUnknown original-name="root">\n` +
+                `  <outputA/>\n` +
+                `  <outputB>I have text!</outputB>\n` +
+                `</outputUnknown>`;
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
@@ -114,13 +117,14 @@ describe('xslt', () => {
                 </xsl:template>
             </xsl:stylesheet>`;
 
-            const expectedOutString = `<outputUnknown original-name="root">` +
-                `<subnode>Custom text</subnode>` +
-                `<outputA>`+
-                    `<yep/>`+
-                `</outputA>`+
-                `<outputB foo="bar">I have text!</outputB>`+
-            `</outputUnknown>`;
+            const expectedOutString =
+                `<outputUnknown original-name="root">\n` +
+                `  <subnode>Custom text</subnode>\n` +
+                `  <outputA>\n` +
+                `    <yep/>\n` +
+                `  </outputA>\n` +
+                `  <outputB foo="bar">I have text!</outputB>\n` +
+                `</outputUnknown>`;
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
@@ -159,12 +163,13 @@ describe('xslt', () => {
                 </xsl:template>
             </xsl:stylesheet>`;
 
-            const expectedOutString = `<outputUnknown original-name="root">`+
-                `<outputA>`+
-                    `<yep/>`+
-                `</outputA>`+
-                `<outputB foo="bar">I have text!</outputB>`+
-            `</outputUnknown>`;
+            const expectedOutString =
+                `<outputUnknown original-name="root">\n` +
+                `  <outputA>\n` +
+                `    <yep/>\n` +
+                `  </outputA>\n` +
+                `  <outputB foo="bar">I have text!</outputB>\n` +
+                `</outputUnknown>`;
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
@@ -201,10 +206,11 @@ describe('xslt', () => {
                 </xsl:template>
             </xsl:stylesheet>`;
 
-            const expectedOutString = `<outputUnknown original-name="root">`+
-                `<outputA/>`+
-                `<outputB foo="bar">I have text!</outputB>`+
-            `</outputUnknown>`;
+            const expectedOutString =
+                `<outputUnknown original-name="root">\n` +
+                `  <outputA/>\n` +
+                `  <outputB foo="bar">I have text!</outputB>\n` +
+                `</outputUnknown>`;
 
             const xsltClass = new Xslt();
             const xmlParser = new XmlParser();
