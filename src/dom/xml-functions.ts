@@ -68,7 +68,7 @@ export function xmlValue(node: XNode, disallowBrowserSpecificOptimization: boole
 
 /**
  * The older version to obtain a XML value from a node.
- * For now, this form is only used to get text from attribute nodes, 
+ * For now, this form is only used to get text from attribute nodes,
  * and it should be removed in future versions.
  * @param node The attribute node.
  * @param disallowBrowserSpecificOptimization A boolean, to avoid browser optimization.
@@ -261,8 +261,7 @@ function xmlShouldIndentChildren(childNodes: XNode[]): boolean {
         return false;
     }
     return significantChildren.every(
-        (child) =>
-            child.nodeType === DOM_ELEMENT_NODE ||
+        (child) => child.nodeType === DOM_ELEMENT_NODE ||
             child.nodeType === DOM_COMMENT_NODE ||
             child.nodeType === DOM_PROCESSING_INSTRUCTION_NODE
     );
@@ -602,7 +601,7 @@ function nodeToJsonObject(node: XNode): any {
     if (nodeType === DOM_DOCUMENT_NODE || nodeType === DOM_DOCUMENT_FRAGMENT_NODE) {
         const children = node.childNodes || [];
         const childObjects = [];
-        
+
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
             const childObj = nodeToJsonObject(child);
@@ -625,7 +624,7 @@ function nodeToJsonObject(node: XNode): any {
         const obj: any = {};
         const element = node as any;
         const hasAttributes = element.attributes && element.attributes.length > 0;
-        
+
         // Add attributes with @ prefix
         if (hasAttributes) {
             for (let i = 0; i < element.attributes.length; i++) {
@@ -776,10 +775,10 @@ export function xmlToJson(node: XNode): string {
     const element = rootElement as any;
     const rootName = element.localName || element.nodeName;
     const jsonObj: any = {};
-    
+
     // Build the root element object
     const elementContent = nodeToJsonObject(rootElement);
-    
+
     if (elementContent === null) {
         // Empty root element
         jsonObj[rootName] = {};

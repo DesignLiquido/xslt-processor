@@ -24,7 +24,7 @@ const NAMED_ENTITIES: { [key: string]: string } = {
     'para': '\u00B6',
     'hellip': '\u2026',
     'middot': '\u00B7',
-    'deg': '\u00B0',
+    'deg': '\u00B0'
 };
 
 /**

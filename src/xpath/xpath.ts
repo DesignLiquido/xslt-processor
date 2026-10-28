@@ -78,7 +78,7 @@ export class XPath {
         const version = (context.xsltVersion as XPathVersion) || '1.0';
         // For XSLT 3.0, use XPath 3.1 to get Maps and Arrays support which are often expected
         const effectiveVersion = version === '3.0' ? '3.1' : version;
-        
+
         const expression = this.xPathParse(select, undefined, effectiveVersion);
         return expression.evaluate(context);
     }

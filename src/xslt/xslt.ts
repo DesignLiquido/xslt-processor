@@ -40,10 +40,10 @@ import {
 
 import { StringValue, NodeSetValue, NodeValue, NumberValue, BooleanValue } from '../xpath/values';
 import { XsltDecimalFormatSettings, XsltOptions } from './types';
-import { 
-    PackageRegistry, 
-    XsltPackageInterface, 
-    PackageComponentInterface, 
+import {
+    PackageRegistry,
+    XsltPackageInterface,
+    PackageComponentInterface,
     UsedPackageInterface,
     ComponentVisibility,
     ComponentType,
@@ -325,7 +325,7 @@ export class Xslt {
         this.warningsCallback = console.warn.bind(console);
         this.fetchFunction = options.fetchFunction || (async (uri: string) => {
             const globalFetch =
-                typeof globalThis !== 'undefined' && typeof (globalThis as any).fetch === 'function'
+                typeof globalThis !== 'undefined' && typeof(globalThis as any).fetch === 'function'
                     ? (globalThis as any).fetch
                     : null;
 
@@ -726,12 +726,9 @@ export class Xslt {
      */
     protected async xsltApplyTemplates(context: ExprContext, template: XNode, output?: XNode) {
         const select = xmlGetAttribute(template, 'select');
-        let nodes: XNode[] = [];
-        if (select) {
-            nodes = this.xPath.xPathEval(select, context).nodeSetValue();
-        } else {
-            nodes = context.nodeList[context.position].childNodes;
-        }
+        const nodes: XNode[] = select
+        ? this.xPath.xPathEval(select, context).nodeSetValue()
+        : context.nodeList[context.position].childNodes;
 
         const onEmpty = this.findConditionalChild(template, 'on-empty');
         const onNonEmpty = this.findConditionalChild(template, 'on-non-empty');
@@ -853,21 +850,21 @@ export class Xslt {
                     const metadata = this.templateSourceMap.get(selection.selectedTemplate);
                     const matchPattern = xmlGetAttribute(selection.selectedTemplate, 'match');
                     const modeAttr = xmlGetAttribute(selection.selectedTemplate, 'mode');
-                    
+
                     this.currentTemplateStack.push({
                         template: selection.selectedTemplate,
                         stylesheetDepth: metadata?.importDepth ?? 0,
                         mode: modeAttr || effectiveMode,
                         match: matchPattern
                     });
-                    
+
                     // Set override context if this is an overridden template
                     const previousOverrideContext = this.currentOverrideContext;
                     const overrideContext = selection.originalComponent || (selection.selectedTemplate as any).__originalComponent;
                     if (overrideContext) {
                         this.currentOverrideContext = overrideContext;
                     }
-                    
+
                     try {
                         await this.xsltChildNodes(clonedContext, selection.selectedTemplate, output);
                     } finally {
@@ -917,14 +914,14 @@ export class Xslt {
                                     const childMetadata = this.templateSourceMap.get(childSelection.selectedTemplate);
                                     const childMatchPattern = xmlGetAttribute(childSelection.selectedTemplate, 'match');
                                     const childModeAttr = xmlGetAttribute(childSelection.selectedTemplate, 'mode');
-                                    
+
                                     this.currentTemplateStack.push({
                                         template: childSelection.selectedTemplate,
                                         stylesheetDepth: childMetadata?.importDepth ?? 0,
                                         mode: childModeAttr || effectiveMode,
                                         match: childMatchPattern
                                     });
-                                    
+
                                     try {
                                         await this.xsltChildNodes(childContext, childSelection.selectedTemplate, output);
                                     } finally {
@@ -960,11 +957,11 @@ export class Xslt {
         if (!node.childNodes || node.childNodes.length === 0) {
             return;
         }
-        
+
         const childNodes = node.childNodes.filter(
             (n: XNode) => n.nodeType !== DOM_ATTRIBUTE_NODE && n.nodeName !== '#dtd-section'
         );
-        
+
         for (const childNode of childNodes) {
             if (childNode.nodeType === DOM_TEXT_NODE) {
                 // Check for text-matching templates first
@@ -1007,14 +1004,14 @@ export class Xslt {
                     const childMetadata = this.templateSourceMap.get(childSelection.selectedTemplate);
                     const childMatchPattern = xmlGetAttribute(childSelection.selectedTemplate, 'match');
                     const childModeAttr = xmlGetAttribute(childSelection.selectedTemplate, 'mode');
-                    
+
                     this.currentTemplateStack.push({
                         template: childSelection.selectedTemplate,
                         stylesheetDepth: childMetadata?.importDepth ?? 0,
                         mode: childModeAttr || mode,
                         match: childMatchPattern
                     });
-                    
+
                     const previousOverrideContext = this.currentOverrideContext;
                     const overrideContext = childSelection.originalComponent || (childSelection.selectedTemplate as any).__originalComponent;
                     if (overrideContext) {
@@ -1348,10 +1345,10 @@ export class Xslt {
     }
 
     /**
-     * Implements `xsl:comment`. 
+     * Implements `xsl:comment`.
      * @param context The Expression Context.
      * @param template The template.
-     * @param output The output. Only used if there's no corresponding output node already defined. 
+     * @param output The output. Only used if there's no corresponding output node already defined.
      */
     protected async xsltComment(context: ExprContext, template: XNode, output?: XNode) {
         const node = domCreateDocumentFragment(this.outputDocument);
@@ -1431,7 +1428,7 @@ export class Xslt {
 
     /**
      * Implements `xsl:decimal-format`, registering the settings in this instance
-     * and the current context. 
+     * and the current context.
      * @param context The Expression Context.
      * @param template The template.
      */
@@ -1907,7 +1904,7 @@ export class Xslt {
         if (items.length === 0) {
             // Process on-completion even with empty sequence
             const onCompletionElements = Array.from(template.childNodes || []).filter(
-                (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                (node) => node.nodeType === DOM_ELEMENT_NODE &&
                          this.isXsltElement(node as XNode, 'on-completion')
             ) as XNode[];
 
@@ -1918,11 +1915,11 @@ export class Xslt {
             }
             return;
         }
-        
+
         // Initialize accumulators from xsl:param children
         const accumulators: { [name: string]: any } = {};
         const paramElements = Array.from(template.childNodes || []).filter(
-            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+            (node) => node.nodeType === DOM_ELEMENT_NODE &&
                      (node as XNode).localName === 'param' &&
                      this.isXsltElement(node as XNode)
         ) as XNode[];
@@ -1948,13 +1945,15 @@ export class Xslt {
         // Iterate over items
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            
+
             // Create iteration context with current item as context node
             const iterationContext = context.clone([item], 0);
-            
+
             // Add accumulators to the context as variables
             for (const accName in accumulators) {
-                iterationContext.variables[accName] = accumulators[accName];
+                if (Object.prototype.hasOwnProperty.call(accumulators, accName)) {
+                    iterationContext.variables[accName] = accumulators[accName];
+                }
             }
 
             // Process the iteration body (excluding xsl:param, xsl:on-completion, xsl:next-iteration)
@@ -1965,27 +1964,27 @@ export class Xslt {
                 if (bodyNode.nodeType === DOM_ELEMENT_NODE) {
                     const elem = bodyNode as XNode;
                     // Skip XSLT special elements
-                    if (this.isXsltElement(elem) && 
+                    if (this.isXsltElement(elem) &&
                         (elem.localName === 'param' ||
                          elem.localName === 'on-completion' ||
                          elem.localName === 'next-iteration')) {
                         continue;
                     }
                 }
-                
+
                 await this.xsltProcessContext(iterationContext, bodyNode, output);
             }
 
             // Process xsl:next-iteration to update accumulators
             const nextIterationElements = Array.from(template.childNodes || []).filter(
-                (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                (node) => node.nodeType === DOM_ELEMENT_NODE &&
                          this.isXsltElement(node as XNode, 'next-iteration')
             ) as XNode[];
 
             if (nextIterationElements.length > 0) {
                 const nextIteration = nextIterationElements[0];
                 const withParamElements = Array.from(nextIteration.childNodes || []).filter(
-                    (node) => node.nodeType === DOM_ELEMENT_NODE && 
+                    (node) => node.nodeType === DOM_ELEMENT_NODE &&
                              this.isXsltElement(node as XNode, 'with-param')
                 ) as XNode[];
 
@@ -2007,19 +2006,21 @@ export class Xslt {
 
         // After iteration, process xsl:on-completion if present
         const onCompletionElements = Array.from(template.childNodes || []).filter(
-            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+            (node) => node.nodeType === DOM_ELEMENT_NODE &&
                      this.isXsltElement(node as XNode, 'on-completion')
         ) as XNode[];
 
         if (onCompletionElements.length > 0) {
             const onCompletion = onCompletionElements[0];
-            
+
             // on-completion inherits the xsl:iterate instruction's context item/position/size.
             const completionContext = context.clone();
-            
+
             // Add final accumulators to context
             for (const accName in accumulators) {
-                completionContext.variables[accName] = accumulators[accName];
+                if (Object.prototype.hasOwnProperty.call(accumulators, accName)) {
+                    completionContext.variables[accName] = accumulators[accName];
+                }
             }
 
             // Process on-completion body
@@ -2035,12 +2036,12 @@ export class Xslt {
      */
     protected async xsltTry(context: ExprContext, template: XNode, output?: XNode) {
         const tryBodyNodes = Array.from(template.childNodes || []).filter(
-            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+            (node) => node.nodeType === DOM_ELEMENT_NODE &&
                      !this.isXsltElement(node as XNode, 'catch')
         ) as XNode[];
 
         const catchElements = Array.from(template.childNodes || []).filter(
-            (node) => node.nodeType === DOM_ELEMENT_NODE && 
+            (node) => node.nodeType === DOM_ELEMENT_NODE &&
                      this.isXsltElement(node as XNode, 'catch')
         ) as XNode[];
 
@@ -2069,7 +2070,7 @@ export class Xslt {
             let caught = false;
             for (const catchElement of catchElements) {
                 const errorsAttr = xmlGetAttribute(catchElement, 'errors');
-                
+
                 // If no errors attribute, catch all errors
                 if (!errorsAttr) {
                     caught = true;
@@ -2215,29 +2216,29 @@ export class Xslt {
 
         const fetchResponse = await this.fetchFunction(href);
         const includedXslt = this.xmlParser.xmlParse(fetchResponse);
-        
+
         // Track stylesheet metadata for apply-imports
-        const currentDepth = this.styleSheetStack.length > 0 
-            ? this.styleSheetStack[this.styleSheetStack.length - 1].importDepth 
+        const currentDepth = this.styleSheetStack.length > 0
+            ? this.styleSheetStack[this.styleSheetStack.length - 1].importDepth
             : 0;
-        
+
         const metadata: StylesheetMetadata = {
-            importDepth: isImport ? currentDepth + 1 : currentDepth,  // Includes are same depth, imports are deeper
-            href: href,
+            importDepth: isImport ? currentDepth + 1 : currentDepth, // Includes are same depth, imports are deeper
+            href,
             order: this.importedStylesheets.size
         };
-        
+
         this.styleSheetStack.push(metadata);
         this.importedStylesheets.set(href, includedXslt);
-        
+
         // Map all templates in this stylesheet to their metadata
         const stylesheetRoot = includedXslt.childNodes[0];
         if (stylesheetRoot) {
             this.mapTemplatesFromStylesheet(stylesheetRoot, metadata);
         }
-        
+
         await this.xsltChildNodes(context, stylesheetRoot, output);
-        
+
         this.styleSheetStack.pop();
     }
 
@@ -2330,7 +2331,7 @@ export class Xslt {
         /**
          * Loads and registers an external package.
          * Creates a temporary context and processes the package document.
-         * 
+         *
          * @param name The package name/URI.
          * @param packageDoc The parsed package document.
          * @param version Optional semantic version string.
@@ -2338,7 +2339,7 @@ export class Xslt {
         protected async loadAndRegisterPackage(name: string, packageDoc: XNode, version?: string): Promise<void> {
             // Detect circular dependencies
             const packageKey = version ? `${name}@${version}` : name;
-            
+
             if (!this.packageRegistry.beginLoading(packageKey)) {
                 throw new Error(`Circular package dependency detected: "${packageKey}".`);
             }
@@ -2364,7 +2365,7 @@ export class Xslt {
                     if (version && !xmlGetAttribute(packageRoot, 'package-version')) {
                         domSetAttribute(packageRoot, 'package-version', version);
                     }
-                    
+
                     // Create a temporary context for processing
                     const tempContext = new ExprContext([packageRoot]);
                     tempContext.documentLoader = this.documentLoader;
@@ -2407,7 +2408,7 @@ export class Xslt {
 
             // Try to load the package from registry first
             let usedPackage = this.packageRegistry.get(name, packageVersion);
-            
+
             // If not found and loader exists, try loading
             if (!usedPackage && this.packageLoader) {
                 try {
@@ -2425,7 +2426,7 @@ export class Xslt {
                     // Otherwise, continue to error message below
                 }
             }
-            
+
             if (!usedPackage) {
                 throw new Error(
                     `Package "${name}"${packageVersion ? `@${packageVersion}` : ''} not found. ` +
@@ -2552,7 +2553,7 @@ export class Xslt {
                     const templateName = xmlGetAttribute(child, 'name');
                     const match = xmlGetAttribute(child, 'match');
                     const mode = xmlGetAttribute(child, 'mode');
-                    
+
                     // If name is specified, match by name
                     if (name) {
                         if (templateName === name) {
@@ -2688,12 +2689,12 @@ export class Xslt {
                 }
 
                 const localName = child.localName;
-                
+
                 // Determine component type from element name
                 let componentType: ComponentType | null = null;
                 let componentName: string | null = null;
                 let componentMatch: string | null = null;
-                
+
                 switch (localName) {
                     case 'template':
                         componentType = 'template';
@@ -2723,14 +2724,14 @@ export class Xslt {
                 // Find the original component in the used package
                 // Check both accepted components and the package's own components
                 let originalComponent: PackageComponentInterface | undefined;
-                
-                
+
+
                 // First check accepted components (which we explicitly accepted)
                 usedPkg.acceptedComponents.forEach((component) => {
                     if (component.type !== componentType) {
                         return;
                     }
-                    
+
                     // Match by name or match pattern
                     if (componentName && component.name === componentName) {
                         originalComponent = component;
@@ -2738,14 +2739,14 @@ export class Xslt {
                         originalComponent = component;
                     }
                 });
-                
+
                 // If not found in accepted, check the package components directly
                 if (!originalComponent) {
                     usedPkg.package.components.forEach((component) => {
                         if (component.type !== componentType) {
                             return;
                         }
-                        
+
                         // Match by name or match pattern
                         if (componentName && component.name === componentName) {
                             originalComponent = component;
@@ -2808,7 +2809,7 @@ export class Xslt {
         /**
          * Find components in a package matching the given criteria.
          * Used by xsl:accept to locate components from used packages.
-         * 
+         *
          * @param pkg The package to search in
          * @param componentType The type of component to find
          * @param namePatterns Array of name patterns ('*' for all, or specific names)
@@ -2848,7 +2849,7 @@ export class Xslt {
          * Get the name to use when matching components.
          * For named components (functions, variables, attribute-sets), returns the name.
          * For templates, returns the name if present, otherwise returns null (match-based templates).
-         * 
+         *
          * @param component The component to get the name from
          * @returns The component name for matching, or null if unnamed
          */
@@ -2893,24 +2894,24 @@ export class Xslt {
                     // Execute the original template's children
                     await this.xsltChildNodes(context, originalNode, output);
                     break;
-                
+
                 case 'function':
                     // For functions, xsl:original would be called from within the override function body
                     // The actual function execution is handled by the function call mechanism
                     throw new Error('<xsl:original> for functions should be called as a function, not as an element.');
-                
+
                 case 'variable':
                     // For variables, execute the original variable definition
                     await this.xsltVariable(context, originalNode, true);
                     break;
-                
+
                 case 'attribute-set':
                     // For attribute-sets, apply the original attribute set
                     if (originalComponent.name && output) {
                         await this.applyAttributeSets(context, output, originalComponent.name);
                     }
                     break;
-                
+
                 default:
                     throw new Error(`<xsl:original> does not support component type "${originalComponent.type}".`);
             }
@@ -2992,7 +2993,7 @@ export class Xslt {
          */
         private collectAcceptedTemplates(mode: string | null): TemplatePriorityInterface[] {
             const templates: TemplatePriorityInterface[] = [];
-            
+
             if (!this.currentPackage) {
                 return templates;
             }
@@ -3005,34 +3006,34 @@ export class Xslt {
                         // Check for overrides - use the effective component
                         const effectiveComponent = this.getEffectiveComponent(component);
                         const templateNode = effectiveComponent.node;
-                        
+
                         // If this is an override, store the original for xsl:original
                         const isOverride = effectiveComponent !== component;
                         const originalForContext = isOverride ? component : undefined;
-                        
+
                         // Check if this template matches the requested mode
                         const templateMode = xmlGetAttribute(templateNode, 'mode') || null;
                         const effectiveMode = mode || null;
                         if (effectiveMode !== templateMode) {
                             return;
                         }
-                        
+
                         // Only include templates with match patterns
                         const match = xmlGetAttribute(templateNode, 'match');
                         if (!match) {
                             return;
                         }
-                        
+
                         // Get priority
                         const priorityAttr = xmlGetAttribute(templateNode, 'priority');
                         const explicitPriority = priorityAttr ? parseFloat(priorityAttr) : null;
-                        
+
                         // Calculate default priority - use 0 as a safe default for accepted templates
                         const defaultPriority = component.priority || 0;
                         const effectivePriority = explicitPriority !== null && !isNaN(explicitPriority)
                             ? explicitPriority
                             : defaultPriority;
-                        
+
                         templates.push({
                             template: templateNode,
                             explicitPriority: explicitPriority !== null && !isNaN(explicitPriority) ? explicitPriority : null,
@@ -3060,13 +3061,13 @@ export class Xslt {
     protected async xsltStream(context: ExprContext, template: XNode, output?: XNode) {
         // Update streaming processor with current version
         this.streamingProcessor.setVersion(this.version);
-        
+
         // Create child processor callback
         const childProcessor: StreamingChildProcessor = {
             processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
             isXsltElement: (node, name) => this.isXsltElement(node, name)
         };
-        
+
         await this.streamingProcessor.processStream(context, template, output, childProcessor);
     }
 
@@ -3083,7 +3084,7 @@ export class Xslt {
             processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
             isXsltElement: (node, name) => this.isXsltElement(node, name)
         };
-        
+
         await this.streamingProcessor.processFork(context, template, output, childProcessor);
     }
 
@@ -3097,13 +3098,13 @@ export class Xslt {
     protected async xsltMerge(context: ExprContext, template: XNode, output?: XNode) {
         // Update streaming processor with current version
         this.streamingProcessor.setVersion(this.version);
-        
+
         // Create child processor callback
         const childProcessor: StreamingChildProcessor = {
             processChildren: (ctx, tmpl, out) => this.xsltChildNodes(ctx, tmpl, out),
             isXsltElement: (node, name) => this.isXsltElement(node, name)
         };
-        
+
         await this.streamingProcessor.processMerge(context, template, output, childProcessor);
     }
 
@@ -3909,7 +3910,7 @@ export class Xslt {
      * Implements `xsl:template`.
      * @param context The Expression Context.
      * @param template The `<xsl:template>` node.
-     * @param output The output. In general, a fragment that will be used by 
+     * @param output The output. In general, a fragment that will be used by
      *               the caller.
      */
     protected async xsltTemplate(context: ExprContext, template: XNode, output?: XNode) {
@@ -3968,7 +3969,7 @@ export class Xslt {
         const attributes = stylesheetElement.childNodes.filter((n) => n.nodeType === DOM_ATTRIBUTE_NODE);
         const validAttributes = ['version', 'id', 'extension-element-prefixes', 'exclude-result-prefixes', 'default-collation'];
         const validNamespaceAttributes = ['xmlns']; // xmlns and xmlns:* attributes
-        
+
         let versionFound = false;
 
         for (let attribute of attributes) {
@@ -4090,7 +4091,7 @@ export class Xslt {
             order: 0
         };
         this.mapTemplatesFromStylesheet(template, mainStylesheetMetadata);
-        
+
         // Collect attribute sets from stylesheet at the beginning
         this.collectAttributeSets(template);
 
@@ -4160,7 +4161,7 @@ export class Xslt {
                 // First, check if "/" pattern matches - it's the document entry point and should be preferred
                 const rootPatternMatch = matchCandidates.find(c => c.priority.matchPattern === '/');
                 let winner: { priority: TemplatePriorityInterface; matchedNodes: XNode[] };
-                
+
                 if (rootPatternMatch) {
                     // Use the root template as entry point
                     winner = rootPatternMatch;
@@ -4179,8 +4180,7 @@ export class Xslt {
                 }
 
                 // Detect conflicts
-                const conflicts = matchCandidates.filter(t =>
-                    t.priority.importPrecedence === winner.priority.importPrecedence &&
+                const conflicts = matchCandidates.filter(t => t.priority.importPrecedence === winner.priority.importPrecedence &&
                     t.priority.effectivePriority === winner.priority.effectivePriority
                 );
 
@@ -4199,21 +4199,21 @@ export class Xslt {
                 this.firstTemplateRan = true;
                 contextClone.baseTemplateMatched = true;
                 const templateContext = contextClone.clone(winner.matchedNodes, 0);
-                
+
                 // Track this template execution for apply-imports
                 const metadata = this.templateSourceMap.get(winner.priority.template);
                 const matchPattern = xmlGetAttribute(winner.priority.template, 'match');
                 const modeAttr = xmlGetAttribute(winner.priority.template, 'mode');
-                
+
                 this.currentTemplateStack.push({
                     template: winner.priority.template,
                     stylesheetDepth: metadata?.importDepth ?? 0,
                     mode: modeAttr || null,
                     match: matchPattern
                 });
-                
+
                 await this.xsltChildNodes(templateContext, winner.priority.template, output);
-                
+
                 this.currentTemplateStack.pop();
             } else {
                 // No template matched the root context.
@@ -4339,9 +4339,15 @@ export class Xslt {
         let jsFlags = 'g'; // Always use global for analyze-string
         for (const flag of flagsAttr) {
             switch (flag) {
-                case 'i': jsFlags += 'i'; break;
-                case 'm': jsFlags += 'm'; break;
-                case 's': jsFlags += 's'; break;
+                case 'i':
+                    jsFlags += 'i';
+                    break;
+                case 'm':
+                    jsFlags += 'm';
+                    break;
+                case 's':
+                    jsFlags += 's';
+                    break;
                 // 'x' (extended) would need special handling - skip for now
             }
         }
@@ -4417,7 +4423,7 @@ export class Xslt {
 
     /**
      * Implements `xsl:function` (XSLT 2.0).
-     * 
+     *
      * Declares a stylesheet function that can be called from XPath expressions.
      * Functions are collected during stylesheet initialization and made available
      * to the XPath evaluator.
@@ -4452,14 +4458,14 @@ export class Xslt {
 
     /**
      * Coerce a NodeValue to a specific type based on the 'as' attribute.
-     * 
+     *
      * @param value The value to coerce.
      * @param type The target type (e.g., "xs:integer", "xs:string", "xs:boolean").
      * @returns The coerced value.
      */
     protected coerceToType(value: NodeValue, type: string): NodeValue {
         const normalizedType = type.replace(/^xs:/, '').toLowerCase();
-        
+
         switch (normalizedType) {
             case 'integer':
             case 'int':
@@ -4468,15 +4474,15 @@ export class Xslt {
             case 'number':
                 // Convert to number
                 return new NumberValue(value.numberValue());
-            
+
             case 'string':
                 // Convert to string
                 return new StringValue(value.stringValue());
-            
+
             case 'boolean':
                 // Convert to boolean
                 return new BooleanValue(value.booleanValue());
-            
+
             default:
                 // For unknown types or node-set types, return as-is
                 return value;
@@ -4563,7 +4569,7 @@ export class Xslt {
                     if (paramType) {
                         paramValue = this.coerceToType(paramValue, paramType);
                     }
-                    
+
                     functionContext.setVariable(paramName, paramValue);
                 } else {
                     // Use default value from parameter definition if available
@@ -4673,7 +4679,7 @@ export class Xslt {
      * Sets the package loader callback.
      * The callback is called when a package is referenced via xsl:use-package
      * but is not found in the registry.
-     * 
+     *
      * @param loader A function that loads package documents by URI and optional version.
      *               Returns the parsed package document, or null if not found.
      */
@@ -4684,7 +4690,7 @@ export class Xslt {
     /**
      * Pre-registers a package for use in transformations.
      * The package is parsed and stored in the internal registry.
-     * 
+     *
      * @param name The package name/URI.
      * @param packageDoc The parsed package document.
      * @param version Optional semantic version string.
@@ -4906,7 +4912,7 @@ export class Xslt {
      * This logic is used in two different places:
      * - `xsltPassThrough`, if the template asks this library to write a text node;
      * - `xsltProcessContext`, `apply-templates` operation, when the current node is text.
-     * 
+     *
      * Text nodes always require a parent, and they never have children.
      * @param context The Expression Context.
      * @param template The template, that contains the node value to be written.
@@ -4974,7 +4980,7 @@ export class Xslt {
                 }
 
                 newNode = domCreateElement(this.outputDocument, qualifiedName);
-                
+
                 // Set position based on current number of children in output
                 // This preserves document order for literal elements in templates
                 // (Issue #158: text nodes before block elements should stay before them)
@@ -5001,8 +5007,7 @@ export class Xslt {
 
                 // Apply attribute sets from use-attribute-sets attribute on literal elements
                 const useAttributeSetsAttr = template.childNodes.find(
-                    (a: XNode) =>
-                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'use-attribute-sets'
+                    (a: XNode) => a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName === 'use-attribute-sets'
                 );
                 if (useAttributeSetsAttr) {
                     await this.applyAttributeSets(elementContext, newNode, useAttributeSetsAttr.nodeValue);
@@ -5011,8 +5016,7 @@ export class Xslt {
                 await this.xsltChildNodes(elementContext, template, newNode);
 
                 const templateAttributes = template.childNodes.filter(
-                    (a: XNode) =>
-                        a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName !== 'use-attribute-sets'
+                    (a: XNode) => a?.nodeType === DOM_ATTRIBUTE_NODE && a.nodeName !== 'use-attribute-sets'
                 );
                 for (const attribute of templateAttributes) {
                     const name = attribute.nodeName;
@@ -5127,10 +5131,10 @@ export class Xslt {
 
         let result = '';
         let i = 0;
-        
+
         while (i < value.length) {
             const char = value[i];
-            
+
             if (char === '{') {
                 // Check for escaped {{
                 if (i + 1 < value.length && value[i + 1] === '{') {
@@ -5138,12 +5142,12 @@ export class Xslt {
                     i += 2;
                     continue;
                 }
-                
+
                 // Find matching closing brace
                 let depth = 1;
                 let j = i + 1;
                 let expr = '';
-                
+
                 while (j < value.length && depth > 0) {
                     if (value[j] === '{') {
                         depth++;
@@ -5156,7 +5160,7 @@ export class Xslt {
                     expr += value[j];
                     j++;
                 }
-                
+
                 if (depth === 0) {
                     // Evaluate the XPath expression
                     try {
@@ -5178,7 +5182,7 @@ export class Xslt {
                     i += 2;
                     continue;
                 }
-                
+
                 // Unmatched closing brace - treat as literal
                 result += char;
                 i++;
@@ -5187,7 +5191,7 @@ export class Xslt {
                 i++;
             }
         }
-        
+
         return result;
     }
 
@@ -5254,8 +5258,7 @@ export class Xslt {
             ) {
                 const name = xmlGetAttribute(child, 'name');
                 const attributes = child.childNodes.filter(
-                    (n: XNode) =>
-                        n.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(n, 'attribute')
+                    (n: XNode) => n.nodeType === DOM_ELEMENT_NODE && this.isXsltElement(n, 'attribute')
                 );
 
                 if (name) {
@@ -5300,16 +5303,14 @@ export class Xslt {
 
         const functionsMap = new Map<string, {
             functionDef: XNode;
-            executor: (ctx: ExprContext, functionDef: XNode, args: any[]) => any;
+            executor:(ctx: ExprContext, functionDef: XNode, args: any[]) => any;
         }>();
 
         // Register user-defined functions from the current stylesheet
         this.userDefinedFunctions.forEach((functionDef, name) => {
             functionsMap.set(name, {
                 functionDef,
-                executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => {
-                    return this.executeUserDefinedFunctionSync(ctx, funcDef, args);
-                }
+                executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => this.executeUserDefinedFunctionSync(ctx, funcDef, args)
             });
         });
 
@@ -5362,9 +5363,7 @@ export class Xslt {
                     // Register this function
                     functionsMap.set(component.name, {
                         functionDef: effectiveComponent.node,
-                        executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => {
-                            return this.executeUserDefinedFunctionSync(ctx, funcDef, args);
-                        }
+                        executor: (ctx: ExprContext, funcDef: XNode, args: any[]) => this.executeUserDefinedFunctionSync(ctx, funcDef, args)
                     });
                 }
             });

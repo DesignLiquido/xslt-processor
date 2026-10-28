@@ -7,7 +7,7 @@ import { XsltPackageInterface } from "./xslt-package-interface";
 export interface UsedPackageInterface {
     /** The package being used */
     package: XsltPackageInterface;
-    
+
     /** Components accepted (overridden) from this package */
     acceptedComponents: Map<string, PackageComponentInterface>;
 }

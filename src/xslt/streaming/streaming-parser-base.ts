@@ -41,7 +41,7 @@ export class StreamingParserBase implements StreamingParserInterface {
             depth: 0
         });
     }
-    
+
     /**
      * Check if document can be streamed.
      */
@@ -125,10 +125,10 @@ export class StreamingParserBase implements StreamingParserInterface {
                     content: `${node.nodeValue ?? ''}`,
                     depth: depth + 1
                 });
-                return;
+
             }
             default:
-                return;
+
         }
     }
 }
