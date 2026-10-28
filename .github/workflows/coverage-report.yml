@@ -1,0 +1,48 @@
+name: Coverage Report
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration - Main"]
+    types:
+      - completed
+
+jobs:
+  report:
+    name: Publish Coverage on PR
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read PR number
+        id: pr
+        run: echo "number=$(cat pr-number.txt)" >> $GITHUB_OUTPUT
+
+      - name: Generate coverage report
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        id: coverage
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          coverage-file: report.json
+          base-coverage-file: report.json
+          prnumber: ${{ steps.pr.outputs.number }}
+          skip-step: all
+          output: report-markdown
+
+      - name: Publish comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ steps.pr.outputs.number }}
+          message: ${{ steps.coverage.outputs.report }}
