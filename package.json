@@ -20,7 +20,7 @@
     "test": "jest --coverage",
     "pre-build-setup": "rimraf ./dist",
     "build": "yarn pre-build-setup && tsup && yarn copy-files-from-to",
-    "lint": "eslint src/**/*",
+    "lint": "eslint src",
     "docs": "typedoc",
     "docs:watch": "typedoc --watch",
     "docs:markdown": "typedoc --plugin typedoc-plugin-markdown --out docs/api",
