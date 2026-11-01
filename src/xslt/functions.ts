@@ -327,7 +327,7 @@ export function collectAndExpandTemplates(
                 effectivePriority,
                 importPrecedence,
                 documentOrder: docOrder++,
-                matchPattern: alternative  // Use the individual alternative, not the full union
+                matchPattern: alternative // Use the individual alternative, not the full union
             });
         }
     }
@@ -450,7 +450,7 @@ function nodeMatchesSinglePattern(
             // If pattern doesn't start with '/', add '//' to match anywhere in document
             const evaluationPattern = pattern.startsWith('/') ? pattern : '//' + pattern;
             const rootContext = context.clone([context.root], 0);
-            
+
             // Use xPathEval for pattern evaluation (handles // patterns correctly)
             const evalResult = xPath.xPathEval(evaluationPattern, rootContext);
             const nodes = evalResult.nodeSetValue();
@@ -575,8 +575,7 @@ export function selectBestTemplate(
 
     // 3. Detect conflicts - templates with same import precedence and priority
     const winner = matching[0];
-    const conflicts = matching.filter(t =>
-        t.importPrecedence === winner.importPrecedence &&
+    const conflicts = matching.filter(t => t.importPrecedence === winner.importPrecedence &&
         t.effectivePriority === winner.effectivePriority
     );
 

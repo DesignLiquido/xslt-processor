@@ -17,7 +17,7 @@ export class LocationExpr extends Expression {
             nodeTest: step.nodeTest,
             predicates: step.predicates || [],
             predicate: step.predicates || [],
-            hasPositionalPredicate: this.hasPositionalPredicate(step.predicates || []),
+            hasPositionalPredicate: this.hasPositionalPredicate(step.predicates || [])
         }));
     }
 

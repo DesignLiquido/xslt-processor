@@ -11,7 +11,7 @@ export interface StreamingParserInterface {
      * @param handler Function to call for each event
      */
     parse(source: string, handler: (event: StreamingEventInterface) => Promise<void>): Promise<void>;
-    
+
     /**
      * Check if a document can be parsed in streaming mode.
      * @param source Document source

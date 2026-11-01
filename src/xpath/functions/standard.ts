@@ -87,12 +87,10 @@ export function _false() {
  */
 function formatNumberIntegerPart(_number: string, _mask: string, settings: XsltDecimalFormatSettings): string {
     let formattedIntegerPart: string = "";
-    let lastMaskPlaceholder: string = "";
     let numberPosition: number = _number.length - 1;
 
     for (let i = _mask.length - 1; i >= 0; i--) {
-        lastMaskPlaceholder = _mask[i];
-        switch (lastMaskPlaceholder) {
+        switch (_mask[i]) {
             case '#':
                 formattedIntegerPart = _number[numberPosition] + formattedIntegerPart;
                 numberPosition--;

@@ -28,9 +28,6 @@ export default async (): Promise<Config.InitialOptions> => ({
             diagnostics: {
                 warnOnly: true
             }
-        }],
-        '^.+\\.(js|jsx)$': ['babel-jest', {
-            sourceMaps: true
         }]
     }
 });

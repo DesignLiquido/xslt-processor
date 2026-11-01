@@ -1,12 +1,12 @@
 /**
  * XSLT 3.0 Package System
- * 
+ *
  * Implements package management for XSLT 3.0 including:
  * - Package definition (xsl:package)
  * - Component visibility (xsl:expose, xsl:accept)
  * - Package usage (xsl:use-package)
  * - Component overrides
- * 
+ *
  * Reference: XSLT 3.0 Specification Section 3 (Packages)
  */
 

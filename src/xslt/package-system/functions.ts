@@ -32,7 +32,7 @@ export function isComponentVisible(component: PackageComponentInterface, fromPac
     if (component.visibility === 'private') {
         return fromPackage;
     }
-    
+
     // Public, final, and abstract components are visible from other packages
     return true;
 }
@@ -45,7 +45,7 @@ export function canOverrideComponent(component: PackageComponentInterface): bool
     if (component.visibility === 'final') {
         return false;
     }
-    
+
     // Otherwise check the overridable flag
     return component.overridable;
 }

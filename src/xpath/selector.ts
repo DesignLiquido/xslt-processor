@@ -18,14 +18,14 @@ export class XPathSelector {
     public select(expression: string, contextNode: XNode): XNode[] {
         const tokens = this.lexer.scan(expression);
         const ast = this.parser.parse(tokens);
-        
+
         // Limpar cache para cada seleção
         this.nodeCache = new WeakMap();
-        
+
         const xpathNode = this.convertToXPathNode(contextNode);
         const context = createContext(xpathNode);
         const result = ast.evaluate(context);
-        
+
         return this.convertResult(result);
     }
 
@@ -51,7 +51,7 @@ export class XPathSelector {
             attributes: [], // Será preenchido depois
             nextSibling: null, // Não converter para evitar ciclos
             previousSibling: null, // Não converter para evitar ciclos
-            ownerDocument: null, // Não converter para evitar ciclos
+            ownerDocument: null // Não converter para evitar ciclos
         };
 
         // Cachear ANTES de converter filhos
@@ -64,9 +64,9 @@ export class XPathSelector {
         return xpathNode;
     }
 
-    private getNodeType(node: XNode): number {        
+    private getNodeType(node: XNode): number {
         if (node.nodeType !== undefined) return node.nodeType;
-        
+
         switch (node.nodeName?.toLowerCase()) {
             case '#text':
                 return 3; // TEXT_NODE
@@ -85,11 +85,11 @@ export class XPathSelector {
         if (Array.isArray(result)) {
             return result.map(node => this.convertFromXPathNode(node));
         }
-        
+
         if (result && typeof result === 'object' && 'nodeType' in result) {
             return [this.convertFromXPathNode(result)];
         }
-            
+
         return [];
     }
 
@@ -105,7 +105,7 @@ export class XPathSelector {
             children: xpathNode.childNodes ? Array.from(xpathNode.childNodes).map(child => this.convertFromXPathNode(child)) : undefined,
             attributes: xpathNode.attributes ? Array.from(xpathNode.attributes).map(attr => this.convertFromXPathNode(attr)) : undefined,
             nextSibling: xpathNode.nextSibling ? this.convertFromXPathNode(xpathNode.nextSibling) : undefined,
-            previousSibling: xpathNode.previousSibling ? this.convertFromXPathNode(xpathNode.previousSibling) : undefined,
+            previousSibling: xpathNode.previousSibling ? this.convertFromXPathNode(xpathNode.previousSibling) : undefined
         } as any;
     }
 }

@@ -20,7 +20,6 @@
         "preserveSymlinks": true
     },
     "exclude": [
-        "babel.config.js",
         "jest.config.ts",
         "rollup.config.js",
         "coverage/**/*",
