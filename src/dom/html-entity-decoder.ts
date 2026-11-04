@@ -38,33 +38,16 @@ export function htmlEntityDecode(text: string): string {
         return text;
     }
 
-    // Replace named entities
-    let result = text.replace(/&([a-zA-Z]+);/g, (match: string, entity: string) => {
-        const lower = entity.toLowerCase();
-        return NAMED_ENTITIES[lower] || match;
-    });
-
-    // Replace decimal numeric entities: &#123;
-    result = result.replace(/&#(\d+);/g, (match: string, code: string) => {
-        try {
-            const num = parseInt(code, 10);
-            return String.fromCharCode(num);
-        } catch {
-            return match;
+    // Decode in a single pass, so the output of one reference (e.g. the "&" from "&amp;")
+    // is never re-read as the start of another one.
+    return text.replace(
+        /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z]+));/g,
+        (match: string, decimal?: string, hex?: string, entity?: string) => {
+            if (decimal) return String.fromCharCode(parseInt(decimal, 10));
+            if (hex) return String.fromCharCode(parseInt(hex, 16));
+            return NAMED_ENTITIES[entity!.toLowerCase()] || match;
         }
-    });
-
-    // Replace hexadecimal numeric entities: &#xAB; or &#XAB;
-    result = result.replace(/&#[xX]([0-9a-fA-F]+);/g, (match: string, code: string) => {
-        try {
-            const num = parseInt(code, 16);
-            return String.fromCharCode(num);
-        } catch {
-            return match;
-        }
-    });
-
-    return result;
+    );
 }
 
 /**

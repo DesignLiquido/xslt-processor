@@ -231,6 +231,15 @@ function xmlIsIndentEligibleOutputMethod(options: XmlOutputOptions): boolean {
 }
 
 /**
+ * Whether a text value only contains XML whitespace (#x9, #xA, #xD and #x20).
+ * `String.prototype.trim()` can't be used for this: it also strips characters XML treats as
+ * content, such as the non-breaking space (U+00A0).
+ */
+function isXmlWhitespaceOnly(text: string): boolean {
+    return !/[^\t\n\r ]/.test(text);
+}
+
+/**
  * Whether a node contributes no output to the serialized result. This mirrors
  * the skip condition applied to text nodes in `xmlTransformedTextRecursive`:
  * a text node produces nothing when it has no value, or when it's
@@ -242,7 +251,7 @@ function xmlProducesNoOutput(node: XNode): boolean {
         return false;
     }
     const isFromXslText = node.fromXslText === true;
-    return !(node.nodeValue && (isFromXslText || node.nodeValue.trim() !== ''));
+    return !(node.nodeValue && (isFromXslText || !isXmlWhitespaceOnly(node.nodeValue)));
 }
 
 /**
@@ -283,9 +292,9 @@ function xmlTransformedTextRecursive(node: XNode, buffer: string[], options: Xml
         // For text nodes created by xsl:text, don't trim whitespace
         // For other text nodes, skip whitespace-only ones
         const isFromXslText = node.fromXslText === true;
-        if (node.nodeValue && (isFromXslText || node.nodeValue.trim() !== '')) {
+        if (node.nodeValue && (isFromXslText || !isXmlWhitespaceOnly(node.nodeValue))) {
             const finalText =
-                node.escape && options.escape ? xmlEscapeText(node.nodeValue): xmlUnescapeText(node.nodeValue);
+                node.escape && options.escape ? xmlEscapeText(node.nodeValue) : node.nodeValue;
             buffer.push(finalText);
         }
     } else if (nodeType === DOM_CDATA_SECTION_NODE) {
@@ -493,16 +502,6 @@ function xmlFullNodeName(node: XNode): string {
     }
 
     return nodeName;
-}
-
-/**
- * Replaces HTML/XML entities to their literal characters.
- * Currently implementing only tag delimiters.
- * @param text The text to be transformed.
- * @returns The unescaped text.
- */
-export function xmlUnescapeText(text: string): string {
-    return `${text}`.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
 /**
