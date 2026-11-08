@@ -1,11 +1,11 @@
 /**
  * XSLT 3.0 Streaming Processor
- * 
+ *
  * Encapsulates the streaming-related XSLT instructions:
  * - xsl:stream
  * - xsl:fork
  * - xsl:merge
- * 
+ *
  * This class coordinates streaming context, copy management, and merge operations.
  */
 
@@ -44,7 +44,7 @@ export interface StreamingChildProcessor {
      * @param output Output node for results
      */
     processChildren(context: ExprContext, template: XNode, output?: XNode): Promise<void>;
-    
+
     /**
      * Check if a node is an XSLT element with the given local name.
      * @param node Node to check
@@ -60,22 +60,22 @@ export interface StreamingChildProcessor {
 export class StreamingProcessor {
     /** Streaming context for tracking state during streaming */
     private context: StreamingContext = new StreamingContext();
-    
+
     /** Copy manager for xsl:fork operations */
     private copyManager: StreamingCopyManager = new StreamingCopyManager();
-    
+
     /** Merge coordinator for xsl:merge operations */
     private mergeCoordinator: StreamingMergeCoordinator = new StreamingMergeCoordinator();
-    
+
     /** Whether streaming is currently enabled */
     private enabled: boolean = false;
-    
+
     /** Streaming parser implementation */
     private parser: StreamingParserInterface = new StreamingParserBase();
-    
+
     /** XPath evaluator reference */
     private xPath: XPath;
-    
+
     /** XSLT version */
     private version: string;
 
@@ -143,7 +143,7 @@ export class StreamingProcessor {
     /**
      * Implements `<xsl:stream>` (XSLT 3.0 Section 16).
      * Enables streaming processing of large documents.
-     * 
+     *
      * @param exprContext The Expression Context.
      * @param template The xsl:stream element.
      * @param output The output node.
@@ -199,7 +199,7 @@ export class StreamingProcessor {
     /**
      * Implements `<xsl:fork>` (XSLT 3.0 Section 17).
      * Creates multiple independent output branches from the input stream.
-     * 
+     *
      * @param exprContext The Expression Context.
      * @param template The xsl:fork element.
      * @param output The output node.
@@ -237,7 +237,7 @@ export class StreamingProcessor {
     /**
      * Implements `<xsl:merge>` (XSLT 3.0 Section 15).
      * Merges multiple sorted input sequences.
-     * 
+     *
      * @param exprContext The Expression Context.
      * @param template The xsl:merge element.
      * @param output The output node.
@@ -308,16 +308,16 @@ export class StreamingProcessor {
             // Process merge groups - iterate through all items in sources
             // For a basic implementation, we process merge-action once for each source that has data
             let hasData = sources.some(s => s.buffer.length > 0);
-            
+
             if (hasData) {
                 // For each source that has items, process the merge-action
                 for (const source of sources) {
                     while (source.buffer.length > 0) {
                         const item = source.buffer.shift();
-                        
+
                         // Create context with the current merge item
                         const mergeContext = exprContext.clone([item], 0);
-                        
+
                         // Process merge group with xsl:merge-action
                         for (const child of template.childNodes) {
                             if (childProcessor.isXsltElement(child, 'merge-action')) {

@@ -57,12 +57,12 @@ export class NodeConverter {
         return createContext(xpathNode, {
             position: exprContext.position + 1, // XPath is 1-based
             size: exprContext.nodeList.length,
-            nodeList: nodeList,
+            nodeList,
             variables: this.convertVariables(exprContext),
             functions: this.createCustomFunctions(exprContext),
             namespaces: exprContext.knownNamespaces,
             xsltVersion: exprContext.xsltVersion,
-            extensions: Object.keys(extensions).length > 0 ? extensions : undefined,
+            extensions: Object.keys(extensions).length > 0 ? extensions : undefined
         });
     }
 
@@ -84,7 +84,9 @@ export class NodeConverter {
 
         if (!('textContent' in adapted)) {
             Object.defineProperty(adapted, 'textContent', {
-                get() { return this._getTextContent(); },
+                get() {
+                    return this._getTextContent();
+                },
                 enumerable: true,
                 configurable: true
             });
@@ -133,12 +135,12 @@ export class NodeConverter {
      */
     xPathNodeToXNode(xpathNode: XPathNode): XNode | null {
         if (!xpathNode) return null;
-        
+
         // Check if this is already an XNode (from native parsing)
         if (xpathNode instanceof XNode) {
             return xpathNode as unknown as XNode;
         }
-        
+
         // Otherwise, convert XPathNode interface (from json-to-xml or xpath/lib) to XNode
         return this.convertXPathNodeToXNode(xpathNode);
     }
@@ -226,7 +228,7 @@ export class NodeConverter {
 
         // key() function - XSLT specific
         // Signature: key(context, keyName, keyValue)
-        functions['key'] = (_context: XPathContext, keyName: string, keyValue: string) => {
+        functions.key = (_context: XPathContext, keyName: string, keyValue: string) => {
             const keyDef = exprContext.keys?.[keyName];
             if (keyDef && keyDef[keyValue]) {
                 const nodeSetValue = keyDef[keyValue];
@@ -237,7 +239,7 @@ export class NodeConverter {
 
         // current() function - XSLT specific
         // Signature: current(context)
-        functions['current'] = (_context: XPathContext) => {
+        functions.current = (_context: XPathContext) => {
             const currentNode = exprContext.nodeList[exprContext.position];
             return [this.adaptXNode(currentNode)];
         };
@@ -284,19 +286,19 @@ export class NodeConverter {
             // Convert JSON string to XML document node using xpath lib converter
             const converter = new JsonToXmlConverter();
             const xpathNode = converter.convert(String(jsonStr));
-            
+
             if (!xpathNode) {
                 return null;
             }
 
             // Get owner document from context
-            const ownerDoc = exprContext.nodeList && exprContext.nodeList.length > 0 
-                ? exprContext.nodeList[0].ownerDocument 
+            const ownerDoc = exprContext.nodeList && exprContext.nodeList.length > 0
+                ? exprContext.nodeList[0].ownerDocument
                 : null;
 
             // Convert XPathNode interface tree to actual XNode objects
             const convertedNode = this.convertXPathNodeToXNode(xpathNode, ownerDoc);
-            
+
             // Return as array for consistency with xpath processor
             return convertedNode ? [convertedNode] : [];
         };
@@ -404,7 +406,7 @@ export class NodeConverter {
         // document() function - XSLT specific (Section 12.1)
         // Signature: document(context, uriOrNodeSet, baseNode?)
         // Note: This is a basic implementation. Full implementation requires document loading.
-        functions['document'] = (_context: XPathContext, uriOrNodeSet: any, _baseNode?: any) => {
+        functions.document = (_context: XPathContext, uriOrNodeSet: any, _baseNode?: any) => {
             const uri = Array.isArray(uriOrNodeSet)
                 ? (uriOrNodeSet[0]?.textContent || String(uriOrNodeSet[0] || ''))
                 : String(uriOrNodeSet || '');
@@ -457,9 +459,7 @@ export class NodeConverter {
                 ctx.userDefinedFunctions.forEach((funcInfo, funcName) => {
                     if (!functions[funcName]) {
                         // Execute the function synchronously
-                        functions[funcName] = (_context: XPathContext, ...args: any[]) => {
-                            return funcInfo.executor(exprContext, funcInfo.functionDef, args);
-                        };
+                        functions[funcName] = (_context: XPathContext, ...args: any[]) => funcInfo.executor(exprContext, funcInfo.functionDef, args);
                     }
                 });
                 break;
@@ -686,13 +686,13 @@ export class NodeConverter {
             // But we must distinguish between node-set and sequence of other items.
             // If it's a sequence of nodes, we treat it as NodeSetValue.
             const nodes = result.map(node => this.xPathNodeToXNode(node)).filter(n => n !== null) as XNode[];
-            
+
             // If we have nodes OR it's an empty sequence, default to NodeSetValue for backward compatibility
             // In XPath 1.0, everything was a node-set (or primitive).
             if (nodes.length > 0 || result.length === 0) {
                 return new NodeSetValue(nodes);
             }
-            
+
             // If it's a sequence of non-nodes, we should ideally have a SequenceValue.
             // For now, let's treat it as a StringValue joined by space (common XSLT 2.0 behavior for sequences in some contexts)
             // or just take the first item's string value.

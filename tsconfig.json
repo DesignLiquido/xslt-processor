@@ -21,7 +21,6 @@
         "preserveSymlinks": true
     },
     "exclude": [
-        "babel.config.js",
         "jest.config.ts",
         "tsup.config.ts",
         "coverage/**/*",
@@ -32,6 +31,7 @@
         "src/xpath/lib/tests/**/*",
         "tmp-*.ts",
         "test-without-jest.*",
-        "tests/**/*"
+        "tests/**/*",
+        "eslint.config.mjs"
     ]
 }

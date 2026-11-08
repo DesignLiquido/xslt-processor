@@ -1,4 +1,4 @@
-import { CopyOperationInterface as CopyOperationInterface } from "./copy-operation-interface";
+import { CopyOperationInterface } from "./copy-operation-interface";
 import { StreamingEventInterface } from "./streaming-event-interface";
 
 /**
@@ -7,7 +7,7 @@ import { StreamingEventInterface } from "./streaming-event-interface";
 export class StreamingCopyManager {
     private copies: Map<string, CopyOperationInterface> = new Map();
     private copyIdCounter: number = 0;
-    
+
     /**
      * Create a new copy operation.
      */
@@ -20,11 +20,11 @@ export class StreamingCopyManager {
             eventQueue: [],
             currentDepth: 0
         };
-        
+
         this.copies.set(id, copy);
         return copy;
     }
-    
+
     /**
      * Distribute an event to all active copies.
      */
@@ -36,7 +36,7 @@ export class StreamingCopyManager {
             }
         }
     }
-    
+
     /**
      * Close a copy operation.
      */
@@ -46,14 +46,14 @@ export class StreamingCopyManager {
             copy.isActive = false;
         }
     }
-    
+
     /**
      * Get copy by ID.
      */
     getCopy(copyId: string): CopyOperationInterface | undefined {
         return this.copies.get(copyId);
     }
-    
+
     /**
      * Clear all copies.
      */

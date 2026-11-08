@@ -6,7 +6,7 @@ import { XsltPackageInterface } from "./xslt-package-interface";
 export class PackageRegistry {
     private packages: Map<string, XsltPackageInterface> = new Map();
     private loading: Set<string> = new Set();
-    
+
     /**
      * Register a package in the registry.
      */
@@ -14,7 +14,7 @@ export class PackageRegistry {
         const key = this.makePackageKey(pkg.name, pkg.version);
         this.packages.set(key, pkg);
     }
-    
+
     /**
      * Retrieve a package from the registry.
      * Supports version constraints: exact, wildcards (1.*), ranges (>=1.0), and combined (>=1.0,<2.0).
@@ -130,7 +130,7 @@ export class PackageRegistry {
         }
         return 0;
     }
-    
+
     /**
      * Check if a package exists in the registry.
      */
@@ -166,14 +166,14 @@ export class PackageRegistry {
     isLoading(packageKey: string): boolean {
         return this.loading.has(packageKey);
     }
-    
+
     /**
      * Create a unique key for a package based on name and version.
      */
     private makePackageKey(name: string, version?: string): string {
         return version ? `${name}@${version}` : name;
     }
-    
+
     /**
      * Clear all registered packages.
      */

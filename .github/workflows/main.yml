@@ -1,31 +1,76 @@
-name: Commit and PR - Main
+name: Continuous Integration - Main
 
 on:
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
 
 jobs:
-  unit-tests:
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: write
+  checks:
+    name: Checks (Lint and Build)
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-    - uses: ArtiomTr/jest-coverage-report-action@v2
-      id: coverage
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        test-script: yarn test
-        package-manager: yarn
-        output: report-markdown
-    - uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        message: ${{ steps.coverage.outputs.report }}
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Build / Package
+        run: yarn build
+
+  unit-tests:
+    name: Unit Tests
+    needs: checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: |
+          yarn test \
+            --ci \
+            --coverageReporters=json-summary \
+            --coverageReporters=text \
+            --json \
+            --testLocationInResults \
+            --outputFile=report.json
+
+      - name: Save PR number
+        if: github.event_name == 'pull_request'
+        run: echo "${{ github.event.number }}" > pr-number.txt
+
+      - name: Save test and coverage artifacts
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            report.json
+            pr-number.txt
+          retention-days: 1
