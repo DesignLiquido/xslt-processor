@@ -1,4 +1,3 @@
-import { htmlEntityDecode } from './html-entity-decoder';
 
 import {
     DOM_ATTRIBUTE_NODE,
@@ -513,7 +512,6 @@ function xmlFullNodeName(node: XNode): string {
 export function xmlEscapeText(s: string): string {
     return `${s}`
         .replace(/&/g, '&amp;')
-        .replace(/&amp;amp;/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 }
@@ -531,25 +529,15 @@ function xmlEscapeAttr(s: string): string {
 }
 
 /**
- * Wrapper function to access attribute values of template element
- * nodes. Currently this calls htmlEntityDecode because in some DOM
- * implementations the return value of node.getAttributeValue()
- * contains unresolved XML entities, although the DOM spec requires
- * that entity references are resolved by the DOM.
- * @param node TODO
- * @param name TODO
- * @returns TODO
+ * Wrapper function to access attribute values of template element nodes.
+ * The parser already resolves entity references in attribute values, so the
+ * value is returned as is. Decoding it again would turn `&amp;lt;` into `<`.
+ * @param node The element node.
+ * @param name The attribute name.
+ * @returns The attribute value.
  */
 export function xmlGetAttribute(node: XNode, name: string): string {
-    // TODO(mesch): This should not be necessary if the DOM is working
-    // correctly. The DOM is responsible for resolving entities, not the
-    // application.
-    const value = domGetAttributeValue(node, name);
-    if (value) {
-        return htmlEntityDecode(value);
-    }
-
-    return value;
+    return domGetAttributeValue(node, name);
 }
 
 /**

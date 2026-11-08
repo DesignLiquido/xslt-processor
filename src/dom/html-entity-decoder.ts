@@ -43,8 +43,12 @@ export function htmlEntityDecode(text: string): string {
     return text.replace(
         /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z]+));/g,
         (match: string, decimal?: string, hex?: string, entity?: string) => {
-            if (decimal) return String.fromCharCode(parseInt(decimal, 10));
-            if (hex) return String.fromCharCode(parseInt(hex, 16));
+            if (decimal || hex) {
+                // fromCodePoint handles characters above U+FFFF (e.g. emoji);
+                // out-of-range references are left untouched.
+                const codePoint = decimal ? parseInt(decimal, 10) : parseInt(hex!, 16);
+                return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : match;
+            }
             return NAMED_ENTITIES[entity!.toLowerCase()] || match;
         }
     );
